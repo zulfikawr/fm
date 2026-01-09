@@ -2,6 +2,7 @@ package config
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 )
@@ -19,6 +20,8 @@ type Config struct {
 	ShowHeader        bool `json:"show_header"`
 	DateFormatIndex   int  `json:"date_format_index"`
 	SizeFormatIndex   int  `json:"size_format_index"`
+	EditorIndex       int  `json:"editor_index"`
+	UseTrash          bool `json:"use_trash"`
 }
 
 // DefaultConfig returns the initial configuration.
@@ -35,6 +38,8 @@ func DefaultConfig() Config {
 		ShowHeader:        true,
 		DateFormatIndex:   0,
 		SizeFormatIndex:   0,
+		EditorIndex:       0,
+		UseTrash:          true,
 	}
 }
 
@@ -54,6 +59,7 @@ func Load() Config {
 
 	var cfg Config
 	if err := json.Unmarshal(data, &cfg); err != nil {
+		fmt.Fprintf(os.Stderr, "Error parsing config: %v\n", err)
 		return DefaultConfig()
 	}
 	return cfg

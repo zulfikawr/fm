@@ -81,3 +81,31 @@ func TestNavigation(t *testing.T) {
 		m.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'h'}})
 	})
 }
+
+func TestFileOpening(t *testing.T) {
+	tmpDir, _ := os.MkdirTemp("", "fm-open-test")
+	defer os.RemoveAll(tmpDir)
+
+	filePath := filepath.Join(tmpDir, "test.txt")
+	os.WriteFile(filePath, []byte("hello"), 0644)
+
+	m := NewModel(tmpDir)
+	m.items = []files.Item{{Name: "test.txt", Path: filePath, IsDir: false}}
+	m.applyFilter()
+	m.cursor = 0
+
+	t.Run("Open with editor", func(t *testing.T) {
+		m.cfg.EditorIndex = 0 // vim (terminal)
+		newModel, cmd := m.Update(tea.KeyMsg{Type: tea.KeyEnter})
+		if cmd == nil {
+			t.Error("Expected non-nil cmd for terminal editor")
+		}
+		m = newModel.(*Model)
+	})
+
+	t.Run("Open with non-terminal editor", func(t *testing.T) {
+		m.cfg.EditorIndex = 4 // code (non-terminal)
+		m.Update(tea.KeyMsg{Type: tea.KeyEnter})
+		// We can't easily verify the execution in test, but we ensure it doesn't panic
+	})
+}

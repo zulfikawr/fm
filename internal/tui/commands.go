@@ -18,11 +18,26 @@ type LoadedItemsMsg struct {
 	Err         error
 }
 
+// DirSizeMsg is sent when a directory size has been calculated.
+type DirSizeMsg struct {
+	Path string
+	Size int64
+}
+
+// GitStatusMsg is sent when git status has been fetched.
+type GitStatusMsg struct {
+	Path     string
+	Statuses map[string]string
+	Branch   string
+}
+
 // WatchEventMsg is sent when a file system event occurs in the watched directory.
 type WatchEventMsg struct {
 	Event fsnotify.Event
 	Err   error
 }
+
+type errMsg struct{ err error }
 
 type clearMsg struct{}
 
@@ -32,23 +47,30 @@ func (m *Model) reload() tea.Cmd {
 	path := m.path
 	mode := m.sortMode
 	showHidden := m.cfg.ShowHidden
-	enableGit := m.cfg.EnableGit
 
 	return func() tea.Msg {
-		var gitStatuses map[string]string
-		var gitBranch string
-		if enableGit {
-			gitStatuses, gitBranch = files.GetGitStatus(path)
-		}
-
-		items, err := files.Load(path, mode, showHidden, gitStatuses)
+		items, err := files.Load(path, mode, showHidden, nil)
 		return LoadedItemsMsg{
 			Path:        path,
 			Items:       items,
-			GitStatuses: gitStatuses,
-			GitBranch:   gitBranch,
+			GitStatuses: nil,
+			GitBranch:   "",
 			Err:         err,
 		}
+	}
+}
+
+func calculateDirSize(path string) tea.Cmd {
+	return func() tea.Msg {
+		size := files.GetDirSize(path)
+		return DirSizeMsg{Path: path, Size: size}
+	}
+}
+
+func fetchGitStatus(path string) tea.Cmd {
+	return func() tea.Msg {
+		statuses, branch := files.GetGitStatus(path)
+		return GitStatusMsg{Path: path, Statuses: statuses, Branch: branch}
 	}
 }
 

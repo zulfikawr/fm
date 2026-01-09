@@ -5,11 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [v0.1.2] - 2026-01-09
+## [v0.1.3] - 2026-01-09
 
 ### Added
-- **Test Reorganization:** Standardized the test suite by implementing dedicated `_test.go` files for every source module, ensuring a 1:1 mapping between code and tests.
-- **Coverage Milestone:** Significantly increased test coverage across all internal packages to exceed the **80%** threshold.
+- **Open File Feature:** Integrated the ability to open files directly from the TUI. Code and text files open in a user-preferred editor, while others use the system default application.
+- **Editor Selection Setting:** Added a new configuration option to choose the preferred text editor (supporting vim, nano, vi, emacs, code, subl, cursor, and zed).
+- **Trash Bin Integration:** Modified deletion logic to move files to the system trash (using `gio` on Linux, `osascript` on macOS, and PowerShell on Windows) instead of permanent deletion.
+- **Asynchronous Background Caching:** Reimplemented directory size calculations and Git status fetching to run in the background, ensuring the TUI remains responsive when browsing large repositories.
+
+### Fixed
+- **Config Persistence:** Improved configuration loading with error reporting to handle and debug potential JSON parsing failures.
+
+## [v0.1.2] - 2026-01-09
 
 ### Changed
 - **Architectural Refactor:** Performed a comprehensive modularization of the codebase to improve maintainability and reduce technical debt.

@@ -1,6 +1,7 @@
 package tui
 
 import (
+	"path/filepath"
 	"time"
 
 	"filemanager/internal/files"
@@ -51,7 +52,59 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		m.watcher.Add(m.path)
 		m.lastWatched = m.path
-		return m, m.watchDir()
+
+		if m.cfg.EnableGit {
+			cmds = append(cmds, fetchGitStatus(m.path))
+		}
+		for _, item := range m.items {
+			if item.IsDir && !item.IsUp {
+				cmds = append(cmds, calculateDirSize(item.Path))
+			}
+		}
+
+		return m, tea.Batch(append(cmds, m.watchDir())...)
+
+	case DirSizeMsg:
+		for i, item := range m.items {
+			if item.Path == msg.Path {
+				m.items[i].Size = msg.Size
+				break
+			}
+		}
+		m.applyFilter()
+		return m, nil
+
+	case GitStatusMsg:
+		if msg.Path != m.path {
+			return m, nil
+		}
+		m.gitBranch = msg.Branch
+
+		statusMap := msg.Statuses
+		for i, item := range m.items {
+			if status, ok := statusMap[item.Name]; ok {
+				m.items[i].GitStatus = status
+			}
+		}
+
+		seen := make(map[string]bool)
+		for _, item := range m.items {
+			seen[item.Name] = true
+		}
+		for name, status := range statusMap {
+			if !seen[name] && status == "D" {
+				m.items = append(m.items, files.Item{
+					Name:      name,
+					Path:      filepath.Join(m.path, name),
+					IsDir:     false,
+					GitStatus: "D",
+					IsGhost:   true,
+					Size:      0,
+				})
+			}
+		}
+		m.applyFilter()
+		return m, nil
 
 	case WatchEventMsg:
 		if msg.Err != nil {
@@ -63,6 +116,10 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if time.Since(m.msgTime) >= 5*time.Second {
 			m.msg = ""
 		}
+		return m, nil
+
+	case errMsg:
+		m.setMsg(msg.err.Error())
 		return m, nil
 
 	case tea.KeyMsg:

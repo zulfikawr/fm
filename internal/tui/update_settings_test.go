@@ -12,29 +12,33 @@ func TestSettings(t *testing.T) {
 	m.width = 80
 	m.height = 24
 
+	// New indices:
+	// 0: ShowHidden, 1: CaseSensitive, 2: Confirmations, 3: Wrap, 4: Editor
+	// 5: ShowHeader, 6: EnableGit, 7: ShowSize, 8: SizeFormat, 9: ShowDate, 10: DateFormat, 11: Theme
+
 	t.Run("Navigation skipping disabled settings", func(t *testing.T) {
 		m.cfg.ShowSize = false
 		m.cfg.ShowDateModified = false
-		m.settingsCursor = 6 // On ShowSize (off)
+		m.settingsCursor = 7 // On ShowSize (off)
 		newModel, _ := m.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("j")})
 		m = newModel.(*Model)
-		// Should skip 7 and go to 8
-		if m.settingsCursor != 8 {
-			t.Errorf("Expected cursor to skip 7 and go to 8, got %d", m.settingsCursor)
+		// Should skip 8 and go to 9
+		if m.settingsCursor != 9 {
+			t.Errorf("Expected cursor to skip 8 and go to 9, got %d", m.settingsCursor)
 		}
 
 		newModel, _ = m.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("j")})
 		m = newModel.(*Model)
-		// Should skip 9 and go to 10
-		if m.settingsCursor != 10 {
-			t.Errorf("Expected cursor to skip 9 and go to 10, got %d", m.settingsCursor)
+		// Should skip 10 and go to 11
+		if m.settingsCursor != 11 {
+			t.Errorf("Expected cursor to skip 10 and go to 11, got %d", m.settingsCursor)
 		}
 	})
 
 	t.Run("Toggle logic for formats", func(t *testing.T) {
 		m.cfg.ShowSize = false
 		m.cfg.SizeFormatIndex = 0
-		m.settingsCursor = 7 // On SizeFormat
+		m.settingsCursor = 8 // On SizeFormat
 
 		newModel, _ := m.Update(tea.KeyMsg{Type: tea.KeySpace})
 		m = newModel.(*Model)
@@ -51,32 +55,36 @@ func TestSettings(t *testing.T) {
 	})
 
 	t.Run("Toggle Setting All", func(t *testing.T) {
-		for i := 0; i <= 10; i++ {
+		m.cfg.ShowSize = true
+		m.cfg.ShowDateModified = true
+		for i := 0; i <= 11; i++ {
 			m.toggleSetting(i)
 		}
 	})
 
 	t.Run("Toggle Setting Previous", func(t *testing.T) {
+		m := NewModel("/")
 		m.cfg.ThemeIndex = 1
-		m.toggleSettingPrev(10) // Theme
+		m.toggleSettingPrev(11) // Theme
 		if m.cfg.ThemeIndex != 0 {
 			t.Errorf("Expected theme index 0, got %d", m.cfg.ThemeIndex)
 		}
 
 		m.cfg.ShowSize = true
 		m.cfg.SizeFormatIndex = 1
-		m.toggleSettingPrev(7) // Size format
+		m.toggleSettingPrev(8) // Size format
 		if m.cfg.SizeFormatIndex != 0 {
 			t.Errorf("Expected size format 0, got %d", m.cfg.SizeFormatIndex)
 		}
 
 		m.cfg.ShowDateModified = true
 		m.cfg.DateFormatIndex = 1
-		m.toggleSettingPrev(9) // Date format
+		m.toggleSettingPrev(10) // Date format
 		if m.cfg.DateFormatIndex != 0 {
 			t.Errorf("Expected date format 0, got %d", m.cfg.DateFormatIndex)
 		}
 
+		m.toggleSettingPrev(4) // Editor prev
 		m.toggleSettingPrev(0)
 	})
 }
@@ -106,7 +114,7 @@ func TestHandleSettingsUpdate(t *testing.T) {
 	})
 
 	t.Run("Toggle prev", func(t *testing.T) {
-		m.settingsCursor = 10 // Theme
+		m.settingsCursor = 11 // Theme
 		m.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'h'}})
 	})
 }

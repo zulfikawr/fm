@@ -7,7 +7,7 @@ import (
 )
 
 func (m *Model) handleSettingsUpdate(msg tea.Msg) (tea.Model, tea.Cmd) {
-	const numSettings = 11 // Hidden, CaseSensitive, Confirmations, Wrapping, Git, ShowSize, SizeFormat, ShowDate, DateFormat, ShowHeader, Theme
+	const numSettings = 12 // Hidden, CaseSensitive, Confirmations, Wrapping, Editor, Git, ShowSize, SizeFormat, ShowDate, DateFormat, ShowHeader, Theme
 
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
@@ -20,7 +20,7 @@ func (m *Model) handleSettingsUpdate(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if m.settingsCursor > 0 {
 				m.settingsCursor--
 				// Skip disabled settings
-				if (m.settingsCursor == 7 && !m.cfg.ShowSize) || (m.settingsCursor == 9 && !m.cfg.ShowDateModified) {
+				if (m.settingsCursor == 8 && !m.cfg.ShowSize) || (m.settingsCursor == 10 && !m.cfg.ShowDateModified) {
 					if m.settingsCursor > 0 {
 						m.settingsCursor--
 					}
@@ -30,7 +30,7 @@ func (m *Model) handleSettingsUpdate(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if m.settingsCursor < numSettings-1 {
 				m.settingsCursor++
 				// Skip disabled settings
-				if (m.settingsCursor == 7 && !m.cfg.ShowSize) || (m.settingsCursor == 9 && !m.cfg.ShowDateModified) {
+				if (m.settingsCursor == 8 && !m.cfg.ShowSize) || (m.settingsCursor == 10 && !m.cfg.ShowDateModified) {
 					if m.settingsCursor < numSettings-1 {
 						m.settingsCursor++
 					}
@@ -58,22 +58,24 @@ func (m *Model) toggleSetting(idx int) {
 	case 3:
 		m.cfg.WrapNavigation = !m.cfg.WrapNavigation
 	case 4:
-		m.cfg.ShowHeader = !m.cfg.ShowHeader
+		m.cfg.EditorIndex = (m.cfg.EditorIndex + 1) % len(files.Editors)
 	case 5:
-		m.cfg.EnableGit = !m.cfg.EnableGit
+		m.cfg.ShowHeader = !m.cfg.ShowHeader
 	case 6:
-		m.cfg.ShowSize = !m.cfg.ShowSize
+		m.cfg.EnableGit = !m.cfg.EnableGit
 	case 7:
+		m.cfg.ShowSize = !m.cfg.ShowSize
+	case 8:
 		if m.cfg.ShowSize {
 			m.cfg.SizeFormatIndex = (m.cfg.SizeFormatIndex + 1) % len(files.SizeFormats)
 		}
-	case 8:
-		m.cfg.ShowDateModified = !m.cfg.ShowDateModified
 	case 9:
+		m.cfg.ShowDateModified = !m.cfg.ShowDateModified
+	case 10:
 		if m.cfg.ShowDateModified {
 			m.cfg.DateFormatIndex = (m.cfg.DateFormatIndex + 1) % len(files.DateFormats)
 		}
-	case 10:
+	case 11:
 		m.cfg.ThemeIndex = (m.cfg.ThemeIndex + 1) % len(Themes)
 		m.styles = NewStylesheet(Themes[m.cfg.ThemeIndex])
 		m.updateThemeStyles()
@@ -82,15 +84,17 @@ func (m *Model) toggleSetting(idx int) {
 
 func (m *Model) toggleSettingPrev(idx int) {
 	switch idx {
-	case 7:
+	case 4:
+		m.cfg.EditorIndex = (m.cfg.EditorIndex - 1 + len(files.Editors)) % len(files.Editors)
+	case 8:
 		if m.cfg.ShowSize {
 			m.cfg.SizeFormatIndex = (m.cfg.SizeFormatIndex - 1 + len(files.SizeFormats)) % len(files.SizeFormats)
 		}
-	case 9:
+	case 10:
 		if m.cfg.ShowDateModified {
 			m.cfg.DateFormatIndex = (m.cfg.DateFormatIndex - 1 + len(files.DateFormats)) % len(files.DateFormats)
 		}
-	case 10:
+	case 11:
 		m.cfg.ThemeIndex = (m.cfg.ThemeIndex - 1 + len(Themes)) % len(Themes)
 		m.styles = NewStylesheet(Themes[m.cfg.ThemeIndex])
 		m.updateThemeStyles()

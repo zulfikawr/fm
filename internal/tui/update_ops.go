@@ -74,10 +74,16 @@ func (m *Model) performDelete() []tea.Cmd {
 		}
 	}
 
+	errs := 0
 	for _, t := range targets {
-		files.Delete(t)
+		if err := files.Trash(t); err != nil {
+			errs++
+			m.setMsg(fmt.Sprintf("Error trashing %s: %v", filepath.Base(t), err))
+		}
 	}
-	m.setMsg(fmt.Sprintf("Deleted %d items", len(targets)))
+	if errs == 0 {
+		m.setMsg(fmt.Sprintf("Trashed %d items", len(targets)))
+	}
 	return []tea.Cmd{m.reload()}
 }
 

@@ -33,11 +33,12 @@ func (m *Model) renderSettingsList(header, footer string) string {
 				{"Case-Sensitive Search", m.formatBool(m.cfg.CaseSensitive)},
 				{"Confirm Operations", m.formatBool(m.cfg.ConfirmOperations)},
 				{"Wrap Navigation", m.formatBool(m.cfg.WrapNavigation)},
+				{"Preferred Editor", fmt.Sprintf("< %s >", files.Editors[m.cfg.EditorIndex])},
 			},
 		},
 		{
 			title:    "Display Options",
-			startIdx: 4,
+			startIdx: 5,
 			settings: []setting{
 				{"Show Column Headers", m.formatBool(m.cfg.ShowHeader)},
 				{"Enable Git Status", m.formatBool(m.cfg.EnableGit)},
@@ -49,7 +50,7 @@ func (m *Model) renderSettingsList(header, footer string) string {
 		},
 		{
 			title:    "Appearance",
-			startIdx: 10,
+			startIdx: 11,
 			settings: []setting{
 				{"Theme", fmt.Sprintf("< %s >", Themes[m.cfg.ThemeIndex].Name)},
 			},
@@ -72,9 +73,9 @@ func (m *Model) renderSettingsList(header, footer string) string {
 
 			// Dim inactive settings
 			inactive := false
-			if idx == 7 && !m.cfg.ShowSize { // Size Format
+			if idx == 8 && !m.cfg.ShowSize { // Size Format
 				inactive = true
-			} else if idx == 9 && !m.cfg.ShowDateModified { // Date Format
+			} else if idx == 10 && !m.cfg.ShowDateModified { // Date Format
 				inactive = true
 			}
 			val := s.value

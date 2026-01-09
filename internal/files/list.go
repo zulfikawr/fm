@@ -69,7 +69,7 @@ func Load(path string, mode SortMode, showHidden bool, gitStatuses map[string]st
 	for _, f := range filtered {
 		size := f.Size()
 		if f.IsDir() {
-			size = GetDirSize(filepath.Join(path, f.Name()))
+			size = -1
 		}
 
 		items = append(items, Item{

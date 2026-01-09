@@ -3,6 +3,8 @@ package tui
 import (
 	"path/filepath"
 
+	"filemanager/internal/files"
+
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -53,6 +55,28 @@ func (m *Model) handleNavigation(msg tea.KeyMsg) []tea.Cmd {
 			m.offsetMemory[m.path] = m.offset
 			m.path = filepath.Join(m.path, selected.Name)
 			cmds = append(cmds, m.reload())
+		} else {
+			// Handle file opening
+			if msg.String() == "enter" {
+				execCmd, isTerminal, err := files.GetOpenCmd(selected.Path, m.cfg.EditorIndex)
+				if err != nil {
+					m.setMsg("Error: " + err.Error())
+					break
+				}
+
+				if isTerminal {
+					return []tea.Cmd{tea.ExecProcess(execCmd, func(err error) tea.Msg {
+						if err != nil {
+							return errMsg{err}
+						}
+						return nil
+					})}
+				} else {
+					if err := execCmd.Start(); err != nil {
+						m.setMsg("Error: " + err.Error())
+					}
+				}
+			}
 		}
 
 	case "backspace", "left", "h":
