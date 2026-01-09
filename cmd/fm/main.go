@@ -78,6 +78,8 @@ func printHelp(s tui.Stylesheet, themeName string) {
 		s.DirCol.Render("\nKeybindings:"),
 		fmt.Sprintf("  %-20s %s", s.ExecCol.Render("Enter/→/l"), dim.Render("Open directory")),
 		fmt.Sprintf("  %-20s %s", s.ExecCol.Render("Backspace/←/h"), dim.Render("Parent directory")),
+		fmt.Sprintf("  %-20s %s", s.ExecCol.Render("Tab"), dim.Render("Switch pane")),
+		fmt.Sprintf("  %-20s %s", s.ExecCol.Render("Ctrl+n"), dim.Render("Cycle pane count (1-3)")),
 		fmt.Sprintf("  %-20s %s", s.ExecCol.Render("Space"), dim.Render("Select file")),
 		fmt.Sprintf("  %-20s %s", s.ExecCol.Render("s"), dim.Render("Cycle sort mode")),
 		fmt.Sprintf("  %-20s %s", s.ExecCol.Render("/"), dim.Render("Search")),

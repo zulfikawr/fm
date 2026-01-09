@@ -5,6 +5,31 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.1.1] - 2026-01-09
+
+### Added
+- **Configurable Formats:** Added settings to choose between multiple date/time formats (Default, ISO, US, Short) and file size units (Short, Full, Bytes).
+- **Expanded Themes:** Added Monokai, Solarized Dark, Red, Tokyo Night, Rose Pine, and Catppuccin Mocha dark themes. **Gruvbox** is now the default theme.
+- **Enhanced UI Coloring:** Colorized keybindings and path headers to be more prominent; dimmed secondary info like dates, sizes, and the "up dir" (..) entry for better focus.
+- **Item Counter Fix:** Footer counter now correctly excludes the "up dir" from the total count and index.
+- **Date Modified Column:** Added a new column showing file modification time in `DD/MM/YYYY 24H` format.
+- **Display Settings:** Added settings to toggle the visibility of "Size", "Date Modified", and "Column Headers".
+- **Responsive Truncation:** Filenames are now intelligently truncated with `…` based on available terminal width and active columns.
+- **Rendering Tests:** Added comprehensive tests for row rendering and responsive truncation logic.
+- **Improved Column Headers:** Added transparent headers with a separator line for better visual distinction from the breadcrumb.
+- **Directory Sizes:** Replaced the `<DIR>` placeholder with actual recursive directory size calculations.
+- **Unicode Navigation:** Replaced the standard `..` with a more descriptive `↑ ..` unicode icon.
+- **Increase test coverage**
+
+### Changed
+- **Redesigned Settings TUI:** Reorganized settings into categorized groups (File Operations, Display Options, Appearance) with Title Case headers, improved spacing, and responsive layout. Added theme-aware styling for `[ON]` (primary color) and `[OFF]` (dimmed) states.
+- **Adaptive Selection Mode:** Selection indicators (`[ ]` / `[x]`) and left padding are now hidden by default to provide a cleaner view.
+- **Dynamic UI:** Selection mode is automatically activated when using `Space` and deactivated when clearing selections with `Esc`.
+- **Improved Sorting:** All sorting modes (Name, Size, Date) now correctly mix files and folders together based on the selected criteria. The **Default Sort** remains "folders first" for logical navigation.
+- **Git Integration:** Now respects `.gitignore` files. Ignored files and directories are automatically detected and displayed with a dimmed style in the TUI.
+- **Codebase Cleanup:** Removed unused style declarations to maintain a lean TUI engine.
+- **Settings UI:** Improved settings list with `< Value >` indicators for cyclable options like Themes.
+
 ## [v0.1.0] - 2026-01-09
 
 ### Added

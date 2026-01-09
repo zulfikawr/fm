@@ -25,7 +25,7 @@ func (m *Model) setMsg(msg string) {
 	m.msgTime = time.Now()
 }
 
-func (m Model) watchDir() tea.Cmd {
+func (m *Model) watchDir() tea.Cmd {
 	return func() tea.Msg {
 		select {
 		case event, ok := <-m.watcher.Events:
@@ -43,7 +43,7 @@ func (m Model) watchDir() tea.Cmd {
 }
 
 // Update handles incoming events and updates the model state.
-func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 	var cmds []tea.Cmd
 
@@ -61,6 +61,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.items = msg.Items
 			m.gitBranch = msg.GitBranch
 		}
+		m.selectMode = false
 		m.applyFilter()
 
 		if val, ok := m.cursorMemory[m.path]; ok {
@@ -101,6 +102,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case tea.KeyMsg:
 		if !m.searching && !m.renaming && !m.confirming && !m.settingsOpen && msg.String() == "esc" {
+			m.selectMode = false
 			hasSelection := false
 			for i := range m.items {
 				if m.items[i].Selected {
@@ -269,6 +271,16 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 			}
 
+			// Update selectMode based on whether anything is selected
+			anySelected := false
+			for _, item := range m.items {
+				if item.Selected {
+					anySelected = true
+					break
+				}
+			}
+			m.selectMode = anySelected
+
 		case "s":
 			m.sortMode = (m.sortMode + 1) % 7
 			cmds = append(cmds, m.reload())
@@ -353,7 +365,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m *Model) handleSettingsUpdate(msg tea.Msg) (tea.Model, tea.Cmd) {
-	const numSettings = 6 // Hidden, CaseSensitive, Confirmations, Wrapping, Git, Theme
+	const numSettings = 11 // Hidden, CaseSensitive, Confirmations, Wrapping, Git, ShowSize, SizeFormat, ShowDate, DateFormat, ShowHeader, Theme
 
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
@@ -365,10 +377,22 @@ func (m *Model) handleSettingsUpdate(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "up", "k":
 			if m.settingsCursor > 0 {
 				m.settingsCursor--
+				// Skip disabled settings
+				if (m.settingsCursor == 7 && !m.cfg.ShowSize) || (m.settingsCursor == 9 && !m.cfg.ShowDateModified) {
+					if m.settingsCursor > 0 {
+						m.settingsCursor--
+					}
+				}
 			}
 		case "down", "j":
 			if m.settingsCursor < numSettings-1 {
 				m.settingsCursor++
+				// Skip disabled settings
+				if (m.settingsCursor == 7 && !m.cfg.ShowSize) || (m.settingsCursor == 9 && !m.cfg.ShowDateModified) {
+					if m.settingsCursor < numSettings-1 {
+						m.settingsCursor++
+					}
+				}
 			}
 		case "enter", "right", "l", " ":
 			m.toggleSetting(m.settingsCursor)
@@ -392,8 +416,22 @@ func (m *Model) toggleSetting(idx int) {
 	case 3:
 		m.cfg.WrapNavigation = !m.cfg.WrapNavigation
 	case 4:
-		m.cfg.EnableGit = !m.cfg.EnableGit
+		m.cfg.ShowHeader = !m.cfg.ShowHeader
 	case 5:
+		m.cfg.EnableGit = !m.cfg.EnableGit
+	case 6:
+		m.cfg.ShowSize = !m.cfg.ShowSize
+	case 7:
+		if m.cfg.ShowSize {
+			m.cfg.SizeFormatIndex = (m.cfg.SizeFormatIndex + 1) % len(files.SizeFormats)
+		}
+	case 8:
+		m.cfg.ShowDateModified = !m.cfg.ShowDateModified
+	case 9:
+		if m.cfg.ShowDateModified {
+			m.cfg.DateFormatIndex = (m.cfg.DateFormatIndex + 1) % len(files.DateFormats)
+		}
+	case 10:
 		m.cfg.ThemeIndex = (m.cfg.ThemeIndex + 1) % len(Themes)
 		m.styles = NewStylesheet(Themes[m.cfg.ThemeIndex])
 		m.updateThemeStyles()
@@ -401,11 +439,20 @@ func (m *Model) toggleSetting(idx int) {
 }
 
 func (m *Model) toggleSettingPrev(idx int) {
-	if idx == 5 {
+	switch idx {
+	case 7:
+		if m.cfg.ShowSize {
+			m.cfg.SizeFormatIndex = (m.cfg.SizeFormatIndex - 1 + len(files.SizeFormats)) % len(files.SizeFormats)
+		}
+	case 9:
+		if m.cfg.ShowDateModified {
+			m.cfg.DateFormatIndex = (m.cfg.DateFormatIndex - 1 + len(files.DateFormats)) % len(files.DateFormats)
+		}
+	case 10:
 		m.cfg.ThemeIndex = (m.cfg.ThemeIndex - 1 + len(Themes)) % len(Themes)
 		m.styles = NewStylesheet(Themes[m.cfg.ThemeIndex])
 		m.updateThemeStyles()
-	} else {
+	default:
 		m.toggleSetting(idx)
 	}
 }
@@ -440,7 +487,7 @@ func (m *Model) performPaste() []tea.Cmd {
 	return []tea.Cmd{m.reload()}
 }
 
-func (m Model) getViewportHeight() int {
+func (m *Model) getViewportHeight() int {
 	h := m.height - 2
 	if h < 5 {
 		return 5

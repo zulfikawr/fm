@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+	"time"
 )
 
 // SortMode defines the sorting strategy for directory contents.
@@ -134,7 +135,7 @@ type Item struct {
 	IsGhost   bool   // IsGhost indicates a file that exists in Git but not on disk (Deleted).
 	Size      int64
 	Mode      os.FileMode
-	MTime     os.FileInfo
+	MTime     time.Time
 	IsUp      bool // IsUp indicates if this item represents the parent directory ("..").
 }
 
@@ -145,7 +146,7 @@ func Load(path string, mode SortMode, showHidden bool, gitStatuses map[string]st
 
 	if path != "/" {
 		items = append(items, Item{
-			Name:  "..",
+			Name:  "↑ ..",
 			IsDir: true,
 			IsUp:  true,
 		})
@@ -174,11 +175,6 @@ func Load(path string, mode SortMode, showHidden bool, gitStatuses map[string]st
 	}
 
 	sort.Slice(filtered, func(i, j int) bool {
-		d1, d2 := filtered[i].IsDir(), filtered[j].IsDir()
-		if d1 != d2 {
-			return d1
-		}
-
 		switch mode {
 		case SortName:
 			return strings.ToLower(filtered[i].Name()) < strings.ToLower(filtered[j].Name())
@@ -192,19 +188,29 @@ func Load(path string, mode SortMode, showHidden bool, gitStatuses map[string]st
 			return filtered[i].Size() > filtered[j].Size()
 		case SortSizeAsc:
 			return filtered[i].Size() < filtered[j].Size()
-		default: // SortDefault
+		default: // SortDefault - Directories first, then alphabetical
+			d1, d2 := filtered[i].IsDir(), filtered[j].IsDir()
+			if d1 != d2 {
+				return d1
+			}
 			return strings.ToLower(filtered[i].Name()) < strings.ToLower(filtered[j].Name())
 		}
 	})
 
 	for _, f := range filtered {
+		size := f.Size()
+		if f.IsDir() {
+			size = GetDirSize(filepath.Join(path, f.Name()))
+		}
+
 		items = append(items, Item{
 			Name:      f.Name(),
 			Path:      filepath.Join(path, f.Name()),
 			IsDir:     f.IsDir(),
 			GitStatus: gitStatuses[f.Name()],
-			Size:      f.Size(),
+			Size:      size,
 			Mode:      f.Mode(),
+			MTime:     f.ModTime(),
 		})
 	}
 
@@ -225,8 +231,28 @@ func Load(path string, mode SortMode, showHidden bool, gitStatuses map[string]st
 	return items, nil
 }
 
-// FormatSize converts a byte count into a human-readable string (e.g., "1.5 MB").
-func FormatSize(b int64) string {
+var DateFormats = []struct {
+	Name   string
+	Layout string
+}{
+	{"Default", "02/01/2006 15:04"},
+	{"ISO", "2006-01-02 15:04"},
+	{"US", "01/02/2006 03:04 PM"},
+	{"Short", "02/01/06 15:04"},
+}
+
+var SizeFormats = []string{
+	"Short (K, M, G)",
+	"Full (KB, MB, GB)",
+	"Bytes",
+}
+
+// FormatSize converts a byte count into a human-readable string based on the selected format.
+func FormatSize(b int64, formatIdx int) string {
+	if formatIdx == 2 { // Bytes
+		return fmt.Sprintf("%d B", b)
+	}
+
 	const unit = 1024
 	if b < unit {
 		return fmt.Sprintf("%d B", b)
@@ -236,5 +262,27 @@ func FormatSize(b int64) string {
 		div *= unit
 		exp++
 	}
-	return fmt.Sprintf("%.1f %c", float64(b)/float64(div), "KMGTPE"[exp])
+
+	units := "KMGTPE"
+	suffix := string(units[exp])
+	if formatIdx == 1 { // Full
+		suffix += "B"
+	}
+
+	return fmt.Sprintf("%.1f %s", float64(b)/float64(div), suffix)
+}
+
+// GetDirSize calculates the total size of a directory recursively.
+func GetDirSize(path string) int64 {
+	var size int64
+	filepath.Walk(path, func(_ string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if !info.IsDir() {
+			size += info.Size()
+		}
+		return nil
+	})
+	return size
 }

@@ -23,8 +23,8 @@ func GetGitStatus(dirPath string) (map[string]string, string) {
 	branchOut, _ := branchCmd.Output()
 	branch := strings.TrimSpace(string(branchOut))
 
-	// Get file statuses
-	cmd := exec.Command("git", "-C", repoRoot, "status", "--porcelain")
+	// Get file statuses (including ignored)
+	cmd := exec.Command("git", "-C", repoRoot, "status", "--porcelain", "--ignored")
 	out, err := cmd.Output()
 	if err != nil {
 		return statuses, ""
@@ -45,9 +45,13 @@ func GetGitStatus(dirPath string) (map[string]string, string) {
 		status := line[:2]
 		// Porcelain format: XY PATH
 		// X: Index status, Y: Working tree status
+		// !!: Ignored
 		char := string(status[0])
-		if char == " " || char == "?" {
+		if char == " " || char == "?" || char == "!" {
 			char = string(status[1])
+		}
+		if status == "!!" {
+			char = "!"
 		}
 
 		filePath := line[3:]
@@ -73,13 +77,13 @@ func GetGitStatus(dirPath string) (map[string]string, string) {
 		parts := strings.Split(subPath, "/")
 		name := parts[0]
 
-		// Priority for display: Conflict (U) > Modified (M) > Staged (A) > Untracked (?)
+		// Priority for display: Conflict (U) > Modified (M) > Staged (A) > Untracked (?) > Ignored (!)
 		// If we already have a higher priority status for this name (dir), don't overwrite
 		existing := statuses[name]
 		if existing == "U" {
 			continue
 		}
-		if char == "U" || existing == "" || (existing == "?" && char != "?") || (existing == "A" && char == "M") {
+		if char == "U" || existing == "" || (existing == "!" && char != "!") || (existing == "?" && char != "?" && char != "!") || (existing == "A" && char == "M") {
 			statuses[name] = char
 		}
 	}

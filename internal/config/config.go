@@ -14,6 +14,11 @@ type Config struct {
 	ConfirmOperations bool `json:"confirm_operations"`
 	WrapNavigation    bool `json:"wrap_navigation"`
 	EnableGit         bool `json:"enable_git"`
+	ShowSize          bool `json:"show_size"`
+	ShowDateModified  bool `json:"show_date_modified"`
+	ShowHeader        bool `json:"show_header"`
+	DateFormatIndex   int  `json:"date_format_index"`
+	SizeFormatIndex   int  `json:"size_format_index"`
 }
 
 // DefaultConfig returns the initial configuration.
@@ -25,6 +30,11 @@ func DefaultConfig() Config {
 		ConfirmOperations: true,
 		WrapNavigation:    false,
 		EnableGit:         true,
+		ShowSize:          true,
+		ShowDateModified:  true,
+		ShowHeader:        true,
+		DateFormatIndex:   0,
+		SizeFormatIndex:   0,
 	}
 }
 

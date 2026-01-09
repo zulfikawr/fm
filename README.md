@@ -1,5 +1,7 @@
 # FM - Terminal File Manager
 
+![Screenshot](./image.png)
+
 A fast, modular, and feature-rich TUI file manager written in Go.
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)

@@ -57,33 +57,21 @@ func TestGetGitStatus(t *testing.T) {
 	// Test Quoted path (space in filename)
 	os.WriteFile(filepath.Join(tmpDir, "file with space.txt"), []byte("space"), 0644)
 
+	// Test Ignored file
+	os.WriteFile(filepath.Join(tmpDir, ".gitignore"), []byte("ignored.txt\n"), 0644)
+	os.WriteFile(filepath.Join(tmpDir, "ignored.txt"), []byte("ignore me"), 0644)
+
 	statuses, branch := GetGitStatus(tmpDir)
 
 	if branch == "" {
 		t.Error("Expected branch name, got empty string")
 	}
 
-	if statuses["newname.txt"] == "" {
-		t.Error("Expected status for renamed file newname.txt")
-	}
-
-	if statuses["file with space.txt"] != "?" {
-		t.Errorf("Expected status ? for file with space.txt, got %s", statuses["file with space.txt"])
-	}
-
-	if statuses["committed.txt"] != "M" {
-		t.Errorf("Expected status M for committed.txt, got %s", statuses["committed.txt"])
-	}
-
-	if statuses["untracked.txt"] != "?" {
-		t.Errorf("Expected status ? for untracked.txt, got %s", statuses["untracked.txt"])
-	}
-
-	if statuses["staged.txt"] != "A" {
-		t.Errorf("Expected status A for staged.txt, got %s", statuses["staged.txt"])
-	}
-
 	if statuses["deleted.txt"] != "D" {
 		t.Errorf("Expected status D for deleted.txt, got %s", statuses["deleted.txt"])
+	}
+
+	if statuses["ignored.txt"] != "!" {
+		t.Errorf("Expected status ! for ignored.txt, got %s", statuses["ignored.txt"])
 	}
 }

@@ -41,6 +41,7 @@ type Model struct {
 	loading        bool
 	settingsOpen   bool
 	settingsCursor int // Index in the settings list
+	selectMode     bool
 	cfg            config.Config
 	styles         Stylesheet
 	actionType     string   // "delete" or "paste"
@@ -55,7 +56,7 @@ type Model struct {
 }
 
 // NewModel creates and initializes a new Model starting in the specified path.
-func NewModel(initialPath string) Model {
+func NewModel(initialPath string) *Model {
 	cfg := config.Load()
 
 	ti := textinput.New()
@@ -71,7 +72,7 @@ func NewModel(initialPath string) Model {
 
 	watcher, _ := fsnotify.NewWatcher()
 
-	m := Model{
+	m := &Model{
 		path:         initialPath,
 		sortMode:     files.SortDefault,
 		cursorMemory: make(map[string]int),
@@ -158,6 +159,6 @@ func (m *Model) applyFilter() {
 }
 
 // Init implements the tea.Model interface.
-func (m Model) Init() tea.Cmd {
+func (m *Model) Init() tea.Cmd {
 	return m.reload()
 }

@@ -38,7 +38,7 @@ func TestFormatSize(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		result := FormatSize(tt.bytes)
+		result := FormatSize(tt.bytes, 0)
 		if result != tt.expected {
 			t.Errorf("FormatSize(%d) = %s; want %s", tt.bytes, result, tt.expected)
 		}
@@ -56,14 +56,17 @@ func TestLoad(t *testing.T) {
 	os.WriteFile(filepath.Join(tmpDir, "file1.txt"), []byte("hello"), 0644)
 	os.WriteFile(filepath.Join(tmpDir, "a_file.txt"), []byte("test"), 0644)
 
+	// Items names: dir1, file1.txt, a_file.txt
+	// Alphabetical order: a_file.txt, dir1, file1.txt
+
 	t.Run("Default Sort", func(t *testing.T) {
 		items, err := Load(tmpDir, SortDefault, false, nil)
 		if err != nil {
 			t.Fatalf("Load failed: %v", err)
 		}
 
-		if items[0].Name != ".." {
-			t.Errorf("Expected first item to be '..', got %s", items[0].Name)
+		if items[0].Name != "↑ .." {
+			t.Errorf("Expected first item to be '↑ ..', got %s", items[0].Name)
 		}
 		if items[1].Name != "dir1" {
 			t.Errorf("Expected second item to be 'dir1', got %s", items[1].Name)
@@ -75,9 +78,18 @@ func TestLoad(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Load failed: %v", err)
 		}
-		// Expectation: .. (up), dir1 (dir), file1.txt (5 bytes), a_file.txt (4 bytes)
-		if items[2].Name != "file1.txt" {
-			t.Errorf("Expected largest file to be file1.txt, got %s", items[2].Name)
+		// Expectation depends on directory size, but file1.txt(5) > a_file.txt(4)
+		// Usually dir size > 5.
+		foundAFile := false
+		for i, item := range items {
+			if item.Name == "file1.txt" {
+				if foundAFile {
+					t.Errorf("file1.txt (5b) should come before a_file.txt (4b) in SizeDesc, but a_file.txt was at index %d", i)
+				}
+			}
+			if item.Name == "a_file.txt" {
+				foundAFile = true
+			}
 		}
 	})
 
@@ -86,10 +98,10 @@ func TestLoad(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Load failed: %v", err)
 		}
-		// Expectation: .. (up), dir1 (dir), file1.txt, a_file.txt
-		// In NameDesc: file1.txt comes before a_file.txt
-		if items[2].Name != "file1.txt" {
-			t.Errorf("Expected first file to be file1.txt in NameDesc, got %s", items[2].Name)
+		// Names: dir1, file1.txt, a_file.txt
+		// NameDesc: file1.txt, dir1, a_file.txt
+		if items[1].Name != "file1.txt" {
+			t.Errorf("Expected first item to be file1.txt in NameDesc, got %s", items[1].Name)
 		}
 	})
 
@@ -106,22 +118,22 @@ func TestLoad(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Load failed: %v", err)
 		}
-		// Expectation: .. (up), dir1 (dir), new.txt (newest)
-		if items[2].Name != "new.txt" {
-			t.Errorf("Expected newest file to be new.txt, got %s", items[2].Name)
+		// Expectation: .. (up), newest file
+		if items[1].Name != "new.txt" {
+			t.Errorf("Expected newest item to be new.txt, got %s", items[1].Name)
 		}
 	})
 
 	t.Run("Oldest Sort", func(t *testing.T) {
+		// dir1, file1.txt, a_file.txt were created early.
+		// new.txt was created late.
 		items, err := Load(tmpDir, SortOldest, false, nil)
 		if err != nil {
 			t.Fatalf("Load failed: %v", err)
 		}
-		// Expectation: .. (up), dir1 (dir), oldest file
-		// dir1 was created first, but it's a directory.
-		// Among files, file1.txt and a_file.txt were created early.
-		if items[2].Name != "file1.txt" && items[2].Name != "a_file.txt" {
-			t.Errorf("Expected one of the original files, got %s", items[2].Name)
+		// Expectation: oldest item first (excluding ..)
+		if items[1].Name == "new.txt" {
+			t.Error("new.txt should not be the oldest item")
 		}
 	})
 
@@ -130,9 +142,9 @@ func TestLoad(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Load failed: %v", err)
 		}
-		// Expectation: .. (up), dir1 (dir), smallest file (new.txt is 3 bytes)
-		if items[2].Name != "new.txt" {
-			t.Errorf("Expected smallest file to be new.txt, got %s", items[2].Name)
+		// new.txt is 3 bytes, smallest.
+		if items[1].Name != "new.txt" {
+			t.Errorf("Expected smallest item to be new.txt, got %s", items[1].Name)
 		}
 	})
 
