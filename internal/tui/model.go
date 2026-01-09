@@ -1,7 +1,6 @@
 package tui
 
 import (
-	"strings"
 	"time"
 
 	"filemanager/internal/config"
@@ -12,15 +11,6 @@ import (
 	"github.com/charmbracelet/lipgloss"
 	"github.com/fsnotify/fsnotify"
 )
-
-// LoadedItemsMsg is sent when directory contents have been loaded asynchronously.
-type LoadedItemsMsg struct {
-	Path        string
-	Items       []files.Item
-	GitStatuses map[string]string
-	GitBranch   string
-	Err         error
-}
 
 // Model holds the application state.
 type Model struct {
@@ -97,65 +87,6 @@ func (m *Model) updateThemeStyles() {
 	m.searchInput.PromptStyle = m.searchInput.PromptStyle.Background(theme.Bg)
 	m.renameInput.TextStyle = m.renameInput.TextStyle.Background(theme.Bg)
 	m.renameInput.PromptStyle = m.renameInput.PromptStyle.Background(theme.Bg)
-}
-
-// reload triggers an asynchronous reload of the current directory.
-func (m *Model) reload() tea.Cmd {
-	m.loading = true
-	path := m.path
-	mode := m.sortMode
-	showHidden := m.cfg.ShowHidden
-	enableGit := m.cfg.EnableGit
-
-	return func() tea.Msg {
-		var gitStatuses map[string]string
-		var gitBranch string
-		if enableGit {
-			gitStatuses, gitBranch = files.GetGitStatus(path)
-		}
-
-		items, err := files.Load(path, mode, showHidden, gitStatuses)
-		return LoadedItemsMsg{
-			Path:        path,
-			Items:       items,
-			GitStatuses: gitStatuses,
-			GitBranch:   gitBranch,
-			Err:         err,
-		}
-	}
-}
-
-func (m *Model) applyFilter() {
-	query := m.searchInput.Value()
-	if !m.cfg.CaseSensitive {
-		query = strings.ToLower(query)
-	}
-
-	if query == "" {
-		m.filteredItems = m.items
-		return
-	}
-
-	var filtered []files.Item
-	if len(m.items) > 0 && m.items[0].IsUp {
-		filtered = append(filtered, m.items[0])
-	}
-
-	for _, item := range m.items {
-		if item.IsUp {
-			continue
-		}
-
-		name := item.Name
-		if !m.cfg.CaseSensitive {
-			name = strings.ToLower(name)
-		}
-
-		if strings.Contains(name, query) {
-			filtered = append(filtered, item)
-		}
-	}
-	m.filteredItems = filtered
 }
 
 // Init implements the tea.Model interface.

@@ -1,0 +1,66 @@
+package tui
+
+import (
+	"path/filepath"
+
+	tea "github.com/charmbracelet/bubbletea"
+)
+
+func (m *Model) handleNavigation(msg tea.KeyMsg) []tea.Cmd {
+	var cmds []tea.Cmd
+
+	switch msg.String() {
+	case "up", "k":
+		if m.cursor > 0 {
+			m.cursor--
+		} else if m.cfg.WrapNavigation && len(m.filteredItems) > 0 {
+			m.cursor = len(m.filteredItems) - 1
+		}
+
+		if m.cursor < m.offset {
+			m.offset = m.cursor
+		} else if m.cursor >= m.offset+m.getViewportHeight() {
+			m.offset = m.cursor - m.getViewportHeight() + 1
+		}
+
+	case "down", "j":
+		if m.cursor < len(m.filteredItems)-1 {
+			m.cursor++
+		} else if m.cfg.WrapNavigation && len(m.filteredItems) > 0 {
+			m.cursor = 0
+		}
+
+		viewportHeight := m.getViewportHeight()
+		if m.cursor >= m.offset+viewportHeight {
+			m.offset = m.cursor - viewportHeight + 1
+		} else if m.cursor < m.offset {
+			m.offset = m.cursor
+		}
+
+	case "enter", "right", "l":
+		if len(m.filteredItems) == 0 {
+			break
+		}
+		selected := m.filteredItems[m.cursor]
+
+		if selected.IsUp {
+			m.cursorMemory[m.path] = m.cursor
+			m.offsetMemory[m.path] = m.offset
+			m.path = filepath.Dir(m.path)
+			cmds = append(cmds, m.reload())
+		} else if selected.IsDir {
+			m.cursorMemory[m.path] = m.cursor
+			m.offsetMemory[m.path] = m.offset
+			m.path = filepath.Join(m.path, selected.Name)
+			cmds = append(cmds, m.reload())
+		}
+
+	case "backspace", "left", "h":
+		m.cursorMemory[m.path] = m.cursor
+		m.offsetMemory[m.path] = m.offset
+		m.path = filepath.Dir(m.path)
+		cmds = append(cmds, m.reload())
+	}
+
+	return cmds
+}

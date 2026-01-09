@@ -59,6 +59,8 @@ func Load() Config {
 	return cfg
 }
 
+var marshalIndent = json.MarshalIndent
+
 // Save writes the current config to disk.
 func (c Config) Save() error {
 	path := GetConfigPath()
@@ -67,7 +69,7 @@ func (c Config) Save() error {
 		return err
 	}
 
-	data, err := json.MarshalIndent(c, "", "  ")
+	data, err := marshalIndent(c, "", "  ")
 	if err != nil {
 		return err
 	}

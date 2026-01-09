@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.1.2] - 2026-01-09
+
+### Added
+- **Test Reorganization:** Standardized the test suite by implementing dedicated `_test.go` files for every source module, ensuring a 1:1 mapping between code and tests.
+- **Coverage Milestone:** Significantly increased test coverage across all internal packages to exceed the **80%** threshold.
+
+### Changed
+- **Architectural Refactor:** Performed a comprehensive modularization of the codebase to improve maintainability and reduce technical debt.
+- **Decomposed `internal/files`:** Split the primary file management logic into specialized modules: `item.go`, `ops.go`, `list.go`, `sort.go`, and `format.go`.
+- **Restructured `internal/tui`:** Decomposed large TUI files into focused components:
+    - Dedicated view modules for the file list, settings, and shared UI components.
+    - Specialized update handlers for navigation, file operations, search, and settings.
+    - Centralized `commands.go` for Bubble Tea messages and command factories.
+- **Lean CLI Entry Point:** Refactored `cmd/fm/main.go` to remove TUI rendering logic, moving the help screen implementation to the `tui` package.
+- **Test Suite Cleanup:** Removed large "god" test files (`tui_test.go`, `render_test.go`, `coverage_test.go`, and `files_test.go`) in favor of the new modular testing structure.
+
 ## [v0.1.1] - 2026-01-09
 
 ### Added
