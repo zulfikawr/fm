@@ -30,22 +30,28 @@ func GetGitStatus(dirPath string) (map[string]string, string) {
 		return statuses, ""
 	}
 
-	// Calculate current directory relative to repo root
+	statuses = ParseGitStatusPorcelain(string(out), repoRoot, dirPath)
+	return statuses, branch
+}
+
+// ParseGitStatusPorcelain is a shared helper to parse git status --porcelain output.
+func ParseGitStatusPorcelain(output, repoRoot, dirPath string) map[string]string {
+	statuses := make(map[string]string)
 	relDir, _ := filepath.Rel(repoRoot, dirPath)
 	if relDir == "." {
 		relDir = ""
 	}
-
-	lines := strings.Split(string(out), "\n")
+	relDir = filepath.ToSlash(relDir)
+	if relDir == "." {
+		relDir = ""
+	}
+	lines := strings.Split(output, "\n")
 	for _, line := range lines {
 		if len(line) < 4 {
 			continue
 		}
 
 		status := line[:2]
-		// Porcelain format: XY PATH
-		// X: Index status, Y: Working tree status
-		// !!: Ignored
 		char := string(status[0])
 		if char == " " || char == "?" || char == "!" {
 			char = string(status[1])
@@ -55,20 +61,17 @@ func GetGitStatus(dirPath string) (map[string]string, string) {
 		}
 
 		filePath := line[3:]
-		// Handle renamed files: "R  old -> new"
 		if strings.Contains(filePath, " -> ") {
 			parts := strings.Split(filePath, " -> ")
 			filePath = parts[1]
 		}
-		// Unquote if necessary
 		filePath = strings.Trim(filePath, "\"")
+		filePath = filepath.ToSlash(filePath)
 
-		// We only care about files inside or equal to the current relDir
 		if relDir != "" && !strings.HasPrefix(filePath, relDir) {
 			continue
 		}
 
-		// Get the part of the path immediately under relDir
 		subPath := filePath
 		if relDir != "" {
 			subPath = strings.TrimPrefix(filePath, relDir+"/")
@@ -77,8 +80,6 @@ func GetGitStatus(dirPath string) (map[string]string, string) {
 		parts := strings.Split(subPath, "/")
 		name := parts[0]
 
-		// Priority for display: Conflict (U) > Modified (M) > Staged (A) > Untracked (?) > Ignored (!)
-		// If we already have a higher priority status for this name (dir), don't overwrite
 		existing := statuses[name]
 		if existing == "U" {
 			continue
@@ -88,5 +89,5 @@ func GetGitStatus(dirPath string) (map[string]string, string) {
 		}
 	}
 
-	return statuses, branch
+	return statuses
 }

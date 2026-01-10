@@ -16,10 +16,11 @@ func TestFileOperations(t *testing.T) {
 	srcFile := filepath.Join(tmpDir, "src.txt")
 	content := []byte("hello world")
 	os.WriteFile(srcFile, content, 0644)
+	fs := &LocalFS{}
 
 	t.Run("Copy File", func(t *testing.T) {
 		dstFile := filepath.Join(tmpDir, "dst.txt")
-		if err := Copy(srcFile, dstFile); err != nil {
+		if err := Copy(fs, srcFile, dstFile); err != nil {
 			t.Fatalf("Copy failed: %v", err)
 		}
 
@@ -35,7 +36,7 @@ func TestFileOperations(t *testing.T) {
 	t.Run("Rename File", func(t *testing.T) {
 		oldPath := srcFile
 		newPath := filepath.Join(tmpDir, "renamed.txt")
-		if err := Rename(oldPath, newPath); err != nil {
+		if err := Rename(fs, oldPath, newPath); err != nil {
 			t.Fatalf("Rename failed: %v", err)
 		}
 
@@ -50,7 +51,7 @@ func TestFileOperations(t *testing.T) {
 	t.Run("Delete", func(t *testing.T) {
 		path := filepath.Join(tmpDir, "todelete.txt")
 		os.WriteFile(path, []byte("delete me"), 0644)
-		if err := Delete(path); err != nil {
+		if err := Delete(fs, path); err != nil {
 			t.Fatalf("Delete failed: %v", err)
 		}
 		if _, err := os.Stat(path); err == nil {
@@ -59,14 +60,14 @@ func TestFileOperations(t *testing.T) {
 	})
 
 	t.Run("Copy Non-existent", func(t *testing.T) {
-		err := Copy(filepath.Join(tmpDir, "nonexistent"), filepath.Join(tmpDir, "out"))
+		err := Copy(fs, filepath.Join(tmpDir, "nonexistent"), filepath.Join(tmpDir, "out"))
 		if err == nil {
 			t.Error("Expected error when copying non-existent file")
 		}
 	})
 
 	t.Run("Rename Non-existent", func(t *testing.T) {
-		err := Rename(filepath.Join(tmpDir, "nonexistent"), filepath.Join(tmpDir, "out"))
+		err := Rename(fs, filepath.Join(tmpDir, "nonexistent"), filepath.Join(tmpDir, "out"))
 		if err == nil {
 			t.Error("Expected error when renaming non-existent file")
 		}
@@ -79,7 +80,7 @@ func TestFileOperations(t *testing.T) {
 		os.WriteFile(filepath.Join(subDir, "inner.txt"), []byte("inner"), 0644)
 
 		dstDir := filepath.Join(tmpDir, "recursive_dst")
-		if err := Copy(srcDir, dstDir); err != nil {
+		if err := Copy(fs, srcDir, dstDir); err != nil {
 			t.Fatalf("Recursive copy failed: %v", err)
 		}
 

@@ -14,7 +14,7 @@ import (
 func TestNavigation(t *testing.T) {
 	tmpDir, _ := os.MkdirTemp("", "fm-nav-test")
 	defer os.RemoveAll(tmpDir)
-	m := NewModel(tmpDir)
+	m := NewModel(&files.LocalFS{}, tmpDir)
 
 	m.items = []files.Item{
 		{Name: "↑ ..", IsDir: true, IsUp: true},
@@ -89,7 +89,7 @@ func TestFileOpening(t *testing.T) {
 	filePath := filepath.Join(tmpDir, "test.txt")
 	os.WriteFile(filePath, []byte("hello"), 0644)
 
-	m := NewModel(tmpDir)
+	m := NewModel(&files.LocalFS{}, tmpDir)
 	m.items = []files.Item{{Name: "test.txt", Path: filePath, IsDir: false}}
 	m.applyFilter()
 	m.cursor = 0

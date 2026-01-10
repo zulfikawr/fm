@@ -1,13 +1,14 @@
 package tui
 
 import (
+	"filemanager/internal/files"
 	"testing"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
 
 func TestSettings(t *testing.T) {
-	m := NewModel("/")
+	m := NewModel(&files.LocalFS{}, "/")
 	m.settingsOpen = true
 	m.width = 80
 	m.height = 24
@@ -63,7 +64,7 @@ func TestSettings(t *testing.T) {
 	})
 
 	t.Run("Toggle Setting Previous", func(t *testing.T) {
-		m := NewModel("/")
+		m := NewModel(&files.LocalFS{}, "/")
 		m.cfg.ThemeIndex = 1
 		m.toggleSettingPrev(11) // Theme
 		if m.cfg.ThemeIndex != 0 {
@@ -90,7 +91,7 @@ func TestSettings(t *testing.T) {
 }
 
 func TestHandleSettingsUpdate(t *testing.T) {
-	m := NewModel("/")
+	m := NewModel(&files.LocalFS{}, "/")
 	m.settingsOpen = true
 
 	t.Run("Esc to close", func(t *testing.T) {

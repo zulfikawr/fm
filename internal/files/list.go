@@ -3,17 +3,16 @@ package files
 import (
 	"fmt"
 	"os"
-	"path/filepath"
 	"sort"
 	"strings"
 )
 
 // Load reads the contents of the specified directory path.
 // It returns a sorted slice of Items based on the provided SortMode and visibility preferences.
-func Load(path string, mode SortMode, showHidden bool, gitStatuses map[string]string) ([]Item, error) {
+func Load(fs FileSystem, path string, mode SortMode, showHidden bool, gitStatuses map[string]string) ([]Item, error) {
 	var items []Item
 
-	if path != "/" {
+	if path != "/" && path != fs.Separator() {
 		items = append(items, Item{
 			Name:  "↑ ..",
 			IsDir: true,
@@ -21,7 +20,7 @@ func Load(path string, mode SortMode, showHidden bool, gitStatuses map[string]st
 		})
 	}
 
-	entries, err := os.ReadDir(path)
+	entries, err := fs.ReadDir(path)
 	if err != nil {
 		return items, fmt.Errorf("failed to read directory: %w", err)
 	}
@@ -29,17 +28,12 @@ func Load(path string, mode SortMode, showHidden bool, gitStatuses map[string]st
 	// Track seen files to identify ghosts later
 	seenOnDisk := make(map[string]bool)
 
-	// Filter and Sort logic
 	var filtered []os.FileInfo
 	for _, e := range entries {
 		if !showHidden && strings.HasPrefix(e.Name(), ".") {
 			continue
 		}
-		info, err := e.Info()
-		if err != nil {
-			continue
-		}
-		filtered = append(filtered, info)
+		filtered = append(filtered, e)
 		seenOnDisk[e.Name()] = true
 	}
 
@@ -74,7 +68,7 @@ func Load(path string, mode SortMode, showHidden bool, gitStatuses map[string]st
 
 		items = append(items, Item{
 			Name:      f.Name(),
-			Path:      filepath.Join(path, f.Name()),
+			Path:      fs.Join(path, f.Name()),
 			IsDir:     f.IsDir(),
 			GitStatus: gitStatuses[f.Name()],
 			Size:      size,
@@ -88,7 +82,7 @@ func Load(path string, mode SortMode, showHidden bool, gitStatuses map[string]st
 		if !seenOnDisk[name] && status == "D" {
 			items = append(items, Item{
 				Name:      name,
-				Path:      filepath.Join(path, name),
+				Path:      fs.Join(path, name),
 				IsDir:     false,
 				GitStatus: "D",
 				IsGhost:   true,
@@ -101,16 +95,24 @@ func Load(path string, mode SortMode, showHidden bool, gitStatuses map[string]st
 }
 
 // GetDirSize calculates the total size of a directory recursively.
-func GetDirSize(path string) int64 {
+func GetDirSize(fs FileSystem, path string) int64 {
 	var size int64
-	filepath.Walk(path, func(_ string, info os.FileInfo, err error) error {
+
+	var walk func(string)
+	walk = func(currPath string) {
+		entries, err := fs.ReadDir(currPath)
 		if err != nil {
-			return err
+			return
 		}
-		if !info.IsDir() {
-			size += info.Size()
+		for _, e := range entries {
+			if e.IsDir() {
+				walk(fs.Join(currPath, e.Name()))
+			} else {
+				size += e.Size()
+			}
 		}
-		return nil
-	})
+	}
+
+	walk(path)
 	return size
 }

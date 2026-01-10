@@ -10,7 +10,7 @@ import (
 )
 
 func TestRowRendering(t *testing.T) {
-	m := NewModel("/")
+	m := NewModel(&files.LocalFS{}, "/")
 	m.width = 80
 	m.cfg = config.DefaultConfig()
 	m.cfg.ShowSize = true
@@ -61,7 +61,7 @@ func TestRowRendering(t *testing.T) {
 }
 
 func TestViewRenderList(t *testing.T) {
-	m := NewModel("/")
+	m := NewModel(&files.LocalFS{}, "/")
 	m.width = 80
 	m.height = 24
 	m.items = []files.Item{

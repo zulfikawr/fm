@@ -14,12 +14,14 @@ import (
 
 // Model holds the application state.
 type Model struct {
+	fs             files.FileSystem
 	path           string
 	items          []files.Item // Original items
 	filteredItems  []files.Item // Filtered items for display
 	sortMode       files.SortMode
 	cursorMemory   map[string]int // Path -> Cursor index
 	offsetMemory   map[string]int // Path -> Scroll offset
+	dirSizeCache   map[string]int64
 	searchInput    textinput.Model
 	renameInput    textinput.Model
 	watcher        *fsnotify.Watcher
@@ -46,7 +48,7 @@ type Model struct {
 }
 
 // NewModel creates and initializes a new Model starting in the specified path.
-func NewModel(initialPath string) *Model {
+func NewModel(fs files.FileSystem, initialPath string) *Model {
 	cfg := config.Load()
 
 	ti := textinput.New()
@@ -63,10 +65,12 @@ func NewModel(initialPath string) *Model {
 	watcher, _ := fsnotify.NewWatcher()
 
 	m := &Model{
+		fs:           fs,
 		path:         initialPath,
 		sortMode:     files.SortDefault,
 		cursorMemory: make(map[string]int),
 		offsetMemory: make(map[string]int),
+		dirSizeCache: make(map[string]int64),
 		searchInput:  ti,
 		renameInput:  ri,
 		watcher:      watcher,
@@ -87,6 +91,16 @@ func (m *Model) updateThemeStyles() {
 	m.searchInput.PromptStyle = m.searchInput.PromptStyle.Background(theme.Bg)
 	m.renameInput.TextStyle = m.renameInput.TextStyle.Background(theme.Bg)
 	m.renameInput.PromptStyle = m.renameInput.PromptStyle.Background(theme.Bg)
+}
+
+// Close releases resources held by the model, including filesystem connections and watchers.
+func (m *Model) Close() {
+	if m.watcher != nil {
+		m.watcher.Close()
+	}
+	if m.fs != nil {
+		m.fs.Close()
+	}
 }
 
 // Init implements the tea.Model interface.

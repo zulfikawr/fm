@@ -2,7 +2,6 @@ package tui
 
 import (
 	"fmt"
-	"path/filepath"
 
 	"filemanager/internal/files"
 
@@ -23,11 +22,12 @@ func (m *Model) handleRenaming(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if newName != "" {
 				selected := m.filteredItems[m.cursor]
 				oldPath := selected.Path
-				newPath := filepath.Join(m.path, newName)
-				if err := files.Rename(oldPath, newPath); err != nil {
-					m.setMsg("Rename failed: " + err.Error())
+				newPath := m.fs.Join(m.path, newName)
+				if err := files.Rename(m.fs, oldPath, newPath); err != nil {
+					m.LogError(err, "Rename")
 				} else {
 					cmd = m.reload()
+					m.LogInfo(fmt.Sprintf("Renamed %s to %s", selected.Name, newName))
 				}
 			}
 			m.renaming = false
@@ -74,24 +74,21 @@ func (m *Model) performDelete() []tea.Cmd {
 		}
 	}
 
-	errs := 0
-	for _, t := range targets {
-		if err := files.Trash(t); err != nil {
-			errs++
-			m.setMsg(fmt.Sprintf("Error trashing %s: %v", filepath.Base(t), err))
-		}
+	if len(targets) == 0 {
+		return nil
 	}
-	if errs == 0 {
-		m.setMsg(fmt.Sprintf("Trashed %d items", len(targets)))
-	}
-	return []tea.Cmd{m.reload()}
+
+	m.loading = true
+	m.setMsg(fmt.Sprintf("Deleting %d items...", len(targets)))
+	return []tea.Cmd{deleteItems(m.fs, targets, m.cfg.UseTrash), m.reload()}
 }
 
 func (m *Model) performPaste() []tea.Cmd {
-	for _, src := range m.clipboard {
-		dst := filepath.Join(m.path, filepath.Base(src))
-		files.Copy(src, dst)
+	if len(m.clipboard) == 0 {
+		return nil
 	}
-	m.setMsg(fmt.Sprintf("Pasted %d items", len(m.clipboard)))
-	return []tea.Cmd{m.reload()}
+
+	m.loading = true
+	m.setMsg(fmt.Sprintf("Pasting %d items...", len(m.clipboard)))
+	return []tea.Cmd{pasteItems(m.fs, m.clipboard, m.path), m.reload()}
 }

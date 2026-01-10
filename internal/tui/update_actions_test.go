@@ -13,7 +13,7 @@ import (
 func TestActions(t *testing.T) {
 	tmpDir, _ := os.MkdirTemp("", "fm-actions-test")
 	defer os.RemoveAll(tmpDir)
-	m := NewModel(tmpDir)
+	m := NewModel(&files.LocalFS{}, tmpDir)
 
 	m.items = []files.Item{
 		{Name: "↑ ..", IsUp: true, IsDir: true},

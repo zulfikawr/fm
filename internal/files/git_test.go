@@ -75,3 +75,89 @@ func TestGetGitStatus(t *testing.T) {
 		t.Errorf("Expected status ! for ignored.txt, got %s", statuses["ignored.txt"])
 	}
 }
+
+func TestParseGitStatusPorcelain(t *testing.T) {
+	tests := []struct {
+		name     string
+		output   string
+		repoRoot string
+		dirPath  string
+		expected map[string]string
+	}{
+		{
+			name: "Basic status",
+			output: " M modified.txt\n" +
+				"?? untracked.txt\n" +
+				"A  staged.txt\n",
+			repoRoot: "/repo",
+			dirPath:  "/repo",
+			expected: map[string]string{
+				"modified.txt":  "M",
+				"untracked.txt": "?",
+				"staged.txt":    "A",
+			},
+		},
+		{
+			name: "Nested directory filtering",
+			output: " M file1.txt\n" +
+				" M sub/file2.txt\n" +
+				"?? other/file3.txt\n",
+			repoRoot: "/repo",
+			dirPath:  "/repo/sub",
+			expected: map[string]string{
+				"file2.txt": "M",
+			},
+		},
+		{
+			name:     "Renamed files",
+			output:   "R  old.txt -> new.txt\n",
+			repoRoot: "/repo",
+			dirPath:  "/repo",
+			expected: map[string]string{
+				"new.txt": "R",
+			},
+		},
+		{
+			name:     "Quoted paths",
+			output:   " M \"file with space.txt\"\n",
+			repoRoot: "/repo",
+			dirPath:  "/repo",
+			expected: map[string]string{
+				"file with space.txt": "M",
+			},
+		},
+		{
+			name:     "Ignored files",
+			output:   "!! ignored.txt\n",
+			repoRoot: "/repo",
+			dirPath:  "/repo",
+			expected: map[string]string{
+				"ignored.txt": "!",
+			},
+		},
+		{
+			name: "Status priorities (directory status)",
+			output: " M dir/file1.txt\n" +
+				"?? dir/file2.txt\n",
+			repoRoot: "/repo",
+			dirPath:  "/repo",
+			expected: map[string]string{
+				"dir": "M",
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := ParseGitStatusPorcelain(tt.output, tt.repoRoot, tt.dirPath)
+			if len(got) != len(tt.expected) {
+				t.Errorf("expected %d statuses, got %d", len(tt.expected), len(got))
+			}
+			for k, v := range tt.expected {
+				if got[k] != v {
+					t.Errorf("for file %s: expected %s, got %s", k, v, got[k])
+				}
+			}
+		})
+	}
+}

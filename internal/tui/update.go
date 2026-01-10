@@ -1,7 +1,7 @@
 package tui
 
 import (
-	"path/filepath"
+	"strings"
 	"time"
 
 	"filemanager/internal/files"
@@ -20,7 +20,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, nil
 		}
 		if msg.Err != nil {
-			m.err = msg.Err
+			m.LogError(msg.Err, "Loading directory")
 			m.items = []files.Item{}
 		} else {
 			m.err = nil
@@ -28,43 +28,53 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.gitBranch = msg.GitBranch
 		}
 		m.selectMode = false
+
+		if m.cursor == 0 {
+			if val, ok := m.cursorMemory[m.path]; ok {
+				m.cursor = val
+			}
+		}
+		if m.offset == 0 {
+			if val, ok := m.offsetMemory[m.path]; ok {
+				m.offset = val
+			}
+		}
+
+		for i, item := range m.items {
+			if item.IsDir && !item.IsUp {
+				if size, ok := m.dirSizeCache[item.Path]; ok {
+					m.items[i].Size = size
+				} else {
+					cmds = append(cmds, calculateDirSize(m.fs, item.Path))
+				}
+			}
+		}
+
 		m.applyFilter()
 
-		if val, ok := m.cursorMemory[m.path]; ok {
-			m.cursor = val
-			if m.cursor >= len(m.filteredItems) {
-				m.cursor = 0
-			}
-		} else {
+		if m.cursor >= len(m.filteredItems) {
 			m.cursor = 0
 		}
-		if val, ok := m.offsetMemory[m.path]; ok {
-			m.offset = val
-			if m.offset >= len(m.filteredItems) {
-				m.offset = 0
-			}
-		} else {
+		if m.offset >= len(m.filteredItems) {
 			m.offset = 0
 		}
 
-		if m.lastWatched != "" {
-			m.watcher.Remove(m.lastWatched)
+		if m.fs.IsLocal() {
+			if m.lastWatched != "" {
+				m.watcher.Remove(m.lastWatched)
+			}
+			m.watcher.Add(m.path)
+			m.lastWatched = m.path
 		}
-		m.watcher.Add(m.path)
-		m.lastWatched = m.path
 
 		if m.cfg.EnableGit {
-			cmds = append(cmds, fetchGitStatus(m.path))
-		}
-		for _, item := range m.items {
-			if item.IsDir && !item.IsUp {
-				cmds = append(cmds, calculateDirSize(item.Path))
-			}
+			cmds = append(cmds, fetchGitStatus(m.fs, m.path))
 		}
 
 		return m, tea.Batch(append(cmds, m.watchDir())...)
 
 	case DirSizeMsg:
+		m.dirSizeCache[msg.Path] = msg.Size
 		for i, item := range m.items {
 			if item.Path == msg.Path {
 				m.items[i].Size = msg.Size
@@ -95,7 +105,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if !seen[name] && status == "D" {
 				m.items = append(m.items, files.Item{
 					Name:      name,
-					Path:      filepath.Join(m.path, name),
+					Path:      m.fs.Join(m.path, name),
 					IsDir:     false,
 					GitStatus: "D",
 					IsGhost:   true,
@@ -107,19 +117,22 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 
 	case WatchEventMsg:
+		path := msg.Event.Name
+		if strings.Contains(path, "/.git/") || strings.HasSuffix(path, "/.git") ||
+			strings.Contains(path, "\\.git\\") || strings.HasSuffix(path, "\\.git") {
+			return m, m.watchDir()
+		}
 		if msg.Err != nil {
 			return m, m.watchDir()
 		}
 		return m, tea.Batch(m.reload(), m.watchDir())
 
 	case clearMsg:
-		if time.Since(m.msgTime) >= 5*time.Second {
-			m.msg = ""
-		}
+		m.ClearMsg()
 		return m, nil
 
 	case errMsg:
-		m.setMsg(msg.err.Error())
+		m.LogError(msg.err, "Operation failed")
 		return m, nil
 
 	case tea.KeyMsg:
@@ -161,7 +174,9 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "ctrl+c", "q":
-			m.watcher.Close()
+			if m.fs.IsLocal() {
+				m.watcher.Close()
+			}
 			return m, tea.Quit
 		}
 

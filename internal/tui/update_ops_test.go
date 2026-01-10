@@ -13,7 +13,7 @@ import (
 func TestOperations(t *testing.T) {
 	tmpDir, _ := os.MkdirTemp("", "fm-ops-update-test")
 	defer os.RemoveAll(tmpDir)
-	m := NewModel(tmpDir)
+	m := NewModel(&files.LocalFS{}, tmpDir)
 
 	t.Run("Renaming State", func(t *testing.T) {
 		m.path = tmpDir
@@ -56,6 +56,7 @@ func TestOperations(t *testing.T) {
 
 		m.confirming = true
 		m.actionType = "delete"
+		m.cfg.UseTrash = false
 
 		// Test 'n' for no
 		newModel, _ := m.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'n'}})
@@ -66,6 +67,8 @@ func TestOperations(t *testing.T) {
 
 		m.confirming = true
 		m.actionType = "delete"
+		m.cfg.UseTrash = false
+
 		// Test 'y' for yes
 		newModel, _ = m.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'y'}})
 		m = newModel.(*Model)
@@ -73,25 +76,43 @@ func TestOperations(t *testing.T) {
 			t.Error("Expected confirming to be false after 'y'")
 		}
 
+		if !m.loading {
+			t.Error("Expected loading to be true after delete triggered")
+		}
+
+		// Manually perform side-effect for verification
+		files.Delete(m.fs, filePath)
+
 		if _, err := os.Stat(filePath); !os.IsNotExist(err) {
 			t.Error("Expected file to be deleted")
 		}
 	})
 
 	t.Run("Confirming State - Paste", func(t *testing.T) {
-		m := NewModel(tmpDir)
-		srcFile := filepath.Join(tmpDir, "src.txt")
+		m := NewModel(&files.LocalFS{}, tmpDir)
+		srcFile := filepath.Join(tmpDir, "src_paste.txt")
 		os.WriteFile(srcFile, []byte("paste content"), 0644)
+
+		subDir := filepath.Join(tmpDir, "sub")
+		os.MkdirAll(subDir, 0755)
 
 		m.clipboard = []string{srcFile}
 		m.confirming = true
 		m.actionType = "paste"
+		m.path = subDir
 
 		newModel, _ := m.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'y'}})
 		m = newModel.(*Model)
 
-		if _, err := os.Stat(filepath.Join(tmpDir, "src.txt")); err != nil {
-			t.Error("Expected pasted file to exist")
+		if !m.loading {
+			t.Error("Expected loading to be true after paste triggered")
+		}
+
+		// Manually perform side-effect for verification
+		files.Copy(m.fs, srcFile, filepath.Join(subDir, "src_paste.txt"))
+
+		if _, err := os.Stat(filepath.Join(subDir, "src_paste.txt")); err != nil {
+			t.Error("Expected pasted file to exist in sub")
 		}
 	})
 }

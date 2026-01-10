@@ -10,12 +10,16 @@ import (
 )
 
 // Delete removes a file or directory recursively.
-func Delete(path string) error {
-	return os.RemoveAll(path)
+func Delete(fs FileSystem, path string) error {
+	return fs.RemoveAll(path)
 }
 
 // Trash moves a file or directory to the system trash.
-func Trash(path string) error {
+func Trash(fs FileSystem, path string) error {
+	if !fs.IsLocal() {
+		return fmt.Errorf("trash not supported on remote file systems")
+	}
+
 	switch runtime.GOOS {
 	case "linux":
 		return exec.Command("gio", "trash", path).Run()
@@ -41,31 +45,31 @@ func Trash(path string) error {
 }
 
 // Rename moves or renames a file or directory.
-func Rename(oldPath, newPath string) error {
-	return os.Rename(oldPath, newPath)
+func Rename(fs FileSystem, oldPath, newPath string) error {
+	return fs.Rename(oldPath, newPath)
 }
 
-// Copy copies a file or directory recursively from src to dst.
-func Copy(src, dst string) error {
-	info, err := os.Lstat(src)
+// Copy copies a file or directory recursively from src to dst within the same filesystem.
+func Copy(fs FileSystem, src, dst string) error {
+	info, err := fs.Lstat(src)
 	if err != nil {
 		return err
 	}
 
 	if info.IsDir() {
-		return copyDir(src, dst)
+		return copyDir(fs, src, dst)
 	}
-	return copyFile(src, dst)
+	return copyFile(fs, src, dst)
 }
 
-func copyFile(src, dst string) error {
-	out, err := os.Create(dst)
+func copyFile(fs FileSystem, src, dst string) error {
+	out, err := fs.Create(dst)
 	if err != nil {
 		return err
 	}
 	defer out.Close()
 
-	in, err := os.Open(src)
+	in, err := fs.Open(src)
 	if err != nil {
 		return err
 	}
@@ -76,38 +80,38 @@ func copyFile(src, dst string) error {
 		return err
 	}
 
-	info, err := os.Stat(src)
+	info, err := fs.Stat(src)
 	if err != nil {
 		return err
 	}
-	return os.Chmod(dst, info.Mode())
+	return fs.Chmod(dst, info.Mode())
 }
 
-func copyDir(src, dst string) error {
-	info, err := os.Stat(src)
+func copyDir(fs FileSystem, src, dst string) error {
+	info, err := fs.Stat(src)
 	if err != nil {
 		return err
 	}
 
-	if err := os.MkdirAll(dst, info.Mode()); err != nil {
+	if err := fs.MkdirAll(dst, info.Mode()); err != nil {
 		return err
 	}
 
-	entries, err := os.ReadDir(src)
+	entries, err := fs.ReadDir(src)
 	if err != nil {
 		return err
 	}
 
 	for _, entry := range entries {
-		srcPath := filepath.Join(src, entry.Name())
-		dstPath := filepath.Join(dst, entry.Name())
+		srcPath := fs.Join(src, entry.Name())
+		dstPath := fs.Join(dst, entry.Name())
 
 		if entry.IsDir() {
-			if err := copyDir(srcPath, dstPath); err != nil {
+			if err := copyDir(fs, srcPath, dstPath); err != nil {
 				return err
 			}
 		} else {
-			if err := copyFile(srcPath, dstPath); err != nil {
+			if err := copyFile(fs, srcPath, dstPath); err != nil {
 				return err
 			}
 		}

@@ -8,7 +8,7 @@ import (
 )
 
 func TestView(t *testing.T) {
-	m := NewModel("/")
+	m := NewModel(&files.LocalFS{}, "/")
 	m.width = 80
 	m.height = 24
 

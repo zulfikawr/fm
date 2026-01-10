@@ -7,7 +7,7 @@ import (
 )
 
 func TestFiltering(t *testing.T) {
-	m := NewModel("/")
+	m := NewModel(&files.LocalFS{}, "/")
 	m.items = []files.Item{
 		{Name: "↑ ..", IsDir: true, IsUp: true},
 		{Name: "dir1", IsDir: true, Path: "dir1"},

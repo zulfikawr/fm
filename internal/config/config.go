@@ -45,8 +45,12 @@ func DefaultConfig() Config {
 
 // GetConfigPath returns the path to the config file in the user's home directory.
 func GetConfigPath() string {
-	home, _ := os.UserHomeDir()
-	return filepath.Join(home, ".config", "fm", "config.json")
+	configDir, err := os.UserConfigDir()
+	if err != nil {
+		home, _ := os.UserHomeDir()
+		return filepath.Join(home, ".config", "fm", "config.json")
+	}
+	return filepath.Join(configDir, "fm", "config.json")
 }
 
 // Load reads the config from disk or returns default if not found.

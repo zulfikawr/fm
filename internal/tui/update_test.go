@@ -1,13 +1,14 @@
 package tui
 
 import (
+	"filemanager/internal/files"
 	"testing"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
 
 func TestUpdateWindowSize(t *testing.T) {
-	m := NewModel("/")
+	m := NewModel(&files.LocalFS{}, "/")
 	m.searching = false
 	newModel, _ := m.Update(tea.WindowSizeMsg{Width: 100, Height: 50})
 	m = newModel.(*Model)
@@ -17,7 +18,7 @@ func TestUpdateWindowSize(t *testing.T) {
 }
 
 func TestUpdateQuit(t *testing.T) {
-	m := NewModel("/")
+	m := NewModel(&files.LocalFS{}, "/")
 	_, cmd := m.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("q")})
 	if cmd == nil {
 		t.Fatal("Expected quit command")

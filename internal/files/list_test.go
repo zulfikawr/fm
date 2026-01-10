@@ -19,7 +19,8 @@ func TestLoad(t *testing.T) {
 	os.WriteFile(filepath.Join(tmpDir, "a_file.txt"), []byte("test"), 0644)
 
 	t.Run("Default Sort", func(t *testing.T) {
-		items, err := Load(tmpDir, SortDefault, false, nil)
+		fs := &LocalFS{}
+		items, err := Load(fs, tmpDir, SortDefault, false, nil)
 		if err != nil {
 			t.Fatalf("Load failed: %v", err)
 		}
@@ -30,7 +31,8 @@ func TestLoad(t *testing.T) {
 	})
 
 	t.Run("Size Sort", func(t *testing.T) {
-		items, err := Load(tmpDir, SortSizeDesc, false, nil)
+		fs := &LocalFS{}
+		items, err := Load(fs, tmpDir, SortSizeDesc, false, nil)
 		if err != nil {
 			t.Fatalf("Load failed: %v", err)
 		}
@@ -53,7 +55,8 @@ func TestLoad(t *testing.T) {
 		future := time.Now().Add(1 * time.Hour)
 		os.Chtimes(newFile, future, future)
 
-		items, err := Load(tmpDir, SortNewest, false, nil)
+		fs := &LocalFS{}
+		items, err := Load(fs, tmpDir, SortNewest, false, nil)
 		if err != nil {
 			t.Fatalf("Load failed: %v", err)
 		}
@@ -64,7 +67,8 @@ func TestLoad(t *testing.T) {
 
 	t.Run("Show Hidden", func(t *testing.T) {
 		os.WriteFile(filepath.Join(tmpDir, ".hidden"), []byte("hidden"), 0644)
-		items, err := Load(tmpDir, SortDefault, true, nil)
+		fs := &LocalFS{}
+		items, err := Load(fs, tmpDir, SortDefault, true, nil)
 		if err != nil {
 			t.Fatalf("Load failed: %v", err)
 		}
@@ -86,7 +90,8 @@ func TestLoadGhostEntries(t *testing.T) {
 	defer os.RemoveAll(tmpDir)
 
 	gitStatuses := map[string]string{"deleted.txt": "D"}
-	items, err := Load(tmpDir, SortDefault, false, gitStatuses)
+	fs := &LocalFS{}
+	items, err := Load(fs, tmpDir, SortDefault, false, gitStatuses)
 	if err != nil {
 		t.Fatalf("Load failed: %v", err)
 	}
@@ -114,7 +119,8 @@ func TestGetDirSize(t *testing.T) {
 	os.WriteFile(filepath.Join(tmpDir, "f1.txt"), []byte("12345"), 0644)
 	os.WriteFile(filepath.Join(subDir, "f2.txt"), []byte("123"), 0644)
 
-	size := GetDirSize(tmpDir)
+	fs := &LocalFS{}
+	size := GetDirSize(fs, tmpDir)
 	if size != 8 {
 		t.Errorf("Expected size 8, got %d", size)
 	}

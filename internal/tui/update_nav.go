@@ -1,8 +1,6 @@
 package tui
 
 import (
-	"path/filepath"
-
 	"filemanager/internal/files"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -48,16 +46,20 @@ func (m *Model) handleNavigation(msg tea.KeyMsg) []tea.Cmd {
 		if selected.IsUp {
 			m.cursorMemory[m.path] = m.cursor
 			m.offsetMemory[m.path] = m.offset
-			m.path = filepath.Dir(m.path)
+			m.path = m.fs.Dir(m.path)
 			cmds = append(cmds, m.reload())
 		} else if selected.IsDir {
 			m.cursorMemory[m.path] = m.cursor
 			m.offsetMemory[m.path] = m.offset
-			m.path = filepath.Join(m.path, selected.Name)
+			m.path = m.fs.Join(m.path, selected.Name)
 			cmds = append(cmds, m.reload())
 		} else {
 			// Handle file opening
 			if msg.String() == "enter" {
+				if !m.fs.IsLocal() {
+					m.setMsg("Opening remote files not supported yet")
+					break
+				}
 				execCmd, isTerminal, err := files.GetOpenCmd(selected.Path, m.cfg.EditorIndex)
 				if err != nil {
 					m.setMsg("Error: " + err.Error())
@@ -82,7 +84,7 @@ func (m *Model) handleNavigation(msg tea.KeyMsg) []tea.Cmd {
 	case "backspace", "left", "h":
 		m.cursorMemory[m.path] = m.cursor
 		m.offsetMemory[m.path] = m.offset
-		m.path = filepath.Dir(m.path)
+		m.path = m.fs.Dir(m.path)
 		cmds = append(cmds, m.reload())
 	}
 

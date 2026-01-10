@@ -2,7 +2,6 @@ package tui
 
 import (
 	"fmt"
-	"os"
 	"strings"
 
 	"github.com/charmbracelet/lipgloss"
@@ -20,10 +19,11 @@ func (m *Model) renderHeader() string {
 		return m.styles.Header.Width(m.width).Render("Settings")
 	}
 
-	parts := strings.Split(m.path, string(os.PathSeparator))
+	sep := m.fs.Separator()
+	parts := strings.Split(m.path, sep)
 	var cleanParts []string
-	if m.path == "/" {
-		cleanParts = []string{"/"}
+	if m.path == sep {
+		cleanParts = []string{sep}
 	} else {
 		for _, p := range parts {
 			if p != "" {
@@ -32,7 +32,6 @@ func (m *Model) renderHeader() string {
 		}
 	}
 
-	// Ensure all parts in header inherit header's background
 	dimHeaderStyle := m.styles.DimCol.Inherit(m.styles.Header)
 
 	var styledParts []string
@@ -42,8 +41,8 @@ func (m *Model) renderHeader() string {
 
 	separator := dimHeaderStyle.Render(" > ")
 	breadcrumb := strings.Join(styledParts, separator)
-	if !strings.HasPrefix(breadcrumb, "/") && strings.HasPrefix(m.path, "/") {
-		breadcrumb = dimHeaderStyle.Render("/ ") + breadcrumb
+	if !strings.HasPrefix(breadcrumb, sep) && strings.HasPrefix(m.path, sep) {
+		breadcrumb = dimHeaderStyle.Render(sep+" ") + breadcrumb
 	}
 
 	if m.gitBranch != "" {
@@ -154,7 +153,6 @@ func (m *Model) renderFooter() string {
 	paginationStr := ""
 	if totalItems > 0 {
 		if currentIndex < 0 {
-			// Cursor is on ".." - show as 0 or handle specifically
 			paginationStr = fmt.Sprintf(" -/%d  ", totalItems)
 		} else {
 			paginationStr = fmt.Sprintf(" %d/%d  ", currentIndex+1, totalItems)
@@ -216,9 +214,14 @@ func (m *Model) colorizeKeys(s string) string {
 }
 
 func (m *Model) getViewportHeight() int {
-	h := m.height - 2
-	if h < 5 {
-		return 5
+	headerH := lipgloss.Height(m.renderHeader())
+	footerH := lipgloss.Height(m.renderFooter())
+	h := m.height - headerH - footerH
+	if m.cfg.ShowHeader && !m.settingsOpen {
+		h -= 3 // 3 for header lines (separator + text + separator)
+	}
+	if h < 1 {
+		return 1
 	}
 	return h
 }

@@ -8,7 +8,7 @@ import (
 )
 
 func TestViewComponents(t *testing.T) {
-	m := NewModel("/home/user/docs")
+	m := NewModel(&files.LocalFS{}, "/home/user/docs")
 	m.width = 100
 	m.gitBranch = "main"
 

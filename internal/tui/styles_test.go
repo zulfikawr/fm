@@ -1,6 +1,7 @@
 package tui
 
 import (
+	"filemanager/internal/files"
 	"testing"
 )
 
@@ -13,7 +14,7 @@ func TestThemeApplication(t *testing.T) {
 				t.Errorf("Expected header foreground %v, got %v", theme.Dir, styles.Header.GetForeground())
 			}
 
-			m := NewModel("/")
+			m := NewModel(&files.LocalFS{}, "/")
 			m.cfg.ThemeIndex = i
 			m.styles = styles
 			m.width = 80

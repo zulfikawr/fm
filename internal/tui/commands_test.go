@@ -10,7 +10,7 @@ import (
 func TestCommands(t *testing.T) {
 	tmpDir, _ := os.MkdirTemp("", "fm-commands-test")
 	defer os.RemoveAll(tmpDir)
-	m := NewModel(tmpDir)
+	m := NewModel(&files.LocalFS{}, tmpDir)
 
 	t.Run("LoadedItemsMsg", func(t *testing.T) {
 		items := []files.Item{{Name: "test.txt", IsDir: false}}

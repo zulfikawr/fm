@@ -1,6 +1,7 @@
 package tui
 
 import (
+	"filemanager/internal/files"
 	"os"
 	"testing"
 
@@ -10,7 +11,7 @@ import (
 func TestSearch(t *testing.T) {
 	tmpDir, _ := os.MkdirTemp("", "fm-search-test")
 	defer os.RemoveAll(tmpDir)
-	m := NewModel(tmpDir)
+	m := NewModel(&files.LocalFS{}, tmpDir)
 
 	t.Run("Searching State", func(t *testing.T) {
 		m.searching = true

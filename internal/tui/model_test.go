@@ -1,11 +1,12 @@
 package tui
 
 import (
+	"filemanager/internal/files"
 	"testing"
 )
 
 func TestNewModel(t *testing.T) {
-	m := NewModel("/")
+	m := NewModel(&files.LocalFS{}, "/")
 	if m.path != "/" {
 		t.Errorf("Expected path /, got %s", m.path)
 	}

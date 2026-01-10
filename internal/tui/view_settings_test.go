@@ -1,12 +1,13 @@
 package tui
 
 import (
+	"filemanager/internal/files"
 	"strings"
 	"testing"
 )
 
 func TestViewSettings(t *testing.T) {
-	m := NewModel("/")
+	m := NewModel(&files.LocalFS{}, "/")
 	m.cfg.ShowSize = false
 	m.settingsOpen = true
 	m.width = 80
