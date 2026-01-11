@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"filemanager/internal/files"
+	"fm/internal/files"
 )
 
 func TestView(t *testing.T) {

@@ -22,6 +22,9 @@ var SizeFormats = []string{
 
 // FormatSize converts a byte count into a human-readable string based on the selected format.
 func FormatSize(b int64, formatIdx int) string {
+	if b < 0 {
+		return "Counting..."
+	}
 	if formatIdx == 2 { // Bytes
 		return fmt.Sprintf("%d B", b)
 	}

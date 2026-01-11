@@ -9,6 +9,7 @@ import (
 
 // Config holds the user preferences.
 type Config struct {
+	ConfigVersion     int  `json:"config_version"`
 	ThemeIndex        int  `json:"theme_index"`
 	ShowHidden        bool `json:"show_hidden"`
 	CaseSensitive     bool `json:"case_sensitive"`
@@ -24,10 +25,13 @@ type Config struct {
 	UseTrash          bool `json:"use_trash"`
 }
 
+const CurrentConfigVersion = 1
+
 // DefaultConfig returns the initial configuration.
 func DefaultConfig() Config {
 	return Config{
-		ThemeIndex:        0,
+		ConfigVersion:     CurrentConfigVersion,
+		ThemeIndex:        0, // Gruvbox
 		ShowHidden:        false,
 		CaseSensitive:     false,
 		ConfirmOperations: true,
@@ -35,10 +39,10 @@ func DefaultConfig() Config {
 		EnableGit:         true,
 		ShowSize:          true,
 		ShowDateModified:  true,
-		ShowHeader:        true,
-		DateFormatIndex:   0,
-		SizeFormatIndex:   0,
-		EditorIndex:       0,
+		ShowHeader:        false,
+		DateFormatIndex:   0, // Default
+		SizeFormatIndex:   0, // Full
+		EditorIndex:       0, // Vim
 		UseTrash:          true,
 	}
 }
@@ -53,6 +57,21 @@ func GetConfigPath() string {
 	return filepath.Join(configDir, "fm", "config.json")
 }
 
+// GetCacheDir returns the path to the cache directory.
+func GetCacheDir() string {
+	cacheDir, err := os.UserCacheDir()
+	if err != nil {
+		home, _ := os.UserHomeDir()
+		return filepath.Join(home, ".cache", "fm")
+	}
+	return filepath.Join(cacheDir, "fm")
+}
+
+// GetSizeCachePath returns the path to the directory size cache file.
+func GetSizeCachePath() string {
+	return filepath.Join(GetCacheDir(), "sizes.gob")
+}
+
 // Load reads the config from disk or returns default if not found.
 func Load() Config {
 	path := GetConfigPath()
@@ -61,12 +80,48 @@ func Load() Config {
 		return DefaultConfig()
 	}
 
-	var cfg Config
+	cfg := DefaultConfig()
 	if err := json.Unmarshal(data, &cfg); err != nil {
-		fmt.Fprintf(os.Stderr, "Error parsing config: %v\n", err)
+		fmt.Fprintf(os.Stderr, "config parse failed: %s: %v\n", path, err)
 		return DefaultConfig()
 	}
+
+	// Validate and migrate if needed
+	if err := cfg.Validate(); err != nil {
+		fmt.Fprintf(os.Stderr, "config validation failed: %v, using defaults\n", err)
+		return DefaultConfig()
+	}
+
+	// Auto-migrate old configs
+	if cfg.ConfigVersion < CurrentConfigVersion {
+		fmt.Fprintf(os.Stderr, "migrating config from v%d to v%d\n", cfg.ConfigVersion, CurrentConfigVersion)
+		// For v0 -> v1 migration, reset to defaults since we're introducing versioning
+		if cfg.ConfigVersion == 0 {
+			cfg = DefaultConfig()
+		} else {
+			cfg.ConfigVersion = CurrentConfigVersion
+		}
+		cfg.Save()
+	}
+
 	return cfg
+}
+
+// Validate checks if the config values are within valid ranges
+func (c *Config) Validate() error {
+	if c.ThemeIndex < 0 || c.ThemeIndex >= 10 {
+		return fmt.Errorf("invalid theme_index: %d (must be 0-9)", c.ThemeIndex)
+	}
+	if c.DateFormatIndex < 0 || c.DateFormatIndex >= 5 {
+		return fmt.Errorf("invalid date_format_index: %d (must be 0-4)", c.DateFormatIndex)
+	}
+	if c.SizeFormatIndex < 0 || c.SizeFormatIndex >= 3 {
+		return fmt.Errorf("invalid size_format_index: %d (must be 0-2)", c.SizeFormatIndex)
+	}
+	if c.EditorIndex < 0 || c.EditorIndex >= 7 {
+		return fmt.Errorf("invalid editor_index: %d (must be 0-6)", c.EditorIndex)
+	}
+	return nil
 }
 
 var marshalIndent = json.MarshalIndent

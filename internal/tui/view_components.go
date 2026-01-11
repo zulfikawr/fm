@@ -19,6 +19,27 @@ func (m *Model) renderHeader() string {
 		return m.styles.Header.Width(m.width).Render("Settings")
 	}
 
+	// Render tabs if there are multiple tabs
+	var tabsStr string
+	if len(m.tabs) > 1 {
+		activeTabStyle := m.styles.KeyCol.Inherit(m.styles.Header).UnsetPadding().UnsetWidth()
+		inactiveTabStyle := m.styles.DimCol.Inherit(m.styles.Header).UnsetPadding().UnsetWidth()
+		spacerStyle := m.styles.Header.UnsetPadding().UnsetWidth()
+
+		var tabParts []string
+		for i := range m.tabs {
+			tabLabel := fmt.Sprintf("[%d]", i+1)
+			if i == m.activeTab {
+				// Active tab in primary color
+				tabParts = append(tabParts, activeTabStyle.Render(tabLabel))
+			} else {
+				// Inactive tab in dim color
+				tabParts = append(tabParts, inactiveTabStyle.Render(tabLabel))
+			}
+		}
+		tabsStr = strings.Join(tabParts, spacerStyle.Render(" "))
+	}
+
 	sep := m.fs.Separator()
 	parts := strings.Split(m.path, sep)
 	var cleanParts []string
@@ -49,10 +70,80 @@ func (m *Model) renderHeader() string {
 		breadcrumb += dimHeaderStyle.Render(fmt.Sprintf(" (%s)", m.gitBranch))
 	}
 
-	return m.styles.Header.Width(m.width).Render(breadcrumb)
+	if m.readOnly {
+		roStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("160")).Inherit(m.styles.Header)
+		breadcrumb += roStyle.Render(" [RO]")
+	}
+
+	// Combine breadcrumb and tabs (tabs at the right end fixed position)
+	baseHeaderStyle := m.styles.Header.UnsetPadding().UnsetWidth()
+	fullHeader := breadcrumb
+	if len(m.tabs) > 1 {
+		breadcrumbWidth := lipgloss.Width(breadcrumb)
+		tabsWidth := lipgloss.Width(tabsStr)
+		gap := m.width - breadcrumbWidth - tabsWidth - 2 // -2 for padding
+		if gap < 1 {
+			gap = 1
+		}
+		fullHeader = breadcrumb + baseHeaderStyle.Render(strings.Repeat(" ", gap)) + tabsStr
+	}
+
+	return m.styles.Header.Width(m.width).Render(fullHeader)
 }
 
 func (m *Model) renderFooter() string {
+	baseFooterStyle := m.styles.Footer.UnsetPadding().UnsetWidth()
+
+	if m.showProgress {
+		// Custom responsive progress bar: Label [#######.......] 100%
+		percent := int(m.progressPercent * 100)
+		if percent > 100 {
+			percent = 100
+		}
+		percStr := fmt.Sprintf(" %3d%%", percent)
+
+		// Calculate available width for the bar itself
+		// Format: " Label [###...] 100%"
+		// Padding: 1 (start) + 1 (after label) + 1 (before brackets) + 2 (brackets) + 1 (before percent) = 6
+		label := m.progressLabel
+		availableWidth := m.width - len(percStr) - 6
+
+		if availableWidth < 10 {
+			// Extremely narrow, just show label and percent
+			content := label + percStr
+			if len(content) > m.width-2 {
+				content = content[:m.width-5] + "..." + percStr
+			}
+			return m.styles.Footer.Width(m.width).Render(" " + content)
+		}
+
+		// Truncate label if it takes more than 40% of space
+		maxLabelWidth := int(float64(availableWidth) * 0.4)
+		if len(label) > maxLabelWidth {
+			label = label[:maxLabelWidth-3] + "..."
+		}
+
+		barWidth := availableWidth - len(label)
+		filledWidth := int(float64(barWidth) * m.progressPercent)
+		if filledWidth > barWidth {
+			filledWidth = barWidth
+		}
+
+		dimStyle := m.styles.DimCol.Inherit(m.styles.Footer)
+		barStyle := m.styles.ProgressBar.Inherit(m.styles.Footer)
+
+		bar := dimStyle.Render("[")
+		bar += barStyle.Render(strings.Repeat("#", filledWidth))
+		bar += dimStyle.Render(strings.Repeat(".", barWidth-filledWidth))
+		bar += dimStyle.Render("]")
+
+		styledLabel := baseFooterStyle.Render(label)
+		styledPerc := baseFooterStyle.Render(percStr)
+
+		content := styledLabel + " " + bar + styledPerc
+		return m.styles.Footer.Width(m.width).Render(" " + content)
+	}
+
 	if m.searching {
 		return m.styles.Footer.Width(m.width).Render(" " + m.searchInput.View())
 	}
@@ -63,15 +154,19 @@ func (m *Model) renderFooter() string {
 
 	if m.confirming {
 		prompt := ""
-		if m.actionType == "delete" {
+		switch m.actionType {
+		case "delete":
 			prompt = "Delete selected items? (y/n)"
-		} else if m.actionType == "paste" {
+		case "paste":
 			prompt = fmt.Sprintf("Paste %d items? (y/n)", len(m.clipboard))
+		case "reset-settings":
+			prompt = "Reset all settings to defaults? (y/n)"
+		case "conflict":
+			baseName := m.fs.Base(m.conflictDst)
+			prompt = fmt.Sprintf("'%s' exists. [y] Overwrite | [n] Skip | [r] Rename", baseName)
 		}
 		return m.styles.Footer.Width(m.width).Render(" " + m.colorizeKeys(prompt))
 	}
-
-	baseFooterStyle := m.styles.Footer.UnsetPadding().UnsetWidth()
 
 	if m.settingsOpen {
 		helpMsg := ""
@@ -85,22 +180,26 @@ func (m *Model) renderFooter() string {
 		case 3:
 			helpMsg = "Cursor loops at list boundaries"
 		case 4:
-			helpMsg = "Show/hide list column headers"
+			helpMsg = "Choose default editor for opening files"
 		case 5:
-			helpMsg = "Enable git status markers"
+			helpMsg = "Move deleted items to trash (off = permanent delete)"
 		case 6:
-			helpMsg = "Show file size in list"
+			helpMsg = "Show/hide list column headers"
 		case 7:
-			helpMsg = "Change the file size display unit"
+			helpMsg = "Enable git status markers"
 		case 8:
-			helpMsg = "Show last modification time"
+			helpMsg = "Show file size in list"
 		case 9:
-			helpMsg = "Change the date and time format"
+			helpMsg = "Change the file size display unit"
 		case 10:
+			helpMsg = "Show last modification time"
+		case 11:
+			helpMsg = "Change the date and time format"
+		case 12:
 			helpMsg = "Change the application color scheme"
 		}
 
-		leftPart := " [↑↓] Navigate | [⏎/Space] Toggle | [Esc/.] Back"
+		leftPart := " [↑↓] Navigate | [⏎/Space] Toggle | [r] Reset | [Esc/.] Back"
 		rightPart := helpMsg + " "
 
 		gap := m.width - lipgloss.Width(leftPart) - lipgloss.Width(rightPart)
@@ -112,6 +211,11 @@ func (m *Model) renderFooter() string {
 		return m.styles.Footer.Width(m.width).Render(footerContent)
 	}
 
+	// If there's a message (notification/error/confirmation), show only the message
+	if m.msg != "" {
+		return m.styles.Footer.Width(m.width).Render(" " + m.msg)
+	}
+
 	selectedCount := 0
 	for _, item := range m.items {
 		if item.Selected {
@@ -119,21 +223,16 @@ func (m *Model) renderFooter() string {
 		}
 	}
 
-	statusMsg := m.msg
-	if statusMsg == "" {
-		if selectedCount > 0 {
-			statusMsg = "[c] Copy | [r] Rename | [d] Delete"
-		} else {
-			statusMsg = "[↑↓] Nav | [Space] Sel | [s] Sort | [/] Search | [.] Settings"
+	statusMsg := ""
+	if selectedCount > 0 {
+		statusMsg = "[c] Copy | [x] Cut | [r] Rename | [d] Delete"
+		if len(m.clipboard) > 0 {
+			statusMsg += " | [v] Paste"
 		}
 	}
 
 	if selectedCount > 0 {
 		statusMsg = fmt.Sprintf("[%d selected] %s", selectedCount, statusMsg)
-	}
-
-	if len(m.clipboard) > 0 && selectedCount == 0 && !strings.Contains(statusMsg, "[v] Paste") {
-		statusMsg += " | [v] Paste"
 	}
 
 	sortStr := m.sortMode.String()
@@ -185,21 +284,22 @@ func (m *Model) colorizeKeys(s string) string {
 
 	var current strings.Builder
 	for _, r := range s {
-		if r == '[' {
+		switch r {
+		case '[':
 			if current.Len() > 0 {
 				result.WriteString(baseStyle.Render(current.String()))
 				current.Reset()
 			}
 			inBracket = true
 			result.WriteString(keyStyle.Render("["))
-		} else if r == ']' {
+		case ']':
 			if current.Len() > 0 {
 				result.WriteString(keyStyle.Render(current.String()))
 				current.Reset()
 			}
 			inBracket = false
 			result.WriteString(keyStyle.Render("]"))
-		} else {
+		default:
 			current.WriteRune(r)
 		}
 	}

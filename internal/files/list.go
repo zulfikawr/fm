@@ -1,7 +1,7 @@
 package files
 
 import (
-	"fmt"
+	"context"
 	"os"
 	"sort"
 	"strings"
@@ -9,7 +9,13 @@ import (
 
 // Load reads the contents of the specified directory path.
 // It returns a sorted slice of Items based on the provided SortMode and visibility preferences.
-func Load(fs FileSystem, path string, mode SortMode, showHidden bool, gitStatuses map[string]string) ([]Item, error) {
+// If individual file entries fail to load, they are skipped and the load continues.
+func Load(ctx context.Context, fs FileSystem, path string, mode SortMode, showHidden bool, gitStatuses map[string]string) ([]Item, error) {
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	default:
+	}
 	var items []Item
 
 	if path != "/" && path != fs.Separator() {
@@ -20,21 +26,21 @@ func Load(fs FileSystem, path string, mode SortMode, showHidden bool, gitStatuse
 		})
 	}
 
-	entries, err := fs.ReadDir(path)
+	entries, err := fs.ReadDir(ctx, path)
 	if err != nil {
-		return items, fmt.Errorf("failed to read directory: %w", err)
+		return items, err
 	}
 
 	// Track seen files to identify ghosts later
 	seenOnDisk := make(map[string]bool)
 
 	var filtered []os.FileInfo
-	for _, e := range entries {
-		if !showHidden && strings.HasPrefix(e.Name(), ".") {
+	for _, entry := range entries {
+		if !showHidden && strings.HasPrefix(entry.Name(), ".") {
 			continue
 		}
-		filtered = append(filtered, e)
-		seenOnDisk[e.Name()] = true
+		filtered = append(filtered, entry)
+		seenOnDisk[entry.Name()] = true
 	}
 
 	sort.Slice(filtered, func(i, j int) bool {
@@ -66,14 +72,26 @@ func Load(fs FileSystem, path string, mode SortMode, showHidden bool, gitStatuse
 			size = -1
 		}
 
+		path := fs.Join(path, f.Name())
+		mode := f.Mode()
+
+		// Simplified permission check: check if user, group, or others have R/W bits
+		// This is an approximation. On Unix, we could use unix.Access, but for SFTP compatibility
+		// and cross-platform ease, we check bits or try a dry-run if needed.
+		// For now, let's check Mode bits and refine for SFTP if necessary.
+		canRead := (mode.Perm() & 0444) != 0
+		canWrite := (mode.Perm() & 0222) != 0
+
 		items = append(items, Item{
 			Name:      f.Name(),
-			Path:      fs.Join(path, f.Name()),
+			Path:      path,
 			IsDir:     f.IsDir(),
 			GitStatus: gitStatuses[f.Name()],
 			Size:      size,
-			Mode:      f.Mode(),
+			Mode:      mode,
 			MTime:     f.ModTime(),
+			CanRead:   canRead,
+			CanWrite:  canWrite,
 		})
 	}
 
@@ -92,27 +110,4 @@ func Load(fs FileSystem, path string, mode SortMode, showHidden bool, gitStatuse
 	}
 
 	return items, nil
-}
-
-// GetDirSize calculates the total size of a directory recursively.
-func GetDirSize(fs FileSystem, path string) int64 {
-	var size int64
-
-	var walk func(string)
-	walk = func(currPath string) {
-		entries, err := fs.ReadDir(currPath)
-		if err != nil {
-			return
-		}
-		for _, e := range entries {
-			if e.IsDir() {
-				walk(fs.Join(currPath, e.Name()))
-			} else {
-				size += e.Size()
-			}
-		}
-	}
-
-	walk(path)
-	return size
 }

@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"filemanager/internal/files"
+	"fm/internal/files"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -16,8 +16,8 @@ func TestActions(t *testing.T) {
 	m := NewModel(&files.LocalFS{}, tmpDir)
 
 	m.items = []files.Item{
-		{Name: "↑ ..", IsUp: true, IsDir: true},
-		{Name: "f1", Path: filepath.Join(tmpDir, "f1"), IsDir: false},
+		{Name: "↑ ..", IsUp: true, IsDir: true, CanRead: true, CanWrite: true},
+		{Name: "f1", Path: filepath.Join(tmpDir, "f1"), IsDir: false, CanRead: true, CanWrite: true},
 	}
 	m.applyFilter()
 
@@ -38,6 +38,26 @@ func TestActions(t *testing.T) {
 		m.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'c'}})
 		if len(m.clipboard) != 1 {
 			t.Error("Expected 1 item in clipboard")
+		}
+	})
+
+	t.Run("Cut Action", func(t *testing.T) {
+		m.cursor = 1
+		m.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'x'}})
+		if len(m.clipboard) != 1 {
+			t.Error("Expected 1 item in clipboard")
+		}
+		if !m.clipboardCut {
+			t.Error("Expected clipboardCut to be true")
+		}
+		if m.actionType != "cut" {
+			t.Errorf("Expected actionType 'cut', got %s", m.actionType)
+		}
+
+		// Verify Copy resets it
+		m.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'c'}})
+		if m.clipboardCut {
+			t.Error("Expected clipboardCut to be false after copy")
 		}
 	})
 
@@ -74,6 +94,46 @@ func TestActions(t *testing.T) {
 		}
 		if m.items[1].Selected {
 			t.Error("Expected selection to be cleared after Esc")
+		}
+	})
+
+	t.Run("Paste Action", func(t *testing.T) {
+		m.clipboard = []string{"somefile"}
+		m.cfg.ConfirmOperations = false
+		m.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'v'}})
+		if !m.loading {
+			t.Error("Expected loading to be true after paste action")
+		}
+	})
+
+	t.Run("Paste Action with Confirmation", func(t *testing.T) {
+		m.clipboard = []string{"somefile"}
+		m.cfg.ConfirmOperations = true
+		m.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'v'}})
+		if !m.confirming {
+			t.Error("Expected confirming to be true when ConfirmOperations is enabled")
+		}
+		if m.actionType != "paste" {
+			t.Errorf("Expected actionType 'paste', got %s", m.actionType)
+		}
+		m.confirming = false
+	})
+
+	t.Run("Rename Action", func(t *testing.T) {
+		m.cursor = 1
+		m.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'r'}})
+		if !m.renaming {
+			t.Error("Expected renaming to be true after 'r'")
+		}
+		m.renaming = false
+	})
+
+	t.Run("Delete Action", func(t *testing.T) {
+		m.cursor = 1
+		m.cfg.ConfirmOperations = false
+		m.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'d'}})
+		if !m.loading {
+			t.Error("Expected loading to be true after 'd'")
 		}
 	})
 }

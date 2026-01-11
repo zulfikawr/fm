@@ -1,0 +1,69 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        goos: [linux, windows, darwin]
+        goarch: [amd64, arm64]
+        exclude:
+          - goos: windows
+            goarch: arm64
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.25"
+
+      - name: Test
+        run: go test ./...
+
+      - name: Build
+        env:
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+        run: |
+          if [ "${{ matrix.goos }}" = "windows" ]; then
+            go build -o fm-${{ matrix.goos }}-${{ matrix.goarch }}.exe ./cmd/fm
+          else
+            go build -o fm-${{ matrix.goos }}-${{ matrix.goarch }} ./cmd/fm
+          fi
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: fm-${{ matrix.goos }}-${{ matrix.goarch }}
+          path: fm-${{ matrix.goos }}-${{ matrix.goarch }}${{ matrix.goos == 'windows' && '.exe' || '' }}
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Extract release notes
+        run: |
+          # This awk command finds the line starting with "## [TAG]" 
+          # and prints lines until it hits the next "## [" header.
+          awk "/^## \[${{ github.ref_name }}\]/{flag=1;next}/^## \[/{flag=0}flag" CHANGELOG.md > RELEASE_NOTES.md
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: dist/*/*
+          body_path: RELEASE_NOTES.md

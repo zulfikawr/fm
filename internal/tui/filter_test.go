@@ -3,7 +3,7 @@ package tui
 import (
 	"testing"
 
-	"filemanager/internal/files"
+	"fm/internal/files"
 )
 
 func TestFiltering(t *testing.T) {

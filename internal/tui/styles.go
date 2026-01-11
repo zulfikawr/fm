@@ -182,6 +182,7 @@ type Stylesheet struct {
 	DimCol         lipgloss.Style
 	KeyCol         lipgloss.Style
 	SettingsHeader lipgloss.Style
+	ProgressBar    lipgloss.Style
 }
 
 // NewStylesheet computes styles based on the provided theme.
@@ -235,5 +236,6 @@ func NewStylesheet(t Theme) Stylesheet {
 			Foreground(t.Dir).
 			Bold(true).
 			Padding(0, 0, 0, 1),
+		ProgressBar: lipgloss.NewStyle().Foreground(t.Dir),
 	}
 }

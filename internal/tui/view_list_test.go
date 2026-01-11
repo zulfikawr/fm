@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"filemanager/internal/config"
-	"filemanager/internal/files"
+	"fm/internal/config"
+	"fm/internal/files"
 )
 
 func TestRowRendering(t *testing.T) {

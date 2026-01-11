@@ -1,33 +1,71 @@
 package files
 
 import (
+	"context"
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"time"
 )
 
+const GitCommandTimeout = 10 * time.Second
+
+// GetGitRoot returns the root directory of the Git repository containing the given path.
+func GetGitRoot(ctx context.Context, dirPath string) string {
+	ctx, cancel := context.WithTimeout(ctx, GitCommandTimeout)
+	defer cancel()
+
+	cmd := exec.CommandContext(ctx, "git", "-C", dirPath, "rev-parse", "--show-toplevel")
+	out, err := cmd.Output()
+	if err != nil {
+		return ""
+	}
+	return strings.TrimSpace(string(out))
+}
+
 // GetGitStatus returns a map of filenames to their Git status relative to the given directory.
-func GetGitStatus(dirPath string) (map[string]string, string) {
+// Optimized for performance: combines git commands, limits scope to current directory.
+func GetGitStatus(ctx context.Context, dirPath string) (map[string]string, string) {
 	statuses := make(map[string]string)
 
-	// Get repo root to resolve relative paths correctly
-	rootCmd := exec.Command("git", "-C", dirPath, "rev-parse", "--show-toplevel")
+	// Create context with timeout
+	ctx, cancel := context.WithTimeout(ctx, GitCommandTimeout)
+	defer cancel()
+
+	// Get repo root and branch in one command for efficiency
+	rootCmd := exec.CommandContext(ctx, "git", "-C", dirPath, "rev-parse", "--show-toplevel", "--abbrev-ref", "HEAD")
 	rootOut, err := rootCmd.Output()
 	if err != nil {
 		return statuses, ""
 	}
-	repoRoot := strings.TrimSpace(string(rootOut))
 
-	// Get branch info
-	branchCmd := exec.Command("git", "-C", dirPath, "rev-parse", "--abbrev-ref", "HEAD")
-	branchOut, _ := branchCmd.Output()
-	branch := strings.TrimSpace(string(branchOut))
+	// Parse both repo root and branch from output
+	lines := strings.Split(strings.TrimSpace(string(rootOut)), "\n")
+	if len(lines) < 2 {
+		return statuses, ""
+	}
+	repoRoot := strings.TrimSpace(lines[0])
+	branch := strings.TrimSpace(lines[1])
 
-	// Get file statuses (including ignored)
-	cmd := exec.Command("git", "-C", repoRoot, "status", "--porcelain", "--ignored")
+	// Calculate relative path
+	relPath, err := filepath.Rel(repoRoot, dirPath)
+	if err != nil {
+		return statuses, branch
+	}
+
+	// Get file statuses - scope to current directory for performance, keep --ignored
+	var cmd *exec.Cmd
+	if relPath == "." || relPath == "" {
+		// At repo root, get all statuses
+		cmd = exec.CommandContext(ctx, "git", "-C", repoRoot, "status", "--porcelain", "-uall", "--ignored")
+	} else {
+		// In subdirectory, limit to current directory only for better performance
+		cmd = exec.CommandContext(ctx, "git", "-C", repoRoot, "status", "--porcelain", "-uall", "--ignored", "--", relPath)
+	}
+
 	out, err := cmd.Output()
 	if err != nil {
-		return statuses, ""
+		return statuses, branch
 	}
 
 	statuses = ParseGitStatusPorcelain(string(out), repoRoot, dirPath)

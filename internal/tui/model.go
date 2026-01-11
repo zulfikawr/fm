@@ -3,8 +3,8 @@ package tui
 import (
 	"time"
 
-	"filemanager/internal/config"
-	"filemanager/internal/files"
+	"fm/internal/config"
+	"fm/internal/files"
 
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
@@ -14,37 +14,56 @@ import (
 
 // Model holds the application state.
 type Model struct {
-	fs             files.FileSystem
-	path           string
-	items          []files.Item // Original items
-	filteredItems  []files.Item // Filtered items for display
-	sortMode       files.SortMode
-	cursorMemory   map[string]int // Path -> Cursor index
-	offsetMemory   map[string]int // Path -> Scroll offset
-	dirSizeCache   map[string]int64
-	searchInput    textinput.Model
-	renameInput    textinput.Model
-	watcher        *fsnotify.Watcher
-	lastWatched    string
-	gitBranch      string
-	searching      bool
-	renaming       bool
-	confirming     bool
-	loading        bool
-	settingsOpen   bool
-	settingsCursor int // Index in the settings list
-	selectMode     bool
-	cfg            config.Config
-	styles         Stylesheet
-	actionType     string   // "delete" or "paste"
-	clipboard      []string // Paths to copy
-	cursor         int
-	offset         int // Scroll offset
-	width          int
-	height         int
-	msg            string
-	msgTime        time.Time
-	err            error
+	fs              files.FileSystem
+	tabs            []Tab // Multiple tabs
+	activeTab       int   // Index of active tab
+	path            string
+	pathGeneration  int          // Incremented on each navigation to detect stale messages
+	items           []files.Item // Original items
+	filteredItems   []files.Item // Filtered items for display
+	sortMode        files.SortMode
+	cursorMemory    *SimpleCache                 // Path -> Cursor index (LRU cache)
+	offsetMemory    *SimpleCache                 // Path -> Scroll offset (LRU cache)
+	dirSizeCache    *LRUCache                    // Path -> Size (LRU cache)
+	pendingDirSizes map[string]int64             // Batched sizes waiting to be applied
+	gitStatusCache  map[string]map[string]string // Path -> Git status map (simple cache)
+	searchInput     textinput.Model
+	renameInput     textinput.Model
+	watcher         *fsnotify.Watcher
+	lastWatched     string
+	lastWatchedGit  string
+	gitBranch       string
+	gitRoot         string
+	searching       bool
+	renaming        bool
+	confirming      bool
+	loading         bool
+	sizeTickActive  bool
+	showProgress    bool
+	progressPercent float64
+	progressLabel   string
+	processingItems map[string]bool // Paths currently being operated on (copy/move/delete)
+	selectedPaths   map[string]bool // Paths currently selected
+	settingsOpen    bool
+	settingsCursor  int // Index in the settings list
+	settingsOffset  int // Scroll offset for settings
+	selectMode      bool
+	readOnly        bool // True if current directory is on a read-only filesystem
+	cfg             config.Config
+	styles          Stylesheet
+	actionType      string   // "delete", "paste", "reset-settings", "conflict"
+	clipboard       []string // Paths to copy/move
+	clipboardCut    bool     // True if cut, false if copy
+	conflictSrc     string   // Current source path in conflict
+	conflictDst     string   // Current destination path in conflict
+	pendingItems    []string // Items still waiting to be processed after a conflict
+	cursor          int
+	offset          int // Scroll offset
+	width           int
+	height          int
+	msg             string
+	msgTime         time.Time
+	err             error
 }
 
 // NewModel creates and initializes a new Model starting in the specified path.
@@ -64,19 +83,35 @@ func NewModel(fs files.FileSystem, initialPath string) *Model {
 
 	watcher, _ := fsnotify.NewWatcher()
 
-	m := &Model{
-		fs:           fs,
-		path:         initialPath,
-		sortMode:     files.SortDefault,
-		cursorMemory: make(map[string]int),
-		offsetMemory: make(map[string]int),
-		dirSizeCache: make(map[string]int64),
-		searchInput:  ti,
-		renameInput:  ri,
-		watcher:      watcher,
-		cfg:          cfg,
-		styles:       NewStylesheet(Themes[cfg.ThemeIndex]),
+	// Initialize with one tab
+	initialTab := Tab{
+		path:          initialPath,
+		sortMode:      files.SortDefault,
+		selectedPaths: make(map[string]bool),
 	}
+
+	m := &Model{
+		fs:              fs,
+		tabs:            []Tab{initialTab},
+		activeTab:       0,
+		path:            initialPath,
+		sortMode:        files.SortDefault,
+		cursorMemory:    NewSimpleCache(MaxCacheEntries),
+		offsetMemory:    NewSimpleCache(MaxCacheEntries),
+		dirSizeCache:    NewLRUCache(MaxCacheEntries),
+		pendingDirSizes: make(map[string]int64),
+		gitStatusCache:  make(map[string]map[string]string),
+		searchInput:     ti,
+		renameInput:     ri,
+		watcher:         watcher,
+		processingItems: make(map[string]bool),
+		selectedPaths:   make(map[string]bool),
+		cfg:             cfg,
+		styles:          NewStylesheet(Themes[cfg.ThemeIndex]),
+	}
+
+	// Load persistent size cache
+	m.dirSizeCache.Load(config.GetSizeCachePath())
 
 	// Apply initial theme styles to inputs
 	m.updateThemeStyles()

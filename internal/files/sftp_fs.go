@@ -1,6 +1,7 @@
 package files
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"net"
@@ -14,6 +15,9 @@ import (
 	"golang.org/x/crypto/ssh/agent"
 	"golang.org/x/crypto/ssh/knownhosts"
 )
+
+// SSHConnectionTimeout is the timeout for SSH connections
+const SSHConnectionTimeout = 5 * time.Second
 
 // SftpFS implements FileSystem for SFTP.
 type SftpFS struct {
@@ -47,21 +51,23 @@ func NewSftpFS(address, user, password, keyPath string) (*SftpFS, error) {
 		auths = append(auths, ssh.Password(password))
 	}
 
-	// Setup HostKeyCallback (Production Ready)
-	hostKeyCallback := ssh.InsecureIgnoreHostKey()
+	// Setup HostKeyCallback - REQUIRE known_hosts for security
 	home, err := os.UserHomeDir()
-	if err == nil {
-		knownHostsPath := path.Join(home, ".ssh", "known_hosts")
-		if callback, err := knownhosts.New(knownHostsPath); err == nil {
-			hostKeyCallback = callback
-		}
+	if err != nil {
+		return nil, fmt.Errorf("get home directory failed: %w", err)
+	}
+
+	knownHostsPath := path.Join(home, ".ssh", "known_hosts")
+	hostKeyCallback, err := knownhosts.New(knownHostsPath)
+	if err != nil {
+		return nil, fmt.Errorf("load known_hosts failed: %s: %w\nRun 'ssh-keyscan %s >> ~/.ssh/known_hosts' first", knownHostsPath, err, address)
 	}
 
 	config := &ssh.ClientConfig{
 		User:            user,
 		Auth:            auths,
 		HostKeyCallback: hostKeyCallback,
-		Timeout:         5 * time.Second,
+		Timeout:         SSHConnectionTimeout,
 	}
 
 	// Ensure port is present
@@ -71,13 +77,13 @@ func NewSftpFS(address, user, password, keyPath string) (*SftpFS, error) {
 
 	conn, err := ssh.Dial("tcp", address, config)
 	if err != nil {
-		return nil, fmt.Errorf("failed to dial: %w", err)
+		return nil, fmt.Errorf("ssh dial failed: %s: %w", address, err)
 	}
 
 	client, err := sftp.NewClient(conn)
 	if err != nil {
 		conn.Close()
-		return nil, fmt.Errorf("failed to create sftp client: %w", err)
+		return nil, fmt.Errorf("create sftp client failed: %s: %w", address, err)
 	}
 
 	return &SftpFS{
@@ -105,61 +111,118 @@ func (s *SftpFS) Close() error {
 	return nil
 }
 
-func (s *SftpFS) ReadDir(p string) ([]os.FileInfo, error) {
-	return s.client.ReadDir(p)
+func (s *SftpFS) ReadDir(ctx context.Context, p string) ([]os.FileInfo, error) {
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	default:
+	}
+	infos, err := s.client.ReadDir(p)
+	return infos, WrapError(err, "ReadDir")
 }
 
-func (s *SftpFS) Stat(p string) (os.FileInfo, error) {
-	return s.client.Stat(p)
+func (s *SftpFS) Stat(ctx context.Context, p string) (os.FileInfo, error) {
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	default:
+	}
+	info, err := s.client.Stat(p)
+	return info, WrapError(err, "Stat")
 }
 
-func (s *SftpFS) Lstat(p string) (os.FileInfo, error) {
-	return s.client.Lstat(p)
+func (s *SftpFS) Lstat(ctx context.Context, p string) (os.FileInfo, error) {
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	default:
+	}
+	info, err := s.client.Lstat(p)
+	return info, WrapError(err, "Lstat")
 }
 
-func (s *SftpFS) RemoveAll(p string) error {
+func (s *SftpFS) RemoveAll(ctx context.Context, p string) error {
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	default:
+	}
+
 	info, err := s.client.Stat(p)
 	if err != nil {
-		return err
+		return WrapError(err, "RemoveAll")
 	}
 
 	if !info.IsDir() {
-		return s.client.Remove(p)
+		return WrapError(s.client.Remove(p), "RemoveAll")
 	}
 
 	entries, err := s.client.ReadDir(p)
 	if err != nil {
-		return err
+		return WrapError(err, "RemoveAll")
 	}
 
 	for _, entry := range entries {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		default:
+		}
+
 		childPath := path.Join(p, entry.Name())
-		if err := s.RemoveAll(childPath); err != nil {
+		if err := s.RemoveAll(ctx, childPath); err != nil {
 			return err
 		}
 	}
 
-	return s.client.RemoveDirectory(p)
+	return WrapError(s.client.RemoveDirectory(p), "RemoveAll")
 }
 
-func (s *SftpFS) Rename(oldPath, newPath string) error {
-	return s.client.Rename(oldPath, newPath)
+func (s *SftpFS) Rename(ctx context.Context, oldPath, newPath string) error {
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	default:
+	}
+	return WrapError(s.client.Rename(oldPath, newPath), "Rename")
 }
 
-func (s *SftpFS) Create(p string) (io.WriteCloser, error) {
-	return s.client.Create(p)
+func (s *SftpFS) Create(ctx context.Context, p string) (io.WriteCloser, error) {
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	default:
+	}
+	f, err := s.client.Create(p)
+	return f, WrapError(err, "Create")
 }
 
-func (s *SftpFS) Open(p string) (io.ReadCloser, error) {
-	return s.client.Open(p)
+func (s *SftpFS) Open(ctx context.Context, p string) (io.ReadCloser, error) {
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	default:
+	}
+	f, err := s.client.Open(p)
+	return f, WrapError(err, "Open")
 }
 
-func (s *SftpFS) MkdirAll(p string, perm os.FileMode) error {
-	return s.client.MkdirAll(p)
+func (s *SftpFS) MkdirAll(ctx context.Context, p string, perm os.FileMode) error {
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	default:
+	}
+	return WrapError(s.client.MkdirAll(p), "MkdirAll")
 }
 
-func (s *SftpFS) Chmod(p string, mode os.FileMode) error {
-	return s.client.Chmod(p, mode)
+func (s *SftpFS) Chmod(ctx context.Context, p string, mode os.FileMode) error {
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	default:
+	}
+	return WrapError(s.client.Chmod(p, mode), "Chmod")
 }
 
 func (s *SftpFS) GetHomeDir() (string, error) {
@@ -197,10 +260,17 @@ func (s *SftpFS) Base(p string) string {
 	return path.Base(p)
 }
 
-func (s *SftpFS) GetGitStatus(p string) (map[string]string, string) {
+func (s *SftpFS) GetGitStatus(ctx context.Context, p string) (map[string]string, string) {
 	if s.conn == nil {
 		return nil, ""
 	}
+
+	select {
+	case <-ctx.Done():
+		return nil, ""
+	default:
+	}
+
 	rootCmd := fmt.Sprintf("git -C %s rev-parse --show-toplevel", p)
 	session, err := s.conn.NewSession()
 	if err != nil {
@@ -233,4 +303,59 @@ func (s *SftpFS) GetGitStatus(p string) (map[string]string, string) {
 	}
 
 	return nil, ""
+}
+
+func (s *SftpFS) IsReadOnly(ctx context.Context, p string) (bool, error) {
+	// SFTP doesn't easily expose mount flags. Default to false.
+	return false, nil
+}
+
+// GetDirSize calculates the total size of a directory recursively for SFTP.
+func (s *SftpFS) GetDirSize(ctx context.Context, path string) int64 {
+	var size int64
+	visited := make(map[string]bool)
+
+	var walk func(string, int) error
+	walk = func(currPath string, depth int) error {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		default:
+		}
+
+		if depth > MaxDirectoryDepth {
+			return nil
+		}
+
+		// Prevent symlink loops
+		realPath, err := s.Abs(currPath)
+		if err == nil {
+			if visited[realPath] {
+				return nil
+			}
+			visited[realPath] = true
+		}
+
+		entries, err := s.ReadDir(ctx, currPath)
+		if err != nil {
+			return nil
+		}
+		for _, e := range entries {
+			select {
+			case <-ctx.Done():
+				return ctx.Err()
+			default:
+			}
+
+			if e.IsDir() {
+				walk(s.Join(currPath, e.Name()), depth+1)
+			} else {
+				size += e.Size()
+			}
+		}
+		return nil
+	}
+
+	walk(path, 0)
+	return size
 }

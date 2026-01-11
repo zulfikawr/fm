@@ -1,6 +1,8 @@
 package tui
 
 import (
+	"fm/internal/files"
+
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -17,6 +19,16 @@ func (m *Model) handleSearching(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 
 	m.searchInput, cmd = m.searchInput.Update(msg)
+
+	// Validate query
+	if err := files.ValidateSearchQuery(m.searchInput.Value()); err != nil {
+		// If query is invalid, strip the last character or clear it
+		val := m.searchInput.Value()
+		if len(val) > 0 {
+			m.searchInput.SetValue(val[:len(val)-1])
+		}
+	}
+
 	m.applyFilter()
 	if m.cursor >= len(m.filteredItems) {
 		m.cursor = 0

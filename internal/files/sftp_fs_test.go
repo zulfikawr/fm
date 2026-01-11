@@ -1,6 +1,7 @@
 package files
 
 import (
+	"context"
 	"io"
 	"strings"
 	"testing"
@@ -49,19 +50,19 @@ func TestSftpFS_Basic(t *testing.T) {
 	})
 
 	t.Run("File Operations", func(t *testing.T) {
-		err := fs.MkdirAll("testdir/sub", 0755)
+		err := fs.MkdirAll(context.Background(), "testdir/sub", 0755)
 		if err != nil {
 			t.Fatalf("MkdirAll failed: %v", err)
 		}
 
-		w, err := fs.Create("testdir/sub/hello.txt")
+		w, err := fs.Create(context.Background(), "testdir/sub/hello.txt")
 		if err != nil {
 			t.Fatalf("Create failed: %v", err)
 		}
 		w.Write([]byte("hello world"))
 		w.Close()
 
-		info, err := fs.Stat("testdir/sub/hello.txt")
+		info, err := fs.Stat(context.Background(), "testdir/sub/hello.txt")
 		if err != nil {
 			t.Fatalf("Stat failed: %v", err)
 		}
@@ -70,13 +71,13 @@ func TestSftpFS_Basic(t *testing.T) {
 		}
 
 		// Lstat
-		_, err = fs.Lstat("testdir/sub/hello.txt")
+		_, err = fs.Lstat(context.Background(), "testdir/sub/hello.txt")
 		if err != nil {
 			t.Errorf("Lstat failed: %v", err)
 		}
 
 		// Chmod
-		err = fs.Chmod("testdir/sub/hello.txt", 0600)
+		err = fs.Chmod(context.Background(), "testdir/sub/hello.txt", 0600)
 		if err != nil {
 			t.Errorf("Chmod failed: %v", err)
 		}
@@ -91,7 +92,7 @@ func TestSftpFS_Basic(t *testing.T) {
 			t.Errorf("Abs failed: %s", abs2)
 		}
 
-		entries, err := fs.ReadDir("testdir/sub")
+		entries, err := fs.ReadDir(context.Background(), "testdir/sub")
 		if err != nil {
 			t.Fatalf("ReadDir failed: %v", err)
 		}
@@ -99,7 +100,7 @@ func TestSftpFS_Basic(t *testing.T) {
 			t.Errorf("ReadDir mismatch: %+v", entries)
 		}
 
-		r, err := fs.Open("testdir/sub/hello.txt")
+		r, err := fs.Open(context.Background(), "testdir/sub/hello.txt")
 		if err != nil {
 			t.Fatalf("Open failed: %v", err)
 		}
@@ -109,16 +110,16 @@ func TestSftpFS_Basic(t *testing.T) {
 			t.Errorf("Expected hello world, got %s", string(content))
 		}
 
-		err = fs.Rename("testdir/sub/hello.txt", "testdir/sub/hi.txt")
+		err = fs.Rename(context.Background(), "testdir/sub/hello.txt", "testdir/sub/hi.txt")
 		if err != nil {
 			t.Fatalf("Rename failed: %v", err)
 		}
 
-		err = fs.RemoveAll("testdir")
+		err = fs.RemoveAll(context.Background(), "testdir")
 		if err != nil {
 			t.Fatalf("RemoveAll failed: %v", err)
 		}
-		_, err = fs.Stat("testdir")
+		_, err = fs.Stat(context.Background(), "testdir")
 		if err == nil {
 			t.Error("testdir should be gone")
 		}
@@ -127,7 +128,7 @@ func TestSftpFS_Basic(t *testing.T) {
 
 func TestSftpFS_GetGitStatus_Nil(t *testing.T) {
 	fs := &SftpFS{conn: nil}
-	statuses, branch := fs.GetGitStatus(".")
+	statuses, branch := fs.GetGitStatus(context.Background(), ".")
 	if statuses != nil || branch != "" {
 		t.Error("Expected nil/empty for nil connection")
 	}
@@ -162,11 +163,11 @@ func TestRemoveAll_File(t *testing.T) {
 	client, _ := sftp.NewClientPipe(clientReader, clientWriter)
 	fs := &SftpFS{client: client}
 
-	w, _ := fs.Create("single_file.txt")
+	w, _ := fs.Create(context.Background(), "single_file.txt")
 	w.Write([]byte("test"))
 	w.Close()
 
-	if err := fs.RemoveAll("single_file.txt"); err != nil {
+	if err := fs.RemoveAll(context.Background(), "single_file.txt"); err != nil {
 		t.Errorf("RemoveAll on file failed: %v", err)
 	}
 }
@@ -178,5 +179,5 @@ func TestRemoveAll_NonExistent(t *testing.T) {
 		}
 	}()
 	fs := &SftpFS{}
-	fs.RemoveAll("nonexistent")
+	fs.RemoveAll(context.Background(), "nonexistent")
 }

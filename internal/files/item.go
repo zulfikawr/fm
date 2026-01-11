@@ -16,5 +16,7 @@ type Item struct {
 	Size      int64
 	Mode      os.FileMode
 	MTime     time.Time
+	CanRead   bool // CanRead indicates if the current user has read permission
+	CanWrite  bool // CanWrite indicates if the current user has write permission
 	IsUp      bool // IsUp indicates if this item represents the parent directory ("..").
 }

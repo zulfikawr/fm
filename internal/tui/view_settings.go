@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"filemanager/internal/files"
+	"fm/internal/files"
 
 	"github.com/charmbracelet/lipgloss"
 )
@@ -34,11 +34,12 @@ func (m *Model) renderSettingsList(header, footer string) string {
 				{"Confirm Operations", m.formatBool(m.cfg.ConfirmOperations)},
 				{"Wrap Navigation", m.formatBool(m.cfg.WrapNavigation)},
 				{"Preferred Editor", fmt.Sprintf("< %s >", files.Editors[m.cfg.EditorIndex])},
+				{"Use Trash (Move to Trash)", m.formatBool(m.cfg.UseTrash)},
 			},
 		},
 		{
 			title:    "Display Options",
-			startIdx: 5,
+			startIdx: 6,
 			settings: []setting{
 				{"Show Column Headers", m.formatBool(m.cfg.ShowHeader)},
 				{"Enable Git Status", m.formatBool(m.cfg.EnableGit)},
@@ -50,9 +51,30 @@ func (m *Model) renderSettingsList(header, footer string) string {
 		},
 		{
 			title:    "Appearance",
-			startIdx: 11,
+			startIdx: 12,
 			settings: []setting{
 				{"Theme", fmt.Sprintf("< %s >", Themes[m.cfg.ThemeIndex].Name)},
+			},
+		},
+		{
+			title:    "Keybindings",
+			startIdx: 13,
+			settings: []setting{
+				{"Open", "Enter/→/l"},
+				{"Back", "Backspace/←/h"},
+				{"Select", "Space"},
+				{"New Tab", "Alt+T"},
+				{"Switch Tab", "Alt+1-9"},
+				{"Sort", "s"},
+				{"Search", "/"},
+				{"Copy", "c"},
+				{"Cut", "x"},
+				{"Paste", "v"},
+				{"Rename", "r"},
+				{"Delete", "d"},
+				{"Clear/Esc", "Esc"},
+				{"Settings", "."},
+				{"Quit", "q"},
 			},
 		},
 	}
@@ -73,9 +95,9 @@ func (m *Model) renderSettingsList(header, footer string) string {
 
 			// Dim inactive settings
 			inactive := false
-			if idx == 8 && !m.cfg.ShowSize { // Size Format
+			if idx == 9 && !m.cfg.ShowSize { // Size Format
 				inactive = true
-			} else if idx == 10 && !m.cfg.ShowDateModified { // Date Format
+			} else if idx == 11 && !m.cfg.ShowDateModified { // Date Format
 				inactive = true
 			}
 			val := s.value
@@ -84,12 +106,12 @@ func (m *Model) renderSettingsList(header, footer string) string {
 				val = m.styles.DimCol.Render(s.value)
 			}
 
-			labelWidth := 25
-			if m.width < 40 {
-				labelWidth = m.width - 12
+			labelWidth := 35
+			if m.width < 60 {
+				labelWidth = m.width - 20
 			}
-			if labelWidth < 5 {
-				labelWidth = 5
+			if labelWidth < 10 {
+				labelWidth = 10
 			}
 
 			label := s.label + ":"
@@ -116,8 +138,21 @@ func (m *Model) renderSettingsList(header, footer string) string {
 			rows = append(rows, style.Width(m.width).Render(content))
 		}
 	}
-	for i := len(rows); i < viewportHeight; i++ {
-		rows = append(rows, "")
+
+	// Apply scroll offset
+	if m.settingsOffset > 0 && m.settingsOffset < len(rows) {
+		rows = rows[m.settingsOffset:]
+	} else if m.settingsOffset >= len(rows) {
+		rows = []string{}
+	}
+
+	// Ensure we fill the viewport
+	if len(rows) > viewportHeight {
+		rows = rows[:viewportHeight]
+	} else {
+		for i := len(rows); i < viewportHeight; i++ {
+			rows = append(rows, "")
+		}
 	}
 
 	return strings.Join(rows, "\n")

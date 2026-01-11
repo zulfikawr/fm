@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"filemanager/internal/files"
+	"fm/internal/files"
 
 	"github.com/charmbracelet/lipgloss"
 )
@@ -26,10 +26,11 @@ func (m *Model) renderList(header, footer string) string {
 	// Column Headers
 	var headerRows []string
 	if m.cfg.ShowHeader && len(m.filteredItems) > 0 {
-		sizeWidth := 10
-		if m.cfg.SizeFormatIndex == 1 {
+		sizeWidth := 11
+		switch m.cfg.SizeFormatIndex {
+		case 1:
 			sizeWidth = 12
-		} else if m.cfg.SizeFormatIndex == 2 {
+		case 2:
 			sizeWidth = 15
 		}
 
@@ -43,7 +44,7 @@ func (m *Model) renderList(header, footer string) string {
 		if m.selectMode {
 			markerWidth = 4
 		}
-		gitMarkerWidth := 2
+		gitMarkerWidth := 3 // git status + perm indicator space
 
 		nameWidth := m.width - markerWidth - gitMarkerWidth
 		if m.cfg.ShowSize {
@@ -152,10 +153,11 @@ func (m *Model) renderRow(item files.Item, selected bool) string {
 	}
 
 	// Calculate widths
-	sizeWidth := 10
-	if m.cfg.SizeFormatIndex == 1 { // Full (KB, MB, GB)
+	sizeWidth := 11
+	switch m.cfg.SizeFormatIndex {
+	case 1: // Full (KB, MB, GB)
 		sizeWidth = 12
-	} else if m.cfg.SizeFormatIndex == 2 { // Bytes
+	case 2: // Bytes
 		sizeWidth = 15
 	}
 
@@ -166,8 +168,9 @@ func (m *Model) renderRow(item files.Item, selected bool) string {
 	markerWidth := len(marker)
 	gitMarkerWidth := 2 // "M "
 	const columnGap = 2
+	permIndicatorWidth := 1
 
-	availableWidth := m.width - markerWidth - gitMarkerWidth
+	availableWidth := m.width - markerWidth - gitMarkerWidth - permIndicatorWidth
 
 	if m.cfg.ShowSize {
 		availableWidth -= (sizeWidth + columnGap)
@@ -195,9 +198,14 @@ func (m *Model) renderRow(item files.Item, selected bool) string {
 		sizePart = fmt.Sprintf("%*s%*s", columnGap, "", sizeWidth, sizeStr)
 	}
 
-	lineContent := fmt.Sprintf("%s%s%-*s%s%s", marker, gitMarker, nameWidth, nameStr, datePart, sizePart)
+	// Permission indicator
+	permIndicator := " "
+	if !item.CanWrite && !item.IsUp && !item.IsGhost {
+		permIndicator = "!"
+	}
 
 	if selected {
+		lineContent := fmt.Sprintf("%s%s%s%-*s%s%s", marker, gitMarker, permIndicator, nameWidth, nameStr, datePart, sizePart)
 		return m.styles.SelectedItem.Width(m.width).Render(lineContent)
 	}
 
@@ -237,6 +245,15 @@ func (m *Model) renderRow(item files.Item, selected bool) string {
 	}
 
 	styledName := nameStyle.Render(nameStr)
+	if !item.CanRead && !item.IsUp {
+		styledName = m.styles.DimCol.Render(nameStr)
+	}
+
+	// Styled Permission indicator
+	styledPermIndicator := permIndicator
+	if permIndicator == "!" {
+		styledPermIndicator = m.styles.DimCol.Render("!")
+	}
 
 	// Git Marker Coloring
 	styledGitMarker := gitMarker
@@ -260,6 +277,6 @@ func (m *Model) renderRow(item files.Item, selected bool) string {
 		gap = 0
 	}
 
-	row := fmt.Sprintf("%s%s%s%s%s%s", marker, styledGitMarker, styledName, strings.Repeat(" ", gap), datePart, sizePart)
+	row := fmt.Sprintf("%s%s%s%s%s%s%s", marker, styledGitMarker, styledPermIndicator, styledName, strings.Repeat(" ", gap), datePart, sizePart)
 	return m.styles.Item.Width(m.width).Render(row)
 }

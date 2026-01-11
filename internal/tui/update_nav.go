@@ -1,7 +1,7 @@
 package tui
 
 import (
-	"filemanager/internal/files"
+	"fm/internal/files"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -44,26 +44,41 @@ func (m *Model) handleNavigation(msg tea.KeyMsg) []tea.Cmd {
 		selected := m.filteredItems[m.cursor]
 
 		if selected.IsUp {
-			m.cursorMemory[m.path] = m.cursor
-			m.offsetMemory[m.path] = m.offset
+			m.cursorMemory.Put(m.path, m.cursor)
+			m.offsetMemory.Put(m.path, m.offset)
+			m.saveTabState()
 			m.path = m.fs.Dir(m.path)
+			m.pathGeneration++
+			m.items = nil
+			m.filteredItems = nil
 			cmds = append(cmds, m.reload())
 		} else if selected.IsDir {
-			m.cursorMemory[m.path] = m.cursor
-			m.offsetMemory[m.path] = m.offset
+			// Validate path to prevent traversal attacks
+			if err := files.ValidatePath(m.path, selected.Name); err != nil {
+				return []tea.Cmd{m.setMsg("Security: " + err.Error())}
+			}
+
+			if !selected.CanRead {
+				return []tea.Cmd{m.setMsg("Access Denied: You do not have permission to read this directory")}
+			}
+
+			m.cursorMemory.Put(m.path, m.cursor)
+			m.offsetMemory.Put(m.path, m.offset)
+			m.saveTabState()
 			m.path = m.fs.Join(m.path, selected.Name)
+			m.pathGeneration++
+			m.items = nil
+			m.filteredItems = nil
 			cmds = append(cmds, m.reload())
 		} else {
 			// Handle file opening
 			if msg.String() == "enter" {
 				if !m.fs.IsLocal() {
-					m.setMsg("Opening remote files not supported yet")
-					break
+					return []tea.Cmd{m.setMsg("Opening remote files not supported yet")}
 				}
 				execCmd, isTerminal, err := files.GetOpenCmd(selected.Path, m.cfg.EditorIndex)
 				if err != nil {
-					m.setMsg("Error: " + err.Error())
-					break
+					return []tea.Cmd{m.setMsg("Error: " + err.Error())}
 				}
 
 				if isTerminal {
@@ -75,16 +90,20 @@ func (m *Model) handleNavigation(msg tea.KeyMsg) []tea.Cmd {
 					})}
 				} else {
 					if err := execCmd.Start(); err != nil {
-						m.setMsg("Error: " + err.Error())
+						cmds = append(cmds, m.setMsg("Error: "+err.Error()))
 					}
 				}
 			}
 		}
 
 	case "backspace", "left", "h":
-		m.cursorMemory[m.path] = m.cursor
-		m.offsetMemory[m.path] = m.offset
+		m.cursorMemory.Put(m.path, m.cursor)
+		m.offsetMemory.Put(m.path, m.offset)
+		m.saveTabState()
 		m.path = m.fs.Dir(m.path)
+		m.pathGeneration++
+		m.items = nil
+		m.filteredItems = nil
 		cmds = append(cmds, m.reload())
 	}
 

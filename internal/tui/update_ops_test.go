@@ -1,11 +1,12 @@
 package tui
 
 import (
+	"context"
 	"os"
 	"path/filepath"
 	"testing"
 
-	"filemanager/internal/files"
+	"fm/internal/files"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -17,7 +18,7 @@ func TestOperations(t *testing.T) {
 
 	t.Run("Renaming State", func(t *testing.T) {
 		m.path = tmpDir
-		m.items = []files.Item{{Name: "old.txt", Path: filepath.Join(tmpDir, "old.txt")}}
+		m.items = []files.Item{{Name: "old.txt", Path: filepath.Join(tmpDir, "old.txt"), CanRead: true, CanWrite: true}}
 		os.WriteFile(m.items[0].Path, []byte("test"), 0644)
 		m.applyFilter()
 		m.cursor = 0
@@ -50,7 +51,7 @@ func TestOperations(t *testing.T) {
 		m.path = tmpDir
 		filePath := filepath.Join(tmpDir, "delete_me.txt")
 		os.WriteFile(filePath, []byte("delete"), 0644)
-		m.items = []files.Item{{Name: "delete_me.txt", Path: filePath}}
+		m.items = []files.Item{{Name: "delete_me.txt", Path: filePath, CanRead: true, CanWrite: true}}
 		m.applyFilter()
 		m.cursor = 0
 
@@ -81,7 +82,7 @@ func TestOperations(t *testing.T) {
 		}
 
 		// Manually perform side-effect for verification
-		files.Delete(m.fs, filePath)
+		files.Delete(context.Background(), m.fs, filePath, nil)
 
 		if _, err := os.Stat(filePath); !os.IsNotExist(err) {
 			t.Error("Expected file to be deleted")
@@ -109,10 +110,35 @@ func TestOperations(t *testing.T) {
 		}
 
 		// Manually perform side-effect for verification
-		files.Copy(m.fs, srcFile, filepath.Join(subDir, "src_paste.txt"))
+		files.Copy(context.Background(), m.fs, srcFile, filepath.Join(subDir, "src_paste.txt"), nil)
 
 		if _, err := os.Stat(filepath.Join(subDir, "src_paste.txt")); err != nil {
 			t.Error("Expected pasted file to exist in sub")
+		}
+	})
+
+	t.Run("Perform Paste - Cut", func(t *testing.T) {
+		m := NewModel(&files.LocalFS{}, tmpDir)
+		srcFile := filepath.Join(tmpDir, "src_cut.txt")
+		os.WriteFile(srcFile, []byte("cut content"), 0644)
+
+		destDir := filepath.Join(tmpDir, "dest_cut")
+		os.MkdirAll(destDir, 0755)
+
+		m.clipboard = []string{srcFile}
+		m.clipboardCut = true
+		m.path = destDir
+
+		m.performPaste()
+
+		if !m.loading {
+			t.Error("Expected loading to be true after move triggered")
+		}
+		if len(m.clipboard) != 0 {
+			t.Error("Expected clipboard to be cleared after move")
+		}
+		if m.clipboardCut {
+			t.Error("Expected clipboardCut to be false after move")
 		}
 	})
 }

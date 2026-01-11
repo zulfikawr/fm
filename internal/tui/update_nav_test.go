@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"filemanager/internal/files"
+	"fm/internal/files"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -17,9 +17,9 @@ func TestNavigation(t *testing.T) {
 	m := NewModel(&files.LocalFS{}, tmpDir)
 
 	m.items = []files.Item{
-		{Name: "↑ ..", IsDir: true, IsUp: true},
-		{Name: "dir1", IsDir: true, Path: filepath.Join(tmpDir, "dir1")},
-		{Name: "file1", IsDir: false, Path: filepath.Join(tmpDir, "file1")},
+		{Name: "↑ ..", IsDir: true, IsUp: true, CanRead: true},
+		{Name: "dir1", IsDir: true, Path: filepath.Join(tmpDir, "dir1"), CanRead: true},
+		{Name: "file1", IsDir: false, Path: filepath.Join(tmpDir, "file1"), CanRead: true},
 	}
 	m.applyFilter()
 
@@ -90,7 +90,7 @@ func TestFileOpening(t *testing.T) {
 	os.WriteFile(filePath, []byte("hello"), 0644)
 
 	m := NewModel(&files.LocalFS{}, tmpDir)
-	m.items = []files.Item{{Name: "test.txt", Path: filePath, IsDir: false}}
+	m.items = []files.Item{{Name: "test.txt", Path: filePath, IsDir: false, CanRead: true}}
 	m.applyFilter()
 	m.cursor = 0
 

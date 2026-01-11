@@ -1,6 +1,7 @@
 package files
 
 import (
+	"context"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -61,7 +62,7 @@ func TestGetGitStatus(t *testing.T) {
 	os.WriteFile(filepath.Join(tmpDir, ".gitignore"), []byte("ignored.txt\n"), 0644)
 	os.WriteFile(filepath.Join(tmpDir, "ignored.txt"), []byte("ignore me"), 0644)
 
-	statuses, branch := GetGitStatus(tmpDir)
+	statuses, branch := GetGitStatus(context.Background(), tmpDir)
 
 	if branch == "" {
 		t.Error("Expected branch name, got empty string")

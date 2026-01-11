@@ -1,7 +1,7 @@
 package tui
 
 import (
-	"filemanager/internal/files"
+	"fm/internal/files"
 	"os"
 	"testing"
 

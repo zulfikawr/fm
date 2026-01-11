@@ -14,11 +14,20 @@ func (m *Model) handleAction(msg tea.KeyMsg) []tea.Cmd {
 	case " ":
 		if len(m.filteredItems) > 0 {
 			idx := m.cursor
-			if !m.filteredItems[idx].IsUp {
-				m.filteredItems[idx].Selected = !m.filteredItems[idx].Selected
+			item := m.filteredItems[idx]
+			if !item.IsUp {
+				newSelected := !item.Selected
+				m.filteredItems[idx].Selected = newSelected
+
+				// Update original items and selectedPaths map
 				for i := range m.items {
-					if m.items[i].Path == m.filteredItems[idx].Path {
-						m.items[i].Selected = m.filteredItems[idx].Selected
+					if m.items[i].Path == item.Path {
+						m.items[i].Selected = newSelected
+						if newSelected {
+							m.selectedPaths[item.Path] = true
+						} else {
+							delete(m.selectedPaths, item.Path)
+						}
 						break
 					}
 				}
@@ -26,14 +35,7 @@ func (m *Model) handleAction(msg tea.KeyMsg) []tea.Cmd {
 		}
 
 		// Update selectMode based on whether anything is selected
-		anySelected := false
-		for _, item := range m.items {
-			if item.Selected {
-				anySelected = true
-				break
-			}
-		}
-		m.selectMode = anySelected
+		m.selectMode = len(m.selectedPaths) > 0
 
 	case "s":
 		m.sortMode = (m.sortMode + 1) % 7
@@ -47,6 +49,7 @@ func (m *Model) handleAction(msg tea.KeyMsg) []tea.Cmd {
 		cmds = append(cmds, textinput.Blink)
 
 	case "c":
+		m.clipboardCut = false
 		m.actionType = "copy"
 		m.clipboard = []string{}
 		for _, item := range m.items {
@@ -60,9 +63,32 @@ func (m *Model) handleAction(msg tea.KeyMsg) []tea.Cmd {
 				m.clipboard = append(m.clipboard, sel.Path)
 			}
 		}
-		m.setMsg(fmt.Sprintf("Copied %d items to clipboard", len(m.clipboard)))
+		cmds = append(cmds, m.setMsg(fmt.Sprintf("Copied %d items to clipboard", len(m.clipboard))))
+
+	case "x":
+		if m.readOnly {
+			return []tea.Cmd{m.setMsg("Error: Read-only filesystem")}
+		}
+		m.clipboardCut = true
+		m.actionType = "cut"
+		m.clipboard = []string{}
+		for _, item := range m.items {
+			if item.Selected {
+				m.clipboard = append(m.clipboard, item.Path)
+			}
+		}
+		if len(m.clipboard) == 0 && len(m.filteredItems) > 0 {
+			sel := m.filteredItems[m.cursor]
+			if !sel.IsUp {
+				m.clipboard = append(m.clipboard, sel.Path)
+			}
+		}
+		cmds = append(cmds, m.setMsg(fmt.Sprintf("Cut %d items to clipboard", len(m.clipboard))))
 
 	case "v":
+		if m.readOnly {
+			return []tea.Cmd{m.setMsg("Error: Read-only filesystem")}
+		}
 		if len(m.clipboard) > 0 {
 			if m.cfg.ConfirmOperations {
 				m.confirming = true
@@ -73,6 +99,9 @@ func (m *Model) handleAction(msg tea.KeyMsg) []tea.Cmd {
 		}
 
 	case "r":
+		if m.readOnly {
+			return []tea.Cmd{m.setMsg("Error: Read-only filesystem")}
+		}
 		if len(m.filteredItems) > 0 {
 			sel := m.filteredItems[m.cursor]
 			if !sel.IsUp {
@@ -84,6 +113,9 @@ func (m *Model) handleAction(msg tea.KeyMsg) []tea.Cmd {
 		}
 
 	case "d":
+		if m.readOnly {
+			return []tea.Cmd{m.setMsg("Error: Read-only filesystem")}
+		}
 		selectedCount := 0
 		for _, item := range m.items {
 			if item.Selected {
@@ -102,6 +134,7 @@ func (m *Model) handleAction(msg tea.KeyMsg) []tea.Cmd {
 	case ".":
 		m.settingsOpen = true
 		m.settingsCursor = 0
+		m.settingsOffset = 0
 	}
 
 	return cmds

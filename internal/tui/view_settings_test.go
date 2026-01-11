@@ -1,7 +1,7 @@
 package tui
 
 import (
-	"filemanager/internal/files"
+	"fm/internal/files"
 	"strings"
 	"testing"
 )
@@ -11,6 +11,7 @@ func TestViewSettings(t *testing.T) {
 	m.cfg.ShowSize = false
 	m.settingsOpen = true
 	m.width = 80
+	m.height = 40 // Ensure enough height for all settings
 
 	t.Run("Settings Rendering", func(t *testing.T) {
 		header := m.renderHeader()
