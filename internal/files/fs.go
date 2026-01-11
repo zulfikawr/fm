@@ -9,9 +9,6 @@ import (
 	"runtime"
 	"sync"
 	"sync/atomic"
-	"syscall"
-
-	"golang.org/x/sys/unix"
 )
 
 // FileSystem defines the interface for file system operations.
@@ -61,12 +58,11 @@ func (l *LocalFS) GetDirSize(ctx context.Context, path string) int64 {
 
 	// Optional: Get the device ID of the starting path to implement "one file system" (du -x)
 	// This prevents counting /proc, /sys, etc. when measuring root.
+	// Only supported on Unix-like systems
 	var startDev uint64
 	if info, err := os.Stat(path); err == nil {
-		if sys := info.Sys(); sys != nil {
-			if stat, ok := sys.(*syscall.Stat_t); ok {
-				startDev = uint64(stat.Dev)
-			}
+		if stat := getStatInfo(info.Sys()); stat != nil {
+			startDev = stat.dev
 		}
 	}
 
@@ -103,22 +99,21 @@ func (l *LocalFS) GetDirSize(ctx context.Context, path string) int64 {
 
 			var size int64 = info.Size()
 			// Use actual disk usage (blocks) if available on Unix
-			if sys := info.Sys(); sys != nil {
-				if stat, ok := sys.(*syscall.Stat_t); ok {
-					// st_blocks is always in 512-byte units in POSIX/Linux
-					size = stat.Blocks * 512
+			if stat := getStatInfo(info.Sys()); stat != nil {
+				// st_blocks is always in 512-byte units in POSIX/Linux
+				size = stat.blocks * 512
 
-					// If we are on a different device (e.g. /proc inside /), skip it
-					// unless we explicitly started inside that device.
-					if startDev != 0 && uint64(stat.Dev) != startDev {
-						continue
-					}
+				// If we are on a different device (e.g. /proc inside /), skip it
+				// unless we explicitly started inside that device.
+				// Only check if we successfully got startDev (Unix systems)
+				if startDev != 0 && stat.dev != startDev {
+					continue
+				}
 
-					// Loop detection using Inode
-					key := fmt.Sprintf("%d:%d", stat.Dev, stat.Ino)
-					if _, loaded := visited.LoadOrStore(key, true); loaded {
-						continue
-					}
+				// Loop detection using Inode
+				key := fmt.Sprintf("%d:%d", stat.dev, stat.ino)
+				if _, loaded := visited.LoadOrStore(key, true); loaded {
+					continue
 				}
 			}
 
@@ -288,16 +283,18 @@ func (l *LocalFS) GetGitStatus(ctx context.Context, path string) (map[string]str
 }
 
 func (l *LocalFS) IsReadOnly(ctx context.Context, path string) (bool, error) {
-	if runtime.GOOS == "linux" || runtime.GOOS == "darwin" {
-		var stat unix.Statfs_t
-		if err := unix.Statfs(path, &stat); err != nil {
-			return false, err
-		}
-		// Check for MS_RDONLY (linux) or MNT_RDONLY (darwin)
-		// On many systems MS_RDONLY is 1
-		return (stat.Flags & unix.MS_RDONLY) != 0, nil
+	// Try to detect read-only filesystem by attempting to create a test file
+	tmpFile := filepath.Join(path, ".fm-readonly-test-"+fmt.Sprintf("%d", os.Getpid()))
+
+	// Try to create a temporary file
+	f, err := os.Create(tmpFile)
+	if err != nil {
+		// If we get a permission denied error, it's likely read-only
+		return os.IsPermission(err), nil
 	}
-	// For other OSs, we can try to create a temporary file or check attributes
-	// For now, default to false.
+
+	// Clean up the test file
+	f.Close()
+	os.Remove(tmpFile)
 	return false, nil
 }

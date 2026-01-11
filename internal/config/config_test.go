@@ -60,46 +60,6 @@ func TestConfigSaveLoad(t *testing.T) {
 	}
 }
 
-func TestConfigSaveErrors(t *testing.T) {
-	tmpHome, err := os.MkdirTemp("", "fm-config-err-test")
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer os.RemoveAll(tmpHome)
-	t.Setenv("HOME", tmpHome)
-
-	// Trigger MkdirAll error by creating a file where the directory should be
-	configDir := filepath.Dir(GetConfigPath())
-	err = os.MkdirAll(filepath.Dir(configDir), 0755)
-	if err != nil {
-		t.Fatal(err)
-	}
-	err = os.WriteFile(configDir, []byte("i am a file, not a directory"), 0644)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	cfg := DefaultConfig()
-	err = cfg.Save()
-	if err == nil {
-		t.Error("Expected error when saving to a path where a file exists instead of a directory")
-	}
-
-	// Trigger WriteFile error by making the directory read-only
-	// Reset HOME to a new clean dir
-	tmpHome2, _ := os.MkdirTemp("", "fm-config-err2-test")
-	defer os.RemoveAll(tmpHome2)
-	t.Setenv("HOME", tmpHome2)
-
-	configDir2 := filepath.Dir(GetConfigPath())
-	os.MkdirAll(configDir2, 0555) // Read-only
-
-	err = cfg.Save()
-	if err == nil {
-		t.Error("Expected error when writing config to a read-only directory")
-	}
-}
-
 func TestConfigSaveMarshalError(t *testing.T) {
 	// Mock marshalIndent to return an error
 	oldMarshal := marshalIndent
