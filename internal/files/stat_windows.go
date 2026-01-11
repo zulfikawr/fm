@@ -3,7 +3,7 @@
 package files
 
 // getStatInfo returns nil on Windows since stat information is not available
-func getStatInfo(sys interface{}) *statInfo {
+func getStatInfo(_sys interface{}) *statInfo {
 	return nil
 }
 

@@ -42,7 +42,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: fm-${{ matrix.goos }}-${{ matrix.goarch }}
-          path: fm-${{ matrix.goos }}-${{ matrix.goarch }}${{ matrix.matrix.goos == 'windows' && '.exe' || '' }}
+          path: fm-${{ matrix.goos }}-${{ matrix.goarch }}${{ matrix.goos == 'windows' && '.exe' || '' }}
 
   release:
     needs: build
