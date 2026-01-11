@@ -17,10 +17,15 @@ jobs:
             goarch: arm64
     steps:
       - uses: actions/checkout@v4
+
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
           go-version: "1.25"
+          cache: true 
+
+      - name: Install dependencies
+        run: go mod download
 
       - name: Test
         run: go test ./...
@@ -40,7 +45,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: fm-${{ matrix.goos }}-${{ matrix.goarch }}
-          path: fm-${{ matrix.goos }}-${{ matrix.goarch }}${{ matrix.goos == 'windows' && '.exe' || '' }}
+          path: fm-${{ matrix.goos }}-${{ matrix.goarch }}${{ matrix.matrix.goos == 'windows' && '.exe' || '' }}
 
   release:
     needs: build
@@ -53,17 +58,16 @@ jobs:
 
       - name: Extract release notes
         run: |
-          # This awk command finds the line starting with "## [TAG]" 
-          # and prints lines until it hits the next "## [" header.
           awk "/^## \[${{ github.ref_name }}\]/{flag=1;next}/^## \[/{flag=0}flag" CHANGELOG.md > RELEASE_NOTES.md
 
       - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
           path: dist
+          merge-multiple: true
 
       - name: Create Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
-          files: dist/*/*
+          files: dist/fm-*
           body_path: RELEASE_NOTES.md
