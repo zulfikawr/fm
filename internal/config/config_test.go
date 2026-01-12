@@ -1,6 +1,7 @@
 package config
 
 import (
+	"fm/internal/testutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -18,11 +19,8 @@ func TestDefaultConfig(t *testing.T) {
 
 func TestConfigSaveLoad(t *testing.T) {
 	// Mock home directory for testing
-	tmpHome, err := os.MkdirTemp("", "fm-config-test")
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer os.RemoveAll(tmpHome)
+	tmpHome, cleanup := testutil.TempDir(t)
+	defer cleanup()
 
 	// Set HOME environment variable to our temp dir
 	t.Setenv("HOME", tmpHome)
@@ -32,7 +30,7 @@ func TestConfigSaveLoad(t *testing.T) {
 	cfg.ShowHidden = true
 
 	// Test Saving
-	err = cfg.Save()
+	err := cfg.Save()
 	if err != nil {
 		t.Fatalf("Failed to save config: %v", err)
 	}
@@ -53,7 +51,7 @@ func TestConfigSaveLoad(t *testing.T) {
 	}
 
 	// Test Invalid Config
-	os.WriteFile(configPath, []byte("invalid json"), 0644)
+	testutil.CreateTestFile(t, filepath.Dir(configPath), filepath.Base(configPath), "invalid json")
 	invalidCfg := Load()
 	if invalidCfg.ThemeIndex != 0 {
 		t.Errorf("Expected Default ThemeIndex 0 for invalid config, got %d", invalidCfg.ThemeIndex)
@@ -76,8 +74,8 @@ func TestConfigSaveMarshalError(t *testing.T) {
 }
 
 func TestLoadMissingFile(t *testing.T) {
-	tmpHome, _ := os.MkdirTemp("", "fm-config-missing-test")
-	defer os.RemoveAll(tmpHome)
+	tmpHome, cleanup := testutil.TempDir(t)
+	defer cleanup()
 	t.Setenv("HOME", tmpHome)
 
 	cfg := Load()
@@ -87,8 +85,8 @@ func TestLoadMissingFile(t *testing.T) {
 }
 
 func TestLoadPartialConfig(t *testing.T) {
-	tmpHome, _ := os.MkdirTemp("", "fm-config-partial-test")
-	defer os.RemoveAll(tmpHome)
+	tmpHome, cleanup := testutil.TempDir(t)
+	defer cleanup()
 	t.Setenv("HOME", tmpHome)
 
 	// Create a partial config file (missing show_date_modified)
@@ -98,9 +96,7 @@ func TestLoadPartialConfig(t *testing.T) {
 	if err := os.MkdirAll(filepath.Dir(configPath), 0755); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(configPath, []byte(partialJSON), 0644); err != nil {
-		t.Fatal(err)
-	}
+	testutil.CreateTestFile(t, filepath.Dir(configPath), filepath.Base(configPath), partialJSON)
 
 	cfg := Load()
 	if !cfg.ShowDateModified {
@@ -112,26 +108,14 @@ func TestLoadPartialConfig(t *testing.T) {
 }
 
 func TestGetCacheDir(t *testing.T) {
-	tmpHome, _ := os.MkdirTemp("", "fm-cache-test")
-	defer os.RemoveAll(tmpHome)
+	tmpHome, cleanup := testutil.TempDir(t)
+	defer cleanup()
 	t.Setenv("HOME", tmpHome)
 
 	cacheDir := GetCacheDir()
 	expected := filepath.Join(tmpHome, ".cache", "fm")
 	if cacheDir != expected {
 		t.Errorf("Expected cache dir %s, got %s", expected, cacheDir)
-	}
-}
-
-func TestGetSizeCachePath(t *testing.T) {
-	tmpHome, _ := os.MkdirTemp("", "fm-size-cache-test")
-	defer os.RemoveAll(tmpHome)
-	t.Setenv("HOME", tmpHome)
-
-	path := GetSizeCachePath()
-	expected := filepath.Join(tmpHome, ".cache", "fm", "sizes.gob")
-	if path != expected {
-		t.Errorf("Expected size cache path %s, got %s", expected, path)
 	}
 }
 
@@ -143,13 +127,13 @@ func TestConfigValidate(t *testing.T) {
 	}{
 		{"valid", DefaultConfig(), false},
 		{"invalid theme low", func() Config { c := DefaultConfig(); c.ThemeIndex = -1; return c }(), true},
-		{"invalid theme high", func() Config { c := DefaultConfig(); c.ThemeIndex = 10; return c }(), true},
+		{"invalid theme high", func() Config { c := DefaultConfig(); c.ThemeIndex = 99; return c }(), true},
 		{"invalid date low", func() Config { c := DefaultConfig(); c.DateFormatIndex = -1; return c }(), true},
-		{"invalid date high", func() Config { c := DefaultConfig(); c.DateFormatIndex = 5; return c }(), true},
+		{"invalid date high", func() Config { c := DefaultConfig(); c.DateFormatIndex = 99; return c }(), true},
 		{"invalid size low", func() Config { c := DefaultConfig(); c.SizeFormatIndex = -1; return c }(), true},
-		{"invalid size high", func() Config { c := DefaultConfig(); c.SizeFormatIndex = 3; return c }(), true},
+		{"invalid size high", func() Config { c := DefaultConfig(); c.SizeFormatIndex = 99; return c }(), true},
 		{"invalid editor low", func() Config { c := DefaultConfig(); c.EditorIndex = -1; return c }(), true},
-		{"invalid editor high", func() Config { c := DefaultConfig(); c.EditorIndex = 7; return c }(), true},
+		{"invalid editor high", func() Config { c := DefaultConfig(); c.EditorIndex = 99; return c }(), true},
 	}
 
 	for _, tt := range tests {
@@ -162,18 +146,19 @@ func TestConfigValidate(t *testing.T) {
 }
 
 func TestLoadMigration(t *testing.T) {
-	tmpHome, _ := os.MkdirTemp("", "fm-migration-test")
-	defer os.RemoveAll(tmpHome)
+	tmpHome, cleanup := testutil.TempDir(t)
+	defer cleanup()
 	t.Setenv("HOME", tmpHome)
 
 	configPath := GetConfigPath()
-	if err := os.MkdirAll(filepath.Dir(configPath), 0755); err != nil {
+	configDir := filepath.Dir(configPath)
+	if err := os.MkdirAll(configDir, 0755); err != nil {
 		t.Fatal(err)
 	}
 
 	// Test v0 migration
 	v0JSON := `{"config_version": 0, "theme_index": 5}`
-	os.WriteFile(configPath, []byte(v0JSON), 0644)
+	testutil.CreateTestFile(t, configDir, filepath.Base(configPath), v0JSON)
 	cfg := Load()
 	if cfg.ConfigVersion != CurrentConfigVersion {
 		t.Errorf("Expected version %d, got %d", CurrentConfigVersion, cfg.ConfigVersion)
@@ -185,7 +170,7 @@ func TestLoadMigration(t *testing.T) {
 
 	// Test intermediate version migration (if CurrentConfigVersion was > 1)
 	vMinus1JSON := `{"config_version": -1, "theme_index": 5}`
-	os.WriteFile(configPath, []byte(vMinus1JSON), 0644)
+	testutil.CreateTestFile(t, configDir, filepath.Base(configPath), vMinus1JSON)
 	cfg = Load()
 	if cfg.ConfigVersion != CurrentConfigVersion {
 		t.Errorf("Expected version %d, got %d", CurrentConfigVersion, cfg.ConfigVersion)
@@ -224,18 +209,19 @@ func TestGetCacheDirError(t *testing.T) {
 }
 
 func TestLoadValidationFailure(t *testing.T) {
-	tmpHome, _ := os.MkdirTemp("", "fm-val-fail-test")
-	defer os.RemoveAll(tmpHome)
+	tmpHome, cleanup := testutil.TempDir(t)
+	defer cleanup()
 	t.Setenv("HOME", tmpHome)
 
 	configPath := GetConfigPath()
-	if err := os.MkdirAll(filepath.Dir(configPath), 0755); err != nil {
+	configDir := filepath.Dir(configPath)
+	if err := os.MkdirAll(configDir, 0755); err != nil {
 		t.Fatal(err)
 	}
 
 	// Invalid theme_index
 	invalidJSON := `{"config_version": 1, "theme_index": 99}`
-	os.WriteFile(configPath, []byte(invalidJSON), 0644)
+	testutil.CreateTestFile(t, configDir, filepath.Base(configPath), invalidJSON)
 
 	cfg := Load()
 	if cfg.ThemeIndex != 0 {

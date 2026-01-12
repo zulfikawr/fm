@@ -10,10 +10,10 @@ A fast, modular, and feature-rich TUI file manager written in Go.
 
 ## Features
 
-- **🚀 Performance:** Parallel directory counting, disk-backed caching, and real-time watching.
+- **🚀 Performance:** Fast navigation with a modular concurrent architecture, real-time file watching, and efficient git integration.
 - **📁 File Operations:** Full CRUD with cut/paste, interactive conflict resolution, and trash support.
-- **🔒 Security:** SSH host key verification and read-only filesystem protection.
-- **☁️ Remote Access:** Connect to remote servers via SSH/SFTP with password or key auth.
+- **🔒 Security:** Secure SSH host key verification and read-only filesystem protection.
+- **☁️ Remote Access:** Connect to remote servers via SSH/SFTP with password or PEM key auth.
 - **🌿 Git Integration:** Visual status markers (`M`, `A`, `D`, `?`) and current branch display.
 - **🎨 Theme System:** Multiple color schemes including Nord, Dracula, and Gruvbox.
 - **🔍 Search & Filter:** Real-time fuzzy-style filtering within directories.
@@ -38,6 +38,7 @@ A fast, modular, and feature-rich TUI file manager written in Go.
 | `v` | Paste clipboard contents |
 | `r` | Rename highlighted item |
 | `d` | Trash selection (with confirmation) |
+| `g` | Go to path (Local or Remote) |
 | `.` | Open Settings & Themes |
 | `Esc` | Unselect all / Clear message / Close Settings |
 | `q` | Quit |
@@ -54,17 +55,26 @@ go build -o fm ./cmd/fm
 
 ## Remote Access (SSH/SFTP)
 
-Connect directly to remote servers using the `--remote` (or `-r`) flag.
+Connect directly to remote servers using the `--remote` (or `-r`) flag or the in-app `g` (Go to) command. Supports SSH config aliases, SSH agent, identity files, and password authentication.
 
 ```bash
-# Connect to a remote host (prompts for password if needed)
+# Connect using an alias from ~/.ssh/config
+fm -r my-server
+
+# Connect using SSH agent or keys in default locations
 fm --remote user@192.168.1.50
 
-# Connect to a specific path
-fm -r user@example.com:/var/www
-
-# Uses your local SSH agent and keys automatically.
+# Connect using a specific identity file (.pem, etc.)
+fm -r user@40.82.128.117 ./path/to/key.pem
 ```
+
+### Smart Path Detection (Poly-mode)
+The `g` (Go to) command intelligently handles different input types:
+- **Local:** Paths like `/var/log`, `~/Documents`, or `./src`.
+- **Remote:** `user@host` or `host` (SFTP connection).
+- **Aliases:** Hostnames defined in your `~/.ssh/config`.
+
+Features interactive host key verification—if a host is unknown, `fm` will prompt you to verify the fingerprint and automatically add it to your `~/.ssh/known_hosts` upon confirmation.
 
 ## Configuration
 

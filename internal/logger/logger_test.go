@@ -1,6 +1,7 @@
 package logger
 
 import (
+	"fm/internal/testutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -8,11 +9,8 @@ import (
 )
 
 func TestLog(t *testing.T) {
-	tmpDir, err := os.MkdirTemp("", "fm-logger-test")
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer os.RemoveAll(tmpDir)
+	tmpDir, cleanup := testutil.TempDir(t)
+	defer cleanup()
 
 	logPath := filepath.Join(tmpDir, "test.log")
 	SetLogPath(logPath)

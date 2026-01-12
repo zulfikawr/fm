@@ -9,8 +9,8 @@ require (
 	github.com/fsnotify/fsnotify v1.9.0
 	github.com/pkg/sftp v1.13.10
 	golang.org/x/crypto v0.46.0
-	golang.org/x/sys v0.40.0
 	golang.org/x/term v0.39.0
+	pgregory.net/rapid v1.2.0
 )
 
 require (
@@ -34,5 +34,6 @@ require (
 	github.com/muesli/termenv v0.16.0 // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/xo/terminfo v0.0.0-20220910002029-abceb7e1c41e // indirect
+	golang.org/x/sys v0.40.0 // indirect
 	golang.org/x/text v0.33.0 // indirect
 )

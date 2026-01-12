@@ -19,3 +19,10 @@ vendor/
 *.dylib
 *.test
 *.out
+
+# Test data
+testdata/
+
+# Editor
+.vscode/
+.idx/

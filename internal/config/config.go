@@ -67,11 +67,6 @@ func GetCacheDir() string {
 	return filepath.Join(cacheDir, "fm")
 }
 
-// GetSizeCachePath returns the path to the directory size cache file.
-func GetSizeCachePath() string {
-	return filepath.Join(GetCacheDir(), "sizes.gob")
-}
-
 // Load reads the config from disk or returns default if not found.
 func Load() Config {
 	path := GetConfigPath()
@@ -105,23 +100,6 @@ func Load() Config {
 	}
 
 	return cfg
-}
-
-// Validate checks if the config values are within valid ranges
-func (c *Config) Validate() error {
-	if c.ThemeIndex < 0 || c.ThemeIndex >= 10 {
-		return fmt.Errorf("invalid theme_index: %d (must be 0-9)", c.ThemeIndex)
-	}
-	if c.DateFormatIndex < 0 || c.DateFormatIndex >= 5 {
-		return fmt.Errorf("invalid date_format_index: %d (must be 0-4)", c.DateFormatIndex)
-	}
-	if c.SizeFormatIndex < 0 || c.SizeFormatIndex >= 3 {
-		return fmt.Errorf("invalid size_format_index: %d (must be 0-2)", c.SizeFormatIndex)
-	}
-	if c.EditorIndex < 0 || c.EditorIndex >= 7 {
-		return fmt.Errorf("invalid editor_index: %d (must be 0-6)", c.EditorIndex)
-	}
-	return nil
 }
 
 var marshalIndent = json.MarshalIndent

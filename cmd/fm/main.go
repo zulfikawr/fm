@@ -1,8 +1,10 @@
 package main
 
 import (
+	"errors"
 	"flag"
 	"fmt"
+	"net"
 	"os"
 	"path/filepath"
 	"strings"
@@ -10,9 +12,16 @@ import (
 
 	"fm/internal/config"
 	"fm/internal/files"
+	"fm/internal/files/local"
+	remotefs "fm/internal/files/remote"
+	"fm/internal/sshutil"
 	"fm/internal/tui"
+	"fm/internal/tui/help"
+	"fm/internal/tui/theme"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"golang.org/x/crypto/ssh"
+	"golang.org/x/crypto/ssh/knownhosts"
 	"golang.org/x/term"
 )
 
@@ -23,20 +32,63 @@ func main() {
 	}
 }
 
+func createHostKeyCallback() (ssh.HostKeyCallback, error) {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return nil, err
+	}
+	sshDir := filepath.Join(home, ".ssh")
+	knownHostsPath := filepath.Join(sshDir, "known_hosts")
+
+	// Ensure directory exists
+	_ = os.MkdirAll(sshDir, 0700)
+	if _, err := os.Stat(knownHostsPath); os.IsNotExist(err) {
+		_ = os.WriteFile(knownHostsPath, []byte{}, 0600)
+	}
+
+	cb, err := knownhosts.New(knownHostsPath)
+	if err != nil {
+		return nil, err
+	}
+
+	return func(hostname string, remote net.Addr, key ssh.PublicKey) error {
+		err := cb(hostname, remote, key)
+		if err == nil {
+			return nil
+		}
+
+		var keyErr *knownhosts.KeyError
+		if errors.As(err, &keyErr) && len(keyErr.Want) == 0 {
+			// Host not found in known_hosts
+			fmt.Printf("The authenticity of host '%s' can't be established.\n", hostname)
+			fmt.Printf("%s key fingerprint is %s.\n", key.Type(), ssh.FingerprintSHA256(key))
+			fmt.Print("Are you sure you want to continue connecting (y/n)? ")
+
+			var response string
+			fmt.Scanln(&response)
+			if strings.ToLower(response) == "y" || strings.ToLower(response) == "yes" {
+				// Add to known_hosts
+				return sshutil.AddToKnownHosts(hostname, remote, key)
+			}
+		}
+		return err
+	}, nil
+}
+
 func run() error {
 	// Load config first to check for theme
 	cfg := config.Load()
-	theme := tui.Themes[cfg.ThemeIndex]
-	styles := tui.NewStylesheet(theme)
+	t := theme.Themes[cfg.ThemeIndex]
+	styles := theme.NewStylesheet(t)
 
 	// Define flags
-	var remote string
-	flag.StringVar(&remote, "remote", "", "Remote address (user@host[:path])")
-	flag.StringVar(&remote, "r", "", "Remote address (shorthand)")
+	var remoteStr string
+	flag.StringVar(&remoteStr, "remote", "", "Remote address (user@host[:path] or ssh-alias)")
+	flag.StringVar(&remoteStr, "r", "", "Remote address (shorthand)")
 
 	// Custom Usage
 	flag.Usage = func() {
-		tui.PrintHelp(styles, theme.Name)
+		help.Print(styles, t.Name)
 	}
 
 	flag.Parse()
@@ -45,32 +97,54 @@ func run() error {
 	var startPath string
 	var err error
 
-	if remote != "" {
-		// Parse remote string: user@host[:path]
-		if !strings.Contains(remote, "@") {
-			return fmt.Errorf("invalid remote format, use user@host[:path]")
-		}
+	if remoteStr != "" {
+		host := remoteStr
+		user := ""
+		keyPath := ""
+		password := ""
 
-		parts := strings.SplitN(remote, "@", 2)
-		user := parts[0]
-		rest := parts[1]
+		// Check SSH config first
+		sshConfigs, _ := sshutil.ParseSSHConfig()
+		if cfg, ok := sshConfigs[remoteStr]; ok {
+			host = cfg.HostName
+			if host == "" {
+				host = remoteStr
+			}
+			user = cfg.User
+			keyPath = cfg.IdentityFile
+		} else if strings.Contains(remoteStr, "@") {
+			parts := strings.SplitN(remoteStr, "@", 2)
+			user = parts[0]
+			rest := parts[1]
 
-		var host string
-		if strings.Contains(rest, ":") {
-			parts2 := strings.SplitN(rest, ":", 2)
-			host = parts2[0]
-			startPath = parts2[1]
-		} else {
-			host = rest
-			startPath = "."
+			if strings.Contains(rest, ":") {
+				parts2 := strings.SplitN(rest, ":", 2)
+				host = parts2[0]
+				startPath = parts2[1]
+			} else {
+				host = rest
+			}
 		}
 
 		fmt.Printf("Connecting to %s@%s...\n", user, host)
 
-		// Try connecting without password first (Agent/Key)
-		fs, err = files.NewSftpFS(host, user, "", "")
+		// Create CLI host key callback (blocking)
+		hkcb, err := createHostKeyCallback()
 		if err != nil {
+			return fmt.Errorf("failed to setup host key verification: %w", err)
+		}
+
+		// Try connecting with provided key or agent first
+		fs, err = remotefs.NewSftpFS(host, user, "", keyPath, hkcb)
+		if err != nil {
+			// Check if it's a host key verification failure (user said no or mismatch)
+			var keyErr *knownhosts.KeyError
+			if errors.As(err, &keyErr) {
+				return fmt.Errorf("host key verification failed")
+			}
+
 			// If failed, prompt for password
+			fmt.Printf("Connection attempt failed: %v\n", err)
 			fmt.Print("Password: ")
 			bytePw, err := term.ReadPassword(int(syscall.Stdin))
 			fmt.Println() // Newline after input
@@ -78,15 +152,12 @@ func run() error {
 				return fmt.Errorf("reading password: %w", err)
 			}
 
-			// Zero password bytes after use
-			password := string(bytePw)
+			password = string(bytePw)
 			for i := range bytePw {
 				bytePw[i] = 0
 			}
-			bytePw = nil
 
-			fs, err = files.NewSftpFS(host, user, password, "")
-			// Clear password string from memory
+			fs, err = remotefs.NewSftpFS(host, user, password, keyPath, hkcb)
 			password = ""
 
 			if err != nil {
@@ -100,7 +171,7 @@ func run() error {
 
 	} else {
 		// Local File System
-		fs = &files.LocalFS{}
+		fs = &local.LocalFS{}
 
 		// Determine start path from arguments (non-flag)
 		args := flag.Args()
@@ -129,10 +200,18 @@ func run() error {
 		}
 	}
 
-	m := tui.NewModel(fs, startPath)
-	defer m.Close()
+	a := tui.NewApp(fs, startPath)
+	defer tui.Close(a.Model)
 
-	p := tea.NewProgram(m, tea.WithAltScreen())
+	// Ensure cleanup happens even on panic
+	defer func() {
+		if r := recover(); r != nil {
+			tui.Close(a.Model)
+			panic(r) // Re-panic after cleanup
+		}
+	}()
+
+	p := tea.NewProgram(a, tea.WithAltScreen())
 	_, err = p.Run()
 	if err != nil {
 		return fmt.Errorf("running file manager: %w", err)

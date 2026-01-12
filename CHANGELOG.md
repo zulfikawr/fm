@@ -5,6 +5,56 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.1.5] - 2026-01-12
+
+### Added
+- **Go to Path ('g'):** New navigation feature with "Smart Path Detection" (poly-mode):
+  - **Local Jump:** Instantly navigate to local paths starting with `/`, `./`, `~/`, or `C:\`.
+  - **Remote Connect:** Connect to remote servers using `user@host` syntax directly from the footer.
+  - **SSH Config Support:** Support for SSH aliases defined in `~/.ssh/config`. Typing a host alias (e.g., `myserver`) automatically uses the configured `HostName`, `User`, and `IdentityFile`.
+- **Interactive Remote Auth:** Improved remote connection flow:
+  - Automatically attempts connection with SSH agent or default keys.
+  - If initial connection fails, prompts for "Password or PEM path" directly in the footer.
+  - Smart input detection: If the provided string is an existing file path, it's used as a PEM key; otherwise, it's treated as a password.
+- **Background Host Verification:** Host key confirmation (`known_hosts`) is now handled asynchronously, preventing the TUI from blocking while waiting for user input.
+
+### Performance
+- **Pre-calculated Metadata Strings:** Formatted file size and modification dates are now computed once during directory load instead of every frame, significantly reducing CPU usage in large directories.
+- **Efficient Selection Tracking:** Replaced $O(N)$ selection counting with a cached $O(1)$ counter in the state model.
+- **Fast-Path Selection Restore:** Optimized directory reloading to skip selection state reconciliation when no items are selected.
+- **ViewState Pointer Optimization:** Refactored UI state passing to use pointers, reducing memory allocations and stack copying overhead during the render loop.
+- **Memoized Footer Prompts:** Confirmation prompts are now pre-calculated and cached, eliminating redundant string parsing and ANSI colorization cycles.
+- **Stylesheet Memoization:** The theme stylesheet is now fetched once per render cycle and shared across all sub-components.
+- **Optimized List Rendering:** Introduced `ListLayout` to pre-calculate column widths once per frame, removing redundant calculations from individual row rendering.
+- **Git Status Lookups:** Replaced complex branching logic in row rendering with $O(1)$ map-based style lookups for Git markers.
+
+### Refactor
+- **Modularization:** Performed a major restructuring of the codebase, moving from flat files to specialized individual packages to improve maintainability and separation of concerns:
+  - Decomposed `internal/files` into sub-packages: `errors`, `format`, `listing`, `local`, `ops`, `remote`, and `sorting`.
+  - Extracted Git logic into a dedicated `internal/git` package.
+  - Refactored `internal/tui` into a more granular structure with sub-packages for `actions`, `cache`, `commands`, `components`, `errors`, `filter`, `help`, `state`, `theme`, `update`, and `view`.
+- **SSH/SFTP Enhancements:**
+  - **Interactive Host Key Confirmation:** Added a security prompt to verify and trust unknown remote hosts during connection, with automatic persistence to `~/.ssh/known_hosts`.
+  - **Private Key Support:** Added support for identity files (`.pem`, etc.) via a new positional argument: `fm -r user@host /path/to/key`.
+  - **Connection Resilience:** Improved SFTP setup to automatically create missing `.ssh` directories and `known_hosts` files with secure permissions.
+- **Test Infrastructure:** Comprehensive migration to a centralized `testutil` package.
+  - Replaced manual `os.MkdirTemp` and `os.WriteFile` calls with `testutil.TempDir` and `testutil.CreateTestFile` for consistent cleanup.
+  - Implemented a delegating `MockFileSystem` in `testutil` to allow partial mocking.
+  - Standardized error type assertions using `testutil.AssertErrorType`.
+  - Improved test helper compatibility with both `*testing.T` and `*rapid.T`.
+
+### Removed
+- **Directory Size Calculation:** Removed automatic directory size calculation feature to simplify codebase
+  - Removed `GetDirSize` method from FileSystem interface and all implementations (LocalFS, SftpFS)
+  - Removed directory size cache and related persistence logic (`LRUCache`, `SizeCacheEntry`, `GetSizeCachePath`)
+  - Removed background size calculation workers and batch update mechanism
+  - Directories now display with blank size field (only file sizes are shown)
+
+### Fixed
+- **Footer Backgrounds:** Ensured footer text inputs correctly inherit the theme's background color.
+- **CLI Remote Aliases:** Fixed `fm -r <alias>` to correctly parse and use `~/.ssh/config` settings.
+- **Breadcrumb issues on Linux** The leading / is now rendered in the primary color, and the duplication at the root directory (/ /) has been resolved.
+
 ## [v0.1.4] - 2026-01-10
 
 ### Security
