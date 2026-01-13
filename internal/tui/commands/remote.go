@@ -1,7 +1,7 @@
 package commands
 
 import (
-	"fm/internal/files"
+	"fm/internal/files/core"
 	"fm/internal/files/remote"
 	"fm/internal/sshutil"
 
@@ -10,7 +10,7 @@ import (
 
 // RemoteConnectMsg is sent when a remote connection is established or fails.
 type RemoteConnectMsg struct {
-	FS   files.FileSystem
+	FS   core.FileSystem
 	Path string
 	Err  error
 }

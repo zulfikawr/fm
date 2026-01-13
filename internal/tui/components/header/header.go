@@ -10,15 +10,18 @@ import (
 
 // Props contains all data needed to render the header
 type Props struct {
-	Width        int
-	Path         string
-	Separator    string
-	GitBranch    string
-	ReadOnly     bool
-	TabCount     int
-	ActiveTab    int
-	SettingsOpen bool
-	Styles       theme.Stylesheet
+	Width           int
+	Path            string
+	Separator       string
+	GitBranch       string
+	ReadOnly        bool
+	TabCount        int
+	ActiveTab       int
+	SettingsOpen    bool
+	RemoteConnected bool
+	RemoteUser      string
+	RemoteHost      string
+	Styles          theme.Stylesheet
 }
 
 // Render renders the complete header
@@ -38,18 +41,30 @@ func renderSettingsHeader(props Props) string {
 func renderFileHeader(props Props) string {
 	breadcrumb := renderBreadcrumb(props)
 
-	// Only render tabs if there are multiple tabs
-	if props.TabCount <= 1 {
+	tabs := ""
+	if props.TabCount > 1 {
+		tabs = renderTabs(props)
+	}
+
+	if tabs == "" {
 		return props.Styles.Header.Width(props.Width).Render(breadcrumb)
 	}
 
-	tabs := renderTabs(props)
 	return combineHeaderElements(breadcrumb, tabs, props)
 }
 
 // renderBreadcrumb renders the breadcrumb path
 func renderBreadcrumb(props Props) string {
-	breadcrumb := renderBreadcrumbPath(props.Path, props.Separator, props.Styles)
+	remoteStr := ""
+	if props.RemoteConnected {
+		// Use the existing RenderRemote logic but get the raw string if we want it in breadcrumb
+		remoteStr = props.RemoteUser + "@" + props.RemoteHost
+		if props.RemoteUser == "" {
+			remoteStr = props.RemoteHost
+		}
+	}
+
+	breadcrumb := renderBreadcrumbPath(props.Path, props.Separator, remoteStr, props.Styles)
 	breadcrumb = addGitBranch(breadcrumb, props.GitBranch, props.Styles)
 	breadcrumb = addReadOnlyIndicator(breadcrumb, props.ReadOnly, props.Styles)
 	return breadcrumb
@@ -71,6 +86,7 @@ func combineHeaderElements(breadcrumb, tabs string, props Props) string {
 
 	breadcrumbWidth := lipgloss.Width(breadcrumb)
 	tabsWidth := lipgloss.Width(tabs)
+
 	gap := props.Width - breadcrumbWidth - tabsWidth - 2 // -2 for padding
 	if gap < 1 {
 		gap = 1

@@ -5,6 +5,62 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.1.6] - 2026-01-13
+
+### Added
+- **Cross-Filesystem Copy/Paste:** seamless file transfers between local and remote filesystems.
+  - Automatically handles protocol translation between local disk and SFTP.
+  - Preserves file permissions and metadata where supported by the target filesystem.
+- **Unified "Go to Path" Navigation:** improved the `g` command to handle both local paths and remote connection strings.
+  - Supports jumping to local directories and connecting to new remote hosts from the same input field.
+  - Integrated with the breadcrumb system to provide clear connection context.
+- **Parallel Directory Copying:** significantly improved performance when copying directories with many files.
+  - Implemented a concurrency-limited worker pool (16 workers) for parallel file copying.
+  - Thread-safe directory traversal with circular link protection.
+- **Zero-Allocation I/O Buffering:** optimized memory usage during file transfers.
+  - Implemented a `sync.Pool` of reusable 1MB buffers for file stream operations.
+  - Significantly reduced GC pressure and memory fragmentation during large multi-file transfers.
+- **High-Performance Permission Checks:** improved speed and accuracy of read-only detection.
+  - Replaced slow "trial-and-error" file creation with native `unix.Access` syscalls on local filesystems.
+  - Added support for SFTP `StatVFS` extension to detect remote read-only mount points accurately.
+- **SFTP Throughput Tuning:** optimized remote file transfer speeds.
+  - Enabled concurrent writes and increased maximum packet size to 1MB.
+  - Significantly reduced transfer times on high-latency network connections.
+- **Context-Aware Cancellable I/O:** ensured background tasks stop instantly on user cancellation.
+  - Implemented `CancellableReader` and `CancellableWriter` wrappers that respect context cancellation at the buffer level.
+  - Eliminated "I/O lag" when canceling large file transfers.
+- **Concurrent Metadata Retrieval:** significantly faster directory loading.
+  - Parallelized `os.FileInfo` retrieval in `ReadDir` using a concurrency-limited worker pool (32 workers).
+  - Reduced UI stuttering and "Loading..." time when entering large directories on local filesystems.
+- **Transactional Cross-Device Moves:** improved data safety when moving files between disks.
+  - Implemented a strict `Copy` -> `Verify` -> `Delete Source` sequence.
+  - Added automatic rollback (cleanup of destination) if the copy or verification fails.
+  - Verified file integrity (size checks) before committing to delete the source.
+- **Disk Space Pre-allocation:** improved reliability of large file transfers.
+  - Implemented `Preallocate` using `unix.Fallocate` on Linux/Unix to reserve disk space instantly.
+  - Catch "Insufficient disk space" errors at the start of a copy rather than halfway through.
+  - Reduced disk fragmentation by ensuring contiguous block allocation for new files.
+- **Short-Lived Metadata Cache:** made navigation feel instantaneous.
+  - Implemented a TTL-based cache (2 seconds) for directory listings and metadata.
+  - Avoided redundant syscalls and network requests when navigating back and forth between directories.
+  - Integrated automatic cache invalidation for all destructive file operations (create, rename, delete).
+  - Catch "Insufficient disk space" errors at the start of a copy rather than halfway through.
+  - Reduced disk fragmentation by ensuring contiguous block allocation for new files.
+- **Short-Lived Metadata Cache:** made navigation feel instantaneous.
+  - Implemented a TTL-based cache (2 seconds) for directory listings and metadata.
+  - Avoided redundant syscalls and network requests when navigating back and forth between directories.
+  - Integrated automatic cache invalidation for all destructive file operations (create, rename, delete).
+- **Atomic Metadata Mapping:** standardized item translation.
+  - Implemented a "Universal Mapper" (`core.NewItem`) to ensure consistent attribute translation across all filesystems.
+  - Centralized item formatting logic within the `core.Item` model for improved consistency.
+- **Remote Connection Indicator:** integrated connection context into the navigation breadcrumb.
+  - Displays `user@host` as the root of the path when connected (e.g., `user@host > path > to > dir`).
+  - Automatically hidden during authentication or when entering a new remote address.
+  - Theme-aware styling that seamlessly blends with the header navigation.
+- **Enhanced Test Infrastructure:**
+  - **Comprehensive Bootstrap Testing:** Added unit tests for application initialization and filesystem selection.
+  - **Modularized Testing:** Every source file in the TUI packages now has a corresponding `_test.go` file.
+
 ## [v0.1.5] - 2026-01-12
 
 ### Added

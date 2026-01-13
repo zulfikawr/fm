@@ -3,13 +3,13 @@ package commands
 import (
 	"testing"
 
-	"fm/internal/files"
+	"fm/internal/files/core"
 )
 
 func TestWatcher(t *testing.T) {
 	t.Run("ListenToProgress Command", func(t *testing.T) {
-		progChan := make(chan files.Progress, 1)
-		progChan <- files.Progress{Percent: 0.5, Label: "Testing"}
+		progChan := make(chan core.Progress, 1)
+		progChan <- core.Progress{Percent: 0.5, Label: "Testing"}
 		cmd := ListenToProgress(progChan)
 		msg := cmd()
 		pMsg, ok := msg.(ProgressMsg)

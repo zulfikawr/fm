@@ -19,15 +19,46 @@ func HandleGoto(msg tea.Msg, m *state.Model) tea.Cmd {
 		case "esc":
 			actions.ClosePrompt(m)
 			return nil
+		case "tab":
+			m.Inputs.AltMode = !m.Inputs.AltMode
+			if m.Inputs.AltMode {
+				m.Inputs.ActiveInput.Placeholder = "path or [user@]host[:port]"
+			} else {
+				m.Inputs.ActiveInput.Placeholder = "path"
+			}
+			return nil
+
 		case "enter":
 			input := m.Inputs.ActiveInput.Value()
-			if input == "" {
-				actions.ClosePrompt(m)
-				return nil
+
+			// If we are currently on a remote filesystem
+			if !m.FS.IsLocal() {
+				if m.Inputs.AltMode { // AltMode true means Local mode when on Remote FS
+					actions.ClosePrompt(m)
+					return actions.SwitchToLocal(m, input)
+				}
+
+				// Check if they want to navigate the current remote or connect to a new one.
+				// A path starts with /, ., ~, or is empty. A connection string contains @.
+				isPath := strings.HasPrefix(input, "/") || strings.HasPrefix(input, ".") || strings.HasPrefix(input, "~") || input == ""
+				isConnection := strings.Contains(input, "@")
+
+				if isPath && !isConnection {
+					actions.ClosePrompt(m)
+					return actions.NavigateToPath(m, input)
+				}
+
+				return handleRemoteGoto(input, m)
 			}
 
-			// Smart detection: if it contains @ or doesn't look like a local path and contains a dot/hostname
-			if strings.Contains(input, "@") || (!strings.HasPrefix(input, "/") && !strings.HasPrefix(input, "./") && !strings.HasPrefix(input, "../") && !strings.HasPrefix(input, "~") && strings.Contains(input, ".")) {
+			// Currently on local filesystem
+			isRemote := m.Inputs.AltMode
+			if !isRemote {
+				// Auto-detect remote connection string
+				isRemote = strings.Contains(input, "@") || (!strings.HasPrefix(input, "/") && !strings.HasPrefix(input, "./") && !strings.HasPrefix(input, "../") && !strings.HasPrefix(input, "~") && strings.Contains(input, "."))
+			}
+
+			if isRemote {
 				return handleRemoteGoto(input, m)
 			}
 

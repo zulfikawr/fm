@@ -4,89 +4,98 @@ import (
 	"strings"
 	"testing"
 
-	"fm/internal/constants"
-	"fm/internal/files"
 	"fm/internal/files/sorting"
 	"fm/internal/tui/theme"
 
 	"github.com/charmbracelet/bubbles/textinput"
 )
 
-func TestRender_Message(t *testing.T) {
-	props := Props{
-		Mode:    ModeMessage,
-		Width:   80,
-		Message: "Test message",
-		Styles:  theme.NewStylesheet(theme.Themes[0]),
-	}
+func TestRender(t *testing.T) {
+	styles := theme.NewStylesheet(theme.Themes[0])
 
-	result := Render(props)
+	t.Run("Normal Mode", func(t *testing.T) {
+		props := Props{
+			Mode:     ModeNormal,
+			Width:    80,
+			SortMode: sorting.SortName,
+			Styles:   styles,
+		}
+		res := Render(props)
+		if res == "" {
+			t.Error("Expected non-empty footer")
+		}
+	})
 
-	if !strings.Contains(result, "Test message") {
-		t.Error("Expected footer to contain message")
-	}
-}
+	t.Run("Message Mode", func(t *testing.T) {
+		props := Props{
+			Mode:    ModeMessage,
+			Width:   80,
+			Message: "Hello",
+			Styles:  styles,
+		}
+		res := Render(props)
+		if !strings.Contains(res, "Hello") {
+			t.Error("Expected Hello in message mode")
+		}
+	})
 
-func TestRender_Normal(t *testing.T) {
-	props := Props{
-		Mode:          ModeNormal,
-		Width:         80,
-		SortMode:      sorting.SortDefault,
-		Cursor:        0,
-		FilteredItems: []files.Item{{Name: "test.txt"}},
-		Items:         []files.Item{{Name: "test.txt"}},
-		Styles:        theme.NewStylesheet(theme.Themes[0]),
-	}
+	t.Run("Searching Mode", func(t *testing.T) {
+		input := textinput.New()
+		input.SetValue("findme")
+		props := Props{
+			Mode:        ModeSearching,
+			Width:       80,
+			ActiveInput: input,
+			Styles:      styles,
+		}
+		res := Render(props)
+		if !strings.Contains(res, "findme") {
+			t.Error("Expected findme in search mode")
+		}
+	})
 
-	result := Render(props)
+	t.Run("Progress Mode", func(t *testing.T) {
+		props := Props{
+			Mode:            ModeProgress,
+			Width:           80,
+			ProgressLabel:   "Working",
+			ProgressPercent: 0.5,
+			Styles:          styles,
+		}
+		res := Render(props)
+		if !strings.Contains(res, "Working") {
+			t.Error("Expected Working in progress mode")
+		}
+	})
 
-	if result == "" {
-		t.Error("Expected non-empty footer")
-	}
-}
+	t.Run("Settings Mode", func(t *testing.T) {
+		props := Props{
+			Mode:   ModeSettings,
+			Width:  80,
+			Styles: styles,
+		}
+		res := Render(props)
+		if !strings.Contains(res, "Navigate") {
+			t.Error("Expected settings hints")
+		}
+	})
 
-func TestRender_Input(t *testing.T) {
-	input := textinput.New()
-	input.SetValue("search term")
+	t.Run("Goto Mode with Tab Hint", func(t *testing.T) {
+		props := Props{
+			Mode:    ModeGoto,
+			Width:   80,
+			AltMode: false,
+			Styles:  styles,
+		}
+		res := Render(props)
+		if !strings.Contains(res, "Tab") || !strings.Contains(res, "Remote") {
+			t.Errorf("Expected tab hint for remote, got: %s", res)
+		}
 
-	props := Props{
-		Mode:        ModeSearching,
-		Width:       80,
-		ActiveInput: input,
-		Styles:      theme.NewStylesheet(theme.Themes[0]),
-	}
-
-	result := Render(props)
-
-	if !strings.Contains(result, "search term") {
-		t.Error("Expected footer to contain search input")
-	}
-}
-
-func TestBuildConfirmationPrompt(t *testing.T) {
-	tests := []struct {
-		name       string
-		actionType constants.ActionType
-		expected   string
-	}{
-		{"delete", constants.ActionDelete, "Delete selected items?"},
-		{"paste", constants.ActionPaste, "Paste"},
-		{"conflict", constants.ActionConflict, "exists"},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			props := Props{
-				ActionType:     tt.actionType,
-				ClipboardCount: 5,
-				ConflictDst:    "/path/to/file.txt",
-			}
-
-			result := BuildConfirmationPrompt(props)
-
-			if !strings.Contains(result, tt.expected) {
-				t.Errorf("Expected prompt to contain '%s', got: %s", tt.expected, result)
-			}
-		})
-	}
+		props.AltMode = true
+		res = Render(props)
+		if !strings.Contains(res, "Local") {
+			t.Errorf("Expected tab hint for local, got: %s", res)
+		}
+	})
 }

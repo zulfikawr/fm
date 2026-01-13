@@ -1,9 +1,9 @@
 package update
 
 import (
+	"fm/internal/constants"
 	"fm/internal/tui/actions"
 	"fm/internal/tui/commands"
-	"fm/internal/tui/filter"
 	"fm/internal/tui/state"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -12,12 +12,7 @@ import (
 // HandleKeyMsg delegates keyboard events to specialized handlers
 func HandleKeyMsg(m *state.Model, msg tea.KeyMsg) tea.Cmd {
 	// Handle escape key for clearing selections and inputs
-	if handled, cmd := HandleEscape(m, msg, func() {
-		if m.UI.InputActive {
-			actions.ClosePrompt(m)
-		}
-		filter.Apply(m)
-	}); handled {
+	if handled, cmd := HandleEscape(m, msg); handled {
 		return cmd
 	}
 
@@ -79,8 +74,18 @@ func HandleKeyMsg(m *state.Model, msg tea.KeyMsg) tea.Cmd {
 		if handled {
 			return cmd
 		}
-	case "ctrl+c", "q":
-		if m.FS.IsLocal() {
+	case "ctrl+c":
+		if m.Operations.Progress.Visible {
+			m.UI.Confirming = true
+			m.Operations.ActionType = constants.ActionCancel
+			return nil
+		}
+		if m.FS.IsLocal() && m.Watcher.Watcher != nil {
+			m.Watcher.Watcher.Close()
+		}
+		return tea.Quit
+	case "q":
+		if m.FS.IsLocal() && m.Watcher.Watcher != nil {
 			m.Watcher.Watcher.Close()
 		}
 		return tea.Quit
@@ -94,7 +99,7 @@ func HandleKeyMsg(m *state.Model, msg tea.KeyMsg) tea.Cmd {
 }
 
 // HandleEscape handles the escape key for clearing selections and messages
-func HandleEscape(m *state.Model, msg tea.KeyMsg, applyFilter func()) (bool, tea.Cmd) {
+func HandleEscape(m *state.Model, msg tea.KeyMsg) (bool, tea.Cmd) {
 	if msg.String() != "esc" {
 		return false, nil
 	}
@@ -105,21 +110,7 @@ func HandleEscape(m *state.Model, msg tea.KeyMsg, applyFilter func()) (bool, tea
 		return false, nil
 	}
 
-	m.UI.SelectMode = false
-	m.Operations.SelectedPaths = make(map[string]bool)
-	m.Navigation.SelectedCount = 0
-	hasSelection := false
-	for i := range m.Navigation.Items {
-		if m.Navigation.Items[i].Selected {
-			m.Navigation.Items[i].Selected = false
-			hasSelection = true
-		}
-	}
-	if hasSelection {
-		applyFilter()
-		return true, nil
-	}
-	m.Message.Text = ""
+	actions.ClearSelection(m)
 	return true, nil
 }
 

@@ -1,7 +1,7 @@
 package tui
 
 import (
-	"fm/internal/files"
+	"fm/internal/files/core"
 	"fm/internal/tui/state"
 	"fm/internal/tui/theme"
 	"fm/internal/tui/update"
@@ -16,7 +16,7 @@ type App struct {
 }
 
 // NewApp creates a new Bubble Tea application with the given initial path.
-func NewApp(fs files.FileSystem, initialPath string) *App {
+func NewApp(fs core.FileSystem, initialPath string) *App {
 	m := NewModel(fs, initialPath)
 	return &App{m}
 }

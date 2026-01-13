@@ -3,8 +3,7 @@ package commands
 import (
 	"context"
 
-	"fm/internal/constants"
-	"fm/internal/files"
+	"fm/internal/files/core"
 	"fm/internal/files/ops"
 
 	tuierrors "fm/internal/tui/errors"
@@ -13,29 +12,23 @@ import (
 )
 
 // DeleteItems returns a command to delete the specified targets.
-func DeleteItems(fs files.FileSystem, targets []string, useTrash bool) tea.Cmd {
-	progChan := make(chan files.Progress, 100)
+func DeleteItems(ctx context.Context, fs core.FileSystem, targets []string, useTrash bool) tea.Cmd {
+	progChan := make(chan core.Progress, 100)
 	return tea.Batch(
 		ListenToProgress(progChan),
 		func() tea.Msg {
-			ctx, cancel := context.WithTimeout(context.Background(), constants.FileOperationTimeout)
-			defer cancel()
 			defer close(progChan)
 
 			for i, target := range targets {
 				select {
 				case <-ctx.Done():
-					// Timeout is a transient error
-					err := tuierrors.TransientError("delete items", "Operation timed out", 3).
-						WithContext("target", target).
-						WithContext("targets_remaining", len(targets)-i)
-					return ErrorMsg{Err: err}
+					return OperationFinishedMsg{Paths: targets}
 				default:
 				}
 
 				if !useTrash {
 					select {
-					case progChan <- files.Progress{
+					case progChan <- core.Progress{
 						Percent: float64(i) / float64(len(targets)),
 						Label:   "Deleting " + fs.Base(target) + "...",
 					}:
@@ -62,31 +55,25 @@ func DeleteItems(fs files.FileSystem, targets []string, useTrash bool) tea.Cmd {
 	)
 }
 
-// PasteItems returns a command to copy items from sources to destDir.
-func PasteItems(fs files.FileSystem, sources []string, destDir string) tea.Cmd {
-	progChan := make(chan files.Progress, 100)
+// PasteItems returns a command to copy items from srcFS to dstFS.
+func PasteItems(ctx context.Context, srcFS, dstFS core.FileSystem, sources []string, destDir string) tea.Cmd {
+	progChan := make(chan core.Progress, 100)
 	return tea.Batch(
 		ListenToProgress(progChan),
 		func() tea.Msg {
-			ctx, cancel := context.WithTimeout(context.Background(), constants.FileOperationTimeout)
-			defer cancel()
 			defer close(progChan)
 
 			for i, src := range sources {
 				select {
 				case <-ctx.Done():
-					err := tuierrors.TransientError("paste items", "Operation timed out", 3).
-						WithContext("source", src).
-						WithContext("destination", destDir).
-						WithContext("items_remaining", len(sources)-i)
-					return ErrorMsg{Err: err}
+					return OperationFinishedMsg{Paths: sources}
 				default:
 				}
 
-				dst := fs.Join(destDir, fs.Base(src))
+				dst := dstFS.Join(destDir, srcFS.Base(src))
 
-				// Check for conflict - channel will be closed by defer
-				if _, err := fs.Stat(ctx, dst); err == nil {
+				// Check for conflict
+				if _, err := dstFS.Stat(ctx, dst); err == nil {
 					return ConflictMsg{
 						Src:          src,
 						Dst:          dst,
@@ -96,14 +83,13 @@ func PasteItems(fs files.FileSystem, sources []string, destDir string) tea.Cmd {
 				}
 
 				select {
-				case progChan <- files.Progress{
+				case progChan <- core.Progress{
 					Percent: float64(i) / float64(len(sources)),
-					Label:   "Copying " + fs.Base(src) + "...",
+					Label:   "Copying " + srcFS.Base(src) + "...",
 				}:
-				default:
 				}
 
-				if err := ops.Copy(ctx, fs, src, dst, progChan); err != nil {
+				if err := ops.CrossCopy(ctx, srcFS, dstFS, src, dst, progChan); err != nil {
 					sysErr := tuierrors.SystemError("copy file", err).
 						WithContext("from", src).
 						WithContext("to", dst)
@@ -115,31 +101,25 @@ func PasteItems(fs files.FileSystem, sources []string, destDir string) tea.Cmd {
 	)
 }
 
-// MoveItems returns a command to move items from sources to destDir.
-func MoveItems(fs files.FileSystem, sources []string, destDir string) tea.Cmd {
-	progChan := make(chan files.Progress, 100)
+// MoveItems returns a command to move items from srcFS to dstFS.
+func MoveItems(ctx context.Context, srcFS, dstFS core.FileSystem, sources []string, destDir string) tea.Cmd {
+	progChan := make(chan core.Progress, 100)
 	return tea.Batch(
 		ListenToProgress(progChan),
 		func() tea.Msg {
-			ctx, cancel := context.WithTimeout(context.Background(), constants.FileOperationTimeout)
-			defer cancel()
 			defer close(progChan)
 
 			for i, src := range sources {
 				select {
 				case <-ctx.Done():
-					err := tuierrors.TransientError("move items", "Operation timed out", 3).
-						WithContext("source", src).
-						WithContext("destination", destDir).
-						WithContext("items_remaining", len(sources)-i)
-					return ErrorMsg{Err: err}
+					return OperationFinishedMsg{Paths: sources}
 				default:
 				}
 
-				dst := fs.Join(destDir, fs.Base(src))
+				dst := dstFS.Join(destDir, srcFS.Base(src))
 
-				// Check for conflict - channel will be closed by defer
-				if _, err := fs.Stat(ctx, dst); err == nil {
+				// Check for conflict
+				if _, err := dstFS.Stat(ctx, dst); err == nil {
 					return ConflictMsg{
 						Src:          src,
 						Dst:          dst,
@@ -149,14 +129,13 @@ func MoveItems(fs files.FileSystem, sources []string, destDir string) tea.Cmd {
 				}
 
 				select {
-				case progChan <- files.Progress{
+				case progChan <- core.Progress{
 					Percent: float64(i) / float64(len(sources)),
-					Label:   "Moving " + fs.Base(src) + "...",
+					Label:   "Moving " + srcFS.Base(src) + "...",
 				}:
-				default:
 				}
 
-				if err := ops.Move(ctx, fs, src, dst, progChan); err != nil {
+				if err := ops.CrossMove(ctx, srcFS, dstFS, src, dst, progChan); err != nil {
 					sysErr := tuierrors.SystemError("move file", err).
 						WithContext("from", src).
 						WithContext("to", dst)
@@ -169,20 +148,18 @@ func MoveItems(fs files.FileSystem, sources []string, destDir string) tea.Cmd {
 }
 
 // OverwriteItem returns a command to overwrite a file by copying or moving.
-func OverwriteItem(fs files.FileSystem, src, dst string, isMove bool) tea.Cmd {
-	progChan := make(chan files.Progress, 100)
+func OverwriteItem(ctx context.Context, srcFS, dstFS core.FileSystem, src, dst string, isMove bool) tea.Cmd {
+	progChan := make(chan core.Progress, 100)
 	return tea.Batch(
 		ListenToProgress(progChan),
 		func() tea.Msg {
-			ctx, cancel := context.WithTimeout(context.Background(), constants.FileOperationTimeout)
-			defer cancel()
 			defer close(progChan)
 
 			var err error
 			if isMove {
-				err = ops.Move(ctx, fs, src, dst, progChan)
+				err = ops.CrossMove(ctx, srcFS, dstFS, src, dst, progChan)
 			} else {
-				err = ops.Copy(ctx, fs, src, dst, progChan)
+				err = ops.CrossCopy(ctx, srcFS, dstFS, src, dst, progChan)
 			}
 
 			if err != nil {
@@ -202,7 +179,7 @@ func OverwriteItem(fs files.FileSystem, src, dst string, isMove bool) tea.Cmd {
 }
 
 // ListenToProgress returns a command that listens for progress updates on a channel.
-func ListenToProgress(progChan chan files.Progress) tea.Cmd {
+func ListenToProgress(progChan chan core.Progress) tea.Cmd {
 	return func() tea.Msg {
 		prog, ok := <-progChan
 		if !ok {

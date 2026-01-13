@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"fm/internal/constants"
-	"fm/internal/files"
+	"fm/internal/files/core"
 	"fm/internal/files/listing"
 	"fm/internal/files/sorting"
 	"fm/internal/git"
@@ -13,7 +13,7 @@ import (
 )
 
 // Reload triggers an asynchronous reload of the directory.
-func Reload(fs files.FileSystem, gs git.GitService, path string, generation int, mode sorting.SortMode, showHidden bool) tea.Cmd {
+func Reload(fs core.FileSystem, gs git.GitService, path string, generation int, mode sorting.SortMode, showHidden bool) tea.Cmd {
 	return func() tea.Msg {
 		ctx, cancel := context.WithTimeout(context.Background(), constants.DirectoryLoadTimeout)
 		defer cancel()

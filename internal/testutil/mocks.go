@@ -2,14 +2,32 @@ package testutil
 
 import (
 	"context"
-	"fm/internal/files"
+	"fm/internal/files/core"
 	"io"
 	"os"
+	"time"
 )
 
-// MockFileSystem implements files.FileSystem for testing
+// MockGitService implements a minimal GitService for testing
+type MockGitService struct{}
+
+func (m *MockGitService) IsEnabled() bool         { return true }
+func (m *MockGitService) SetEnabled(enabled bool) {}
+func (m *MockGitService) GetStatus(ctx context.Context, path string) (map[string]string, string) {
+	return make(map[string]string), "main"
+}
+func (m *MockGitService) GetRoot(ctx context.Context, path string) string {
+	return "/repo"
+}
+
+// NewMockGitService creates a new NewMockGitService with default behaviors
+func NewMockGitService() *MockGitService {
+	return &MockGitService{}
+}
+
+// MockFileSystem implements core.FileSystem for testing
 type MockFileSystem struct {
-	files.FileSystem
+	core.FileSystem
 	ReadDirFunc    func(ctx context.Context, path string) ([]os.FileInfo, error)
 	StatFunc       func(ctx context.Context, path string) (os.FileInfo, error)
 	LstatFunc      func(ctx context.Context, path string) (os.FileInfo, error)
@@ -214,3 +232,20 @@ func (m *MockFileSystem) Close() error {
 func NewMockFileSystem() *MockFileSystem {
 	return &MockFileSystem{}
 }
+
+// MockFileInfo implements os.FileInfo for testing
+type MockFileInfo struct {
+	os.FileInfo
+	NameStr    string
+	SizeInt    int64
+	ModeBits   os.FileMode
+	ModTimeVal interface{}
+	IsDirBool  bool
+}
+
+func (m *MockFileInfo) Name() string       { return m.NameStr }
+func (m *MockFileInfo) Size() int64        { return m.SizeInt }
+func (m *MockFileInfo) Mode() os.FileMode  { return m.ModeBits }
+func (m *MockFileInfo) IsDir() bool        { return m.IsDirBool }
+func (m *MockFileInfo) Sys() interface{}   { return nil }
+func (m *MockFileInfo) ModTime() time.Time { return time.Time{} }

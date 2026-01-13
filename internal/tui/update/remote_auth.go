@@ -4,8 +4,8 @@ import (
 	"fm/internal/tui/actions"
 	"fm/internal/tui/commands"
 	"fm/internal/tui/state"
-	"os"
 
+	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -15,6 +15,17 @@ func HandleRemoteAuth(msg tea.Msg, m *state.Model) tea.Cmd {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
+		case "tab":
+			m.Inputs.AltMode = !m.Inputs.AltMode
+			if m.Inputs.AltMode {
+				m.Inputs.ActiveInput.EchoMode = textinput.EchoNormal
+				m.Inputs.ActiveInput.Placeholder = "/path/to/key.pem"
+			} else {
+				m.Inputs.ActiveInput.EchoMode = textinput.EchoPassword
+				m.Inputs.ActiveInput.Placeholder = ""
+			}
+			return nil
+
 		case "esc":
 			actions.ClosePrompt(m)
 			m.UI.RemoteAuth = false
@@ -28,8 +39,7 @@ func HandleRemoteAuth(msg tea.Msg, m *state.Model) tea.Cmd {
 			password := ""
 			keyPath := ""
 
-			// Check if input is an existing file path
-			if _, err := os.Stat(input); err == nil {
+			if m.Inputs.AltMode {
 				keyPath = input
 			} else {
 				password = input

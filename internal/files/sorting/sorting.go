@@ -1,7 +1,7 @@
 package sorting
 
 import (
-	"fm/internal/files"
+	"fm/internal/files/core"
 	"sort"
 	"strings"
 )
@@ -43,7 +43,7 @@ func (s SortMode) String() string {
 
 // SortItems sorts a slice of Items according to the specified mode
 // This is the single source of truth for sorting logic
-func SortItems(items []files.Item, mode SortMode, skipFirst bool) {
+func SortItems(items []core.Item, mode SortMode, skipFirst bool) {
 	startIdx := 0
 	if skipFirst && len(items) > 0 && items[0].IsUp {
 		startIdx = 1
@@ -59,7 +59,7 @@ func SortItems(items []files.Item, mode SortMode, skipFirst bool) {
 	})
 }
 
-func compareBySortMode(a, b files.Item, mode SortMode) bool {
+func compareBySortMode(a, b core.Item, mode SortMode) bool {
 	switch mode {
 	case SortName:
 		return strings.ToLower(a.Name) < strings.ToLower(b.Name)

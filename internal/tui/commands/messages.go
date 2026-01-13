@@ -4,7 +4,7 @@ import (
 	"time"
 
 	"fm/internal/constants"
-	"fm/internal/files"
+	"fm/internal/files/core"
 	"fm/internal/tui/state"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -15,7 +15,7 @@ import (
 type LoadedItemsMsg struct {
 	Generation  int
 	Path        string
-	Items       []files.Item
+	Items       []core.Item
 	GitStatuses map[string]string
 	GitBranch   string
 	GitRoot     string
@@ -67,7 +67,7 @@ type OperationFinishedMsg struct {
 type ProgressMsg struct {
 	Percent float64
 	Label   string
-	Channel chan files.Progress
+	Channel chan core.Progress
 }
 
 // SetMsg sets a temporary message in the footer and returns a command to clear it

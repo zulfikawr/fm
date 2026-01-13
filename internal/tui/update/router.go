@@ -18,7 +18,7 @@ func HandleGenericMsg(m *state.Model, msg tea.Msg) tea.Cmd {
 	case commands.ErrorMsg:
 		// Clear all processing items on error for safety
 		m.Operations.ProcessingItems = make(map[string]bool)
-		return actions.LogError(m, msg.Err, "Operation failed")
+		return tea.Batch(actions.LogError(m, msg.Err, "Operation failed"), actions.Reload(m))
 	}
 	return nil
 }

@@ -25,18 +25,12 @@ func HandleAction(msg tea.KeyMsg, m *state.Model) []tea.Cmd {
 				newSelected := !item.Selected
 				filtered[idx].Selected = newSelected
 
-				// Update original items and selectedPaths map
+				// Update original items and selectedPaths via mutator
 				items := m.Navigation.Items
 				for i := range items {
 					if items[i].Path == item.Path {
 						items[i].Selected = newSelected
-						if newSelected {
-							m.Operations.SelectedPaths[item.Path] = true
-							m.Navigation.SelectedCount++
-						} else {
-							delete(m.Operations.SelectedPaths, item.Path)
-							m.Navigation.SelectedCount--
-						}
+						m.Navigation.ToggleSelection(item.Path)
 						break
 					}
 				}
@@ -44,7 +38,7 @@ func HandleAction(msg tea.KeyMsg, m *state.Model) []tea.Cmd {
 		}
 
 		// Update selectMode based on whether anything is selected
-		m.UI.SelectMode = len(m.Operations.SelectedPaths) > 0
+		m.UI.SelectMode = m.Navigation.SelectedCount > 0
 
 	case "s":
 		m.Display.SortMode = (m.Display.SortMode + 1) % 7
@@ -54,46 +48,45 @@ func HandleAction(msg tea.KeyMsg, m *state.Model) []tea.Cmd {
 		return []tea.Cmd{actions.OpenPrompt(m, state.InputSearch, "")}
 
 	case "c":
-		m.Operations.Clipboard.IsCut = false
-		m.Operations.ActionType = constants.ActionCopy
-		m.Operations.Clipboard.Paths = []string{}
-
-		clipboard := []string{}
+		var targets []string
 		for _, item := range m.Navigation.Items {
 			if item.Selected {
-				clipboard = append(clipboard, item.Path)
+				targets = append(targets, item.Path)
 			}
 		}
-		if len(clipboard) == 0 && len(m.Navigation.FilteredItems) > 0 {
+		if len(targets) == 0 && len(m.Navigation.FilteredItems) > 0 {
 			sel := m.Navigation.FilteredItems[m.Navigation.Cursor]
 			if !sel.IsUp {
-				clipboard = append(clipboard, sel.Path)
+				targets = append(targets, sel.Path)
 			}
 		}
-		m.Operations.Clipboard.Paths = clipboard
-		cmds = append(cmds, commands.SetMsg(m, fmt.Sprintf("Copied %d items to clipboard", len(clipboard))))
+		if len(targets) > 0 {
+			m.Operations.Clipboard.SetCopy(m.FS, targets)
+			m.Operations.ActionType = constants.ActionCopy
+			cmds = append(cmds, commands.SetMsg(m, fmt.Sprintf("Copied %d items to clipboard", len(targets))))
+		}
 
 	case "x":
 		if m.Display.ReadOnly {
 			return []tea.Cmd{commands.SetMsg(m, "Error: Read-only filesystem")}
 		}
-		m.Operations.Clipboard.IsCut = true
-		m.Operations.ActionType = constants.ActionCut
-
-		clipboard := []string{}
+		var targets []string
 		for _, item := range m.Navigation.Items {
 			if item.Selected {
-				clipboard = append(clipboard, item.Path)
+				targets = append(targets, item.Path)
 			}
 		}
-		if len(clipboard) == 0 && len(m.Navigation.FilteredItems) > 0 {
+		if len(targets) == 0 && len(m.Navigation.FilteredItems) > 0 {
 			sel := m.Navigation.FilteredItems[m.Navigation.Cursor]
 			if !sel.IsUp {
-				clipboard = append(clipboard, sel.Path)
+				targets = append(targets, sel.Path)
 			}
 		}
-		m.Operations.Clipboard.Paths = clipboard
-		cmds = append(cmds, commands.SetMsg(m, fmt.Sprintf("Cut %d items to clipboard", len(clipboard))))
+		if len(targets) > 0 {
+			m.Operations.Clipboard.SetCut(m.FS, targets)
+			m.Operations.ActionType = constants.ActionCut
+			cmds = append(cmds, commands.SetMsg(m, fmt.Sprintf("Cut %d items to clipboard", len(targets))))
+		}
 
 	case "v":
 		if m.Display.ReadOnly {
@@ -104,7 +97,7 @@ func HandleAction(msg tea.KeyMsg, m *state.Model) []tea.Cmd {
 				m.UI.Confirming = true
 				m.Operations.ActionType = constants.ActionPaste
 			} else {
-				cmds = append(cmds, PerformPaste(m)...)
+				cmds = append(cmds, actions.PerformPaste(m)...)
 			}
 		}
 
@@ -134,7 +127,7 @@ func HandleAction(msg tea.KeyMsg, m *state.Model) []tea.Cmd {
 				m.UI.Confirming = true
 				m.Operations.ActionType = constants.ActionDelete
 			} else {
-				cmds = append(cmds, PerformDelete(m)...)
+				cmds = append(cmds, actions.PerformDelete(m)...)
 			}
 		}
 

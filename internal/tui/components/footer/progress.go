@@ -65,12 +65,13 @@ func renderProgressBar(label string, percent float64, width int, styles theme.St
 	// Colorize the bar
 	progressStyle := styles.KeyCol.Inherit(styles.Footer).UnsetPadding().UnsetWidth()
 	dimStyle := styles.DimCol.Inherit(styles.Footer).UnsetPadding().UnsetWidth()
+	baseStyle := styles.Footer.UnsetPadding().UnsetWidth()
 
 	colorizedBar := dimStyle.Render("[") +
 		progressStyle.Render(strings.Repeat("#", filled)) +
 		dimStyle.Render(strings.Repeat(".", barWidth-filled)) +
 		dimStyle.Render("]")
 
-	content := label + " " + colorizedBar + percStr
+	content := baseStyle.Render(label+" ") + colorizedBar + baseStyle.Render(percStr)
 	return styles.Footer.Width(width).Render(" " + content)
 }

@@ -9,8 +9,10 @@ import (
 	"path"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"fm/internal/constants"
+	"fm/internal/files/core"
 	"fm/internal/files/errors"
 
 	"github.com/pkg/sftp"
@@ -23,6 +25,7 @@ import (
 type SftpFS struct {
 	client *sftp.Client
 	conn   *ssh.Client
+	cache  *core.MetadataCache
 }
 
 // NewSftpFS creates a new SFTP file system.
@@ -100,7 +103,9 @@ func NewSftpFS(address, user, password, keyPath string, hostKeyCallback ssh.Host
 		return nil, errors.WrapError(err, "ssh dial failed: "+address)
 	}
 
-	client, err := sftp.NewClient(conn)
+	client, err := sftp.NewClient(conn,
+		sftp.UseConcurrentWrites(true),
+	)
 	if err != nil {
 		conn.Close()
 		return nil, errors.WrapError(err, "create sftp client failed: "+address)
@@ -109,6 +114,7 @@ func NewSftpFS(address, user, password, keyPath string, hostKeyCallback ssh.Host
 	return &SftpFS{
 			client: client,
 			conn:   conn,
+			cache:  core.NewMetadataCache(2 * time.Second),
 		},
 		nil
 }
@@ -133,13 +139,24 @@ func (s *SftpFS) Close() error {
 }
 
 func (s *SftpFS) ReadDir(ctx context.Context, p string) ([]os.FileInfo, error) {
+	if entries, ok := s.cache.Get(p); ok {
+		return entries, nil
+	}
+
 	select {
 	case <-ctx.Done():
 		return nil, ctx.Err()
 	default:
 	}
-	infos, err := s.client.ReadDir(p)
-	return infos, errors.WrapErrorWithPath(err, "ReadDir", p)
+
+	entries, err := s.client.ReadDir(p)
+	if err != nil {
+		return nil, errors.WrapErrorWithPath(err, "ReadDir", p)
+	}
+
+	s.cache.Put(p, entries)
+
+	return entries, nil
 }
 
 func (s *SftpFS) Stat(ctx context.Context, p string) (os.FileInfo, error) {
@@ -169,11 +186,8 @@ func (s *SftpFS) RemoveAll(ctx context.Context, p string) error {
 	default:
 	}
 
+	s.cache.Invalidate(path.Dir(p))
 	info, err := s.client.Stat(p)
-	if err != nil {
-		return errors.WrapErrorWithPath(err, "RemoveAll", p)
-	}
-
 	if !info.IsDir() {
 		return errors.WrapErrorWithPath(s.client.Remove(p), "RemoveAll", p)
 	}
@@ -205,6 +219,8 @@ func (s *SftpFS) Rename(ctx context.Context, oldPath, newPath string) error {
 		return ctx.Err()
 	default:
 	}
+	s.cache.Invalidate(path.Dir(oldPath))
+	s.cache.Invalidate(path.Dir(newPath))
 	return errors.WrapErrorWithPath(s.client.Rename(oldPath, newPath), "Rename", fmt.Sprintf("%s -> %s", oldPath, newPath))
 }
 
@@ -214,6 +230,7 @@ func (s *SftpFS) Create(ctx context.Context, p string) (io.WriteCloser, error) {
 		return nil, ctx.Err()
 	default:
 	}
+	s.cache.Invalidate(path.Dir(p))
 	f, err := s.client.Create(p)
 	return f, errors.WrapErrorWithPath(err, "Create", p)
 }
@@ -227,13 +244,13 @@ func (s *SftpFS) Open(ctx context.Context, p string) (io.ReadCloser, error) {
 	f, err := s.client.Open(p)
 	return f, errors.WrapErrorWithPath(err, "Open", p)
 }
-
 func (s *SftpFS) MkdirAll(ctx context.Context, p string, perm os.FileMode) error {
 	select {
 	case <-ctx.Done():
 		return ctx.Err()
 	default:
 	}
+	s.cache.Invalidate(path.Dir(p))
 	return errors.WrapErrorWithPath(s.client.MkdirAll(p), "MkdirAll", p)
 }
 
@@ -244,6 +261,12 @@ func (s *SftpFS) Chmod(ctx context.Context, p string, mode os.FileMode) error {
 	default:
 	}
 	return errors.WrapErrorWithPath(s.client.Chmod(p, mode), "Chmod", p)
+}
+
+func (s *SftpFS) Preallocate(ctx context.Context, path string, size int64) error {
+	// SFTP doesn't support fallocate natively.
+	// We could use StatVFS to check free space, but for now we'll keep it as a no-op.
+	return nil
 }
 
 func (s *SftpFS) GetHomeDir() (string, error) {
@@ -283,6 +306,21 @@ func (s *SftpFS) Base(p string) string {
 }
 
 func (s *SftpFS) IsReadOnly(ctx context.Context, p string) (bool, error) {
-	// SFTP doesn't easily expose mount flags. Default to false.
-	return false, nil
+	// 1. Try StatVFS extension (OpenSSH) to check mount flags
+	if vfs, err := s.client.StatVFS(p); err == nil {
+		// 1 is ST_RDONLY on most systems
+		if vfs.Flag&1 != 0 {
+			return true, nil
+		}
+	}
+
+	// 2. Fallback to checking permission bits of the directory/file itself
+	info, err := s.client.Stat(p)
+	if err != nil {
+		return false, errors.WrapErrorWithPath(err, "IsReadOnly", p)
+	}
+
+	// Check if current user (we assume they own the session) has write bit
+	// This is a simplified check as we don't know the remote UID/GID match
+	return info.Mode().Perm()&0200 == 0, nil
 }

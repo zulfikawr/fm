@@ -11,6 +11,7 @@ import (
 func OpenPrompt(m *state.Model, mode state.InputMode, initialValue string) tea.Cmd {
 	m.UI.StartInput()
 	m.Inputs.Mode = mode
+	m.Inputs.AltMode = false
 
 	m.Inputs.ActiveInput.Focus()
 	m.Inputs.ActiveInput.SetValue(initialValue)
@@ -29,9 +30,28 @@ func OpenPrompt(m *state.Model, mode state.InputMode, initialValue string) tea.C
 		m.Inputs.ActiveInput.Prompt = "Go to: "
 		m.Inputs.ActiveInput.Placeholder = "path or user@host"
 	case state.InputAuth:
-		m.Inputs.ActiveInput.Prompt = "Password or PEM path: "
+		m.Inputs.ActiveInput.Prompt = "Auth: "
 		m.Inputs.ActiveInput.Placeholder = ""
 		m.Inputs.ActiveInput.EchoMode = textinput.EchoPassword
+	}
+
+	// Update width based on prompt to prevent wrapping
+	if m.Display.Width > 0 {
+		promptLen := len(m.Inputs.ActiveInput.Prompt)
+		// Reserve space for prompt, margins (2), and a buffer (2)
+		availableWidth := m.Display.Width - promptLen - 4
+
+		// Reserve extra space for hints if in Goto or Auth mode
+		if mode == state.InputGoto {
+			availableWidth -= 13 // Length of "[Tab] Remote "
+		} else if mode == state.InputAuth {
+			availableWidth -= 15 // Length of "[Tab] Key Path "
+		}
+
+		if availableWidth < 10 {
+			availableWidth = 10
+		}
+		m.Inputs.ActiveInput.Width = availableWidth
 	}
 
 	return textinput.Blink

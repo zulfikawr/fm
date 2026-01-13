@@ -4,7 +4,7 @@ import (
 	"errors"
 	"testing"
 
-	"fm/internal/files"
+	"fm/internal/files/core"
 )
 
 func TestMessages(t *testing.T) {
@@ -12,7 +12,7 @@ func TestMessages(t *testing.T) {
 		msg := LoadedItemsMsg{
 			Generation: 1,
 			Path:       "/test",
-			Items:      []files.Item{{Name: "test"}},
+			Items:      []core.Item{{Name: "test"}},
 			Err:        errors.New("test error"),
 		}
 		if msg.Path != "/test" || len(msg.Items) != 1 || msg.Err == nil {

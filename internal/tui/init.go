@@ -3,7 +3,7 @@ package tui
 import (
 	"fm/internal/config"
 	"fm/internal/constants"
-	"fm/internal/files"
+	"fm/internal/files/core"
 	"fm/internal/files/sorting"
 	"fm/internal/git"
 	"fm/internal/sshutil"
@@ -19,7 +19,7 @@ import (
 )
 
 // NewModel creates and initializes a new Model starting in the specified path.
-func NewModel(fs files.FileSystem, initialPath string) *state.Model {
+func NewModel(fs core.FileSystem, initialPath string) *state.Model {
 	cfg := config.Load()
 
 	// Initialize single unified input
@@ -31,6 +31,7 @@ func NewModel(fs files.FileSystem, initialPath string) *state.Model {
 
 	// Initialize with one tab
 	initialTab := state.Tab{
+		FS:            fs,
 		Path:          initialPath,
 		SortMode:      sorting.SortDefault,
 		SelectedPaths: make(map[string]bool),
@@ -45,7 +46,8 @@ func NewModel(fs files.FileSystem, initialPath string) *state.Model {
 		Tabs:      []state.Tab{initialTab},
 		ActiveTab: 0,
 		Navigation: state.NavigationState{
-			Path: initialPath,
+			Path:          initialPath,
+			SelectedPaths: make(map[string]bool),
 		},
 		Display: state.DisplayState{
 			SortMode:       sorting.SortDefault,
@@ -68,7 +70,6 @@ func NewModel(fs files.FileSystem, initialPath string) *state.Model {
 		},
 		Operations: state.OperationsState{
 			ProcessingItems: make(map[string]bool),
-			SelectedPaths:   make(map[string]bool),
 		},
 		Remote: state.RemoteState{
 			HostConfirmChan: make(chan *sshutil.HostConfirmRequest),

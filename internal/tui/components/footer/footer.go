@@ -4,7 +4,7 @@ import (
 	"strings"
 
 	"fm/internal/constants"
-	"fm/internal/files"
+	"fm/internal/files/core"
 	"fm/internal/files/sorting"
 	"fm/internal/sshutil"
 	"fm/internal/tui/theme"
@@ -40,15 +40,17 @@ type Props struct {
 
 	// Inputs
 	ActiveInput textinput.Model
+	AltMode     bool
 
 	// Status
-	Message       string
-	SortMode      sorting.SortMode
-	Cursor        int
-	TotalItems    int
-	SelectedCount int
-	Items         []files.Item
-	FilteredItems []files.Item
+	RemoteConnected bool
+	Message         string
+	SortMode        sorting.SortMode
+	Cursor          int
+	TotalItems      int
+	SelectedCount   int
+	Items           []core.Item
+	FilteredItems   []core.Item
 
 	// Settings
 	SettingsCursor int

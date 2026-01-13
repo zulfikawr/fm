@@ -3,14 +3,14 @@ package filter
 import (
 	"testing"
 
-	"fm/internal/files"
+	"fm/internal/files/core"
 	"fm/internal/tui/state"
 
 	"github.com/charmbracelet/bubbles/textinput"
 )
 
 func TestApply(t *testing.T) {
-	items := []files.Item{
+	items := []core.Item{
 		{Name: "↑ ..", IsUp: true},
 		{Name: "file1.txt"},
 		{Name: "document.pdf"},

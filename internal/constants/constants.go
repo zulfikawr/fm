@@ -18,6 +18,9 @@ const (
 	MaxTabs           = 9
 	MaxFilenameLength = 255
 	MaxSearchLength   = 64
+	MaxCopyWorkers    = 16
+	MaxReadDirWorkers = 32
+	CopyBufferSize    = 1024 * 1024 // 1MB
 )
 
 // ActionType represents the type of pending action
@@ -31,4 +34,5 @@ const (
 	ActionCut           ActionType = "cut"
 	ActionConflict      ActionType = "conflict"
 	ActionResetSettings ActionType = "reset-settings"
+	ActionCancel        ActionType = "cancel"
 )

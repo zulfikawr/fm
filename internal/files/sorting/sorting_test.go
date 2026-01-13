@@ -1,7 +1,7 @@
 package sorting
 
 import (
-	"fm/internal/files"
+	"fm/internal/files/core"
 	"fmt"
 	"pgregory.net/rapid"
 	"strings"
@@ -10,9 +10,9 @@ import (
 )
 
 // GenItem generates random Item values for property testing
-func GenItem() *rapid.Generator[files.Item] {
-	return rapid.Custom(func(t *rapid.T) files.Item {
-		return files.Item{
+func GenItem() *rapid.Generator[core.Item] {
+	return rapid.Custom(func(t *rapid.T) core.Item {
+		return core.Item{
 			Name:  rapid.String().Draw(t, "name"),
 			IsDir: rapid.Bool().Draw(t, "isDir"),
 			Size:  rapid.Int64Range(0, 1<<40).Draw(t, "size"),
@@ -35,7 +35,7 @@ func TestSortItems_Property(t *testing.T) {
 		mode := GenSortMode().Draw(t, "mode")
 
 		// Make a copy to sort
-		sorted := make([]files.Item, len(items))
+		sorted := make([]core.Item, len(items))
 		copy(sorted, items)
 
 		SortItems(sorted, mode, false)
@@ -51,7 +51,7 @@ func TestSortItems_Property(t *testing.T) {
 	})
 }
 
-func isCorrectOrder(a, b files.Item, mode SortMode) bool {
+func isCorrectOrder(a, b core.Item, mode SortMode) bool {
 	switch mode {
 	case SortName:
 		return strings.ToLower(a.Name) <= strings.ToLower(b.Name)

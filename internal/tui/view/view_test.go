@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"fm/internal/config"
-	"fm/internal/files"
+	"fm/internal/files/core"
 	"fm/internal/tui/state"
 	"fm/internal/tui/theme"
 )
@@ -31,7 +31,7 @@ func TestView(t *testing.T) {
 
 	t.Run("Loading View", func(t *testing.T) {
 		s.UI.Loading = true
-		s.FilteredItems = []files.Item{}
+		s.FilteredItems = []core.Item{}
 		v := Render(s, styles)
 		if !strings.Contains(v, "Loading...") {
 			t.Error("Expected Loading... in view")

@@ -1,7 +1,7 @@
 package filter
 
 import (
-	"fm/internal/files"
+	"fm/internal/files/core"
 	"fm/internal/tui/state"
 	"strings"
 )
@@ -10,7 +10,7 @@ import (
 func Apply(m *state.Model) {
 	query := strings.ToLower(m.Inputs.ActiveInput.Value())
 	if !m.UI.InputActive || m.Inputs.Mode != state.InputSearch || query == "" {
-		m.Navigation.FilteredItems = make([]files.Item, len(m.Navigation.Items))
+		m.Navigation.FilteredItems = make([]core.Item, len(m.Navigation.Items))
 		copy(m.Navigation.FilteredItems, m.Navigation.Items)
 		return
 	}

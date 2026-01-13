@@ -1,12 +1,12 @@
 package footer
 
 import (
-	"fm/internal/files"
+	"fm/internal/files/core"
 	"fm/internal/tui/theme"
 )
 
 // renderPermissionInfo renders the permission information (e.g., "rwx")
-func renderPermissionInfo(items []files.Item, cursor int, styles theme.Stylesheet) string {
+func renderPermissionInfo(items []core.Item, cursor int, styles theme.Stylesheet) string {
 	// Check if cursor is valid
 	if cursor < 0 || cursor >= len(items) {
 		return ""

@@ -7,6 +7,7 @@ import (
 	"fm/internal/constants"
 
 	"github.com/charmbracelet/bubbles/textinput"
+	"github.com/charmbracelet/lipgloss"
 )
 
 // renderPrompts renders the appropriate prompt (input or confirmation) based on mode
@@ -32,7 +33,77 @@ func renderInputPrompt(props Props, input textinput.Model) string {
 	input.PlaceholderStyle = props.Styles.DimCol.Background(bg)
 	input.CursorStyle = props.Styles.Footer.UnsetPadding().UnsetWidth()
 
-	return props.Styles.Footer.Width(props.Width).Render(" " + input.View())
+	baseStyle := props.Styles.Footer.UnsetPadding().UnsetWidth()
+	dimStyle := props.Styles.DimCol.Inherit(props.Styles.Footer).UnsetPadding().UnsetWidth()
+
+	// Update prompt dynamically
+	if props.Mode == ModeGoto {
+		isRemote := props.AltMode
+		if props.RemoteConnected {
+			isRemote = !props.AltMode
+		}
+
+		label := "Local"
+		if isRemote {
+			label = "Remote"
+		}
+		input.Prompt = baseStyle.Render("Go to ") + dimStyle.Render("("+label+")") + baseStyle.Render(": ")
+	} else if props.Mode == ModeAuth {
+		label := "Password"
+		if props.AltMode {
+			label = "Path"
+		}
+		input.Prompt = baseStyle.Render(label + ": ")
+	}
+
+	// Calculate right part (Tab hint) if in Goto or Auth mode
+	rightPart := ""
+	if props.Mode == ModeGoto || props.Mode == ModeAuth {
+		dimStyle := props.Styles.DimCol.Inherit(props.Styles.Footer).UnsetPadding().UnsetWidth()
+		keyStyle := props.Styles.KeyCol.Inherit(props.Styles.Footer).UnsetPadding().UnsetWidth()
+
+		target := ""
+		if props.Mode == ModeGoto {
+			target = "Remote"
+			if props.AltMode {
+				target = "Local"
+			}
+		} else if props.Mode == ModeAuth {
+			target = "Key Path"
+			if props.AltMode {
+				target = "Password"
+			}
+		}
+
+		rightPart = dimStyle.Render("[") + keyStyle.Render("Tab") + dimStyle.Render("] ") + dimStyle.Render(target) + baseStyle.Render(" ")
+	}
+
+	// Adjust input width to fit within props.Width
+	rightWidth := lipgloss.Width(rightPart)
+	promptWidth := lipgloss.Width(input.Prompt)
+	// Available width for the input text itself: total - leading space - prompt - right part - margin
+	availableInputWidth := props.Width - 1 - promptWidth - rightWidth - 1
+	if availableInputWidth < 5 {
+		availableInputWidth = 5
+	}
+	if input.Width > availableInputWidth {
+		input.Width = availableInputWidth
+	}
+
+	// Calculate left part (input)
+	leftPart := baseStyle.Render(" ") + input.View()
+
+	// Calculate gap
+	leftWidth := lipgloss.Width(leftPart)
+	gapWidth := props.Width - leftWidth - rightWidth
+	if gapWidth < 0 {
+		gapWidth = 0
+	}
+
+	gap := baseStyle.Render(strings.Repeat(" ", gapWidth))
+
+	content := leftPart + gap + rightPart
+	return props.Styles.Footer.Width(props.Width).Render(content)
 }
 
 // renderConfirmationPrompt renders confirmation prompts
@@ -57,6 +128,8 @@ func BuildConfirmationPrompt(props Props) string {
 	case constants.ActionConflict:
 		baseName := extractBaseName(props.ConflictDst)
 		return fmt.Sprintf("'%s' exists. [y] Overwrite | [n] Skip | [r] Rename", baseName)
+	case constants.ActionCancel:
+		return "Cancel ongoing operation? (y/n)"
 	default:
 		return "Confirm? (y/n)"
 	}
