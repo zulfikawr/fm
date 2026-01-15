@@ -1,48 +1,52 @@
 package ops
 
 import (
-	"io"
-	"testing"
-
 	"fm/internal/files/core"
+	"fm/internal/testutil"
+	"testing"
 )
 
 func TestProgressWriter(t *testing.T) {
+	mockFile := testutil.NewMockFile("test", nil)
 	progChan := make(chan core.Progress, 10)
 	pw := &progressWriter{
-		Writer:   io.Discard,
-		Total:    100,
+		Writer:   mockFile,
+		Total:    10,
 		Label:    "Testing",
 		progChan: progChan,
 	}
 
-	data := make([]byte, 50)
+	data := []byte("12345")
 	n, err := pw.Write(data)
-	if err != nil || n != 50 {
-		t.Fatalf("Write failed: %v, %d", err, n)
+	testutil.AssertNoError(t, err, "Write should succeed")
+	testutil.AssertEqual(t, 5, n, "Write count")
+
+	// Check if progress was sent
+	select {
+	case p := <-progChan:
+		if p.Percent < 0 || p.Percent > 1.0 {
+			t.Errorf("Invalid progress percent: %f", p.Percent)
+		}
+	default:
+		// It's okay if it wasn't sent due to timing, but we want to cover the code
 	}
 
-	// We might not get a message immediately because of the 100ms throttle,
-	// but the final "Done" message should be sent if we reach total.
+	// Write more to reach total
+	data2 := []byte("67890")
+	_, _ = pw.Write(data2)
 
-	n, err = pw.Write(data) // Total 100
-	if err != nil || n != 50 {
-		t.Fatalf("Write failed: %v, %d", err, n)
-	}
-
-	// Check if we got the 100% message
-	var last core.Progress
-loop:
+	// Final progress should definitely be sent because Current == Total
+	var lastPercent float64
 	for {
 		select {
 		case p := <-progChan:
-			last = p
+			lastPercent = p.Percent
 		default:
-			break loop
+			goto done
 		}
 	}
-
-	if last.Percent != 1.0 {
-		t.Errorf("Expected 1.0 progress, got %f", last.Percent)
+done:
+	if lastPercent != 1.0 {
+		t.Errorf("Expected 100%% progress, got %f", lastPercent)
 	}
 }

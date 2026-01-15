@@ -32,7 +32,7 @@ func DefaultConfig() Config {
 	return Config{
 		ConfigVersion:     CurrentConfigVersion,
 		ThemeIndex:        0, // Gruvbox
-		ShowHidden:        false,
+		ShowHidden:        true,
 		CaseSensitive:     false,
 		ConfirmOperations: true,
 		WrapNavigation:    false,
@@ -43,12 +43,22 @@ func DefaultConfig() Config {
 		DateFormatIndex:   0, // Default
 		SizeFormatIndex:   0, // Full
 		EditorIndex:       0, // Vim
-		UseTrash:          true,
+		UseTrash:          false,
 	}
+}
+
+var customConfigPath string
+
+// SetConfigPath overrides the default config path (useful for testing)
+func SetConfigPath(path string) {
+	customConfigPath = path
 }
 
 // GetConfigPath returns the path to the config file in the user's home directory.
 func GetConfigPath() string {
+	if customConfigPath != "" {
+		return customConfigPath
+	}
 	configDir, err := os.UserConfigDir()
 	if err != nil {
 		home, _ := os.UserHomeDir()
@@ -89,7 +99,6 @@ func Load() Config {
 
 	// Auto-migrate old configs
 	if cfg.ConfigVersion < CurrentConfigVersion {
-		fmt.Fprintf(os.Stderr, "migrating config from v%d to v%d\n", cfg.ConfigVersion, CurrentConfigVersion)
 		// For v0 -> v1 migration, reset to defaults since we're introducing versioning
 		if cfg.ConfigVersion == 0 {
 			cfg = DefaultConfig()
@@ -108,7 +117,7 @@ var marshalIndent = json.MarshalIndent
 func (c Config) Save() error {
 	path := GetConfigPath()
 	dir := filepath.Dir(path)
-	if err := os.MkdirAll(dir, 0755); err != nil {
+	if err := os.MkdirAll(dir, 0o755); err != nil {
 		return err
 	}
 
@@ -117,5 +126,5 @@ func (c Config) Save() error {
 		return err
 	}
 
-	return os.WriteFile(path, data, 0644)
+	return os.WriteFile(path, data, 0o644)
 }

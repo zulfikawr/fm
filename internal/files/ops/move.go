@@ -5,19 +5,50 @@ import (
 	"fmt"
 	"time"
 
+	"fm/internal/files/conflict"
 	"fm/internal/files/core"
 	"fm/internal/files/errors"
 )
 
 // Move moves a file or directory. It tries Rename first, and falls back to Copy+Delete if Rename fails.
-func Move(ctx context.Context, fs core.FileSystem, src, dst string, progChan chan<- core.Progress) error {
-	return CrossMove(ctx, fs, fs, src, dst, progChan)
+func Move(ctx context.Context, fs core.FileSystem, src, dst string, progChan chan<- core.Progress, policy conflict.Policy) error {
+	return CrossMove(ctx, fs, fs, src, dst, progChan, policy)
 }
 
 // CrossMove moves a file or directory from srcFS to dstFS.
-func CrossMove(ctx context.Context, srcFS, dstFS core.FileSystem, src, dst string, progChan chan<- core.Progress) error {
+func CrossMove(ctx context.Context, srcFS, dstFS core.FileSystem, src, dst string, progChan chan<- core.Progress, policy conflict.Policy) error {
 	if src == "" || dst == "" {
 		return errors.WrapErrorWithPath(fmt.Errorf("empty path"), "CrossMove", fmt.Sprintf("%s -> %s", src, dst))
+	}
+
+	// Resolve conflict if any
+	resolver := conflict.NewResolver()
+	resolvedPath, isRenamed, err := resolver.Resolve(ctx, dstFS, src, dst, policy)
+	if err != nil {
+		if cerr, ok := err.(*conflict.ConflictError); ok {
+			cerr.IsMove = true
+			cerr.OpType = "move"
+			return cerr
+		}
+		return err
+	}
+
+	if resolvedPath == "" {
+		return nil // Skip
+	}
+	if resolvedPath == dst && policy == conflict.Overwrite {
+		_ = dstFS.RemoveAll(ctx, dst)
+	}
+	dst = resolvedPath
+
+	if progChan != nil && isRenamed {
+		select {
+		case progChan <- core.Progress{
+			Percent: 0,
+			Label:   fmt.Sprintf("Moving %s as %s...", srcFS.Base(src), dstFS.Base(dst)),
+		}:
+		default:
+		}
 	}
 
 	// 1. Try atomic rename first if same FS
@@ -36,7 +67,7 @@ func CrossMove(ctx context.Context, srcFS, dstFS core.FileSystem, src, dst strin
 	}
 
 	// 2. Fallback for cross-device/FS moves: Copy then Delete
-	if err := CrossCopy(ctx, srcFS, dstFS, src, dst, progChan); err != nil {
+	if err := CrossCopy(ctx, srcFS, dstFS, src, dst, progChan, conflict.Overwrite); err != nil {
 		_ = dstFS.RemoveAll(ctx, dst)
 		return err
 	}

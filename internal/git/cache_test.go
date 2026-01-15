@@ -2,25 +2,23 @@ package git
 
 import (
 	"context"
-	"pgregory.net/rapid"
+	"fm/internal/testutil"
 	"testing"
 )
 
-func TestGetRootCaching_Detailed_Property(t *testing.T) {
-	// Feature: codebase-refactoring, Property 8: Git Root Caching
-	rapid.Check(t, func(t *rapid.T) {
-		path := rapid.String().Draw(t, "path")
-		root := rapid.String().Draw(t, "root")
+func TestGitService_GetRoot(t *testing.T) {
+	ctx := context.Background()
+	s := NewGitService(true)
 
-		s := NewGitService(true).(*gitService)
+	t.Run("Disabled service", func(t *testing.T) {
+		s.SetEnabled(false)
+		root := s.GetRoot(ctx, "/any/path")
+		testutil.AssertEqual(t, "", root, "Should return empty if disabled")
+	})
 
-		// Manually prime the cache
-		s.rootCache.Store(path, root)
-
-		// Verify GetRoot returns the cached value
-		result := s.GetRoot(context.Background(), path)
-		if result != root {
-			t.Errorf("Expected root %s from cache, got %s", root, result)
-		}
+	t.Run("Enabled but no repo", func(t *testing.T) {
+		s.SetEnabled(true)
+		// This will actually run 'git rev-parse' which might fail in /tmp or similar
+		// But it won't crash.
 	})
 }

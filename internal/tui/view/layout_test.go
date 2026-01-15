@@ -1,0 +1,36 @@
+package view
+
+import (
+	"fm/internal/testutil"
+	"fm/internal/tui/context"
+	"testing"
+)
+
+func TestCalculateLayout(t *testing.T) {
+	fs := testutil.NewMockFileSystem()
+	m := context.NewModel(fs, "/test")
+
+	m.Display.Width = 100
+	m.Display.Height = 20
+
+	layout := CalculateLayout(m)
+	testutil.AssertEqual(t, 100, layout.Width, "Width should match")
+	testutil.AssertEqual(t, 20, layout.Height, "Height should match")
+	testutil.AssertEqual(t, 1, layout.HeaderHeight, "Header height should be 1")
+	testutil.AssertEqual(t, 1, layout.FooterHeight, "Footer height should be 1")
+	testutil.AssertEqual(t, 18, layout.BodyHeight, "Body height should be 18")
+
+	testutil.AssertEqual(t, 18, GetViewportHeight(m), "Viewport height should match body height")
+
+	t.Run("Zero height", func(t *testing.T) {
+		m.Display.Height = 0
+		layout := CalculateLayout(m)
+		testutil.AssertEqual(t, 0, layout.BodyHeight, "Body height should be 0")
+	})
+
+	t.Run("Small height", func(t *testing.T) {
+		m.Display.Height = 1
+		layout := CalculateLayout(m)
+		testutil.AssertEqual(t, 0, layout.BodyHeight, "Body height should be 0 when height is 1")
+	})
+}

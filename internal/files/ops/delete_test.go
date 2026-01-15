@@ -2,40 +2,63 @@ package ops
 
 import (
 	"context"
-	"os"
-	"path/filepath"
-	"testing"
-
-	"fm/internal/files/local"
+	"fm/internal/files/core"
 	"fm/internal/testutil"
+	"testing"
 )
 
 func TestDelete(t *testing.T) {
-	tmpDir, cleanup := testutil.TempDir(t)
-	defer cleanup()
+	ctx := context.Background()
+	fs := testutil.NewMockFileSystem()
 
-	fs := &local.LocalFS{}
-
-	t.Run("Delete File", func(t *testing.T) {
-		path := filepath.Join(tmpDir, "todelete.txt")
-		testutil.CreateTestFile(t, tmpDir, "todelete.txt", "delete me")
-		if err := Delete(context.Background(), fs, path, nil); err != nil {
-			t.Fatalf("Delete failed: %v", err)
+	t.Run("Successful Delete", func(t *testing.T) {
+		fs.RemoveAllFunc = func(ctx context.Context, path string) error {
+			return nil
 		}
-		if _, err := os.Stat(path); err == nil {
-			t.Error("File still exists after delete")
+
+		progChan := make(chan core.Progress, 2)
+		err := Delete(ctx, fs, "/path/to/delete", progChan)
+
+		testutil.AssertNoError(t, err, "Delete should succeed")
+		fs.AssertCalled(t, "RemoveAll")
+
+		// Check progress messages
+		p1 := <-progChan
+		if p1.Percent != 0 {
+			t.Errorf("Expected 0%% progress, got %f", p1.Percent)
+		}
+		p2 := <-progChan
+		if p2.Percent != 1.0 {
+			t.Errorf("Expected 100%% progress, got %f", p2.Percent)
+		}
+	})
+
+	t.Run("Empty Path", func(t *testing.T) {
+		err := Delete(ctx, fs, "", nil)
+		if err == nil {
+			t.Error("Expected error for empty path")
 		}
 	})
 }
 
 func TestTrash(t *testing.T) {
-	// Trash is hard to test cross-platform in CI without side effects
-	// but we can test the error cases.
-	m := testutil.NewMockFileSystem()
-	m.IsLocalFunc = func() bool { return false }
+	ctx := context.Background()
+	fs := testutil.NewMockFileSystem()
 
-	err := Trash(context.Background(), m, "/remote/path")
-	if err == nil {
-		t.Error("Expected error when trashing on remote filesystem")
-	}
+	t.Run("Remote FS Unsupported", func(t *testing.T) {
+		fs.IsLocalFunc = func() bool {
+			return false
+		}
+		err := Trash(ctx, fs, "/path/to/trash")
+		if err == nil {
+			t.Fatal("expected error for non-local filesystem")
+		}
+	})
+
+	t.Run("Empty Path", func(t *testing.T) {
+		err := Trash(ctx, fs, "")
+		if err == nil {
+			t.Error("Expected error for empty path")
+		}
+	})
 }

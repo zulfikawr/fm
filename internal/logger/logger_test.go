@@ -3,32 +3,47 @@ package logger
 import (
 	"fm/internal/testutil"
 	"os"
-	"path/filepath"
 	"strings"
 	"testing"
 )
 
-func TestLog(t *testing.T) {
-	tmpDir, cleanup := testutil.TempDir(t)
-	defer cleanup()
+func TestLogger(t *testing.T) {
+	mock := testutil.NewMockLogger()
+	SetLogger(mock)
 
-	logPath := filepath.Join(tmpDir, "test.log")
+	Info("test info message")
+	mock.AssertLogContains(t, "INFO", "test info message")
+
+	Error("test error message")
+	mock.AssertLogContains(t, "ERROR", "test error message")
+}
+
+func TestFileLogger(t *testing.T) {
+	tmp := testutil.NewTempFolder(t)
+	defer tmp.Cleanup()
+
+	logPath := tmp.Join("test.log")
 	SetLogPath(logPath)
-	defer SetLogPath("") // Reset
+	defer SetLogPath("") // Reset after test
 
-	testMsg := "Test log message unique"
-	Info(testMsg)
+	// Restore real logger for this test
+	realLogger := &fileLogger{}
+	SetLogger(realLogger)
 
-	data, err := os.ReadFile(logPath)
-	if err != nil {
-		t.Fatalf("Could not read log file: %v", err)
+	msg := "test log entry"
+	Log("TEST", msg)
+
+	content, err := os.ReadFile(logPath)
+	testutil.AssertNoError(t, err, "Log file should be readable")
+
+	if !strings.Contains(string(content), msg) {
+		t.Errorf("Expected log file to contain %q, but it did not", msg)
 	}
+}
 
-	if !strings.Contains(string(data), testMsg) {
-		t.Errorf("Log file does not contain expected message. Content: %s", string(data))
-	}
-
-	if !strings.Contains(string(data), "INFO") {
-		t.Errorf("Log file missing level INFO. Content: %s", string(data))
+func TestGetLogPath(t *testing.T) {
+	path := GetLogPath()
+	if path == "" {
+		t.Error("GetLogPath returned empty string")
 	}
 }

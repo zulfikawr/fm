@@ -1,9 +1,11 @@
 package core
 
 import (
-	"fm/internal/files/format"
 	"os"
+	"strings"
 	"time"
+
+	"fm/internal/files/format"
 )
 
 // Item represents a single file or directory entry in the file manager.
@@ -20,8 +22,27 @@ type Item struct {
 	CanRead       bool // CanRead indicates if the current user has read permission
 	CanWrite      bool // CanWrite indicates if the current user has write permission
 	IsUp          bool // IsUp indicates if this item represents the parent directory ("..").
+	SearchKey     string
 	FormattedSize string
 	FormattedDate string
+	HasMetadata   bool // HasMetadata indicates if Stat/Info has been called
+}
+
+// NewItemFromDirEntry creates a skeleton Item from os.DirEntry
+func NewItemFromDirEntry(d os.DirEntry, path string, gitStatus string) Item {
+	// Try to get info if it's already cached/available (often true for some systems or SFTP)
+	if info, err := d.Info(); err == nil {
+		return NewItem(info, path, gitStatus)
+	}
+
+	return Item{
+		Name:        d.Name(),
+		Path:        path,
+		IsDir:       d.IsDir(),
+		GitStatus:   gitStatus,
+		HasMetadata: false,
+		SearchKey:   strings.ToLower(d.Name()),
+	}
 }
 
 // NewItem creates a new Item from os.FileInfo
@@ -33,19 +54,21 @@ func NewItem(info os.FileInfo, path string, gitStatus string) Item {
 
 	mode := info.Mode()
 	// Simplified permission check: check if user, group, or others have R/W bits
-	canRead := (mode.Perm() & 0444) != 0
-	canWrite := (mode.Perm() & 0222) != 0
+	canRead := (mode.Perm() & 0o444) != 0
+	canWrite := (mode.Perm() & 0o222) != 0
 
 	return Item{
-		Name:      info.Name(),
-		Path:      path,
-		IsDir:     info.IsDir(),
-		GitStatus: gitStatus,
-		Size:      size,
-		Mode:      mode,
-		MTime:     info.ModTime(),
-		CanRead:   canRead,
-		CanWrite:  canWrite,
+		Name:        info.Name(),
+		Path:        path,
+		IsDir:       info.IsDir(),
+		GitStatus:   gitStatus,
+		Size:        size,
+		Mode:        mode,
+		MTime:       info.ModTime(),
+		CanRead:     canRead,
+		CanWrite:    canWrite,
+		HasMetadata: true,
+		SearchKey:   strings.ToLower(info.Name()),
 	}
 }
 
@@ -54,10 +77,23 @@ func (i *Item) UpdateFormatting(sizeFormatIdx, dateFormatIdx int) {
 	if i.IsUp {
 		return
 	}
+
+	// Hide size and date for deleted files
+	if i.GitStatus == "D" && !i.IsDir {
+		i.FormattedSize = ""
+		i.FormattedDate = ""
+		return
+	}
+
 	i.FormattedSize = format.FormatSize(i.Size, sizeFormatIdx)
-	if dateFormatIdx < len(format.DateFormats) {
+
+	// Check for "zero" dates. Some filesystems use 1970 or 1980 as a default/null value.
+	isSuspiciouslyOld := i.MTime.Year() <= 1980
+	if dateFormatIdx < len(format.DateFormats) && !i.MTime.IsZero() && !isSuspiciouslyOld {
 		layout := format.DateFormats[dateFormatIdx].Layout
 		i.FormattedDate = i.MTime.Format(layout)
+	} else {
+		i.FormattedDate = ""
 	}
 }
 

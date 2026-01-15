@@ -8,90 +8,82 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
-// Props contains all data needed to render the header
+// Props contains data for rendering the header
 type Props struct {
-	Width           int
-	Path            string
-	Separator       string
-	GitBranch       string
-	ReadOnly        bool
-	TabCount        int
-	ActiveTab       int
-	SettingsOpen    bool
-	RemoteConnected bool
-	RemoteUser      string
-	RemoteHost      string
-	Styles          theme.Stylesheet
+	Width         int
+	Path          string
+	Separator     string
+	RemoteStr     string
+	GitBranch     string
+	ReadOnly      bool
+	TabCount      int
+	ActiveTab     int
+	SettingsOpen  bool
+	LogOpen       bool
+	ClipboardOpen bool
+	Style         theme.Stylesheet
 }
 
-// Render renders the complete header
+// Render renders the application header (Breadcrumbs + Tabs)
 func Render(props Props) string {
-	if props.SettingsOpen {
-		return renderSettingsHeader(props)
+	// Account for Padding(0, 1) in styles.go
+	availableWidth := props.Width - 2
+	if availableWidth < 0 {
+		availableWidth = 0
 	}
-	return renderFileHeader(props)
-}
-
-// renderSettingsHeader renders the header for settings view
-func renderSettingsHeader(props Props) string {
-	return props.Styles.Header.Width(props.Width).Render("Settings")
-}
-
-// renderFileHeader renders the header for file browsing view
-func renderFileHeader(props Props) string {
-	breadcrumb := renderBreadcrumb(props)
 
 	tabs := ""
-	if props.TabCount > 1 {
-		tabs = renderTabs(props)
+	if shouldShowTabs(props.TabCount) {
+		tabs = renderTabList(TabConfig{
+			TabCount:     props.TabCount,
+			ActiveIndex:  props.ActiveTab,
+			ShowShortcut: true,
+		}, props.Style)
 	}
 
-	if tabs == "" {
-		return props.Styles.Header.Width(props.Width).Render(breadcrumb)
-	}
-
-	return combineHeaderElements(breadcrumb, tabs, props)
-}
-
-// renderBreadcrumb renders the breadcrumb path
-func renderBreadcrumb(props Props) string {
-	remoteStr := ""
-	if props.RemoteConnected {
-		// Use the existing RenderRemote logic but get the raw string if we want it in breadcrumb
-		remoteStr = props.RemoteUser + "@" + props.RemoteHost
-		if props.RemoteUser == "" {
-			remoteStr = props.RemoteHost
-		}
-	}
-
-	breadcrumb := renderBreadcrumbPath(props.Path, props.Separator, remoteStr, props.Styles)
-	breadcrumb = addGitBranch(breadcrumb, props.GitBranch, props.Styles)
-	breadcrumb = addReadOnlyIndicator(breadcrumb, props.ReadOnly, props.Styles)
-	return breadcrumb
-}
-
-// renderTabs renders the tab indicators
-func renderTabs(props Props) string {
-	config := TabConfig{
-		TabCount:     props.TabCount,
-		ActiveIndex:  props.ActiveTab,
-		ShowShortcut: true,
-	}
-	return renderTabList(config, props.Styles)
-}
-
-// combineHeaderElements combines breadcrumb and tabs with proper spacing
-func combineHeaderElements(breadcrumb, tabs string, props Props) string {
-	baseHeaderStyle := props.Styles.Header.UnsetPadding().UnsetWidth()
-
-	breadcrumbWidth := lipgloss.Width(breadcrumb)
 	tabsWidth := lipgloss.Width(tabs)
 
-	gap := props.Width - breadcrumbWidth - tabsWidth - 2 // -2 for padding
-	if gap < 1 {
-		gap = 1
+	// Determine title
+	title := GetTitle(TitleProps{
+		Path:          props.Path,
+		SettingsOpen:  props.SettingsOpen,
+		LogOpen:       props.LogOpen,
+		ClipboardOpen: props.ClipboardOpen,
+		Style:         props.Style,
+	})
+
+	// Breadcrumb rendering
+	var breadcrumb string
+	if props.SettingsOpen || props.LogOpen || props.ClipboardOpen {
+		breadcrumb = props.Style.Header.UnsetPadding().UnsetWidth().Render(title)
+	} else {
+		breadcrumb = renderBreadcrumbPath(title, props.Separator, props.RemoteStr, props.Style)
+		breadcrumb = addGitBranch(breadcrumb, props.GitBranch, props.Style)
+		breadcrumb = addReadOnlyIndicator(breadcrumb, props.ReadOnly, props.Style)
 	}
 
-	fullHeader := breadcrumb + baseHeaderStyle.Render(strings.Repeat(" ", gap)) + tabs
-	return props.Styles.Header.Width(props.Width).Render(fullHeader)
+	breadcrumbWidth := lipgloss.Width(breadcrumb)
+
+	// Maximum width for breadcrumb is availableWidth - tabsWidth - gap(1)
+	maxBreadcrumbWidth := availableWidth - tabsWidth
+	if tabsWidth > 0 {
+		maxBreadcrumbWidth -= 1 // 1 char gap
+	}
+	if maxBreadcrumbWidth < 0 {
+		maxBreadcrumbWidth = 0
+	}
+
+	if breadcrumbWidth > maxBreadcrumbWidth {
+		breadcrumb = lipgloss.NewStyle().MaxWidth(maxBreadcrumbWidth).Render(breadcrumb)
+		breadcrumbWidth = lipgloss.Width(breadcrumb)
+	}
+
+	gap := availableWidth - breadcrumbWidth - tabsWidth
+	if gap < 0 {
+		gap = 0
+	}
+
+	baseStyle := props.Style.Header.UnsetPadding().UnsetWidth()
+	totalHeader := breadcrumb + baseStyle.Render(strings.Repeat(" ", gap)) + tabs
+	return props.Style.Header.Width(props.Width).Render(totalHeader)
 }

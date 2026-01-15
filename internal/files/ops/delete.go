@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"runtime"
 	"time"
 
@@ -73,7 +72,7 @@ func Trash(ctx context.Context, fs core.FileSystem, path string) error {
 			return errors.WrapErrorWithPath(err, "Trash", path)
 		}
 	case "windows":
-		path = filepath.Clean(path)
+		path = fs.Clean(path)
 		info, sErr := os.Stat(path)
 		if sErr != nil {
 			return errors.WrapErrorWithPath(sErr, "Trash", path)
@@ -89,7 +88,7 @@ func Trash(ctx context.Context, fs core.FileSystem, path string) error {
 			return errors.WrapErrorWithPath(fmt.Errorf("PowerShell not found (required on Windows)"), "Trash", path)
 		}
 
-		cmd := fmt.Sprintf(`Add-Type -AssemblyName Microsoft.VisualBasic; [Microsoft.VisualBasic.FileIO.core.FileSystem]::%s('%s', 'OnlyErrorDialogs', 'SendToRecycleBin')`, op, path)
+		cmd := fmt.Sprintf(`Add-Type -AssemblyName Microsoft.VisualBasic; [Microsoft.VisualBasic.FileIO.FileSystem]::%s('%s', 'OnlyErrorDialogs', 'SendToRecycleBin')`, op, path)
 		err = exec.Command("powershell", "-Command", cmd).Run()
 		if err != nil {
 			return errors.WrapErrorWithPath(err, "Trash", path)

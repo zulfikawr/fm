@@ -2,72 +2,54 @@ package local
 
 import (
 	"context"
-	"fmt"
-	"os"
-	"testing"
-
 	"fm/internal/testutil"
+	"testing"
 )
 
-func TestLocalFS_IsReadOnly(t *testing.T) {
-	tmpDir, cleanup := testutil.TempDir(t)
-	defer cleanup()
+func TestLocalFS(t *testing.T) {
+	ctx := context.Background()
+	tmp := testutil.NewTempFolder(t)
+	defer tmp.Cleanup()
 
-	fs := &LocalFS{}
+	fs := NewLocalFS()
 
-	// Test a writable directory
-	ro, err := fs.IsReadOnly(context.Background(), tmpDir)
-	if err != nil {
-		t.Fatalf("IsReadOnly failed: %v", err)
-	}
-	if ro {
-		t.Error("Expected directory to be writable")
-	}
+	t.Run("Stat and ReadDir", func(t *testing.T) {
+		tmp.WriteFile("test.txt", "content")
 
-	// Test a read-only file (if possible to set permissions in test environment)
-	f := testutil.CreateTestFile(t, tmpDir, "readonly.txt", "content")
-	os.Chmod(f, 0444)
+		info, err := fs.Stat(ctx, tmp.Path)
+		testutil.AssertNoError(t, err, "Stat tempDir should succeed")
+		testutil.AssertEqual(t, true, info.IsDir(), "tempDir should be a directory")
 
-	ro, err = fs.IsReadOnly(context.Background(), f)
-	if err != nil {
-		t.Fatalf("IsReadOnly failed for file: %v", err)
-	}
-	// Note: on some systems/users, owner might still have write access regardless of bits,
-	// but we check if our logic detects the change.
-}
+		entries, err := fs.ReadDir(ctx, tmp.Path)
+		testutil.AssertNoError(t, err, "ReadDir should succeed")
+		testutil.AssertEqual(t, 1, len(entries), "Should find one file")
+		testutil.AssertEqual(t, "test.txt", entries[0].Name(), "File name should match")
+	})
 
-func TestLocalFS_ReadDir(t *testing.T) {
-	tmpDir, cleanup := testutil.TempDir(t)
-	defer cleanup()
+	t.Run("Write and Remove", func(t *testing.T) {
+		filePath := tmp.Join("write_test.txt")
+		f, err := fs.Create(ctx, filePath)
+		testutil.AssertNoError(t, err, "Create should succeed")
+		f.Write([]byte("data"))
+		f.Close()
 
-	fs := &LocalFS{}
+		err = fs.RemoveAll(ctx, filePath)
+		testutil.AssertNoError(t, err, "RemoveAll should succeed")
+	})
 
-	// Create some files
-	for i := 0; i < 10; i++ {
-		fname := fmt.Sprintf("extra_%d.txt", i)
-		testutil.CreateTestFile(t, tmpDir, fname, "content")
-	}
-	// Use explicit names
-	testutil.CreateTestFile(t, tmpDir, "file1.txt", "c1")
-	testutil.CreateTestFile(t, tmpDir, "file2.txt", "c2")
+	t.Run("MkdirAll and Rename", func(t *testing.T) {
+		dirPath := tmp.Join("a/b/c")
+		err := fs.MkdirAll(ctx, dirPath, 0755)
+		testutil.AssertNoError(t, err, "MkdirAll should succeed")
 
-	infos, err := fs.ReadDir(context.Background(), tmpDir)
-	if err != nil {
-		t.Fatalf("ReadDir failed: %v", err)
-	}
+		newPath := tmp.Join("new_dir")
+		err = fs.Rename(ctx, tmp.Join("a"), newPath)
+		testutil.AssertNoError(t, err, "Rename should succeed")
+	})
 
-	if len(infos) < 2 {
-		t.Errorf("Expected at least 2 files, got %d", len(infos))
-	}
-
-	found := false
-	for _, info := range infos {
-		if info.Name() == "file1.txt" {
-			found = true
-			break
-		}
-	}
-	if !found {
-		t.Error("file1.txt not found in ReadDir results")
-	}
+	t.Run("Path helpers", func(t *testing.T) {
+		testutil.AssertEqual(t, "file.txt", fs.Base("/a/b/file.txt"), "Base should work")
+		testutil.AssertEqual(t, "/a/b", fs.Dir("/a/b/file.txt"), "Dir should work")
+		testutil.AssertEqual(t, "/a/b/c", fs.Join("/a/b", "c"), "Join should work")
+	})
 }

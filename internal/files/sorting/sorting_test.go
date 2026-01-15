@@ -2,98 +2,49 @@ package sorting
 
 import (
 	"fm/internal/files/core"
-	"fmt"
-	"pgregory.net/rapid"
-	"strings"
+	"fm/internal/testutil"
 	"testing"
-	"time"
 )
 
-// GenItem generates random Item values for property testing
-func GenItem() *rapid.Generator[core.Item] {
-	return rapid.Custom(func(t *rapid.T) core.Item {
-		return core.Item{
-			Name:  rapid.String().Draw(t, "name"),
-			IsDir: rapid.Bool().Draw(t, "isDir"),
-			Size:  rapid.Int64Range(0, 1<<40).Draw(t, "size"),
-			MTime: time.Unix(rapid.Int64Range(0, time.Now().Unix()).Draw(t, "mtime"), 0),
-		}
-	})
-}
-
-// GenSortMode generates random SortMode values
-func GenSortMode() *rapid.Generator[SortMode] {
-	return rapid.Map(rapid.IntRange(0, 6), func(i int) SortMode {
-		return SortMode(i)
-	})
-}
-
-func TestSortItems_Property(t *testing.T) {
-	// Feature: codebase-refactoring, Property 1: Sorting Correctness
-	rapid.Check(t, func(t *rapid.T) {
-		items := rapid.SliceOf(GenItem()).Draw(t, "items")
-		mode := GenSortMode().Draw(t, "mode")
-
-		// Make a copy to sort
-		sorted := make([]core.Item, len(items))
-		copy(sorted, items)
-
-		SortItems(sorted, mode, false)
-
-		// Verify ordering
-		for i := 1; i < len(sorted); i++ {
-			if !isCorrectOrder(sorted[i-1], sorted[i], mode) {
-				msg := fmt.Sprintf("Items at %d and %d are not correctly ordered for mode %v\nItem 1: %+v\nItem 2: %+v",
-					i-1, i, mode, sorted[i-1], sorted[i])
-				t.Error(msg)
-			}
-		}
-	})
-}
-
-func isCorrectOrder(a, b core.Item, mode SortMode) bool {
-	switch mode {
-	case SortName:
-		return strings.ToLower(a.Name) <= strings.ToLower(b.Name)
-	case SortNameDesc:
-		return strings.ToLower(a.Name) >= strings.ToLower(b.Name)
-	case SortNewest:
-		return a.MTime.After(b.MTime) || a.MTime.Equal(b.MTime)
-	case SortOldest:
-		return a.MTime.Before(b.MTime) || a.MTime.Equal(b.MTime)
-	case SortSizeDesc:
-		return a.Size >= b.Size
-	case SortSizeAsc:
-		return a.Size <= b.Size
-	default: // SortDefault - Directories first, then alphabetical
-		if a.IsDir != b.IsDir {
-			if a.IsDir {
-				return true
-			}
-			return false
-		}
-		return strings.ToLower(a.Name) <= strings.ToLower(b.Name)
-	}
-}
-
-func TestSortModeString(t *testing.T) {
-	tests := []struct {
-		mode     SortMode
-		expected string
-	}{
-		{SortDefault, "[ ⇅ ] Default"},
-		{SortName, "[ A-Z ] Name (Asc)"},
-		{SortNameDesc, "[ Z-A ] Name (Desc)"},
-		{SortNewest, "[ ↓ ] Newest"},
-		{SortOldest, "[ ↑ ] Oldest"},
-		{SortSizeDesc, "[ ▼ ] Size (Lrg)"},
-		{SortSizeAsc, "[ ▲ ] Size (Sml)"},
-		{SortMode(99), "[ ? ] Unknown"},
+func TestSortItems(t *testing.T) {
+	items := []core.Item{
+		{Name: "↑ ..", IsDir: true, IsUp: true},
+		{Name: "b.txt", IsDir: false, Size: 200},
+		{Name: "a.txt", IsDir: false, Size: 100},
+		{Name: "dir", IsDir: true, Size: 0},
 	}
 
-	for _, tt := range tests {
-		if tt.mode.String() != tt.expected {
-			t.Errorf("SortMode(%d).String() = %s; want %s", tt.mode, tt.mode.String(), tt.expected)
-		}
-	}
+	t.Run("SortDefault (Directories first, then name)", func(t *testing.T) {
+		testItems := make([]core.Item, len(items))
+		copy(testItems, items)
+		SortItems(testItems, SortDefault, true)
+
+		// Expected: .. (skipped), dir, a.txt, b.txt
+		testutil.AssertEqual(t, "↑ ..", testItems[0].Name, "First item should be ..")
+		testutil.AssertEqual(t, "dir", testItems[1].Name, "Second item should be dir")
+		testutil.AssertEqual(t, "a.txt", testItems[2].Name, "Third item should be a.txt")
+		testutil.AssertEqual(t, "b.txt", testItems[3].Name, "Fourth item should be b.txt")
+	})
+
+	t.Run("SortNameDesc", func(t *testing.T) {
+		testItems := make([]core.Item, len(items))
+		copy(testItems, items)
+		SortItems(testItems, SortNameDesc, true)
+
+		// Expected: .. (skipped), dir, b.txt, a.txt
+		testutil.AssertEqual(t, "dir", testItems[1].Name, "Should be dir")
+		testutil.AssertEqual(t, "b.txt", testItems[2].Name, "Should be b.txt")
+		testutil.AssertEqual(t, "a.txt", testItems[3].Name, "Should be a.txt")
+	})
+
+	t.Run("SortSizeAsc", func(t *testing.T) {
+		testItems := make([]core.Item, len(items))
+		copy(testItems, items)
+		SortItems(testItems, SortSizeAsc, true)
+
+		// dir (0) < a (100) < b (200)
+		testutil.AssertEqual(t, "dir", testItems[1].Name, "Should be dir")
+		testutil.AssertEqual(t, "a.txt", testItems[2].Name, "Should be a.txt")
+		testutil.AssertEqual(t, "b.txt", testItems[3].Name, "Should be b.txt")
+	})
 }

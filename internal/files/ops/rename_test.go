@@ -2,41 +2,51 @@ package ops
 
 import (
 	"context"
-	"os"
-	"path/filepath"
-	"testing"
-
-	"fm/internal/files/local"
+	"fm/internal/files/conflict"
 	"fm/internal/testutil"
+	"os"
+	"testing"
 )
 
 func TestRename(t *testing.T) {
-	tmpDir, cleanup := testutil.TempDir(t)
-	defer cleanup()
+	ctx := context.Background()
+	fs := testutil.NewMockFileSystem()
 
-	srcFile := filepath.Join(tmpDir, "src.txt")
-	testutil.CreateTestFile(t, tmpDir, "src.txt", "content")
-	fs := &local.LocalFS{}
-
-	t.Run("Rename File", func(t *testing.T) {
-		oldPath := srcFile
-		newPath := filepath.Join(tmpDir, "renamed.txt")
-		if err := Rename(context.Background(), fs, oldPath, newPath); err != nil {
-			t.Fatalf("Rename failed: %v", err)
+	t.Run("Successful Rename", func(t *testing.T) {
+		fs.StatFunc = func(ctx context.Context, path string) (os.FileInfo, error) {
+			return nil, os.ErrNotExist
 		}
-
-		if _, err := os.Stat(oldPath); err == nil {
-			t.Error("Old file still exists after rename")
+		fs.RenameFunc = func(ctx context.Context, old, new string) error {
+			return nil
 		}
-		if _, err := os.Stat(newPath); err != nil {
-			t.Error("New file does not exist after rename")
+		err := Rename(ctx, fs, "/old", "/new", conflict.Ask)
+		testutil.AssertNoError(t, err, "Rename should succeed")
+		fs.AssertCalled(t, "Rename")
+	})
+
+	t.Run("Empty Path", func(t *testing.T) {
+		err := Rename(ctx, fs, "", "/new", conflict.Ask)
+		if err == nil {
+			t.Error("Expected error for empty oldPath")
 		}
 	})
 
-	t.Run("Rename Non-existent", func(t *testing.T) {
-		err := Rename(context.Background(), fs, filepath.Join(tmpDir, "nonexistent"), filepath.Join(tmpDir, "out"))
+	t.Run("Invalid New Name", func(t *testing.T) {
+		err := Rename(ctx, fs, "/old", "/path/invalid*name", conflict.Ask)
 		if err == nil {
-			t.Error("Expected error when renaming non-existent file")
+			t.Error("Expected error for invalid characters in new name")
 		}
+	})
+
+	t.Run("Conflict Skip", func(t *testing.T) {
+		// Mock destination exists
+		fs.StatFunc = func(ctx context.Context, path string) (os.FileInfo, error) {
+			if path == "/new" {
+				return &testutil.MockFileInfo{NameStr: "new"}, nil
+			}
+			return nil, os.ErrNotExist
+		}
+		err := Rename(ctx, fs, "/old", "/new", conflict.Skip)
+		testutil.AssertNoError(t, err, "Should not error on skip")
 	})
 }

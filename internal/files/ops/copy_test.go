@@ -2,198 +2,193 @@ package ops
 
 import (
 	"context"
-	"fmt"
+	"fm/internal/files/conflict"
+	"fm/internal/testutil"
 	"io"
 	"os"
-	"path/filepath"
 	"testing"
-
-	"fm/internal/files/local"
-	"fm/internal/testutil"
 )
 
-func TestCopy(t *testing.T) {
-	tmpDir, cleanup := testutil.TempDir(t)
-	defer cleanup()
+func TestCrossCopy_EdgeCases(t *testing.T) {
+	ctx := context.Background()
+	fs := testutil.NewMockFileSystem()
 
-	srcFile := filepath.Join(tmpDir, "src.txt")
-	content := "hello world"
-	testutil.CreateTestFile(t, tmpDir, "src.txt", content)
-	fs := &local.LocalFS{}
-
-	t.Run("Copy File", func(t *testing.T) {
-		dstFile := filepath.Join(tmpDir, "dst.txt")
-		if err := Copy(context.Background(), fs, srcFile, dstFile, nil); err != nil {
-			t.Fatalf("Copy failed: %v", err)
+	t.Run("Same source and destination", func(t *testing.T) {
+		fs.AbsFunc = func(path string) (string, error) {
+			return "/same/path", nil
 		}
-
-		got, err := os.ReadFile(dstFile)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if string(got) != content {
-			t.Errorf("Expected content %s, got %s", content, string(got))
-		}
-	})
-
-	t.Run("Copy Non-existent", func(t *testing.T) {
-		err := Copy(context.Background(), fs, filepath.Join(tmpDir, "nonexistent"), filepath.Join(tmpDir, "out"), nil)
+		err := CrossCopy(ctx, fs, fs, "/same/path", "/same/path", nil, conflict.Ask)
 		if err == nil {
-			t.Error("Expected error when copying non-existent file")
+			t.Fatal("expected error when src == dst")
 		}
 	})
 
-	t.Run("Copy Dir Recursive", func(t *testing.T) {
-		srcDir := filepath.Join(tmpDir, "recursive_src")
-		subDir := filepath.Join(srcDir, "sub")
-		os.MkdirAll(subDir, 0755)
-		testutil.CreateTestFile(t, subDir, "inner.txt", "inner")
-
-		dstDir := filepath.Join(tmpDir, "recursive_dst")
-		if err := Copy(context.Background(), fs, srcDir, dstDir, nil); err != nil {
-			t.Fatalf("Recursive copy failed: %v", err)
+	t.Run("Permission denied on Create", func(t *testing.T) {
+		fs.LstatFunc = func(ctx context.Context, path string) (os.FileInfo, error) {
+			return &testutil.MockFileInfo{NameStr: "src", IsDirBool: false}, nil
 		}
-
-		if _, err := os.Stat(filepath.Join(dstDir, "sub", "inner.txt")); err != nil {
-			t.Error("Nested file not found in destination")
-		}
-	})
-
-	t.Run("Copy (Create Fails)", func(t *testing.T) {
-		src := filepath.Join(tmpDir, "copy_create_fail_src.txt")
-		testutil.CreateTestFile(t, tmpDir, "copy_create_fail_src.txt", "content")
-		dst := filepath.Join(tmpDir, "copy_create_fail_dst.txt")
-
-		mock := testutil.NewMockFileSystem()
-		mock.FileSystem = fs
-		mock.CreateFunc = func(ctx context.Context, path string) (io.WriteCloser, error) {
+		fs.CreateFunc = func(ctx context.Context, path string) (io.WriteCloser, error) {
 			return nil, os.ErrPermission
 		}
-
-		if err := Copy(context.Background(), mock, src, dst, nil); err == nil {
-			t.Error("Expected error when Copy create fails")
-		}
-	})
-
-	t.Run("Copy (Open Fails)", func(t *testing.T) {
-		src := filepath.Join(tmpDir, "copy_open_fail_src.txt")
-		testutil.CreateTestFile(t, tmpDir, "copy_open_fail_src.txt", "content")
-		dst := filepath.Join(tmpDir, "copy_open_fail_dst.txt")
-
-		mock := testutil.NewMockFileSystem()
-		mock.FileSystem = fs
-		mock.OpenFunc = func(ctx context.Context, path string) (io.ReadCloser, error) {
-			return nil, os.ErrPermission
-		}
-
-		if err := Copy(context.Background(), mock, src, dst, nil); err == nil {
-			t.Error("Expected error when Copy open fails")
-		}
-	})
-
-	t.Run("Copy Dir (MkdirAll Fails)", func(t *testing.T) {
-		src := filepath.Join(tmpDir, "copy_dir_mkdir_src")
-		os.MkdirAll(src, 0755)
-		dst := filepath.Join(tmpDir, "copy_dir_mkdir_dst")
-
-		mock := testutil.NewMockFileSystem()
-		mock.FileSystem = fs
-		mock.MkdirAllFunc = func(ctx context.Context, path string, perm os.FileMode) error {
-			return os.ErrPermission
-		}
-
-		if err := Copy(context.Background(), mock, src, dst, nil); err == nil {
-			t.Error("Expected error when Copy dir MkdirAll fails")
-		}
-	})
-
-	t.Run("Copy Dir (ReadDir Fails)", func(t *testing.T) {
-		src := filepath.Join(tmpDir, "copy_dir_read_src")
-		os.MkdirAll(src, 0755)
-		dst := filepath.Join(tmpDir, "copy_dir_read_dst")
-
-		mock := testutil.NewMockFileSystem()
-		mock.FileSystem = fs
-		mock.ReadDirFunc = func(ctx context.Context, path string) ([]os.FileInfo, error) {
-			return nil, os.ErrPermission
-		}
-
-		if err := Copy(context.Background(), mock, src, dst, nil); err == nil {
-			t.Error("Expected error when Copy dir ReadDir fails")
+		err := CrossCopy(ctx, fs, fs, "/src", "/dst", nil, conflict.Ask)
+		if err == nil {
+			t.Fatal("expected permission error")
 		}
 	})
 }
 
-func TestParallelCopyDir(t *testing.T) {
-	tmpDir, cleanup := testutil.TempDir(t)
-	defer cleanup()
+func TestCrossCopy_Full(t *testing.T) {
+	ctx := context.Background()
+	fs := testutil.NewMockFileSystem()
 
-	srcDir := filepath.Join(tmpDir, "parallel_src")
-	os.MkdirAll(srcDir, 0755)
-
-	// Create many small files to test parallelism
-	numFiles := 100
-	for i := 0; i < numFiles; i++ {
-		fname := fmt.Sprintf("file_%d.txt", i)
-		testutil.CreateTestFile(t, srcDir, fname, fmt.Sprintf("content %d", i))
-	}
-
-	// Create a sub-directory with more files
-	subDir := filepath.Join(srcDir, "sub")
-	os.MkdirAll(subDir, 0755)
-	for i := 0; i < 50; i++ {
-		fname := fmt.Sprintf("sub_file_%d.txt", i)
-		testutil.CreateTestFile(t, subDir, fname, fmt.Sprintf("sub content %d", i))
-	}
-
-	dstDir := filepath.Join(tmpDir, "parallel_dst")
-	fs := &local.LocalFS{}
-
-	if err := Copy(context.Background(), fs, srcDir, dstDir, nil); err != nil {
-		t.Fatalf("Parallel copy failed: %v", err)
-	}
-
-	// Verify all files are present
-	for i := 0; i < numFiles; i++ {
-		fname := fmt.Sprintf("file_%d.txt", i)
-		if _, err := os.Stat(filepath.Join(dstDir, fname)); err != nil {
-			t.Errorf("File %s not found in destination", fname)
+	// Setup for recursive copy test
+	fs.LstatFunc = func(ctx context.Context, path string) (os.FileInfo, error) {
+		if path == "/src" {
+			return &testutil.MockFileInfo{NameStr: "src", IsDirBool: true}, nil
 		}
-	}
-
-	for i := 0; i < 50; i++ {
-		fname := fmt.Sprintf("sub_file_%d.txt", i)
-		if _, err := os.Stat(filepath.Join(dstDir, "sub", fname)); err != nil {
-			t.Errorf("Sub-file %s not found in destination", fname)
+		if path == "/src/file1.txt" {
+			return &testutil.MockFileInfo{NameStr: "file1.txt", IsDirBool: false, SizeInt: 10}, nil
 		}
+		return nil, os.ErrNotExist
 	}
+	fs.StatFunc = fs.LstatFunc
+	fs.ReadDirFunc = func(ctx context.Context, path string) ([]os.FileInfo, error) {
+		if path == "/src" {
+			return []os.FileInfo{&testutil.MockFileInfo{NameStr: "file1.txt", IsDirBool: false, SizeInt: 10}}, nil
+		}
+		return []os.FileInfo{}, nil
+	}
+	fs.MkdirAllFunc = func(ctx context.Context, path string, perm os.FileMode) error { return nil }
+	fs.CreateFunc = func(ctx context.Context, path string) (io.WriteCloser, error) {
+		return testutil.NewMockFile(fs.Base(path), nil), nil
+	}
+	fs.OpenFunc = func(ctx context.Context, path string) (io.ReadCloser, error) {
+		return testutil.NewMockFile(fs.Base(path), make([]byte, 10)), nil
+	}
+	fs.ChmodFunc = func(ctx context.Context, path string, mode os.FileMode) error { return nil }
+
+	err := CrossCopy(ctx, fs, fs, "/src", "/dst", nil, conflict.Ask)
+	testutil.AssertNoError(t, err, "CrossCopy should succeed")
+
+	fs.AssertCalled(t, "MkdirAll")
+	fs.AssertCalled(t, "Create")
 }
 
-func TestParallelCopyDir_Error(t *testing.T) {
-	tmpDir, cleanup := testutil.TempDir(t)
-	defer cleanup()
+func TestCopy(t *testing.T) {
+	ctx := context.Background()
+	fs := testutil.NewMockFileSystem()
 
-	srcDir := filepath.Join(tmpDir, "error_src")
-	os.MkdirAll(srcDir, 0755)
-	testutil.CreateTestFile(t, srcDir, "file1.txt", "content1")
-	testutil.CreateTestFile(t, srcDir, "file2.txt", "content2")
+	fs.LstatFunc = func(ctx context.Context, path string) (os.FileInfo, error) {
+		return &testutil.MockFileInfo{NameStr: "file1.txt", IsDirBool: false, SizeInt: 10}, nil
+	}
+	fs.StatFunc = fs.LstatFunc
+	fs.CreateFunc = func(ctx context.Context, path string) (io.WriteCloser, error) {
+		return testutil.NewMockFile(fs.Base(path), nil), nil
+	}
+	fs.OpenFunc = func(ctx context.Context, path string) (io.ReadCloser, error) {
+		return testutil.NewMockFile(fs.Base(path), make([]byte, 10)), nil
+	}
+	fs.ChmodFunc = func(ctx context.Context, path string, mode os.FileMode) error { return nil }
 
-	dstDir := filepath.Join(tmpDir, "error_dst")
+	err := Copy(ctx, fs, "/src", "/dst", nil, conflict.Overwrite)
+	testutil.AssertNoError(t, err, "Copy should succeed")
+}
 
-	localFS := &local.LocalFS{}
-	mock := testutil.NewMockFileSystem()
-	mock.FileSystem = localFS
+func TestCopyFile(t *testing.T) {
+	ctx := context.Background()
+	fs := testutil.NewMockFileSystem()
 
-	// Fail when creating file2.txt in destination
-	mock.CreateFunc = func(ctx context.Context, path string) (io.WriteCloser, error) {
-		if filepath.Base(path) == "file2.txt" {
-			return nil, os.ErrPermission
+	fs.StatFunc = func(ctx context.Context, path string) (os.FileInfo, error) {
+		return &testutil.MockFileInfo{NameStr: "file1.txt", IsDirBool: false, SizeInt: 10}, nil
+	}
+	fs.CreateFunc = func(ctx context.Context, path string) (io.WriteCloser, error) {
+		return testutil.NewMockFile(fs.Base(path), nil), nil
+	}
+	fs.OpenFunc = func(ctx context.Context, path string) (io.ReadCloser, error) {
+		return testutil.NewMockFile(fs.Base(path), make([]byte, 10)), nil
+	}
+	fs.ChmodFunc = func(ctx context.Context, path string, mode os.FileMode) error { return nil }
+
+	err := copyFile(ctx, fs, "/src", "/dst", nil)
+	testutil.AssertNoError(t, err, "copyFile should succeed")
+}
+
+func TestCopyDir(t *testing.T) {
+	ctx := context.Background()
+	fs := testutil.NewMockFileSystem()
+
+	fs.StatFunc = func(ctx context.Context, path string) (os.FileInfo, error) {
+		if path == "/src" {
+			return &testutil.MockFileInfo{NameStr: "src", IsDirBool: true}, nil
 		}
-		return localFS.Create(ctx, path)
+		return &testutil.MockFileInfo{NameStr: "file1.txt", IsDirBool: false, SizeInt: 10}, nil
 	}
+	fs.ReadDirFunc = func(ctx context.Context, path string) ([]os.FileInfo, error) {
+		if path == "/src" {
+			return []os.FileInfo{&testutil.MockFileInfo{NameStr: "file1.txt", IsDirBool: false, SizeInt: 10}}, nil
+		}
+		return []os.FileInfo{}, nil
+	}
+	fs.MkdirAllFunc = func(ctx context.Context, path string, perm os.FileMode) error { return nil }
+	fs.CreateFunc = func(ctx context.Context, path string) (io.WriteCloser, error) {
+		return testutil.NewMockFile(fs.Base(path), nil), nil
+	}
+	fs.OpenFunc = func(ctx context.Context, path string) (io.ReadCloser, error) {
+		return testutil.NewMockFile(fs.Base(path), make([]byte, 10)), nil
+	}
+	fs.ChmodFunc = func(ctx context.Context, path string, mode os.FileMode) error { return nil }
 
-	err := Copy(context.Background(), mock, srcDir, dstDir, nil)
-	if err == nil {
-		t.Error("Expected error from parallel copy, got nil")
+	err := copyDir(ctx, fs, "/src", "/dst", nil)
+	testutil.AssertNoError(t, err, "copyDir should succeed")
+}
+
+func TestCrossCopy_Rename(t *testing.T) {
+	ctx := context.Background()
+	fs := testutil.NewMockFileSystem()
+
+	fs.StatFunc = func(ctx context.Context, path string) (os.FileInfo, error) {
+		if path == "/dst" {
+			return &testutil.MockFileInfo{NameStr: "dst"}, nil
+		}
+		if path == "/dst (1)" {
+			return nil, os.ErrNotExist
+		}
+		return &testutil.MockFileInfo{NameStr: "src", SizeInt: 10}, nil
 	}
+	fs.LstatFunc = fs.StatFunc
+	fs.OpenFunc = func(ctx context.Context, path string) (io.ReadCloser, error) {
+		return testutil.NewMockFile("src", make([]byte, 10)), nil
+	}
+	fs.CreateFunc = func(ctx context.Context, path string) (io.WriteCloser, error) {
+		return testutil.NewMockFile("dst (1)", nil), nil
+	}
+	fs.ChmodFunc = func(ctx context.Context, path string, mode os.FileMode) error { return nil }
+
+	err := CrossCopy(ctx, fs, fs, "/src", "/dst", nil, conflict.Rename)
+	testutil.AssertNoError(t, err, "CrossCopy should succeed with Rename")
+}
+
+func TestCrossCopy_Overwrite(t *testing.T) {
+	ctx := context.Background()
+	fs := testutil.NewMockFileSystem()
+
+	fs.StatFunc = func(ctx context.Context, path string) (os.FileInfo, error) {
+		if path == "/dst" {
+			return &testutil.MockFileInfo{NameStr: "dst"}, nil
+		}
+		return &testutil.MockFileInfo{NameStr: "src", SizeInt: 10}, nil
+	}
+	fs.LstatFunc = fs.StatFunc
+	fs.RemoveAllFunc = func(ctx context.Context, path string) error { return nil }
+	fs.OpenFunc = func(ctx context.Context, path string) (io.ReadCloser, error) {
+		return testutil.NewMockFile("src", make([]byte, 10)), nil
+	}
+	fs.CreateFunc = func(ctx context.Context, path string) (io.WriteCloser, error) {
+		return testutil.NewMockFile("dst", nil), nil
+	}
+	fs.ChmodFunc = func(ctx context.Context, path string, mode os.FileMode) error { return nil }
+
+	err := CrossCopy(ctx, fs, fs, "/src", "/dst", nil, conflict.Overwrite)
+	testutil.AssertNoError(t, err, "CrossCopy should succeed with Overwrite")
+	fs.AssertCalled(t, "RemoveAll")
 }

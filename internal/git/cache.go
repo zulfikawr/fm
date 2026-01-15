@@ -2,9 +2,10 @@ package git
 
 import (
 	"context"
-	"fm/internal/constants"
 	"os/exec"
 	"strings"
+
+	"fm/internal/constants"
 )
 
 func (s *gitService) GetRoot(ctx context.Context, path string) string {

@@ -1,28 +1,27 @@
 package ops
 
 import (
+	"context"
 	"errors"
 	"fmt"
-	"path/filepath"
 	"strings"
 
 	"fm/internal/constants"
+	"fm/internal/files/core"
 )
 
 // ValidatePath checks if a path is safe and doesn't contain traversal attempts
-func ValidatePath(basePath, targetName string) error {
+func ValidatePath(fs core.FileSystem, basePath, targetName string) error {
 	if err := ValidateFileName(targetName); err != nil {
 		return err
 	}
 
 	// Additional check: ensure the resolved path is within base
 	if basePath != "" {
-		cleanBase := filepath.Clean(basePath)
-		testPath := filepath.Join(basePath, targetName)
-		cleanTest := filepath.Clean(testPath)
+		testPath := fs.Join(basePath, targetName)
 
 		// Ensure the result is still under basePath
-		relPath, err := filepath.Rel(cleanBase, cleanTest)
+		relPath, err := fs.Rel(basePath, testPath)
 		if err != nil || strings.HasPrefix(relPath, "..") {
 			return errors.New("invalid path: attempts to escape base directory")
 		}
@@ -63,6 +62,18 @@ func ValidateFileName(name string) error {
 func ValidateSearchQuery(query string) error {
 	if strings.ContainsAny(query, "`$;") {
 		return errors.New("search query contains invalid characters")
+	}
+	return nil
+}
+
+// ValidateWritable checks if a path is on a writable filesystem
+func ValidateWritable(ctx context.Context, fs core.FileSystem, path string) error {
+	ro, err := fs.IsReadOnly(ctx, path)
+	if err != nil {
+		return err
+	}
+	if ro {
+		return errors.New("filesystem is read-only")
 	}
 	return nil
 }

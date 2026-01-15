@@ -2,111 +2,103 @@ package listing
 
 import (
 	"context"
+	"fm/internal/files/sorting"
 	"fm/internal/testutil"
+	"fmt"
 	"os"
-	"path/filepath"
+	"strings"
 	"testing"
 	"time"
-
-	"fm/internal/files/local"
-	"fm/internal/files/sorting"
 )
 
 func TestLoad(t *testing.T) {
-	tmpDir, cleanup := testutil.TempDir(t)
-	defer cleanup()
+	ctx := context.Background()
+	fs := testutil.NewMockFileSystem()
 
-	os.Mkdir(filepath.Join(tmpDir, "dir1"), 0755)
-	testutil.CreateTestFile(t, tmpDir, "file1.txt", "hello")
-	testutil.CreateTestFile(t, tmpDir, "a_file.txt", "test")
-
-	t.Run("Default Sort", func(t *testing.T) {
-		fs := &local.LocalFS{}
-		items, err := Load(context.Background(), fs, tmpDir, sorting.SortDefault, false, nil)
-		if err != nil {
-			t.Fatalf("Load failed: %v", err)
+	t.Run("Includes parent directory entry", func(t *testing.T) {
+		fs.ReadDirEntriesFunc = func(ctx context.Context, path string) ([]os.DirEntry, error) {
+			return []os.DirEntry{}, nil
 		}
+		items, err := Load(ctx, fs, "/some/path", sorting.SortDefault, true, nil)
+		testutil.AssertNoError(t, err, "Load should not fail")
 
-		if items[0].Name != "↑ .." {
-			t.Errorf("Expected first item to be '↑ ..', got %s", items[0].Name)
-		}
-	})
-
-	t.Run("Size Sort", func(t *testing.T) {
-		fs := &local.LocalFS{}
-		items, err := Load(context.Background(), fs, tmpDir, sorting.SortSizeDesc, false, nil)
-		if err != nil {
-			t.Fatalf("Load failed: %v", err)
-		}
-		foundAFile := false
+		foundUp := false
 		for _, item := range items {
-			if item.Name == "file1.txt" {
-				if foundAFile {
-					t.Error("file1.txt should come before a_file.txt in SizeDesc")
-				}
-			}
-			if item.Name == "a_file.txt" {
-				foundAFile = true
-			}
-		}
-	})
-
-	t.Run("Newest Sort", func(t *testing.T) {
-		newFile := testutil.CreateTestFile(t, tmpDir, "new.txt", "new")
-		future := time.Now().Add(1 * time.Hour)
-		os.Chtimes(newFile, future, future)
-
-		fs := &local.LocalFS{}
-		items, err := Load(context.Background(), fs, tmpDir, sorting.SortNewest, false, nil)
-		if err != nil {
-			t.Fatalf("Load failed: %v", err)
-		}
-		if items[1].Name != "new.txt" {
-			t.Errorf("Expected newest item to be new.txt, got %s", items[1].Name)
-		}
-	})
-
-	t.Run("Show Hidden", func(t *testing.T) {
-		testutil.CreateTestFile(t, tmpDir, ".hidden", "hidden")
-		fs := &local.LocalFS{}
-		items, err := Load(context.Background(), fs, tmpDir, sorting.SortDefault, true, nil)
-		if err != nil {
-			t.Fatalf("Load failed: %v", err)
-		}
-		found := false
-		for _, item := range items {
-			if item.Name == ".hidden" {
-				found = true
+			if item.IsUp {
+				foundUp = true
 				break
 			}
 		}
-		if !found {
-			t.Error("Expected to find hidden file when showHidden is true")
+		testutil.AssertEqual(t, true, foundUp, "Should contain '..' entry for non-root paths")
+	})
+
+	t.Run("Filters hidden files when showHidden is false", func(t *testing.T) {
+		fs.ReadDirEntriesFunc = func(ctx context.Context, path string) ([]os.DirEntry, error) {
+			return []os.DirEntry{
+				&testutil.MockDirEntry{NameStr: "visible.txt"},
+				&testutil.MockDirEntry{NameStr: ".hidden.txt"},
+			}, nil
 		}
+		items, err := Load(ctx, fs, "/", sorting.SortDefault, false, nil)
+		testutil.AssertNoError(t, err, "Load should not fail")
+
+		for _, item := range items {
+			if strings.HasPrefix(item.Name, ".") && !item.IsUp {
+				t.Errorf("found hidden file %q when showHidden=false", item.Name)
+			}
+		}
+	})
+
+	t.Run("Includes ghost entries from git status", func(t *testing.T) {
+		fs.ReadDirEntriesFunc = func(ctx context.Context, path string) ([]os.DirEntry, error) {
+			return []os.DirEntry{
+				&testutil.MockDirEntry{NameStr: "exists.txt"},
+			}, nil
+		}
+		gitStatuses := map[string]string{
+			"deleted.txt": "D",
+			"exists.txt":  "M",
+		}
+		items, err := Load(ctx, fs, "/", sorting.SortDefault, true, gitStatuses)
+		testutil.AssertNoError(t, err, "Load should not fail")
+
+		foundGhost := false
+		for _, item := range items {
+			if item.Name == "deleted.txt" && item.IsGhost {
+				foundGhost = true
+				break
+			}
+		}
+		testutil.AssertEqual(t, true, foundGhost, "Should contain ghost entry for deleted git file")
 	})
 }
 
-func TestLoadGhostEntries(t *testing.T) {
-	tmpDir, cleanup := testutil.TempDir(t)
-	defer cleanup()
+func TestLoad_LargeDirectory(t *testing.T) {
+	ctx := context.Background()
+	fs := testutil.NewMockFileSystem()
 
-	gitStatuses := map[string]string{"deleted.txt": "D"}
-	fs := &local.LocalFS{}
-	items, err := Load(context.Background(), fs, tmpDir, sorting.SortDefault, false, gitStatuses)
-	if err != nil {
-		t.Fatalf("Load failed: %v", err)
-	}
-
-	found := false
-	for _, item := range items {
-		if item.Name == "deleted.txt" {
-			if !item.IsGhost {
-				t.Error("Expected deleted.txt to be marked as Ghost")
-			}
-			found = true
+	// Simulate 10,000 files
+	numFiles := 10000
+	files := make([]os.DirEntry, numFiles)
+	for i := 0; i < numFiles; i++ {
+		files[i] = &testutil.MockDirEntry{
+			NameStr:   fmt.Sprintf("file_%05d.txt", i),
+			IsDirBool: false,
 		}
 	}
-	if !found {
-		t.Error("Expected to find ghost entry 'deleted.txt'")
+
+	fs.ReadDirEntriesFunc = func(ctx context.Context, path string) ([]os.DirEntry, error) {
+		return files, nil
+	}
+
+	start := time.Now()
+	items, err := Load(ctx, fs, "/large", sorting.SortDefault, true, nil)
+	duration := time.Since(start)
+
+	testutil.AssertNoError(t, err, "Load should succeed")
+	testutil.AssertEqual(t, numFiles+1, len(items), "Should have 10,001 items (including ..)")
+
+	if duration > 1*time.Second {
+		t.Errorf("Load took too long: %v", duration)
 	}
 }

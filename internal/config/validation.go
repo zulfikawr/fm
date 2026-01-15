@@ -1,14 +1,12 @@
 package config
 
 import (
-	"fm/internal/files/format"
-	"fm/internal/files/ops"
-	"fm/internal/tui/theme"
 	"fmt"
+
+	"fm/internal/constants"
 )
 
 // ValidationBounds holds the valid ranges for config fields
-// These are derived from actual data lengths
 type ValidationBounds struct {
 	MaxThemeIndex      int
 	MaxDateFormatIndex int
@@ -16,13 +14,13 @@ type ValidationBounds struct {
 	MaxEditorIndex     int
 }
 
-// GetValidationBounds returns bounds derived from actual data
+// GetValidationBounds returns bounds derived from constants
 func GetValidationBounds() ValidationBounds {
 	return ValidationBounds{
-		MaxThemeIndex:      len(theme.Themes) - 1,
-		MaxDateFormatIndex: len(format.DateFormats) - 1,
-		MaxSizeFormatIndex: len(format.SizeFormats) - 1,
-		MaxEditorIndex:     len(ops.Editors) - 1,
+		MaxThemeIndex:      constants.ThemeCount - 1,
+		MaxDateFormatIndex: constants.DateFormatCount - 1,
+		MaxSizeFormatIndex: constants.SizeFormatCount - 1,
+		MaxEditorIndex:     len(constants.Editors) - 1,
 	}
 }
 

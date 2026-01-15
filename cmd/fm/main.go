@@ -1,15 +1,12 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"os"
 
 	"fm/internal/bootstrap"
-	"fm/internal/config"
+	"fm/internal/cli"
 	"fm/internal/tui"
-	"fm/internal/tui/help"
-	"fm/internal/tui/theme"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -22,24 +19,9 @@ func main() {
 }
 
 func run() error {
-	// Load config first to check for theme
-	cfg := config.Load()
-	t := theme.Themes[cfg.ThemeIndex]
-	styles := theme.NewStylesheet(t)
+	args := cli.Parse()
 
-	// Define flags
-	var remoteStr string
-	flag.StringVar(&remoteStr, "remote", "", "Remote address (user@host[:path] or ssh-alias)")
-	flag.StringVar(&remoteStr, "r", "", "Remote address (shorthand)")
-
-	// Custom Usage
-	flag.Usage = func() {
-		help.Print(styles, t.Name)
-	}
-
-	flag.Parse()
-
-	a, err := bootstrap.InitializeApp(remoteStr, flag.Args())
+	a, err := bootstrap.InitializeApp(args.Remote, args.Args)
 	if err != nil {
 		return err
 	}

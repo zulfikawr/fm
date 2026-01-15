@@ -15,5 +15,5 @@ func isReadOnly(path string) (bool, error) {
 
 	// On Windows, the FileMode's read-only bit is generally accurate for current user access
 	// when combined with standard file attributes.
-	return info.Mode().Perm()&0200 == 0, nil
+	return info.Mode().Perm()&0o200 == 0, nil
 }

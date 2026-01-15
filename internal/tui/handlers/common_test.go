@@ -1,0 +1,74 @@
+package handlers
+
+import (
+	"errors"
+	"testing"
+
+	"fm/internal/files/core"
+	"fm/internal/testutil"
+	tuictx "fm/internal/tui/context"
+	tuierrors "fm/internal/tui/errors"
+)
+
+func TestCommon_Helpers(t *testing.T) {
+	fs := testutil.NewMockFileSystem()
+	m := tuictx.NewModel(fs, "/test")
+
+	t.Run("SetMsg", func(t *testing.T) {
+		SetMsg(m, "test message")
+		if m.Message.Text != "test message" {
+			t.Errorf("expected 'test message', got %q", m.Message.Text)
+		}
+	})
+
+	t.Run("LogError", func(t *testing.T) {
+		err := errors.New("test error")
+		LogError(m, err, "Context")
+		if m.Message.Error == nil {
+			t.Fatal("expected message error to be set")
+		}
+
+		tuiErr, ok := m.Message.Error.(*tuierrors.Error)
+		if !ok {
+			t.Fatal("expected error to be *tuierrors.Error")
+		}
+		if tuiErr.Operation != "Context" {
+			t.Errorf("expected operation Context, got %s", tuiErr.Operation)
+		}
+	})
+
+	t.Run("LogPush/Update", func(t *testing.T) {
+		id := LogPush(m, "Test", tuictx.LogInfo, tuictx.StatusRunning, "Start", "")
+		if len(m.Logs.Entries) != 1 {
+			t.Fatal("expected 1 log entry")
+		}
+
+		LogUpdate(m, id, tuictx.StatusSuccess, tuictx.LogSuccess, "Finished", "details")
+		entry := m.Logs.Entries[0]
+		if entry.Status != tuictx.StatusSuccess {
+			t.Errorf("expected StatusSuccess, got %v", entry.Status)
+		}
+	})
+}
+
+func TestCommon_DirectoryLoad(t *testing.T) {
+	fs := testutil.NewMockFileSystem()
+	m := tuictx.NewModel(fs, "/test")
+
+	msg := LoadedItemsMsg{
+		Generation: m.Navigation.PathGen,
+		Path:       "/test",
+		Items: []core.Item{
+			{Name: "f1.txt"},
+		},
+	}
+
+	HandleNavigation(m, msg)
+
+	if len(m.Navigation.Items) != 1 {
+		t.Errorf("expected 1 item, got %d", len(m.Navigation.Items))
+	}
+	if m.UI.Loading {
+		t.Error("expected UI.Loading to be false after load")
+	}
+}

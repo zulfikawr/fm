@@ -1,16 +1,14 @@
 package footer
 
 import (
-	"strings"
-
 	"fm/internal/constants"
 	"fm/internal/files/core"
 	"fm/internal/files/sorting"
 	"fm/internal/sshutil"
+	"fm/internal/tui/components/messages"
+	"fm/internal/tui/components/ui"
+	"fm/internal/tui/components/views"
 	"fm/internal/tui/theme"
-
-	"github.com/charmbracelet/bubbles/textinput"
-	"github.com/charmbracelet/lipgloss"
 )
 
 // Mode represents the current footer display mode
@@ -23,10 +21,15 @@ const (
 	ModeRenaming
 	ModeGoto
 	ModeAuth
+	ModeFuzzySearch
 	ModeConfirming
 	ModeHostConfirm
 	ModeMessage
 	ModeSettings
+	ModeLog
+	ModeClipboard
+	ModeZip
+	ModeUnzip
 )
 
 // Props contains all data needed to render the footer
@@ -39,7 +42,7 @@ type Props struct {
 	ProgressPercent float64
 
 	// Inputs
-	ActiveInput textinput.Model
+	ActiveInput ui.Input
 	AltMode     bool
 
 	// Status
@@ -65,66 +68,73 @@ type Props struct {
 	PromptCache map[string]string
 }
 
-// Render renders the complete footer based on the current mode
+// Render assembles the footer by delegating to mode-specific functions
 func Render(props Props) string {
 	switch props.Mode {
 	case ModeProgress:
-		return renderProgress(props)
-	case ModeSearching, ModeRenaming, ModeGoto, ModeAuth, ModeConfirming, ModeHostConfirm:
-		return renderPrompts(props)
+		return renderProgressFooter(props)
+	case ModeSearching, ModeRenaming, ModeGoto, ModeAuth, ModeFuzzySearch, ModeZip, ModeUnzip, ModeConfirming, ModeHostConfirm:
+		return renderPromptsFooter(props)
 	case ModeMessage:
-		return renderMessage(props)
+		return renderAlertFooter(props)
 	case ModeSettings:
-		return renderSettingsFooter(props)
+		return views.RenderSettingsFooter(props.Width, props.SettingsCursor, props.Styles)
+	case ModeLog:
+		return views.RenderLogsFooter(props.Width, props.Styles)
+	case ModeClipboard:
+		return views.RenderClipboardFooter(props.Width, props.ClipboardCount == 0, props.Styles)
 	default:
-		return renderNormalFooter(props)
+		return renderStatsFooter(props)
 	}
 }
 
-// buildNormalFooterParts builds all parts for normal footer display
-func buildNormalFooterParts(props Props) []string {
-	var parts []string
+func renderPromptsFooter(props Props) string {
+	msgMode := messages.ModeNone
+	switch props.Mode {
+	case ModeSearching:
+		msgMode = messages.ModeSearching
+	case ModeRenaming:
+		msgMode = messages.ModeRenaming
+	case ModeGoto:
+		msgMode = messages.ModeGoto
+	case ModeAuth:
+		msgMode = messages.ModeAuth
+	case ModeFuzzySearch:
+		msgMode = messages.ModeFuzzySearch
+	case ModeZip:
+		msgMode = messages.ModeZip
+	case ModeUnzip:
+		msgMode = messages.ModeUnzip
+	case ModeConfirming:
+		msgMode = messages.ModeConfirming
+	case ModeHostConfirm:
+		msgMode = messages.ModeHostConfirm
+	}
 
-	// Pagination - always show
-	pagination := renderPaginationInfo(PaginationInfo{
-		Current: props.Cursor,
-		Total:   props.TotalItems,
+	return messages.Render(messages.Props{
+		Mode:            msgMode,
+		Width:           props.Width,
+		ActiveInput:     props.ActiveInput,
+		AltMode:         props.AltMode,
+		RemoteConnected: props.RemoteConnected,
+		ActionType:      props.ActionType,
+		ClipboardCount:  props.ClipboardCount,
+		ConflictDst:     props.ConflictDst,
+		HostConfirmReq:  props.HostConfirmReq,
+		Style:           props.Styles,
+		PromptCache:     props.PromptCache,
+	})
+}
+
+func renderAlertFooter(props Props) string {
+	return messages.Render(messages.Props{
+		Mode:    messages.ModeAlert,
 		Width:   props.Width,
-	}, props.Styles)
-	if pagination != "" {
-		parts = append(parts, pagination)
-	}
-
-	// Permission info
-	permission := renderPermissionInfo(props.FilteredItems, props.Cursor, props.Styles)
-	if permission != "" {
-		parts = append(parts, permission)
-	}
-
-	return parts
+		Message: props.Message,
+		Style:   props.Styles,
+	})
 }
 
-// assembleFooterContent assembles footer parts with proper spacing
-func assembleFooterContent(parts []string, width int, styles theme.Stylesheet) string {
-	if len(parts) == 0 {
-		return ""
-	}
-
-	dimStyle := styles.DimCol.Inherit(styles.Footer).UnsetPadding().UnsetWidth()
-	spacer := dimStyle.Render(" | ")
-	content := strings.Join(parts, spacer)
-
-	// Truncate if too long
-	if lipgloss.Width(content) > width-2 {
-		maxWidth := width - 5 // Leave room for "..."
-		if maxWidth < 0 {
-			maxWidth = 0
-		}
-		// Simple truncation
-		if len(content) > maxWidth {
-			content = content[:maxWidth] + "..."
-		}
-	}
-
-	return content
+func renderProgressFooter(props Props) string {
+	return ui.ProgressBar(props.ProgressLabel, props.ProgressPercent, props.Width, props.Styles)
 }

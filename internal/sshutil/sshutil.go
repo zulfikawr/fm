@@ -126,9 +126,9 @@ func GetHostKeyCallback(askChan chan<- *HostConfirmRequest) (ssh.HostKeyCallback
 	knownHostsPath := filepath.Join(sshDir, "known_hosts")
 
 	// Ensure directory exists
-	_ = os.MkdirAll(sshDir, 0700)
+	_ = os.MkdirAll(sshDir, 0o700)
 	if _, err := os.Stat(knownHostsPath); os.IsNotExist(err) {
-		_ = os.WriteFile(knownHostsPath, []byte{}, 0600)
+		_ = os.WriteFile(knownHostsPath, []byte{}, 0o600)
 	}
 
 	cb, err := knownhosts.New(knownHostsPath)
@@ -179,7 +179,7 @@ func AddToKnownHosts(hostname string, remote net.Addr, key ssh.PublicKey) error 
 	}
 	knownHostsPath := filepath.Join(home, ".ssh", "known_hosts")
 
-	f, err := os.OpenFile(knownHostsPath, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0600)
+	f, err := os.OpenFile(knownHostsPath, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0o600)
 	if err != nil {
 		return err
 	}

@@ -7,6 +7,7 @@ import (
 	"sync"
 
 	"fm/internal/constants"
+	"fm/internal/files/conflict"
 	"fm/internal/files/core"
 	"fm/internal/files/errors"
 
@@ -14,12 +15,12 @@ import (
 )
 
 // Copy copies a file or directory recursively from src to dst within the same filesystem.
-func Copy(ctx context.Context, fs core.FileSystem, src, dst string, progChan chan<- core.Progress) error {
-	return CrossCopy(ctx, fs, fs, src, dst, progChan)
+func Copy(ctx context.Context, fs core.FileSystem, src, dst string, progChan chan<- core.Progress, policy conflict.Policy) error {
+	return CrossCopy(ctx, fs, fs, src, dst, progChan, policy)
 }
 
 // CrossCopy copies a file or directory recursively from srcFS to dstFS.
-func CrossCopy(ctx context.Context, srcFS, dstFS core.FileSystem, src, dst string, progChan chan<- core.Progress) error {
+func CrossCopy(ctx context.Context, srcFS, dstFS core.FileSystem, src, dst string, progChan chan<- core.Progress, policy conflict.Policy) error {
 	if src == "" || dst == "" {
 		return errors.WrapErrorWithPath(fmt.Errorf("empty path"), "CrossCopy", fmt.Sprintf("%s -> %s", src, dst))
 	}
@@ -29,6 +30,36 @@ func CrossCopy(ctx context.Context, srcFS, dstFS core.FileSystem, src, dst strin
 		dAbs, _ := dstFS.Abs(dst)
 		if sAbs == dAbs {
 			return errors.WrapErrorWithPath(fmt.Errorf("source and destination are the same"), "CrossCopy", src)
+		}
+	}
+
+	// Resolve conflict if any
+	resolver := conflict.NewResolver()
+	resolvedPath, isRenamed, err := resolver.Resolve(ctx, dstFS, src, dst, policy)
+	if err != nil {
+		if cerr, ok := err.(*conflict.ConflictError); ok {
+			cerr.IsMove = false
+			cerr.OpType = "copy"
+			return cerr
+		}
+		return err
+	}
+
+	if resolvedPath == "" {
+		return nil // Skip
+	}
+	if resolvedPath == dst && policy == conflict.Overwrite {
+		_ = dstFS.RemoveAll(ctx, dst)
+	}
+	dst = resolvedPath
+
+	if progChan != nil && isRenamed {
+		select {
+		case progChan <- core.Progress{
+			Percent: 0,
+			Label:   fmt.Sprintf("Copying %s as %s...", srcFS.Base(src), dstFS.Base(dst)),
+		}:
+		default:
 		}
 	}
 

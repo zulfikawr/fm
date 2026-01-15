@@ -5,6 +5,81 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.1.7] - 2026-01-15
+
+### Added
+- **Centralized Conflict Management (`internal/files/conflict`):**
+  - New dedicated package for handling file collisions across all operations.
+  - Unified `Resolver` interface for consistent Overwrite, Skip, and Rename logic.
+  - Efficient $O(N)$ unique filename generation.
+- **Interactive Batch Conflict Resolution:**
+  - **Apply to All:** Hold Shift while choosing an action (`Y/N/R`) to apply it to all remaining conflicts in a batch.
+  - Detailed logging: Progress updates now show if an item was renamed during the operation (e.g., "Moving file.txt as file (1).txt").
+- **Zip and Unzip Support:**
+  - **Zip ('z'):** Compress selected files and directories into a `.zip` archive.
+  - **Unzip ('u'):** Extract archives directly within the TUI.
+  - **Hardened Security:** Built-in ZipSlip protection using centralized path validation.
+  - **Per-file Conflict Checks:** Unzip checks for existing files *inside* the destination before extracting each entry.
+- **Custom UI Component Package (`internal/tui/components/ui`):**
+  - **Zero-Dependency Text Input:** A custom-built, theme-aware text input component that supports horizontal scrolling, custom prompts, and smooth cursor blinking.
+  - **Optimized Spinner:** A lightweight, theme-aware spinner for consistent loading indicators across the app.
+- **Fuzzy Content Search (Find in Files):** New powerful search feature triggered by `Alt+/`.
+- **Remote Fuzzy Search:** Enabled content search for SFTP connections by implementing a cross-platform recursive `Walk` method.
+- **Clipboard Management Screen:** New dedicated view accessible via `Alt+C`.
+- **Real-time Log Screen:** Access a detailed history of all operations via `Alt+L`.
+- **Fail-Fast Permission Hardening:** Operations now verify write permissions at the destination *before* starting, providing instant feedback and preventing mid-transfer failures.
+- **Global Context Hierarchy:** All background operations (search, copy, move) are now tied to a root application context, ensuring zero goroutine leaks when tabs are closed or the app exits.
+  - **Interactive Batch Conflict Resolution:** New system for handling filename collisions during multi-file operations.
+  - Supports **Overwrite**, **Skip**, and **Auto-rename** per-file.
+  - **Apply to All:** Press `a` during a conflict to apply your choice to all remaining items in the selection.
+- **Double Ctrl+C to Quit:** Added a safety mechanism requiring `Ctrl+C` to be pressed twice while the footer prompt is visible to exit the application.
+- **Message Stack:** Status messages are now managed via a stack, preventing concurrent background tasks from overwriting each other's notifications.
+- **Cross-Platform Path Resolver:** Added `Rel`, `Clean`, `Ext`, and `Walk` to the `FileSystem` interface, ensuring 100% path compatibility between different operating systems.
+
+### Changed
+- **Unified Conflict Policies:** Refactored `Copy`, `Move`, `Rename`, `Zip`, and `Unzip` to use the centralized `conflict.Policy` and `conflict.Resolver`.
+- **Performance & Responsiveness Overhaul:**
+  - **Style Sheet Caching:** The theme stylesheet is now cached in the application state and only recomputed when the theme actually changes, eliminating redundant Lipgloss style creation during the render loop.
+  - **Layout Memoization:** Calculated UI dimensions (header, footer, body heights) are now cached and only updated on window resize events.
+  - **Asynchronous Metadata Formatting:** Moving file size and date formatting to the background directory loader goroutine, preventing UI stutters when entering directories with thousands of files.
+  - **Event Debouncing:**
+    - **Filesystem Events:** Batching rapid filesystem changes (e.g. during git checkout) into a single reload using a 150ms debounce.
+    - **In-list Filtering:** Debouncing search-as-you-type filtering in the file list by 50ms to maintain UI fluidness in large directories.
+  - **Progress Message Throttling:** Throttling background operation progress updates to 30Hz to prevent render-loop flooding during high-speed file transfers.
+  - **Computational Optimizations:**
+    - **Search Key Pre-calculation:** File names are now lowercased once during directory load and cached as `SearchKey`, avoiding thousands of redundant `strings.ToLower` calls during active filtering.
+    - **O(1) Selection Toggling:** Optimized the multi-selection system to eliminate $O(N)$ synchronization loops, relying on the central `SelectedPaths` map as the single source of truth during render.
+    - **Search Context Management:** Fuzzy content search now utilizes active context cancellation to immediately terminate previous search goroutines when the query changes, significantly reducing CPU spikes and ensuring result consistency.
+  - **Caching System Evolution:**
+    - **Generic LRU Architecture:** Refactored the internal caching engine to use Go generics, providing a type-safe, reusable LRU cache for all application data.
+    - **In-Session Navigation Memory:** Cursor positions and scroll offsets are now remembered for recently visited directories during a single session, providing a seamless experience when navigating back and forth.
+    - **Instant Directory Switching:** Implemented an `ItemCache` that stores fully formatted directory listings. Navigation back to recently visited folders is now instantaneous, with background refreshing to ensure accuracy.
+    - **TTL-Aware Git Status:** Git markers are now cached with a 30-second TTL, significantly reducing redundant `git status` calls while browsing.
+  - **Git Integration Improvements:**
+    - **Aggressive Git Root Caching:** Repository root discovery results are now cached with a 1-hour TTL, eliminating thousands of redundant `git rev-parse` calls during deep directory navigation.
+    - **Git Operation Cancellation:** Background Git operations (status and branch detection) are now immediately cancelled when navigating away from a directory, freeing up system resources and preventing race conditions.
+  - **Incremental List Processing:**
+    - **Skeleton Loading:** Large directories now load filenames almost instantly using `os.ReadDir` without waiting for full file metadata (stats).
+    - **Virtual Metadata Prioritization:** The application now prioritizes fetching size, date, and permission information for the visible viewport and a small buffer, providing immediate feedback where the user is looking.
+    - **Background Metadata Population:** Full file information for the remaining items is populated in the background without blocking the UI.
+    - **Skeleton State UI:** Items without metadata yet are displayed with a subtle "..." placeholder, which smoothly transitions to actual data as background workers finish.
+- **Bootstrap Architecture:** Decomposed the "heavy" bootstrap into a dedicated `factory` for filesystems and a `cli` package for argument parsing, improving maintainability.
+- **Smart Selection Behavior:** Selection markers (`[x]`) are now automatically hidden once a Copy, Cut, or Zip operation is initiated, providing a cleaner UI.
+- **Quit Shortcut Cleanup:** Removed the `q` keybinding for quitting to prevent accidental application exits during navigation.- **Unified Batch Operations Engine:** Centralized all multi-file logic (Copy, Move, Delete) into the `ops` package, ensuring consistent progress reporting and error handling.
+- **Refactored `ValidatePath`:** Security validation now utilizes the active `FileSystem` implementation for more robust path-traversal protection on remote hosts.
+- **Streamlined TUI Commands:** Reduced code duplication by making TUI file operations thin wrappers around the consolidated `ops` engine.
+- **Improved Progress Feedback:** The progress bar now dynamically shows filenames for single-item deletions and correctly clears itself after a brief success display.
+
+### Fixed
+- **Progress Sticking:** Fixed a bug where the progress bar would occasionally hang at 100% after completion.
+- **Remote File Watcher:** Implemented a polling-based watcher (3-second interval) for remote SFTP connections, enabling automatic UI updates when files are added or modified on remote servers.
+- **Filesystem Watcher Transitions:** Improved reliability when switching between local and remote filesystems by correctly resetting the watcher state.
+- **File Watcher Responsiveness:** Fixed an issue where the file watcher wouldn't detect changes in the initial directory or after navigating. It now correctly updates the watched path when changing directories or tabs.
+- **Watcher Command Leak:** Added an `IsListening` state to prevent multiple redundant watcher goroutines from being started.
+
+### Removed
+- **Configuration Migration Info:** Silenced the "migrating config from v0 to v1" message to provide a cleaner startup experience.
+
 ## [v0.1.6] - 2026-01-13
 
 ### Added

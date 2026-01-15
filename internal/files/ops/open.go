@@ -1,29 +1,43 @@
 package ops
 
 import (
+	"fmt"
 	"os/exec"
-	"path/filepath"
 	"runtime"
 	"strings"
+
+	"fm/internal/constants"
+	"fm/internal/files/core"
 )
 
-var Editors = []string{
-	"vim",
-	"nano",
-	"vi",
-	"emacs",
-	"code",
-	"subl",
-	"cursor",
-	"zed",
+// GetOpenCmd returns the command to open a file and a boolean indicating if it's a terminal-based editor.
+func GetOpenCmd(fs core.FileSystem, path string, editorIdx int) (*exec.Cmd, bool, error) {
+	return GetOpenAtLineCmd(fs, path, editorIdx, 0)
 }
 
-// GetOpenCmd returns the command to open a file and a boolean indicating if it's a terminal-based editor.
-func GetOpenCmd(path string, editorIdx int) (*exec.Cmd, bool, error) {
-	if IsTextFile(path) {
-		editor := Editors[editorIdx]
+// GetOpenAtLineCmd returns a command to open a file at a specific line number.
+func GetOpenAtLineCmd(fs core.FileSystem, path string, editorIdx int, line int) (*exec.Cmd, bool, error) {
+	if IsTextFile(fs, path) {
+		editor := constants.Editors[editorIdx]
 		isTerminalEditor := isTerminalEditor(editor)
-		return exec.Command(editor, path), isTerminalEditor, nil
+
+		var args []string
+		if line > 0 {
+			switch editor {
+			case "vim", "vi", "nano":
+				args = []string{fmt.Sprintf("+%d", line), path}
+			case "code", "cursor", "subl":
+				args = []string{"--goto", fmt.Sprintf("%s:%d", path, line)}
+			case "emacs":
+				args = []string{fmt.Sprintf("+%d", line), path}
+			default:
+				args = []string{path}
+			}
+		} else {
+			args = []string{path}
+		}
+
+		return exec.Command(editor, args...), isTerminalEditor, nil
 	}
 
 	var cmd *exec.Cmd
@@ -51,8 +65,8 @@ func isTerminalEditor(editor string) bool {
 }
 
 // IsTextFile returns true if the file extension suggests it's a text or code file.
-func IsTextFile(path string) bool {
-	ext := strings.ToLower(filepath.Ext(path))
+func IsTextFile(fs core.FileSystem, path string) bool {
+	ext := strings.ToLower(fs.Ext(path))
 	textExts := map[string]bool{
 		".txt":  true,
 		".md":   true,

@@ -2,8 +2,8 @@ package testutil
 
 import (
 	"errors"
-	"os"
-	"path/filepath"
+	"reflect"
+	"regexp"
 )
 
 // TB is a subset of testing.TB that we use for helpers to be compatible with rapid.T
@@ -13,34 +13,33 @@ type TB interface {
 	Errorf(format string, args ...any)
 }
 
-// TempDir creates a temporary directory and returns its path and a cleanup function
-func TempDir(t TB) (string, func()) {
-	t.Helper()
-	dir, err := os.MkdirTemp("", "fm-test-*")
-	if err != nil {
-		t.Fatalf("failed to create temp dir: %v", err)
-	}
-
-	return dir, func() {
-		os.RemoveAll(dir)
-	}
-}
-
-// CreateTestFile creates a file with the given content in the specified directory
-func CreateTestFile(t TB, dir, name, content string) string {
-	t.Helper()
-	path := filepath.Join(dir, name)
-	err := os.WriteFile(path, []byte(content), 0644)
-	if err != nil {
-		t.Fatalf("failed to create test file: %v", err)
-	}
-	return path
-}
-
 // AssertErrorType checks if an error is of a specific type
 func AssertErrorType(t TB, err error, target interface{}, msg string) {
 	t.Helper()
 	if !errors.As(err, target) {
 		t.Errorf("%s: expected error type %T, got %T (%v)", msg, target, err, err)
 	}
+}
+
+// AssertEqual checks if two values are equal
+func AssertEqual(t TB, expected, actual any, msg string) {
+	t.Helper()
+	if !reflect.DeepEqual(expected, actual) {
+		t.Errorf("%s: expected %+v, got %+v", msg, expected, actual)
+	}
+}
+
+// AssertNoError checks if an error is nil
+func AssertNoError(t TB, err error, msg string) {
+	t.Helper()
+	if err != nil {
+		t.Fatalf("%s: unexpected error: %v", msg, err)
+	}
+}
+
+var ansiRegex = regexp.MustCompile("[\u001b\u009b][[()#;?]*(?:[0-9]{1,4}(?:;[0-9]{0,4})*)?[0-9A-ORZcf-nqry=><]")
+
+// StripANSI removes ANSI escape codes from a string
+func StripANSI(s string) string {
+	return ansiRegex.ReplaceAllString(s, "")
 }

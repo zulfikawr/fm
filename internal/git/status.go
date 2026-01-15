@@ -2,10 +2,11 @@ package git
 
 import (
 	"context"
-	"fm/internal/constants"
 	"os/exec"
 	"path/filepath"
 	"strings"
+
+	"fm/internal/constants"
 )
 
 func (s *gitService) GetStatus(ctx context.Context, path string) (map[string]string, string) {

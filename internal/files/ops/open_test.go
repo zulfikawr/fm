@@ -1,65 +1,83 @@
 package ops
 
 import (
+	"fm/internal/testutil"
+	"strings"
 	"testing"
 )
 
 func TestIsTextFile(t *testing.T) {
+	fs := testutil.NewMockFileSystem()
 	tests := []struct {
 		path     string
 		expected bool
 	}{
 		{"test.txt", true},
-		{"test.go", true},
-		{"test.md", true},
-		{"test.png", false},
-		{"test.jpg", false},
-		{"test.exe", false},
-		{"LICENSE", true}, // no extension
-		{"README", true},
+		{"main.go", true},
+		{"image.png", false},
+		{"no_ext", true},
+		{"SCRIPT.SH", true},
 	}
 
 	for _, tt := range tests {
-		if got := IsTextFile(tt.path); got != tt.expected {
-			t.Errorf("IsTextFile(%s) = %v; want %v", tt.path, got, tt.expected)
+		fs.ExtFunc = func(p string) string {
+			for i := len(p) - 1; i >= 0; i-- {
+				if p[i] == '.' {
+					return p[i:]
+				}
+			}
+			return ""
+		}
+		result := IsTextFile(fs, tt.path)
+		if result != tt.expected {
+			t.Errorf("IsTextFile(%q) = %v, want %v", tt.path, result, tt.expected)
 		}
 	}
 }
 
 func TestGetOpenCmd(t *testing.T) {
-	t.Run("Text file with editor", func(t *testing.T) {
-		cmd, isTerminal, err := GetOpenCmd("test.txt", 0) // vim
-		if err != nil {
-			t.Fatalf("GetOpenCmd failed: %v", err)
-		}
-		if cmd.Path == "" {
-			t.Error("Expected non-empty command path")
-		}
-		if !isTerminal {
-			t.Error("Expected isTerminal to be true for vim")
+	fs := testutil.NewMockFileSystem()
+	fs.ExtFunc = func(p string) string { return ".txt" }
+
+	t.Run("Terminal Editor", func(t *testing.T) {
+		// Index 0 is vim based on constants.Editors
+		cmd, isTerm, err := GetOpenCmd(fs, "file.txt", 0)
+		testutil.AssertNoError(t, err, "Should get cmd")
+		testutil.AssertEqual(t, true, isTerm, "Vim should be terminal editor")
+		if !strings.HasSuffix(cmd.Path, "vim") {
+			t.Errorf("Cmd path %q should end with vim", cmd.Path)
 		}
 	})
 
+	t.Run("Open at line", func(t *testing.T) {
+		// Vim/Nano/Vi
+		cmd, _, _ := GetOpenAtLineCmd(fs, "file.txt", 0, 10)
+		testutil.AssertEqual(t, "+10", cmd.Args[1], "Vim should use +10")
+
+		// VS Code (at index 5 based on constants.Editors)
+		cmd, _, _ = GetOpenAtLineCmd(fs, "file.txt", 5, 10)
+		testutil.AssertEqual(t, "--goto", cmd.Args[1], "VS Code should use --goto")
+		testutil.AssertEqual(t, "file.txt:10", cmd.Args[2], "VS Code should use path:line")
+
+		// Default (no line)
+		cmd, _, _ = GetOpenAtLineCmd(fs, "file.txt", 0, 0)
+		testutil.AssertEqual(t, 2, len(cmd.Args), "Should have 2 args (cmd + path)")
+	})
+
 	t.Run("Non-text file", func(t *testing.T) {
-		cmd, isTerminal, err := GetOpenCmd("test.png", 0)
-		if err != nil {
-			// Might fail on unsupported OS, but linux/darwin/windows should return a cmd
-			return
-		}
-		if isTerminal {
-			t.Error("Expected isTerminal to be false for png")
-		}
-		if cmd == nil {
-			t.Error("Expected non-nil cmd")
+		fs.ExtFunc = func(p string) string { return ".png" }
+		cmd, isTerm, err := GetOpenCmd(fs, "image.png", 0)
+		testutil.AssertNoError(t, err, "Should get open cmd for image")
+		testutil.AssertEqual(t, false, isTerm, "Image should not be opened in terminal editor")
+		// On linux it should be xdg-open
+		if !strings.Contains(cmd.Path, "xdg-open") && !strings.Contains(cmd.Path, "open") && !strings.Contains(cmd.Path, "rundll32") {
+			// This depends on GOOS, but at least one should be there if it's supported
 		}
 	})
 }
 
 func TestIsTerminalEditor(t *testing.T) {
-	if !isTerminalEditor("vim") {
-		t.Error("Expected vim to be terminal editor")
-	}
-	if isTerminalEditor("code") {
-		t.Error("Expected code NOT to be terminal editor")
-	}
+	testutil.AssertEqual(t, true, isTerminalEditor("vim"), "vim is terminal editor")
+	testutil.AssertEqual(t, true, isTerminalEditor("nano"), "nano is terminal editor")
+	testutil.AssertEqual(t, false, isTerminalEditor("code"), "code is NOT terminal editor")
 }

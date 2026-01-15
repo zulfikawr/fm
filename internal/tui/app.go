@@ -1,49 +1,35 @@
 package tui
 
 import (
-	"fm/internal/files/core"
-	"fm/internal/tui/state"
-	"fm/internal/tui/theme"
-	"fm/internal/tui/update"
+	"fm/internal/tui/context"
+	"fm/internal/tui/handlers"
 	"fm/internal/tui/view"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-// App wraps the state.Model to implement tea.Model.
+// App implements tea.Model
 type App struct {
-	*state.Model
+	Model *context.Model
 }
 
-// NewApp creates a new Bubble Tea application with the given initial path.
-func NewApp(fs core.FileSystem, initialPath string) *App {
-	m := NewModel(fs, initialPath)
-	return &App{m}
+// NewApp creates a new Bubble Tea application
+func NewApp(m *context.Model) *App {
+	return &App{Model: m}
 }
 
-// Init implements tea.Model.
+// Init initializes the application
 func (a *App) Init() tea.Cmd {
-	return a.ModelInit()
+	return a.Initialize()
 }
 
-// Update implements tea.Model.
+// Update handles messages and returns commands
 func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	return a, update.Update(a.Model, msg)
+	cmd := handlers.HandleUpdate(a.Model, msg)
+	return a, cmd
 }
 
-// View implements tea.Model.
+// View renders the application UI
 func (a *App) View() string {
-	return a.ModelView()
-}
-
-// ModelView renders the application UI.
-func (a *App) ModelView() string {
-	s := a.ViewState()
-	styles := theme.GetStylesheet(a.Config.ThemeIndex)
-	return view.Render(&s, styles)
-}
-
-// ViewState constructs the current view state from the model.
-func (a *App) ViewState() view.ViewState {
-	return view.GetViewState(a.Model)
+	return view.Render(a.Model)
 }

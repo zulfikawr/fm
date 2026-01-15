@@ -11,7 +11,37 @@ import (
 var (
 	logMu         sync.Mutex
 	customLogPath string
+	currentLogger Logger = &fileLogger{}
 )
+
+// Logger interface for plugging in different logging implementations
+type Logger interface {
+	Log(level, msg string)
+}
+
+type fileLogger struct{}
+
+func (l *fileLogger) Log(level, msg string) {
+	path := GetLogPath()
+	dir := filepath.Dir(path)
+	_ = os.MkdirAll(dir, 0o755)
+
+	f, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
+	if err != nil {
+		return
+	}
+	defer f.Close()
+
+	timestamp := time.Now().Format("2006-01-02 15:04:05")
+	fmt.Fprintf(f, "[%s] %s: %s\n", timestamp, level, msg)
+}
+
+// SetLogger overrides the global logger (useful for testing)
+func SetLogger(l Logger) {
+	logMu.Lock()
+	defer logMu.Unlock()
+	currentLogger = l
+}
 
 // SetLogPath overrides the default log path (useful for testing).
 func SetLogPath(path string) {
@@ -33,23 +63,11 @@ func GetLogPath() string {
 	return filepath.Join(configDir, "fm", "fm.log")
 }
 
-// Log writes a message to the log file with a timestamp and level.
+// Log writes a message using the current logger
 func Log(level, msg string) {
 	logMu.Lock()
 	defer logMu.Unlock()
-
-	path := GetLogPath()
-	dir := filepath.Dir(path)
-	_ = os.MkdirAll(dir, 0755)
-
-	f, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-	if err != nil {
-		return
-	}
-	defer f.Close()
-
-	timestamp := time.Now().Format("2006-01-02 15:04:05")
-	fmt.Fprintf(f, "[%s] %s: %s\n", timestamp, level, msg)
+	currentLogger.Log(level, msg)
 }
 
 // Info logs an informational message.

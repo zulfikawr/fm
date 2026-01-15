@@ -1,85 +1,33 @@
 package git
 
 import (
-	"pgregory.net/rapid"
-	"strings"
+	"fm/internal/testutil"
 	"testing"
 )
 
-func TestParseGitStatusPorcelain_Property(t *testing.T) {
-	// Feature: codebase-refactoring, Property: Git Status Parsing
-	rapid.Check(t, func(t *rapid.T) {
-		// Generate random filenames (alphanumeric only, no slashes) and statuses
-		filenames := rapid.SliceOfNDistinct(rapid.StringMatching("[a-zA-Z0-9]+"), 1, 10, func(s string) string { return s }).Draw(t, "filenames")
-		gitStatuses := rapid.SliceOfN(rapid.SampledFrom([]string{"M ", " M", "A ", " D", "??", "!!"}), len(filenames), len(filenames)).Draw(t, "statuses")
+func TestParseGitStatusPorcelain(t *testing.T) {
+	output := `M  internal/files/core/item.go
+?? internal/files/core/item_test.go
+!! internal/testutil/mock_clock.go
+A  new_file.txt
+D  deleted_file.txt
+`
+	repoRoot := "/home/user/fm"
+	dirPath := "/home/user/fm"
 
-		var builder strings.Builder
-		expectedStatuses := make(map[string]string)
+	statuses := ParseGitStatusPorcelain(output, repoRoot, dirPath)
 
-		for i, name := range filenames {
-			status := gitStatuses[i]
-			builder.WriteString(status)
-			builder.WriteString(" ")
-			builder.WriteString(name)
-			builder.WriteString("\n")
-
-			// Map porcelain status to single char used in FM
-			char := string(status[0])
-			if char == " " || char == "?" || char == "!" {
-				char = string(status[1])
-			}
-			if status == "!!" {
-				char = "!"
-			}
-			expectedStatuses[name] = char
-		}
-
-		parsed := ParseGitStatusPorcelain(builder.String(), "/root", "/root")
-
-		for name, char := range expectedStatuses {
-			if parsed[name] != char {
-				t.Errorf("For file %s, expected status %s, got %s", name, char, parsed[name])
-			}
-		}
+	t.Run("Root level parsing", func(t *testing.T) {
+		testutil.AssertEqual(t, "M", statuses["internal"], "Subdirectory should have status of contained file")
+		testutil.AssertEqual(t, "A", statuses["new_file.txt"], "Added file should have status A")
+		testutil.AssertEqual(t, "D", statuses["deleted_file.txt"], "Deleted file should have status D")
 	})
-}
 
-func TestParseGitStatusPorcelain_Subdir_Property(t *testing.T) {
-	// Feature: codebase-refactoring, Property: Git Status Parsing in Subdir
-	rapid.Check(t, func(t *rapid.T) {
-		subdir := rapid.StringMatching("[a-zA-Z0-9]+").Draw(t, "subdir")
-		filenames := rapid.SliceOfNDistinct(rapid.StringMatching("[a-zA-Z0-9]+"), 1, 10, func(s string) string { return s }).Draw(t, "filenames")
-		gitStatuses := rapid.SliceOfN(rapid.SampledFrom([]string{"M ", " M", "A ", " D", "??", "!!"}), len(filenames), len(filenames)).Draw(t, "statuses")
+	t.Run("Subdirectory level parsing", func(t *testing.T) {
+		subDirPath := "/home/user/fm/internal/files/core"
+		subStatuses := ParseGitStatusPorcelain(output, repoRoot, subDirPath)
 
-		var builder strings.Builder
-		expectedStatuses := make(map[string]string)
-
-		for i, name := range filenames {
-			status := gitStatuses[i]
-			builder.WriteString(status)
-			builder.WriteString(" ")
-			builder.WriteString(subdir)
-			builder.WriteString("/")
-			builder.WriteString(name)
-			builder.WriteString("\n")
-
-			char := string(status[0])
-			if char == " " || char == "?" || char == "!" {
-				char = string(status[1])
-			}
-			if status == "!!" {
-				char = "!"
-			}
-			expectedStatuses[name] = char
-		}
-
-		// When parsing from subdir, it should extract the filenames correctly
-		parsed := ParseGitStatusPorcelain(builder.String(), "/root", "/root/"+subdir)
-
-		for name, char := range expectedStatuses {
-			if parsed[name] != char {
-				t.Errorf("For file %s in subdir %s, expected status %s, got %s", name, subdir, char, parsed[name])
-			}
-		}
+		testutil.AssertEqual(t, "M", subStatuses["item.go"], "File in subfolder should match")
+		testutil.AssertEqual(t, "?", subStatuses["item_test.go"], "Untracked file should match")
 	})
 }

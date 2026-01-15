@@ -1,42 +1,58 @@
 package bootstrap
 
 import (
-	"os"
-	"testing"
-
 	"fm/internal/testutil"
+	"os"
+	"path/filepath"
+	"testing"
 )
 
 func TestInitializeApp_Local(t *testing.T) {
-	tmpDir, cleanup := testutil.TempDir(t)
-	defer cleanup()
+	tmp := testutil.NewTempFolder(t)
+	defer tmp.Cleanup()
 
-	app, err := InitializeApp("", []string{tmpDir})
-	if err != nil {
-		t.Fatalf("InitializeApp failed: %v", err)
-	}
+	t.Run("Default path (cwd)", func(t *testing.T) {
+		app, err := InitializeApp("", []string{})
+		if err != nil {
+			t.Fatalf("InitializeApp failed: %v", err)
+		}
+		if app == nil {
+			t.Fatal("App is nil")
+		}
 
-	if app == nil {
-		t.Fatal("Expected non-nil app")
-	}
+		cwd, _ := os.Getwd()
+		if app.Model.Navigation.Path != cwd {
+			t.Errorf("Expected start path %s, got %s", cwd, app.Model.Navigation.Path)
+		}
+	})
 
-	if !app.Model.FS.IsLocal() {
-		t.Error("Expected local filesystem")
-	}
+	t.Run("Specific directory", func(t *testing.T) {
+		subDir := tmp.Mkdir("subdir")
 
-	if app.Model.Navigation.Path != tmpDir {
-		t.Errorf("Expected path %s, got %s", tmpDir, app.Model.Navigation.Path)
-	}
-}
+		app, err := InitializeApp("", []string{subDir})
+		if err != nil {
+			t.Fatalf("InitializeApp failed: %v", err)
+		}
 
-func TestInitializeApp_NoArgs(t *testing.T) {
-	wd, _ := os.Getwd()
-	app, err := InitializeApp("", []string{})
-	if err != nil {
-		t.Fatalf("InitializeApp failed: %v", err)
-	}
+		absSubDir, _ := filepath.Abs(subDir)
+		if app.Model.Navigation.Path != absSubDir {
+			t.Errorf("Expected start path %s, got %s", absSubDir, app.Model.Navigation.Path)
+		}
+	})
 
-	if app.Model.Navigation.Path != wd {
-		t.Errorf("Expected path %s, got %s", wd, app.Model.Navigation.Path)
-	}
+	t.Run("Non-existent directory", func(t *testing.T) {
+		_, err := InitializeApp("", []string{tmp.Join("ghost")})
+		if err == nil {
+			t.Error("Expected error for non-existent directory")
+		}
+	})
+
+	t.Run("Path is a file", func(t *testing.T) {
+		filePath := tmp.WriteFile("file.txt", "hello")
+
+		_, err := InitializeApp("", []string{filePath})
+		if err == nil {
+			t.Error("Expected error for path being a file")
+		}
+	})
 }

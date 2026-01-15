@@ -27,6 +27,12 @@ type Stylesheet struct {
 	KeyCol         lipgloss.Style
 	SettingsHeader lipgloss.Style
 	ProgressBar    lipgloss.Style
+
+	// Semantic Styles
+	Error   lipgloss.Style
+	Warning lipgloss.Style
+	Success lipgloss.Style
+	Prompt  lipgloss.Style
 }
 
 // NewStylesheet computes styles based on the provided theme.
@@ -56,13 +62,13 @@ func NewStylesheet(t Theme) Stylesheet {
 			Background(t.SelectedBg).
 			Bold(true),
 
-		SettingsItem: lipgloss.NewStyle().PaddingLeft(2),
+		SettingsItem: lipgloss.NewStyle().PaddingLeft(3),
 
 		SettingsSelectedItem: lipgloss.NewStyle().
 			Foreground(t.SelectedFg).
 			Background(t.SelectedBg).
 			Bold(true).
-			PaddingLeft(2),
+			PaddingLeft(3),
 
 		DirCol:  lipgloss.NewStyle().Foreground(t.Dir).Bold(true),
 		ExecCol: lipgloss.NewStyle().Foreground(t.Exec),
@@ -89,5 +95,11 @@ func NewStylesheet(t Theme) Stylesheet {
 			Bold(true).
 			Padding(0, 0, 0, 1),
 		ProgressBar: lipgloss.NewStyle().Foreground(t.Dir),
+
+		// Semantic Styles (Using standard terminal colors as defaults)
+		Error:   lipgloss.NewStyle().Foreground(lipgloss.Color("9")).Bold(true),  // Red
+		Warning: lipgloss.NewStyle().Foreground(lipgloss.Color("11")).Bold(true), // Yellow
+		Success: lipgloss.NewStyle().Foreground(lipgloss.Color("10")).Bold(true), // Green
+		Prompt:  lipgloss.NewStyle().Foreground(t.Dir).Bold(true),                // Theme Primary
 	}
 }

@@ -1,51 +1,52 @@
 package core
 
 import (
+	"fm/internal/testutil"
 	"os"
 	"testing"
 	"time"
 )
 
-type mockFileInfo struct {
-	os.FileInfo
-	name string
-}
-
-func (m mockFileInfo) Name() string { return m.name }
-
 func TestMetadataCache(t *testing.T) {
 	ttl := 100 * time.Millisecond
 	cache := NewMetadataCache(ttl)
+
+	entries := []os.FileInfo{&testutil.MockFileInfo{NameStr: "file1"}}
 	path := "/test/path"
-	entries := []os.FileInfo{mockFileInfo{name: "file1"}}
 
-	// Test Put and Get
-	cache.Put(path, entries)
-	got, ok := cache.Get(path)
-	if !ok || len(got) != 1 || got[0].Name() != "file1" {
-		t.Error("Cache Get failed after Put")
-	}
+	t.Run("Put and Get", func(t *testing.T) {
+		cache.Put(path, entries)
+		got, ok := cache.Get(path)
+		if !ok {
+			t.Fatal("Expected cache hit")
+		}
+		testutil.AssertEqual(t, 1, len(got), "Should have 1 entry")
+	})
 
-	// Test Invalidate
-	cache.Invalidate(path)
-	_, ok = cache.Get(path)
-	if ok {
-		t.Error("Cache should be empty after Invalidate")
-	}
+	t.Run("Expiration", func(t *testing.T) {
+		cache.Put(path, entries)
+		time.Sleep(ttl + 10*time.Millisecond)
+		_, ok := cache.Get(path)
+		if ok {
+			t.Error("Expected cache miss after expiration")
+		}
+	})
 
-	// Test Expiry
-	cache.Put(path, entries)
-	time.Sleep(ttl + 10*time.Millisecond)
-	_, ok = cache.Get(path)
-	if ok {
-		t.Error("Cache should be expired")
-	}
+	t.Run("Invalidate", func(t *testing.T) {
+		cache.Put(path, entries)
+		cache.Invalidate(path)
+		_, ok := cache.Get(path)
+		if ok {
+			t.Error("Expected cache miss after Invalidate")
+		}
+	})
 
-	// Test Clear
-	cache.Put(path, entries)
-	cache.Clear()
-	_, ok = cache.Get(path)
-	if ok {
-		t.Error("Cache should be empty after Clear")
-	}
+	t.Run("Clear", func(t *testing.T) {
+		cache.Put(path, entries)
+		cache.Clear()
+		_, ok := cache.Get(path)
+		if ok {
+			t.Error("Expected cache miss after Clear")
+		}
+	})
 }

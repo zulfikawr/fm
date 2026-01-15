@@ -1,9 +1,10 @@
 package sorting
 
 import (
-	"fm/internal/files/core"
 	"sort"
 	"strings"
+
+	"fm/internal/files/core"
 )
 
 // SortMode defines the sorting strategy for directory contents.

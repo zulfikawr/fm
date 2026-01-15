@@ -30,6 +30,16 @@ func (l *LocalFS) Close() error {
 	return nil
 }
 
+func (l *LocalFS) ReadDirEntries(ctx context.Context, path string) ([]os.DirEntry, error) {
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	default:
+	}
+	entries, err := os.ReadDir(path)
+	return entries, errors.WrapErrorWithPath(err, "ReadDirEntries", path)
+}
+
 func (l *LocalFS) ReadDir(ctx context.Context, path string) ([]os.FileInfo, error) {
 	// Check cache
 	if entries, ok := l.cache.Get(path); ok {
@@ -192,6 +202,14 @@ func (l *LocalFS) Abs(path string) (string, error) {
 	return filepath.Abs(path)
 }
 
+func (l *LocalFS) Rel(basepath, targpath string) (string, error) {
+	return filepath.Rel(basepath, targpath)
+}
+
+func (l *LocalFS) Clean(path string) string {
+	return filepath.Clean(path)
+}
+
 func (l *LocalFS) Dir(path string) string {
 	return filepath.Dir(path)
 }
@@ -200,6 +218,21 @@ func (l *LocalFS) Base(path string) string {
 	return filepath.Base(path)
 }
 
+func (l *LocalFS) Ext(path string) string {
+	return filepath.Ext(path)
+}
+
 func (l *LocalFS) IsReadOnly(ctx context.Context, path string) (bool, error) {
 	return isReadOnly(path)
+}
+
+func (l *LocalFS) Walk(ctx context.Context, root string, walkFn func(path string, info os.FileInfo, err error) error) error {
+	return filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		default:
+		}
+		return walkFn(path, info, err)
+	})
 }

@@ -2,23 +2,19 @@ package ops
 
 import (
 	"context"
+	"fmt"
+
+	"fm/internal/files/conflict"
 	"fm/internal/files/core"
 )
 
-// ConflictError is returned when a destination file already exists
-type ConflictError struct {
-	Source       string
-	Destination  string
-	PendingItems []string
-	IsMove       bool
-}
-
-func (e *ConflictError) Error() string {
-	return "destination already exists: " + e.Destination
-}
-
 // DeleteMultiple removes multiple files or directories recursively.
 func DeleteMultiple(ctx context.Context, fs core.FileSystem, paths []string, useTrash bool, progChan chan<- core.Progress) error {
+	if len(paths) > 0 {
+		if err := ValidateWritable(ctx, fs, fs.Dir(paths[0])); err != nil {
+			return err
+		}
+	}
 	for i, path := range paths {
 		select {
 		case <-ctx.Done():
@@ -46,11 +42,32 @@ func DeleteMultiple(ctx context.Context, fs core.FileSystem, paths []string, use
 			return err
 		}
 	}
+
+	if progChan != nil && len(paths) > 0 {
+		label := ""
+		if len(paths) == 1 {
+			label = fmt.Sprintf("Deleted %s", fs.Base(paths[0]))
+		} else {
+			label = fmt.Sprintf("Deleted %d items", len(paths))
+		}
+		select {
+		case progChan <- core.Progress{
+			Percent: 1.0,
+			Label:   label,
+		}:
+		default:
+		}
+	}
+
 	return nil
 }
 
-// Paste copies multiple items from sources to destDir.
-func Paste(ctx context.Context, fs core.FileSystem, sources []string, destDir string, progChan chan<- core.Progress) error {
+// CopyMultiple copies multiple items from sources to destDir.
+func CopyMultiple(ctx context.Context, fs core.FileSystem, sources []string, destDir string, progChan chan<- core.Progress, policy conflict.Policy) error {
+	if err := ValidateWritable(ctx, fs, destDir); err != nil {
+		return err
+	}
+	resolver := conflict.NewResolver()
 	for i, src := range sources {
 		select {
 		case <-ctx.Done():
@@ -60,27 +77,36 @@ func Paste(ctx context.Context, fs core.FileSystem, sources []string, destDir st
 
 		dst := fs.Join(destDir, fs.Base(src))
 
-		// Check for conflict
-		if _, err := fs.Stat(ctx, dst); err == nil {
-			return &ConflictError{
-				Source:       src,
-				Destination:  dst,
-				PendingItems: sources[i+1:],
-				IsMove:       false,
+		resolvedDst, isRenamed, err := resolver.Resolve(ctx, fs, src, dst, policy)
+		if err != nil {
+			if cerr, ok := err.(*conflict.ConflictError); ok {
+				cerr.PendingItems = sources[i:]
+				cerr.OpType = "copy"
+				return cerr
 			}
+			return err
 		}
 
+		if resolvedDst == "" {
+			continue // Skip
+		}
+		dst = resolvedDst
+
 		if progChan != nil {
+			label := "Copying " + fs.Base(src) + "..."
+			if isRenamed {
+				label = fmt.Sprintf("Copying %s as %s...", fs.Base(src), fs.Base(dst))
+			}
 			select {
 			case progChan <- core.Progress{
 				Percent: float64(i) / float64(len(sources)),
-				Label:   "Copying " + fs.Base(src) + "...",
+				Label:   label,
 			}:
 			default:
 			}
 		}
 
-		if err := Copy(ctx, fs, src, dst, progChan); err != nil {
+		if err := Copy(ctx, fs, src, dst, progChan, conflict.Overwrite); err != nil {
 			return err
 		}
 	}
@@ -88,7 +114,11 @@ func Paste(ctx context.Context, fs core.FileSystem, sources []string, destDir st
 }
 
 // MoveMultiple moves multiple items from sources to destDir.
-func MoveMultiple(ctx context.Context, fs core.FileSystem, sources []string, destDir string, progChan chan<- core.Progress) error {
+func MoveMultiple(ctx context.Context, fs core.FileSystem, sources []string, destDir string, progChan chan<- core.Progress, policy conflict.Policy) error {
+	if err := ValidateWritable(ctx, fs, destDir); err != nil {
+		return err
+	}
+	resolver := conflict.NewResolver()
 	for i, src := range sources {
 		select {
 		case <-ctx.Done():
@@ -98,27 +128,37 @@ func MoveMultiple(ctx context.Context, fs core.FileSystem, sources []string, des
 
 		dst := fs.Join(destDir, fs.Base(src))
 
-		// Check for conflict
-		if _, err := fs.Stat(ctx, dst); err == nil {
-			return &ConflictError{
-				Source:       src,
-				Destination:  dst,
-				PendingItems: sources[i+1:],
-				IsMove:       true,
+		resolvedDst, isRenamed, err := resolver.Resolve(ctx, fs, src, dst, policy)
+		if err != nil {
+			if cerr, ok := err.(*conflict.ConflictError); ok {
+				cerr.PendingItems = sources[i:]
+				cerr.IsMove = true
+				cerr.OpType = "move"
+				return cerr
 			}
+			return err
 		}
 
+		if resolvedDst == "" {
+			continue // Skip
+		}
+		dst = resolvedDst
+
 		if progChan != nil {
+			label := "Moving " + fs.Base(src) + "..."
+			if isRenamed {
+				label = fmt.Sprintf("Moving %s as %s...", fs.Base(src), fs.Base(dst))
+			}
 			select {
 			case progChan <- core.Progress{
 				Percent: float64(i) / float64(len(sources)),
-				Label:   "Moving " + fs.Base(src) + "...",
+				Label:   label,
 			}:
 			default:
 			}
 		}
 
-		if err := Move(ctx, fs, src, dst, progChan); err != nil {
+		if err := Move(ctx, fs, src, dst, progChan, conflict.Overwrite); err != nil {
 			return err
 		}
 	}

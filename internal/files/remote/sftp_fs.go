@@ -68,14 +68,14 @@ func NewSftpFS(address, user, password, keyPath string, hostKeyCallback ssh.Host
 
 		// Ensure .ssh directory exists
 		if _, err := os.Stat(sshDir); os.IsNotExist(err) {
-			if err := os.MkdirAll(sshDir, 0700); err != nil {
+			if err := os.MkdirAll(sshDir, 0o700); err != nil {
 				return nil, fmt.Errorf("failed to create .ssh directory: %w", err)
 			}
 		}
 
 		// Create empty known_hosts if it doesn't exist to prevent knownhosts.New from failing
 		if _, err := os.Stat(knownHostsPath); os.IsNotExist(err) {
-			if err := os.WriteFile(knownHostsPath, []byte{}, 0600); err != nil {
+			if err := os.WriteFile(knownHostsPath, []byte{}, 0o600); err != nil {
 				return nil, fmt.Errorf("failed to create empty known_hosts: %w", err)
 			}
 		}
@@ -136,6 +136,39 @@ func (s *SftpFS) Close() error {
 		return errors.WrapError(fmt.Errorf("close failed: %s", strings.Join(errs, ", ")), "Close")
 	}
 	return nil
+}
+
+func (s *SftpFS) ReadDirEntries(ctx context.Context, p string) ([]os.DirEntry, error) {
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	default:
+	}
+
+	// sftp.Client.ReadDir returns []os.FileInfo, which also satisfies os.DirEntry
+	infos, err := s.client.ReadDir(p)
+	if err != nil {
+		return nil, errors.WrapErrorWithPath(err, "ReadDirEntries", p)
+	}
+
+	entries := make([]os.DirEntry, len(infos))
+	for i, info := range infos {
+		entries[i] = infoToDirEntry(info)
+	}
+	return entries, nil
+}
+
+type dirEntry struct {
+	info os.FileInfo
+}
+
+func (d *dirEntry) Name() string               { return d.info.Name() }
+func (d *dirEntry) IsDir() bool                { return d.info.IsDir() }
+func (d *dirEntry) Type() os.FileMode          { return d.info.Mode().Type() }
+func (d *dirEntry) Info() (os.FileInfo, error) { return d.info, nil }
+
+func infoToDirEntry(info os.FileInfo) os.DirEntry {
+	return &dirEntry{info: info}
 }
 
 func (s *SftpFS) ReadDir(ctx context.Context, p string) ([]os.FileInfo, error) {
@@ -244,6 +277,7 @@ func (s *SftpFS) Open(ctx context.Context, p string) (io.ReadCloser, error) {
 	f, err := s.client.Open(p)
 	return f, errors.WrapErrorWithPath(err, "Open", p)
 }
+
 func (s *SftpFS) MkdirAll(ctx context.Context, p string, perm os.FileMode) error {
 	select {
 	case <-ctx.Done():
@@ -297,12 +331,57 @@ func (s *SftpFS) Abs(p string) (string, error) {
 	return path.Join(wd, p), nil
 }
 
+func (s *SftpFS) Rel(basepath, targpath string) (string, error) {
+	base := path.Clean(basepath)
+	targ := path.Clean(targpath)
+
+	if base == targ {
+		return ".", nil
+	}
+
+	// Simple implementation for slash-based paths
+	baseElems := strings.Split(strings.Trim(base, "/"), "/")
+	targElems := strings.Split(strings.Trim(targ, "/"), "/")
+
+	if base == "/" {
+		baseElems = []string{}
+	}
+	if targ == "/" {
+		targElems = []string{}
+	}
+
+	i := 0
+	for i < len(baseElems) && i < len(targElems) && baseElems[i] == targElems[i] {
+		i++
+	}
+
+	var rel []string
+	for j := i; j < len(baseElems); j++ {
+		rel = append(rel, "..")
+	}
+	rel = append(rel, targElems[i:]...)
+
+	if len(rel) == 0 {
+		return ".", nil
+	}
+
+	return strings.Join(rel, "/"), nil
+}
+
+func (s *SftpFS) Clean(p string) string {
+	return path.Clean(p)
+}
+
 func (s *SftpFS) Dir(p string) string {
 	return path.Dir(p)
 }
 
 func (s *SftpFS) Base(p string) string {
 	return path.Base(p)
+}
+
+func (s *SftpFS) Ext(p string) string {
+	return path.Ext(p)
 }
 
 func (s *SftpFS) IsReadOnly(ctx context.Context, p string) (bool, error) {
@@ -322,5 +401,34 @@ func (s *SftpFS) IsReadOnly(ctx context.Context, p string) (bool, error) {
 
 	// Check if current user (we assume they own the session) has write bit
 	// This is a simplified check as we don't know the remote UID/GID match
-	return info.Mode().Perm()&0200 == 0, nil
+	return info.Mode().Perm()&0o200 == 0, nil
+}
+
+func (s *SftpFS) Walk(ctx context.Context, root string, walkFn func(path string, info os.FileInfo, err error) error) error {
+	walker := s.client.Walk(root)
+	for walker.Step() {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		default:
+		}
+		if err := walker.Err(); err != nil {
+			if err := walkFn(walker.Path(), nil, err); err != nil {
+				if err == filepath.SkipDir {
+					walker.SkipDir()
+					continue
+				}
+				return err
+			}
+			continue
+		}
+		if err := walkFn(walker.Path(), walker.Stat(), nil); err != nil {
+			if err == filepath.SkipDir {
+				walker.SkipDir()
+				continue
+			}
+			return err
+		}
+	}
+	return nil
 }

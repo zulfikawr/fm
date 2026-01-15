@@ -1,0 +1,148 @@
+package context
+
+import (
+	"context"
+	"time"
+
+	"fm/internal/config"
+	"fm/internal/constants"
+	"fm/internal/files/core"
+	"fm/internal/files/sorting"
+	"fm/internal/git"
+	"fm/internal/sshutil"
+	"fm/internal/tui/components/ui"
+	"fm/internal/tui/theme"
+
+	"github.com/fsnotify/fsnotify"
+)
+
+// Model holds the application state.
+type Model struct {
+	// Core services
+	FS     core.FileSystem
+	GS     git.GitService
+	Config config.Config
+
+	// Lifecycle management
+	Context context.Context
+	Cancel  context.CancelFunc
+
+	// Tab management
+	Tabs      []Tab // Multiple tabs
+	ActiveTab int   // Index of active tab
+
+	// Grouped state
+	Navigation NavigationState // Navigation and items
+	Display    DisplayState    // Display and UI configuration
+	UI         UIState         // UI mode and state flags
+	Operations OperationsState // File operations and actions
+	Inputs     InputState      // Text input models
+	Cache      CacheState      // Caching state
+	Watcher    WatcherState    // Filesystem watching
+	Git        GitState        // Git information
+	Remote     RemoteState     // Remote connection state
+	Settings   SettingsState   // Settings view state
+	Message    MessageState    // Status messages
+	Search     SearchState     // Fuzzy content search state
+	Logs       LogState        // Operation logs
+}
+
+// NewModel creates a new model with initial state
+func NewModel(fs core.FileSystem, startPath string) *Model {
+	cfg := config.Load()
+	ctx, cancel := context.WithCancel(context.Background())
+	styles := theme.GetStylesheet(cfg.ThemeIndex)
+
+	ti := ui.NewInput(styles)
+	ti.CharLimit = 256
+	ti.Width = 30
+
+	watcher, _ := fsnotify.NewWatcher()
+
+	s := ui.NewSpinner(styles)
+
+	m := &Model{
+		FS:      fs,
+		GS:      git.NewGitService(true),
+		Config:  cfg,
+		Context: ctx,
+		Cancel:  cancel,
+		Navigation: NavigationState{
+			Path:          startPath,
+			SelectedPaths: make(map[string]bool),
+		},
+		Display: DisplayState{
+			SortMode:       sorting.SortDefault,
+			LoadingSpinner: s,
+			Styles:         styles,
+		},
+		UI: UIState{
+			PromptCache: make(map[string]string),
+		},
+		Inputs: InputState{
+			ActiveInput: ti,
+			Mode:        InputNone,
+		},
+		Cache: CacheState{
+			CursorMemory:   NewSimpleCache[string, int](constants.MaxCacheEntries, 0), // No TTL for cursors
+			OffsetMemory:   NewSimpleCache[string, int](constants.MaxCacheEntries, 0),
+			GitStatusCache: NewSimpleCache[string, map[string]string](constants.MaxCacheEntries, 30*time.Second),
+			GitRootCache:   NewSimpleCache[string, string](constants.MaxCacheEntries, 1*time.Hour),
+			ItemCache:      NewSimpleCache[string, []core.Item](constants.MaxCacheEntries, 5*time.Minute),
+		},
+		Watcher: WatcherState{
+			Watcher: watcher,
+		},
+		Operations: OperationsState{
+			ProcessingItems: make(map[string]bool),
+		},
+		Remote: RemoteState{
+			HostConfirmChan: make(chan *sshutil.HostConfirmRequest),
+		},
+	}
+
+	m.Tabs = []Tab{NewTab(fs, startPath, sorting.SortDefault)}
+	m.ActiveTab = 0
+
+	return m
+}
+
+// ClearSelection clears selection state across navigation and UI
+func (m *Model) ClearSelection() {
+	m.Navigation.ClearSelection()
+	m.UI.SelectMode = false
+}
+
+// AddTab creates and appends a new tab to the model
+func (m *Model) AddTab(path string) {
+	if len(m.Tabs) >= 9 {
+		return
+	}
+	m.Tabs = append(m.Tabs, NewTab(m.FS, path, m.Display.SortMode))
+}
+
+// CloseActiveTab removes the current tab and adjusts the active index
+func (m *Model) CloseActiveTab() bool {
+	if len(m.Tabs) <= 1 {
+		return false
+	}
+	if m.ActiveTab < 0 || m.ActiveTab >= len(m.Tabs) {
+		m.ActiveTab = 0
+		return false
+	}
+
+	m.Tabs = append(m.Tabs[:m.ActiveTab], m.Tabs[m.ActiveTab+1:]...)
+	if m.ActiveTab >= len(m.Tabs) {
+		m.ActiveTab = len(m.Tabs) - 1
+	}
+	return true
+}
+
+// SwitchTab switches to the specified tab number (1-based)
+func (m *Model) SwitchTab(tabNum int) bool {
+	if tabNum > 0 && tabNum <= len(m.Tabs) {
+		m.ActiveTab = tabNum - 1
+		return true
+	}
+	return false
+}

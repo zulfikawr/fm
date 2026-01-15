@@ -4,11 +4,12 @@ import "time"
 
 // Timeouts
 const (
-	DirectoryLoadTimeout   = 30 * time.Second
-	FileOperationTimeout   = 5 * time.Minute
-	GitCommandTimeout      = 10 * time.Second
-	SSHConnectionTimeout   = 5 * time.Second
-	MessageDisplayDuration = 3 * time.Second
+	DirectoryLoadTimeout    = 30 * time.Second
+	FileOperationTimeout    = 5 * time.Minute
+	GitCommandTimeout       = 10 * time.Second
+	SSHConnectionTimeout    = 5 * time.Second
+	MessageDisplayDuration  = 3 * time.Second
+	ProgressDisplayDuration = 500 * time.Millisecond
 )
 
 // Limits
@@ -35,4 +36,21 @@ const (
 	ActionConflict      ActionType = "conflict"
 	ActionResetSettings ActionType = "reset-settings"
 	ActionCancel        ActionType = "cancel"
+)
+
+// Editors lists supported text editors
+var Editors = []string{
+	"vim",
+	"nvim",
+	"nano",
+	"emacs",
+	"vi",
+	"code",
+}
+
+// Data counts for validation
+const (
+	ThemeCount      = 9
+	DateFormatCount = 4
+	SizeFormatCount = 3
 )
