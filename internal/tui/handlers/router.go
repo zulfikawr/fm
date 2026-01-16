@@ -6,6 +6,7 @@ import (
 
 	"fm/internal/constants"
 	"fm/internal/files/ops"
+	"fm/internal/sshutil"
 	"fm/internal/tui/components/ui"
 	"fm/internal/tui/context"
 
@@ -368,13 +369,24 @@ func handleGotoFinalize(m *context.Model, input string) tea.Cmd {
 }
 
 func handleRemoteGoto(m *context.Model, input string) tea.Cmd {
-	var user, host string
-	if strings.Contains(input, "@") {
+	host := input
+	user := ""
+	keyPath := ""
+
+	// 1. Resolve alias from ~/.ssh/config
+	sshConfigs, _ := sshutil.ParseSSHConfig()
+	if cfg, ok := sshConfigs[input]; ok {
+		host = cfg.HostName
+		if host == "" {
+			host = input
+		}
+		user = cfg.User
+		keyPath = cfg.IdentityFile
+	} else if strings.Contains(input, "@") {
+		// 2. Parse user@host
 		parts := strings.SplitN(input, "@", 2)
 		user = parts[0]
 		host = parts[1]
-	} else {
-		host = input
 	}
 
 	m.Remote.Host = host
@@ -384,7 +396,7 @@ func handleRemoteGoto(m *context.Model, input string) tea.Cmd {
 	m.Inputs.AltMode = false // Default to password mode for auth prompt
 
 	return tea.Batch(
-		connectRemote(host, user, "", "", m.Remote.HostConfirmChan),
+		connectRemote(host, user, "", keyPath, m.Remote.HostConfirmChan),
 		listenForHostConfirmation(m.Remote.HostConfirmChan),
 	)
 }
