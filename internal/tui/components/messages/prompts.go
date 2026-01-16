@@ -106,7 +106,8 @@ func RenderInputPrompt(props Props) string {
 func ColorizeKeys(props Props, str string) string {
 	var result strings.Builder
 	inBracket := false
-	keyStyle := props.Style.KeyCol.Inherit(props.Style.Footer)
+	keyStyle := props.Style.KeyCol.Inherit(props.Style.Footer).UnsetPadding().UnsetWidth()
+	dimStyle := props.Style.DimCol.Inherit(props.Style.Footer).UnsetPadding().UnsetWidth()
 	baseStyle := props.Style.Footer.UnsetPadding().UnsetWidth()
 
 	var current strings.Builder
@@ -118,14 +119,14 @@ func ColorizeKeys(props Props, str string) string {
 				current.Reset()
 			}
 			inBracket = true
-			result.WriteString(keyStyle.Render("["))
+			result.WriteString(dimStyle.Render("["))
 		case ']':
 			if current.Len() > 0 {
 				result.WriteString(keyStyle.Render(current.String()))
 				current.Reset()
 			}
 			inBracket = false
-			result.WriteString(keyStyle.Render("]"))
+			result.WriteString(dimStyle.Render("]"))
 		default:
 			current.WriteRune(r)
 		}

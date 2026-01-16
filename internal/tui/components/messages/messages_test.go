@@ -6,6 +6,9 @@ import (
 	"fm/internal/tui/theme"
 	"strings"
 	"testing"
+
+	"github.com/charmbracelet/lipgloss"
+	"github.com/muesli/termenv"
 )
 
 func TestMessages_Render(t *testing.T) {
@@ -70,4 +73,31 @@ func TestMessages_Render(t *testing.T) {
 			t.Error("expected Goto prompt")
 		}
 	})
+}
+
+func TestMessages_ColorizeKeys(t *testing.T) {
+	lipgloss.SetColorProfile(termenv.TrueColor)
+	styles := theme.GetStylesheet(0)
+	props := Props{
+		Style: styles,
+	}
+
+	tests := []struct {
+		input    string
+		contains string
+	}{
+		{"Press [Ctrl+C] again", "Press [Ctrl+C] again"},
+		{"[Space] Toggle", "[Space] Toggle"},
+	}
+
+	for _, tt := range tests {
+		v := ColorizeKeys(props, tt.input)
+		stripped := testutil.StripANSI(v)
+		if stripped != tt.input {
+			t.Errorf("ColorizeKeys(%q) stripped = %q, want %q", tt.input, stripped, tt.input)
+		}
+		if !strings.Contains(v, "\x1b[") {
+			t.Errorf("ColorizeKeys(%q) expected ANSI codes, got %q", tt.input, v)
+		}
+	}
 }

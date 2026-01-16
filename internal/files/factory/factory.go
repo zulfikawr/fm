@@ -175,7 +175,7 @@ func createHostKeyCallback() (ssh.HostKeyCallback, error) {
 				// Host not found in known_hosts
 				fmt.Printf("The authenticity of host '%s' can't be established.\n", hostname)
 				fmt.Printf("%s key fingerprint is %s.\n", key.Type(), ssh.FingerprintSHA256(key))
-				fmt.Print("Are you sure you want to continue connecting (y/n)? ")
+				fmt.Print("Are you sure you want to continue connecting [y] Yes [n] No? ")
 
 				var response string
 				fmt.Scanln(&response)

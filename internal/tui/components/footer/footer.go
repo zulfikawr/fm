@@ -59,10 +59,11 @@ type Props struct {
 	SettingsCursor int
 
 	// Confirming
-	ActionType     constants.ActionType
-	ClipboardCount int
-	ConflictDst    string
-	HostConfirmReq *sshutil.HostConfirmRequest
+	ActionType           constants.ActionType
+	ClipboardCount       int
+	ConflictDst          string
+	ConflictPendingCount int
+	HostConfirmReq       *sshutil.HostConfirmRequest
 
 	Styles      theme.Stylesheet
 	PromptCache map[string]string
@@ -112,17 +113,18 @@ func renderPromptsFooter(props Props) string {
 	}
 
 	return messages.Render(messages.Props{
-		Mode:            msgMode,
-		Width:           props.Width,
-		ActiveInput:     props.ActiveInput,
-		AltMode:         props.AltMode,
-		RemoteConnected: props.RemoteConnected,
-		ActionType:      props.ActionType,
-		ClipboardCount:  props.ClipboardCount,
-		ConflictDst:     props.ConflictDst,
-		HostConfirmReq:  props.HostConfirmReq,
-		Style:           props.Styles,
-		PromptCache:     props.PromptCache,
+		Mode:                 msgMode,
+		Width:                props.Width,
+		ActiveInput:          props.ActiveInput,
+		AltMode:              props.AltMode,
+		RemoteConnected:      props.RemoteConnected,
+		ActionType:           props.ActionType,
+		ClipboardCount:       props.ClipboardCount,
+		ConflictDst:          props.ConflictDst,
+		ConflictPendingCount: props.ConflictPendingCount,
+		HostConfirmReq:       props.HostConfirmReq,
+		Style:                props.Styles,
+		PromptCache:          props.PromptCache,
 	})
 }
 

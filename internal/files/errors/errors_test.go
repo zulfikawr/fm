@@ -135,7 +135,7 @@ func TestWrapError(t *testing.T) {
 			err      error
 			expected string
 		}{
-			{os.ErrNotExist, "file or directory does not exist"},
+			{os.ErrNotExist, "file or directory does not exist or command not found"},
 			{os.ErrExist, "destination already exists"},
 			{os.ErrPermission, "permission denied"},
 			{io.EOF, "unexpected end of file"},

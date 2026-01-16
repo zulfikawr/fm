@@ -38,10 +38,11 @@ type Props struct {
 	Message         string
 
 	// Confirming
-	ActionType     constants.ActionType
-	ClipboardCount int
-	ConflictDst    string
-	HostConfirmReq *sshutil.HostConfirmRequest
+	ActionType           constants.ActionType
+	ClipboardCount       int
+	ConflictDst          string
+	ConflictPendingCount int
+	HostConfirmReq       *sshutil.HostConfirmRequest
 
 	Style       theme.Stylesheet
 	PromptCache map[string]string

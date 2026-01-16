@@ -21,18 +21,21 @@ func RenderConfirmationPrompt(props Props) string {
 func BuildConfirmationPrompt(props Props) string {
 	switch props.ActionType {
 	case constants.ActionDelete:
-		return "Delete selected items? (y/n)"
+		return "Delete selected items? [y] Yes | [n] No"
 	case constants.ActionPaste:
-		return fmt.Sprintf("Paste %d items? (y/n)", props.ClipboardCount)
+		return fmt.Sprintf("Paste %d items? [y] Yes | [n] No", props.ClipboardCount)
 	case constants.ActionResetSettings:
-		return "Reset all settings to defaults? (y/n)"
+		return "Reset all settings to defaults? [y] Yes | [n] No"
 	case constants.ActionConflict:
 		baseName := extractBaseName(props.ConflictDst)
-		return fmt.Sprintf("'%s' exists. [y/Y] Overwrite | [n/N] Skip | [r/R] Rename (Upper=All)", baseName)
+		if props.ConflictPendingCount > 1 {
+			return fmt.Sprintf("'%s' exists. [y/Y] Overwrite | [n/N] Skip | [r/R] Rename (Upper=All)", baseName)
+		}
+		return fmt.Sprintf("'%s' exists. [y] Overwrite | [n] Skip | [r] Rename", baseName)
 	case constants.ActionCancel:
-		return "Cancel ongoing operation? (y/n)"
+		return "Cancel ongoing operation? [y] Yes | [n] No"
 	default:
-		return "Confirm? (y/n)"
+		return "Confirm? [y] Yes | [n] No"
 	}
 }
 
@@ -48,7 +51,7 @@ func RenderHostConfirmPrompt(props Props) string {
 		return props.Style.Footer.Width(props.Width).Render(" " + styled)
 	}
 
-	prompt := fmt.Sprintf("Add host '%s' to known_hosts? (y/n)", hostname)
+	prompt := fmt.Sprintf("Add host '%s' to known_hosts? [y] Yes | [n] No", hostname)
 	return props.Style.Footer.Width(props.Width).Render(" " + ColorizeKeys(props, prompt))
 }
 
