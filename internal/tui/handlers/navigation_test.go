@@ -132,6 +132,94 @@ func TestNavigation_Selection(t *testing.T) {
 	tm.Quit()
 }
 
+func TestNavigation_SelectAll(t *testing.T) {
+	fs := testutil.NewMockFileSystem()
+	m := tuictx.NewModel(fs, "/test")
+	m.Navigation.Items = []core.Item{
+		{Name: "f1.txt", Path: "/test/f1.txt"},
+		{Name: "f2.txt", Path: "/test/f2.txt"},
+	}
+	m.Navigation.FilteredItems = m.Navigation.Items
+
+	wrapper := newTestModelWrapper(m)
+	tm := testutil.NewTestModel(t, wrapper)
+
+	// Press Alt+A
+	tm.Send(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("a"), Alt: true})
+	time.Sleep(20 * time.Millisecond)
+
+	if m.Navigation.SelectedCount != 2 {
+		t.Errorf("expected 2 selected items, got %d", m.Navigation.SelectedCount)
+	}
+
+	if !m.UI.SelectMode {
+		t.Errorf("expected SelectMode to be true")
+	}
+
+	// Press Esc to deselect all
+	tm.Send(tea.KeyMsg{Type: tea.KeyEsc})
+	time.Sleep(20 * time.Millisecond)
+
+	if m.Navigation.SelectedCount != 0 {
+		t.Errorf("expected 0 selected items after Esc, got %d", m.Navigation.SelectedCount)
+	}
+
+	if m.UI.SelectMode {
+		t.Errorf("expected SelectMode to be false after Esc")
+	}
+
+	tm.Quit()
+}
+
+func TestNavigation_SelectAllWithFilter(t *testing.T) {
+	fs := testutil.NewMockFileSystem()
+	m := tuictx.NewModel(fs, "/test")
+	m.Navigation.Items = []core.Item{
+		{Name: "apple.txt", Path: "/test/apple.txt", SearchKey: "apple.txt"},
+		{Name: "banana.txt", Path: "/test/banana.txt", SearchKey: "banana.txt"},
+	}
+	m.Navigation.FilteredItems = m.Navigation.Items
+
+	wrapper := newTestModelWrapper(m)
+	tm := testutil.NewTestModel(t, wrapper)
+
+	// 1. Apply filter "app"
+	m.Navigation.FilterQuery = "app"
+	ApplyFilter(m)
+	if len(m.Navigation.FilteredItems) != 1 {
+		t.Errorf("expected 1 filtered item, got %d", len(m.Navigation.FilteredItems))
+	}
+
+	// 2. Select All (should only select apple.txt)
+	tm.Send(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("a"), Alt: true})
+	time.Sleep(20 * time.Millisecond)
+
+	if m.Navigation.SelectedCount != 1 {
+		t.Errorf("expected 1 selected item, got %d", m.Navigation.SelectedCount)
+	}
+
+	// 3. Press Esc (should clear filter first)
+	tm.Send(tea.KeyMsg{Type: tea.KeyEsc})
+	time.Sleep(20 * time.Millisecond)
+
+	if m.Navigation.FilterQuery != "" {
+		t.Errorf("expected filter to be cleared")
+	}
+	if m.Navigation.SelectedCount != 1 {
+		t.Errorf("expected 1 item to remain selected after first Esc")
+	}
+
+	// 4. Press Esc again (should clear selection)
+	tm.Send(tea.KeyMsg{Type: tea.KeyEsc})
+	time.Sleep(20 * time.Millisecond)
+
+	if m.Navigation.SelectedCount != 0 {
+		t.Errorf("expected 0 selected items after second Esc, got %d", m.Navigation.SelectedCount)
+	}
+
+	tm.Quit()
+}
+
 func TestNavigation_Memory(t *testing.T) {
 	fs := testutil.NewMockFileSystem()
 	fs.StatFunc = func(ctx context.Context, path string) (os.FileInfo, error) {

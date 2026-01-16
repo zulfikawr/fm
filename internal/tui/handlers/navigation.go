@@ -210,6 +210,9 @@ func handleNavKeys(m *tui_context.Model, msg tea.KeyMsg) tea.Cmd {
 	case " ":
 		toggleSelection(m)
 		return nil
+	case "alt+a":
+		selectAll(m)
+		return nil
 	case "/":
 		m.StartInput(tui_context.InputSearch)
 		return m.Inputs.ActiveInput.FocusCmd()
@@ -249,6 +252,14 @@ func toggleSelection(m *tui_context.Model) {
 	item.Selected = !item.Selected
 	m.Navigation.ToggleSelection(item.Path)
 
+	m.UI.SelectMode = m.Navigation.SelectedCount > 0
+}
+
+func selectAll(m *tui_context.Model) {
+	if len(m.Navigation.FilteredItems) == 0 {
+		return
+	}
+	m.Navigation.SelectAll()
 	m.UI.SelectMode = m.Navigation.SelectedCount > 0
 }
 
@@ -606,6 +617,7 @@ func NavigateToPath(m *tui_context.Model, path string) tea.Cmd {
 
 	return navigateToPathInternal(m, path, false)
 }
+
 // Reload triggers an asynchronous reload of the current directory.
 // If silent is true, it won't show the loading spinner.
 func Reload(m *tui_context.Model, silent bool) tea.Cmd {

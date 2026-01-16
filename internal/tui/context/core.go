@@ -13,18 +13,18 @@ import (
 
 // NavigationState holds navigation-related state
 type NavigationState struct {
-	Path          string      // Current directory path
-	PathGen       int         // Incremented on each navigation to detect stale messages
-	Cursor        int         // Current cursor position
-	Offset        int         // Scroll offset
-	Items         []core.Item // Original items
-	FilteredItems []core.Item // Filtered items for display
-	SelectedCount int         // Number of selected items
-	SelectedPaths map[string]bool
-	FilterTimer   *time.Timer // Timer for debouncing filter
-	FilterGen     int         // Generation counter for filter
-	FilterQuery   string      // Current active filter query
-	BackHistory   []string    // History for "Back" navigation
+	Path           string      // Current directory path
+	PathGen        int         // Incremented on each navigation to detect stale messages
+	Cursor         int         // Current cursor position
+	Offset         int         // Scroll offset
+	Items          []core.Item // Original items
+	FilteredItems  []core.Item // Filtered items for display
+	SelectedCount  int         // Number of selected items
+	SelectedPaths  map[string]bool
+	FilterTimer    *time.Timer // Timer for debouncing filter
+	FilterGen      int         // Generation counter for filter
+	FilterQuery    string      // Current active filter query
+	BackHistory    []string    // History for "Back" navigation
 	ForwardHistory []string    // History for "Forward" navigation
 }
 
@@ -56,12 +56,33 @@ func (n *NavigationState) ToggleSelection(path string) {
 	}
 }
 
+// SelectAll selects all currently filtered items
+func (n *NavigationState) SelectAll() {
+	if n.SelectedPaths == nil {
+		n.SelectedPaths = make(map[string]bool)
+	}
+	for i := range n.FilteredItems {
+		item := &n.FilteredItems[i]
+		if item.IsUp {
+			continue
+		}
+		if !n.SelectedPaths[item.Path] {
+			n.SelectedPaths[item.Path] = true
+			n.SelectedCount++
+		}
+		item.Selected = true
+	}
+}
+
 // ClearSelection clears all selections
 func (n *NavigationState) ClearSelection() {
 	n.SelectedPaths = make(map[string]bool)
 	n.SelectedCount = 0
 	for i := range n.Items {
 		n.Items[i].Selected = false
+	}
+	for i := range n.FilteredItems {
+		n.FilteredItems[i].Selected = false
 	}
 }
 
@@ -189,22 +210,22 @@ type DisplayState struct {
 
 // Tab represents a navigation context
 type Tab struct {
-	FS            core.FileSystem
-	Path          string
-	Items         []core.Item
-	FilteredItems []core.Item
-	Cursor        int
-	Offset        int
-	SortMode      sorting.SortMode
-	GitBranch     string
-	GitRoot       string
-	SearchQuery   string
-	Searching     bool
-	SelectMode    bool
-	SelectedPaths map[string]bool
-	RemoteUser    string
-	RemoteHost    string
-	BackHistory   []string
+	FS             core.FileSystem
+	Path           string
+	Items          []core.Item
+	FilteredItems  []core.Item
+	Cursor         int
+	Offset         int
+	SortMode       sorting.SortMode
+	GitBranch      string
+	GitRoot        string
+	SearchQuery    string
+	Searching      bool
+	SelectMode     bool
+	SelectedPaths  map[string]bool
+	RemoteUser     string
+	RemoteHost     string
+	BackHistory    []string
 	ForwardHistory []string
 }
 
