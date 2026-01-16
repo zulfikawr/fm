@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fm/internal/files/core"
 	"fm/internal/testutil"
 	tuictx "fm/internal/tui/context"
 	"fm/internal/tui/view"
@@ -13,6 +14,15 @@ type testModelWrapper struct {
 
 func newTestModelWrapper(m *tuictx.Model) *testModelWrapper {
 	m.GS = testutil.NewMockGitService() // Inject mock
+
+	// Mock external actions to avoid hanging on tea.ExecProcess during tests
+	openFileAction = func(m *tuictx.Model, selected core.Item) tea.Cmd {
+		return nil
+	}
+	openFileAtLineAction = func(m *tuictx.Model, path string, line int) tea.Cmd {
+		return nil
+	}
+
 	return &testModelWrapper{m: m}
 }
 

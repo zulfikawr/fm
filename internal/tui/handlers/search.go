@@ -107,12 +107,18 @@ func scrollSearch(m *tui_context.Model) int {
 		viewportHeight = m.Display.Height - 2
 	}
 
+	// Adjust for fixed header (2 lines)
+	effectiveHeight := viewportHeight - 2
+	if effectiveHeight < 1 {
+		effectiveHeight = 1
+	}
+
 	offset := m.Search.Offset
 	if cursorLine < offset {
 		return cursorLine
 	}
-	if cursorLine >= offset+viewportHeight {
-		return cursorLine - viewportHeight + 1
+	if cursorLine >= offset+effectiveHeight {
+		return cursorLine - effectiveHeight + 1
 	}
 	return offset
 }
@@ -122,7 +128,7 @@ func calculateSearchCursorLine(m *tui_context.Model) int {
 		return 0
 	}
 
-	line := 2 // Stats header + empty line
+	line := 0 // Header is fixed now
 	for fIdx, res := range m.Search.Results {
 		if fIdx == m.Search.CursorFile {
 			if m.Search.CursorMatch == -1 || res.Collapsed {
@@ -149,9 +155,7 @@ func calculateSearchCursorLine(m *tui_context.Model) int {
 // TriggerSearch triggers a debounced fuzzy content search
 func TriggerSearch(m *tui_context.Model, query string) tea.Cmd {
 	if query == "" {
-		m.Search.Results = nil
-		m.Search.IsSearching = false
-		m.Search.Query = ""
+		StopSearch(m)
 		return nil
 	}
 
@@ -164,6 +168,17 @@ func TriggerSearch(m *tui_context.Model, query string) tea.Cmd {
 			Query: query,
 		}
 	})
+}
+
+// StopSearch cancels any active search and clears results
+func StopSearch(m *tui_context.Model) {
+	if m.Search.CancelFunc != nil {
+		m.Search.CancelFunc()
+		m.Search.CancelFunc = nil
+	}
+	m.Search.Results = nil
+	m.Search.IsSearching = false
+	m.Search.Query = ""
 }
 
 func finalizeSearch(m *tui_context.Model, msg SearchMsg) tea.Cmd {

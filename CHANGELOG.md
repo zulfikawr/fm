@@ -24,6 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Parent directory pinning in cache with automatic memory cleanup to ensure instantaneous "Go to Parent" (Backspace) navigation.
 
 ### Fixed
+- **Fuzzy Search Screen:** Fixed a bug where the search screen would get stuck and not return to the file list upon pressing `Esc` or `Enter`, and fixed the search results header so it remains pinned at the top while scrolling.
 - **SFTP Parallel Walk:** Fixed a bug where `Walk` would return before all background goroutines finished (added missing `g.Wait()`).
 - Input masking persistence after authentication prompts.
 - Filter behavior: preserved on Enter, cleaned on navigation, and reset via Esc.

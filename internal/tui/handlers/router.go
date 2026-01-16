@@ -191,6 +191,9 @@ func HandleUpdate(m *context.Model, msg tea.Msg) tea.Cmd {
 					m.Navigation.FilterQuery = ""
 					ApplyFilter(m)
 				}
+				if mode == context.InputFuzzySearch {
+					StopSearch(m)
+				}
 				return tea.Batch(cmds...)
 			}
 
@@ -295,6 +298,8 @@ func HandleUpdate(m *context.Model, msg tea.Msg) tea.Cmd {
 	return tea.Batch(cmds...)
 }
 
+var openFileAtLineAction = openFileAtLine
+
 func finalizeInput(m *context.Model) tea.Cmd {
 	val := m.Inputs.ActiveInput.Value()
 	mode := m.Inputs.Mode
@@ -328,10 +333,12 @@ func finalizeInput(m *context.Model) tea.Cmd {
 			}
 
 			m.StopInput(true)
+			StopSearch(m)
 
-			return openFileAtLine(m, res.Path, line)
+			return openFileAtLineAction(m, res.Path, line)
 		}
 		m.StopInput(true)
+		StopSearch(m)
 	}
 	return nil
 }

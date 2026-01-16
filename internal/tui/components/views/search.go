@@ -50,15 +50,16 @@ func RenderSearch(props SearchProps) string {
 		return renderSearchEmpty(props.Width, props.Height, "No matches found.", props.Style)
 	}
 
-	var allLines []string
-
-	// Stats header
+	// Stats header (Fixed)
 	totalMatches := 0
 	for _, res := range props.Results {
 		totalMatches += len(res.Matches)
 	}
 	stats := fmt.Sprintf(" Found %d matches in %d files", totalMatches, len(props.Results))
-	allLines = append(allLines, props.Style.ListHeader.Render(stats), "")
+	headerStr := props.Style.ListHeader.Render(stats) + "\n\n"
+	headerHeight := 2
+
+	var allLines []string
 
 	// Render each file and its matches
 	for fIdx, res := range props.Results {
@@ -94,6 +95,11 @@ func RenderSearch(props SearchProps) string {
 	}
 
 	// Virtualization
+	resultsHeight := props.Height - headerHeight
+	if resultsHeight < 0 {
+		resultsHeight = 0
+	}
+
 	start := props.Offset
 	if start < 0 {
 		start = 0
@@ -102,18 +108,18 @@ func RenderSearch(props SearchProps) string {
 		start = len(allLines) - 1
 	}
 
-	end := start + props.Height
+	end := start + resultsHeight
 	if end > len(allLines) {
 		end = len(allLines)
 	}
 
 	// Fill remaining space
-	result := ""
+	result := headerStr
 	if start < end {
-		result = strings.Join(allLines[start:end], "\n")
+		result += strings.Join(allLines[start:end], "\n")
 	}
 
-	remainingRows := props.Height - (end - start)
+	remainingRows := resultsHeight - (end - start)
 	if remainingRows > 0 {
 		result += strings.Repeat("\n", remainingRows)
 	}

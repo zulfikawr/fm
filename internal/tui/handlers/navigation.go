@@ -434,6 +434,8 @@ func syncOffset(m *tui_context.Model) {
 	}
 }
 
+var openFileAction = openFile
+
 func navigateToSelected(m *tui_context.Model) tea.Cmd {
 	if len(m.Navigation.FilteredItems) == 0 {
 		return nil
@@ -455,6 +457,10 @@ func navigateToSelected(m *tui_context.Model) tea.Cmd {
 	}
 
 	// File opening logic
+	return openFileAction(m, selected)
+}
+
+func openFile(m *tui_context.Model, selected core.Item) tea.Cmd {
 	if !m.FS.IsLocal() {
 		return SetErrMsg(m, "Opening remote files not supported yet")
 	}
