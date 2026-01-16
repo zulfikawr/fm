@@ -16,6 +16,9 @@ import (
 func HandleUpdate(m *context.Model, msg tea.Msg) tea.Cmd {
 	var cmds []tea.Cmd
 
+	// Synchronize viewport height to ensure correct scrolling calculations
+	m.SyncViewportHeight()
+
 	// 0. Update UI components (like spinners) - Always run this first
 	var spinnerCmd tea.Cmd
 	m.Display.LoadingSpinner, spinnerCmd = m.Display.LoadingSpinner.Update(msg)
@@ -36,17 +39,7 @@ func HandleUpdate(m *context.Model, msg tea.Msg) tea.Cmd {
 	case tea.WindowSizeMsg:
 		m.Display.Width = msg.Width
 		m.Display.Height = msg.Height
-
-		// Calculate ViewportHeight (visible items in list)
-		// App Header(1) + App Footer(1) = 2
-		h := msg.Height - 2
-		if m.Config.ShowHeader && !m.UI.SettingsOpen && !m.UI.LogOpen && !m.UI.ClipboardOpen && m.Inputs.Mode != context.InputFuzzySearch {
-			h -= 3 // List Header
-		}
-		if h < 1 {
-			h = 1
-		}
-		m.Display.ViewportHeight = h
+		m.SyncViewportHeight()
 		return tea.Batch(cmds...)
 
 	case WatchEventMsg:

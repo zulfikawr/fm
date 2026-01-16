@@ -9,9 +9,11 @@ import (
 func TestCalculateLayout(t *testing.T) {
 	fs := testutil.NewMockFileSystem()
 	m := context.NewModel(fs, "/test")
+	m.Config.ShowHeader = false
 
 	m.Display.Width = 100
 	m.Display.Height = 20
+	m.SyncViewportHeight()
 
 	layout := CalculateLayout(m)
 	testutil.AssertEqual(t, 100, layout.Width, "Width should match")
@@ -22,8 +24,15 @@ func TestCalculateLayout(t *testing.T) {
 
 	testutil.AssertEqual(t, 18, GetViewportHeight(m), "Viewport height should match body height")
 
+	t.Run("Header enabled", func(t *testing.T) {
+		m.Config.ShowHeader = true
+		m.SyncViewportHeight()
+		testutil.AssertEqual(t, 15, GetViewportHeight(m), "Viewport height should be 15 when header is enabled")
+	})
+
 	t.Run("Zero height", func(t *testing.T) {
 		m.Display.Height = 0
+		m.SyncViewportHeight()
 		layout := CalculateLayout(m)
 		testutil.AssertEqual(t, 0, layout.BodyHeight, "Body height should be 0")
 	})

@@ -163,3 +163,20 @@ func (m *Model) StopInput(clearInput bool) {
 	}
 	m.Inputs.ActiveInput.Blur()
 }
+
+// SyncViewportHeight recalculates the available height for content areas.
+func (m *Model) SyncViewportHeight() {
+	// App Header(1) + App Footer(1) = 2
+	h := m.Display.Height - 2
+
+	// If we are in the file list and showing the header, subtract its height
+	if !m.UI.SettingsOpen && !m.UI.LogOpen && !m.UI.ClipboardOpen &&
+		m.Inputs.Mode != InputFuzzySearch && m.Config.ShowHeader {
+		h -= 3 // List Header
+	}
+
+	if h < 1 {
+		h = 1
+	}
+	m.Display.ViewportHeight = h
+}

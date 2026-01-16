@@ -28,6 +28,5 @@ func CalculateLayout(m *context.Model) context.Layout {
 
 // GetViewportHeight returns the height available for the main content area
 func GetViewportHeight(m *context.Model) int {
-	l := CalculateLayout(m)
-	return l.BodyHeight
+	return m.Display.ViewportHeight
 }
