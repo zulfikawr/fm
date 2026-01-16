@@ -15,6 +15,7 @@ import (
 	tui_context "fm/internal/tui/context"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"golang.org/x/sync/errgroup"
 )
 
 // HandleNavigation handles navigation-related messages
@@ -48,7 +49,6 @@ func handlePartialItems(m *tui_context.Model, msg PartialItemsMsg) tea.Cmd {
 	}
 	syncOffset(m)
 
-	// Now trigger full metadata load for visible items first
 	return fetchMetadata(m)
 }
 
@@ -81,51 +81,69 @@ func fetchMetadata(m *tui_context.Model) tea.Cmd {
 			end = len(items)
 		}
 
-		// 2. Fetch for priority range first
 		updatedItems := make([]core.Item, len(items))
 		copy(updatedItems, items)
 
+		// Create a limited concurrency group for fetching
+		g, ctx := errgroup.WithContext(ctx)
+		g.SetLimit(10) // Limit concurrent SFTP requests to be polite
+
+		// 2. Fetch for priority range first
 		for i := range updatedItems {
+			idx := i
 			// Skip if already has metadata or is special item
-			if updatedItems[i].IsUp || updatedItems[i].IsGhost || updatedItems[i].HasMetadata {
+			if updatedItems[idx].IsUp || updatedItems[idx].IsGhost || updatedItems[idx].HasMetadata {
 				continue
 			}
 
 			// Prioritize visible items
-			if i < start || i >= end {
+			if idx < start || idx >= end {
 				continue
 			}
 
-			info, err := fs.Stat(ctx, updatedItems[i].Path)
-			if err == nil {
-				updatedItems[i] = core.NewItem(info, updatedItems[i].Path, updatedItems[i].GitStatus)
-				if updatedItems[i].IsDir {
-					enrichDirectoryDate(ctx, fs, &updatedItems[i])
+			g.Go(func() error {
+				info, err := fs.Stat(ctx, updatedItems[idx].Path)
+				if err == nil {
+					updatedItems[idx] = core.NewItem(info, updatedItems[idx].Path, updatedItems[idx].GitStatus)
+					if updatedItems[idx].IsDir {
+						enrichDirectoryDate(ctx, fs, &updatedItems[idx])
+					}
+					updatedItems[idx].UpdateFormatting(sizeFormatIdx, dateFormatIdx)
+				} else {
+					updatedItems[idx].HasMetadata = true
 				}
-				updatedItems[i].UpdateFormatting(sizeFormatIdx, dateFormatIdx)
-			} else {
-				// Mark as having metadata even on error to stop skeleton flicker
-				updatedItems[i].HasMetadata = true
-			}
+				return nil
+			})
 		}
 
-		// 3. Fetch the rest
+		_ = g.Wait()
+
+		// 3. Fetch the rest in the background
+		g, ctx = errgroup.WithContext(ctx)
+		g.SetLimit(10)
+
 		for i := range updatedItems {
-			if updatedItems[i].IsUp || updatedItems[i].IsGhost || updatedItems[i].HasMetadata {
+			idx := i
+			if updatedItems[idx].IsUp || updatedItems[idx].IsGhost || updatedItems[idx].HasMetadata {
 				continue
 			}
 
-			info, err := fs.Stat(ctx, updatedItems[i].Path)
-			if err == nil {
-				updatedItems[i] = core.NewItem(info, updatedItems[i].Path, updatedItems[i].GitStatus)
-				if updatedItems[i].IsDir {
-					enrichDirectoryDate(ctx, fs, &updatedItems[i])
+			g.Go(func() error {
+				info, err := fs.Stat(ctx, updatedItems[idx].Path)
+				if err == nil {
+					updatedItems[idx] = core.NewItem(info, updatedItems[idx].Path, updatedItems[idx].GitStatus)
+					if updatedItems[idx].IsDir {
+						enrichDirectoryDate(ctx, fs, &updatedItems[idx])
+					}
+					updatedItems[idx].UpdateFormatting(sizeFormatIdx, dateFormatIdx)
+				} else {
+					updatedItems[idx].HasMetadata = true
 				}
-				updatedItems[i].UpdateFormatting(sizeFormatIdx, dateFormatIdx)
-			} else {
-				updatedItems[i].HasMetadata = true
-			}
+				return nil
+			})
 		}
+
+		_ = g.Wait()
 
 		ro, _ := fs.IsReadOnly(ctx, path)
 
