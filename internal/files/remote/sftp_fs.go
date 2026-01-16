@@ -9,6 +9,7 @@ import (
 	"path"
 	"path/filepath"
 	"strings"
+	"sync"
 	"time"
 
 	"fm/internal/constants"
@@ -23,11 +24,19 @@ import (
 
 // SftpFS implements FileSystem for SFTP.
 type SftpFS struct {
-	client  *sftp.Client
-	conn    *ssh.Client
-	cache   *core.MetadataCache
+	mu     sync.RWMutex
+	client *sftp.Client
+	conn   *ssh.Client
+	cache  *core.MetadataCache
+
+	// Connection details for reconnection
 	address string
 	user    string
+	config  *ssh.ClientConfig
+
+	// Lifecycle
+	ctx    context.Context
+	cancel context.CancelFunc
 }
 
 // NewSftpFS creates a new SFTP file system.
@@ -113,18 +122,33 @@ func NewSftpFS(address, user, password, keyPath string, hostKeyCallback ssh.Host
 		return nil, errors.WrapError(err, "create sftp client failed: "+address)
 	}
 
-	return &SftpFS{
-			client:  client,
-			conn:    conn,
-			cache:   core.NewMetadataCache(2 * time.Second),
-			address: address,
-			user:    user,
-		},
-		nil
+	ctx, cancel := context.WithCancel(context.Background())
+	fs := &SftpFS{
+		client:  client,
+		conn:    conn,
+		cache:   core.NewMetadataCache(2 * time.Second),
+		address: address,
+		user:    user,
+		config:  config,
+		ctx:     ctx,
+		cancel:  cancel,
+	}
+
+	// Start background keep-alive
+	go fs.keepAlive()
+
+	return fs, nil
 }
 
 // Close releases the SFTP client and the underlying SSH connection.
 func (s *SftpFS) Close() error {
+	if s.cancel != nil {
+		s.cancel()
+	}
+
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
 	var errs []string
 	if s.client != nil {
 		if err := s.client.Close(); err != nil {
@@ -142,24 +166,112 @@ func (s *SftpFS) Close() error {
 	return nil
 }
 
-func (s *SftpFS) ReadDirEntries(ctx context.Context, p string) ([]os.DirEntry, error) {
-	select {
-	case <-ctx.Done():
-		return nil, ctx.Err()
-	default:
+func (s *SftpFS) keepAlive() {
+	ticker := time.NewTicker(30 * time.Second)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-s.ctx.Done():
+			return
+		case <-ticker.C:
+			s.mu.RLock()
+			conn := s.conn
+			s.mu.RUnlock()
+
+			if conn != nil {
+				// Send a global request as a keep-alive heartbeat
+				_, _, err := conn.SendRequest("keepalive@openssh.com", true, nil)
+				if err != nil {
+					// Connection might be dead, but let runWithRetry handle the actual reconnection
+					// when a real operation is attempted.
+				}
+			}
+		}
+	}
+}
+
+func (s *SftpFS) reconnect() error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	// Close old connection if still open
+	if s.client != nil {
+		s.client.Close()
+	}
+	if s.conn != nil {
+		s.conn.Close()
 	}
 
-	// sftp.Client.ReadDir returns []os.FileInfo, which also satisfies os.DirEntry
-	infos, err := s.client.ReadDir(p)
+	// Dial again
+	conn, err := ssh.Dial("tcp", s.address, s.config)
+	if err != nil {
+		return fmt.Errorf("reconnect dial failed: %w", err)
+	}
+
+	client, err := sftp.NewClient(conn, sftp.UseConcurrentWrites(true))
+	if err != nil {
+		conn.Close()
+		return fmt.Errorf("reconnect sftp failed: %w", err)
+	}
+
+	s.conn = conn
+	s.client = client
+	return nil
+}
+
+func (s *SftpFS) isConnectionError(err error) bool {
+	if err == nil {
+		return false
+	}
+	errStr := strings.ToLower(err.Error())
+	return err == io.EOF ||
+		err == io.ErrUnexpectedEOF ||
+		strings.Contains(errStr, "broken pipe") ||
+		strings.Contains(errStr, "connection lost") ||
+		strings.Contains(errStr, "connection closed") ||
+		strings.Contains(errStr, "use of closed network connection")
+}
+
+func (s *SftpFS) ReadDirEntries(ctx context.Context, p string) ([]os.DirEntry, error) {
+	var entries []os.DirEntry
+	err := s.runWithRetry(func() error {
+		infos, err := s.client.ReadDir(p)
+		if err != nil {
+			return err
+		}
+		entries = make([]os.DirEntry, len(infos))
+		for i, info := range infos {
+			entries[i] = infoToDirEntry(info)
+		}
+		return nil
+	})
 	if err != nil {
 		return nil, errors.WrapErrorWithPath(err, "ReadDirEntries", p)
 	}
-
-	entries := make([]os.DirEntry, len(infos))
-	for i, info := range infos {
-		entries[i] = infoToDirEntry(info)
-	}
 	return entries, nil
+}
+
+func (s *SftpFS) runWithRetry(fn func() error) error {
+	// Try 1: Standard attempt
+	s.mu.RLock()
+	client := s.client
+	s.mu.RUnlock()
+
+	if client == nil {
+		if err := s.reconnect(); err != nil {
+			return err
+		}
+	}
+
+	err := fn()
+	if s.isConnectionError(err) {
+		// Try 2: Reconnect and retry once
+		if recErr := s.reconnect(); recErr == nil {
+			return fn()
+		}
+	}
+	return err
 }
 
 type dirEntry struct {
@@ -180,125 +292,108 @@ func (s *SftpFS) ReadDir(ctx context.Context, p string) ([]os.FileInfo, error) {
 		return entries, nil
 	}
 
-	select {
-	case <-ctx.Done():
-		return nil, ctx.Err()
-	default:
-	}
+	var entries []os.FileInfo
+	err := s.runWithRetry(func() error {
+		var err error
+		entries, err = s.client.ReadDir(p)
+		return err
+	})
 
-	entries, err := s.client.ReadDir(p)
 	if err != nil {
 		return nil, errors.WrapErrorWithPath(err, "ReadDir", p)
 	}
 
 	s.cache.Put(p, entries)
-
 	return entries, nil
 }
 
 func (s *SftpFS) Stat(ctx context.Context, p string) (os.FileInfo, error) {
-	select {
-	case <-ctx.Done():
-		return nil, ctx.Err()
-	default:
-	}
-	info, err := s.client.Stat(p)
+	var info os.FileInfo
+	err := s.runWithRetry(func() error {
+		var err error
+		info, err = s.client.Stat(p)
+		return err
+	})
 	return info, errors.WrapErrorWithPath(err, "Stat", p)
 }
 
 func (s *SftpFS) Lstat(ctx context.Context, p string) (os.FileInfo, error) {
-	select {
-	case <-ctx.Done():
-		return nil, ctx.Err()
-	default:
-	}
-	info, err := s.client.Lstat(p)
+	var info os.FileInfo
+	err := s.runWithRetry(func() error {
+		var err error
+		info, err = s.client.Lstat(p)
+		return err
+	})
 	return info, errors.WrapErrorWithPath(err, "Lstat", p)
 }
 
 func (s *SftpFS) RemoveAll(ctx context.Context, p string) error {
-	select {
-	case <-ctx.Done():
-		return ctx.Err()
-	default:
-	}
-
 	s.cache.Invalidate(path.Dir(p))
-	info, err := s.client.Stat(p)
-	if !info.IsDir() {
-		return errors.WrapErrorWithPath(s.client.Remove(p), "RemoveAll", p)
-	}
-
-	entries, err := s.client.ReadDir(p)
-	if err != nil {
-		return errors.WrapErrorWithPath(err, "RemoveAll", p)
-	}
-
-	for _, entry := range entries {
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		default:
-		}
-
-		childPath := path.Join(p, entry.Name())
-		if err := s.RemoveAll(ctx, childPath); err != nil {
+	return s.runWithRetry(func() error {
+		info, err := s.client.Stat(p)
+		if err != nil {
 			return err
 		}
-	}
+		if !info.IsDir() {
+			return s.client.Remove(p)
+		}
 
-	return errors.WrapErrorWithPath(s.client.RemoveDirectory(p), "RemoveAll", p)
+		entries, err := s.client.ReadDir(p)
+		if err != nil {
+			return err
+		}
+
+		for _, entry := range entries {
+			childPath := path.Join(p, entry.Name())
+			if err := s.RemoveAll(ctx, childPath); err != nil {
+				return err
+			}
+		}
+		return s.client.RemoveDirectory(p)
+	})
 }
 
 func (s *SftpFS) Rename(ctx context.Context, oldPath, newPath string) error {
-	select {
-	case <-ctx.Done():
-		return ctx.Err()
-	default:
-	}
 	s.cache.Invalidate(path.Dir(oldPath))
 	s.cache.Invalidate(path.Dir(newPath))
-	return errors.WrapErrorWithPath(s.client.Rename(oldPath, newPath), "Rename", fmt.Sprintf("%s -> %s", oldPath, newPath))
+	err := s.runWithRetry(func() error {
+		return s.client.Rename(oldPath, newPath)
+	})
+	return errors.WrapErrorWithPath(err, "Rename", fmt.Sprintf("%s -> %s", oldPath, newPath))
 }
 
 func (s *SftpFS) Create(ctx context.Context, p string) (io.WriteCloser, error) {
-	select {
-	case <-ctx.Done():
-		return nil, ctx.Err()
-	default:
-	}
 	s.cache.Invalidate(path.Dir(p))
-	f, err := s.client.Create(p)
+	var f io.WriteCloser
+	err := s.runWithRetry(func() error {
+		var err error
+		f, err = s.client.Create(p)
+		return err
+	})
 	return f, errors.WrapErrorWithPath(err, "Create", p)
 }
 
 func (s *SftpFS) Open(ctx context.Context, p string) (io.ReadCloser, error) {
-	select {
-	case <-ctx.Done():
-		return nil, ctx.Err()
-	default:
-	}
-	f, err := s.client.Open(p)
+	var f io.ReadCloser
+	err := s.runWithRetry(func() error {
+		var err error
+		f, err = s.client.Open(p)
+		return err
+	})
 	return f, errors.WrapErrorWithPath(err, "Open", p)
 }
 
 func (s *SftpFS) MkdirAll(ctx context.Context, p string, perm os.FileMode) error {
-	select {
-	case <-ctx.Done():
-		return ctx.Err()
-	default:
-	}
 	s.cache.Invalidate(path.Dir(p))
-	return errors.WrapErrorWithPath(s.client.MkdirAll(p), "MkdirAll", p)
+	return s.runWithRetry(func() error {
+		return s.client.MkdirAll(p)
+	})
 }
 
 func (s *SftpFS) Chmod(ctx context.Context, p string, mode os.FileMode) error {
-	select {
-	case <-ctx.Done():
-		return ctx.Err()
-	default:
-	}
-	return errors.WrapErrorWithPath(s.client.Chmod(p, mode), "Chmod", p)
+	return s.runWithRetry(func() error {
+		return s.client.Chmod(p, mode)
+	})
 }
 
 func (s *SftpFS) Preallocate(ctx context.Context, path string, size int64) error {
@@ -397,50 +492,63 @@ func (s *SftpFS) Ext(p string) string {
 }
 
 func (s *SftpFS) IsReadOnly(ctx context.Context, p string) (bool, error) {
-	// 1. Try StatVFS extension (OpenSSH) to check mount flags
-	if vfs, err := s.client.StatVFS(p); err == nil {
-		// 1 is ST_RDONLY on most systems
-		if vfs.Flag&1 != 0 {
-			return true, nil
+	var isReadOnly bool
+	err := s.runWithRetry(func() error {
+		// 1. Try StatVFS extension (OpenSSH) to check mount flags
+		if vfs, err := s.client.StatVFS(p); err == nil {
+			// 1 is ST_RDONLY on most systems
+			if vfs.Flag&1 != 0 {
+				isReadOnly = true
+				return nil
+			}
 		}
-	}
 
-	// 2. Fallback to checking permission bits of the directory/file itself
-	info, err := s.client.Stat(p)
+		// 2. Fallback to checking permission bits of the directory/file itself
+		info, err := s.client.Stat(p)
+		if err != nil {
+			return err
+		}
+
+		// Check if current user (we assume they own the session) has write bit
+		isReadOnly = info.Mode().Perm()&0o200 == 0
+		return nil
+	})
+
 	if err != nil {
 		return false, errors.WrapErrorWithPath(err, "IsReadOnly", p)
 	}
-
-	// Check if current user (we assume they own the session) has write bit
-	// This is a simplified check as we don't know the remote UID/GID match
-	return info.Mode().Perm()&0o200 == 0, nil
+	return isReadOnly, nil
 }
 
 func (s *SftpFS) Walk(ctx context.Context, root string, walkFn func(path string, info os.FileInfo, err error) error) error {
-	walker := s.client.Walk(root)
-	for walker.Step() {
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		default:
-		}
-		if err := walker.Err(); err != nil {
-			if err := walkFn(walker.Path(), nil, err); err != nil {
+	return s.runWithRetry(func() error {
+		walker := s.client.Walk(root)
+		for walker.Step() {
+			select {
+			case <-ctx.Done():
+				return ctx.Err()
+			case <-s.ctx.Done():
+				return fmt.Errorf("filesystem closed")
+			default:
+			}
+			if err := walker.Err(); err != nil {
+				if err := walkFn(walker.Path(), nil, err); err != nil {
+					if err == filepath.SkipDir {
+						walker.SkipDir()
+						continue
+					}
+					return err
+				}
+				continue
+			}
+			if err := walkFn(walker.Path(), walker.Stat(), nil); err != nil {
 				if err == filepath.SkipDir {
 					walker.SkipDir()
 					continue
 				}
 				return err
 			}
-			continue
 		}
-		if err := walkFn(walker.Path(), walker.Stat(), nil); err != nil {
-			if err == filepath.SkipDir {
-				walker.SkipDir()
-				continue
-			}
-			return err
-		}
-	}
-	return nil
+		return nil
+	})
 }

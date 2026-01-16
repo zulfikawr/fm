@@ -7,14 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [v0.1.8] - 2026-01-16
 
+### Added
+- SSH keep-alives and automatic session recovery for robust remote connections.
+- Comprehensive unit tests for the custom text input component.
+
+### Performance
+- Concurrent remote metadata fetching to significantly reduce UI latency in large directories.
+- Immediate cursor memory synchronization to prevent "jumping" during background reloads.
+
 ### Fixed
-- Fixed a bug where text input remained stuck in password masking mode after an authentication prompt.
-- Fixed filter persistence on Enter, automatic cleanup on navigation, and clearing via Esc.
-- Fixed the `s` shortcut to correctly cycle through sort modes.
-- Fixed list layout overflow when header is enabled.
-- Fixed inconsistent remote address display in breadcrumbs when opening new tabs.
-- Fixed SSH alias resolution in the `g` (Go to path) command.
-- Improved remote navigation stability and performance via immediate cursor memory updates and parallel metadata fetching.
+- Input masking persistence after authentication prompts.
+- Filter behavior: preserved on Enter, cleaned on navigation, and reset via Esc.
+- `s` shortcut for cycling sort modes.
+- Layout overflow bug when list header is active.
+- Remote address display consistency in breadcrumbs across tabs.
+- SSH alias resolution in the `g` (Go to path) command.
 
 ## [v0.1.7] - 2026-01-15
 
