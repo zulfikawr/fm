@@ -193,6 +193,11 @@ func handleNavKeys(m *tui_context.Model, msg tea.KeyMsg) tea.Cmd {
 	case "/":
 		m.StartInput(tui_context.InputSearch)
 		return m.Inputs.ActiveInput.FocusCmd()
+	case "s":
+		m.Display.SortMode = m.Display.SortMode.Next()
+		sorting.SortItems(m.Navigation.Items, m.Display.SortMode, true)
+		ApplyFilter(m)
+		return nil
 	case "g":
 		m.StartInput(tui_context.InputGoto)
 		m.Inputs.ActiveInput.SetValue(m.Navigation.Path)

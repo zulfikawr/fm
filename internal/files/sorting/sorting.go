@@ -20,6 +20,11 @@ const (
 	SortSizeAsc
 )
 
+// Next returns the next sort mode in the cycle.
+func (s SortMode) Next() SortMode {
+	return (s + 1) % 7 // We have 7 modes (0 to 6)
+}
+
 // String returns a human-readable representation of the sort mode.
 func (s SortMode) String() string {
 	switch s {
