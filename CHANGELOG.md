@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed inconsistent remote address display in breadcrumbs when opening new tabs.
 - Fixed SSH alias resolution in the `g` (Go to path) command.
 - Improved remote navigation stability by preventing cursor jumps and making background reloads non-disruptive.
+- Fixed remote connection loss when switching between local and remote filesystems across multiple tabs.
 
 ## [v0.1.7] - 2026-01-15
 

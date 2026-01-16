@@ -1,6 +1,7 @@
 package tui
 
 import (
+	"fm/internal/files/core"
 	"fm/internal/tui/context"
 	"fm/internal/tui/handlers"
 
@@ -28,7 +29,18 @@ func Close(m *context.Model) {
 	if m.Watcher.Watcher != nil {
 		m.Watcher.Watcher.Close()
 	}
+
+	// Close all unique filesystems across all tabs
+	closed := make(map[core.FileSystem]bool)
 	if m.FS != nil {
 		m.FS.Close()
+		closed[m.FS] = true
+	}
+
+	for _, t := range m.Tabs {
+		if t.FS != nil && !closed[t.FS] {
+			t.FS.Close()
+			closed[t.FS] = true
+		}
 	}
 }

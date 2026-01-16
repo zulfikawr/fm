@@ -447,7 +447,22 @@ func SwitchToLocal(m *tui_context.Model, path string) tea.Cmd {
 		return NavigateToPath(m, path)
 	}
 
-	m.FS.Close()
+	// Only close the current FS if it's not being used by any other tab
+	isShared := false
+	for i, t := range m.Tabs {
+		if i == m.ActiveTab {
+			continue
+		}
+		if t.FS == m.FS {
+			isShared = true
+			break
+		}
+	}
+
+	if !isShared {
+		m.FS.Close()
+	}
+
 	m.FS = local.NewLocalFS()
 
 	targetPath := path
