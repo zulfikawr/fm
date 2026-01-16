@@ -191,8 +191,7 @@ func HandleUpdate(m *context.Model, msg tea.Msg) tea.Cmd {
 				}
 				return tea.Batch(cmds...)
 			case "esc":
-				m.UI.StopInput()
-				m.Inputs.Mode = context.InputNone
+				m.StopInput()
 				return tea.Batch(cmds...)
 			}
 
@@ -298,29 +297,23 @@ func finalizeInput(m *context.Model) tea.Cmd {
 
 	switch mode {
 	case context.InputSearch:
-		m.UI.StopInput()
-		m.Inputs.Mode = context.InputNone
+		m.StopInput()
 		return nil
 	case context.InputRename:
-		m.UI.StopInput()
-		m.Inputs.Mode = context.InputNone
+		m.StopInput()
 		return PerformRename(m, val)
 	case context.InputZip:
-		m.UI.StopInput()
-		m.Inputs.Mode = context.InputNone
+		m.StopInput()
 		return PerformZip(m, val)
 	case context.InputUnzip:
-		m.UI.StopInput()
-		m.Inputs.Mode = context.InputNone
+		m.StopInput()
 		return PerformUnzip(m, val)
 	case context.InputGoto:
 		// Implement HandleGoto logic from tui_old
-		m.UI.StopInput()
-		m.Inputs.Mode = context.InputNone
+		m.StopInput()
 		return handleGotoFinalize(m, val)
 	case context.InputAuth:
-		m.UI.StopInput()
-		m.Inputs.Mode = context.InputNone
+		m.StopInput()
 		return handleAuthFinalize(m, val)
 	case context.InputFuzzySearch:
 		if len(m.Search.Results) > 0 {
@@ -330,13 +323,11 @@ func finalizeInput(m *context.Model) tea.Cmd {
 				line = res.Matches[m.Search.CursorMatch].Line
 			}
 
-			m.UI.StopInput()
-			m.Inputs.Mode = context.InputNone
+			m.StopInput()
 
 			return openFileAtLine(m, res.Path, line)
 		}
-		m.UI.StopInput()
-		m.Inputs.Mode = context.InputNone
+		m.StopInput()
 	}
 	return nil
 }

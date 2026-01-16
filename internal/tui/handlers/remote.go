@@ -40,9 +40,7 @@ func finalizeRemoteConnect(m *tui_context.Model, msg RemoteConnectMsg) tea.Cmd {
 
 		// Otherwise, assume authentication is needed or was wrong
 		m.UI.RemoteAuth = true
-		m.UI.StartInput()
-		m.Inputs.Mode = tui_context.InputAuth
-		m.Inputs.ActiveInput.SetValue("")
+		m.StartInput(tui_context.InputAuth)
 
 		// Set prompt label based on AltMode and enable masking for password
 		label := "Password"

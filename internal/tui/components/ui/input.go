@@ -85,6 +85,14 @@ func (i *Input) SetValue(s string) {
 	i.cursor = len(i.value)
 }
 
+// Reset clears the value and resets state.
+func (i *Input) Reset() {
+	i.value = []rune{}
+	i.cursor = 0
+	i.EchoMode = EchoNormal
+	i.Placeholder = ""
+}
+
 // SetCursor sets the cursor position.
 func (i *Input) SetCursor(pos int) {
 	if pos < 0 {

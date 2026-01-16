@@ -191,19 +191,14 @@ func handleNavKeys(m *tui_context.Model, msg tea.KeyMsg) tea.Cmd {
 		toggleSelection(m)
 		return nil
 	case "/":
-		m.UI.StartInput()
-		m.Inputs.Mode = tui_context.InputSearch
-		m.Inputs.ActiveInput.SetValue("")
+		m.StartInput(tui_context.InputSearch)
 		return m.Inputs.ActiveInput.FocusCmd()
 	case "g":
-		m.UI.StartInput()
-		m.Inputs.Mode = tui_context.InputGoto
+		m.StartInput(tui_context.InputGoto)
 		m.Inputs.ActiveInput.SetValue(m.Navigation.Path)
 		return m.Inputs.ActiveInput.FocusCmd()
 	case "alt+/":
-		m.UI.StartInput()
-		m.Inputs.Mode = tui_context.InputFuzzySearch
-		m.Inputs.ActiveInput.SetValue("")
+		m.StartInput(tui_context.InputFuzzySearch)
 		return m.Inputs.ActiveInput.FocusCmd()
 	}
 	return nil

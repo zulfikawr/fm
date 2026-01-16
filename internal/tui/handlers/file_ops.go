@@ -386,8 +386,7 @@ func startRename(m *tui_context.Model) tea.Cmd {
 		return nil
 	}
 
-	m.UI.StartInput()
-	m.Inputs.Mode = tui_context.InputRename
+	m.StartInput(tui_context.InputRename)
 	m.Inputs.ActiveInput.SetValue(selected.Name)
 	return m.Inputs.ActiveInput.FocusCmd()
 }
@@ -398,8 +397,7 @@ func startZip(m *tui_context.Model) tea.Cmd {
 		return nil
 	}
 
-	m.UI.StartInput()
-	m.Inputs.Mode = tui_context.InputZip
+	m.StartInput(tui_context.InputZip)
 	m.Inputs.ActiveInput.SetValue("Archive.zip")
 	m.Inputs.ActiveInput.SetCursor(len("Archive"))
 	return m.Inputs.ActiveInput.FocusCmd()
@@ -657,8 +655,7 @@ func startUnzip(m *tui_context.Model) tea.Cmd {
 		return SetMsg(m, "Please select a .zip file to unzip")
 	}
 
-	m.UI.StartInput()
-	m.Inputs.Mode = tui_context.InputUnzip
+	m.StartInput(tui_context.InputUnzip)
 
 	// Default destination is a folder with same name as zip
 	baseName := m.FS.Base(zipPath)

@@ -146,3 +146,18 @@ func (m *Model) SwitchTab(tabNum int) bool {
 	}
 	return false
 }
+
+// StartInput prepares the UI for a text input mode.
+func (m *Model) StartInput(mode InputMode) {
+	m.UI.StartInput()
+	m.Inputs.Mode = mode
+	m.Inputs.ActiveInput.Reset()
+}
+
+// StopInput exits any active input mode and cleans up the input state.
+func (m *Model) StopInput() {
+	m.UI.StopInput()
+	m.Inputs.Mode = InputNone
+	m.Inputs.ActiveInput.Reset()
+	m.Inputs.ActiveInput.Blur()
+}
