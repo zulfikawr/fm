@@ -21,6 +21,11 @@ func GetOpenAtLineCmd(fs core.FileSystem, path string, editorIdx int, line int) 
 		editor := constants.Editors[editorIdx]
 		isTerminalEditor := isTerminalEditor(editor)
 
+		// Check if editor exists
+		if _, err := exec.LookPath(editor); err != nil {
+			return nil, false, fmt.Errorf("editor '%s' not found. Please install it or choose another editor in settings", editor)
+		}
+
 		var args []string
 		if line > 0 {
 			switch editor {
@@ -43,9 +48,17 @@ func GetOpenAtLineCmd(fs core.FileSystem, path string, editorIdx int, line int) 
 	var cmd *exec.Cmd
 	switch runtime.GOOS {
 	case "linux":
-		cmd = exec.Command("xdg-open", path)
+		opener := "xdg-open"
+		if _, err := exec.LookPath(opener); err != nil {
+			return nil, false, fmt.Errorf("'%s' not found. Please install xdg-utils to open this file type", opener)
+		}
+		cmd = exec.Command(opener, path)
 	case "darwin":
-		cmd = exec.Command("open", path)
+		opener := "open"
+		if _, err := exec.LookPath(opener); err != nil {
+			return nil, false, fmt.Errorf("'%s' not found", opener)
+		}
+		cmd = exec.Command(opener, path)
 	case "windows":
 		cmd = exec.Command("rundll32", "url.dll,FileProtocolHandler", path)
 	default:

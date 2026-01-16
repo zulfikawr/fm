@@ -25,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - SSH alias resolution in the `g` (Go to path) command.
 - Remote connection loss when switching filesystems across multiple tabs.
 - Settings synchronization: toggling options like "show hidden files" now refreshes the UI immediately.
+- Improved error messages when opening files with non-existent editors or system openers.
 
 ## [v0.1.7] - 2026-01-15
 

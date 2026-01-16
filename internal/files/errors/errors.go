@@ -109,9 +109,12 @@ func WrapErrorWithPath(err error, op string, path string) error {
 		return &FileError{Op: op, Path: path, Err: err, Msg: "unexpected end of file"}
 	}
 
-	// Detect "Not Found"
-	if errors.Is(err, os.ErrNotExist) || strings.Contains(strings.ToLower(err.Error()), "no such file") {
-		return &FileError{Op: op, Path: path, Err: err, Msg: "file or directory does not exist"}
+	// Detect "Not Found" (including executables)
+	if errors.Is(err, os.ErrNotExist) ||
+		strings.Contains(strings.ToLower(err.Error()), "no such file") ||
+		strings.Contains(strings.ToLower(err.Error()), "executable file not found") ||
+		strings.Contains(strings.ToLower(err.Error()), "not found") {
+		return &FileError{Op: op, Path: path, Err: err, Msg: err.Error()}
 	}
 
 	// Detect "Already Exists"

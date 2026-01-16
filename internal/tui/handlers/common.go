@@ -1,11 +1,13 @@
 package handlers
 
 import (
+	"errors"
 	"fmt"
 	"time"
 
 	"fm/internal/constants"
 	"fm/internal/files/core"
+	fileerrors "fm/internal/files/errors"
 	"fm/internal/files/remote"
 	"fm/internal/logger"
 	"fm/internal/sshutil"
@@ -150,7 +152,13 @@ func LogError(m *tui_context.Model, err error, context string) tea.Cmd {
 	var tuiErr *tuierrors.Error
 	var ok bool
 	if tuiErr, ok = err.(*tuierrors.Error); !ok {
-		tuiErr = tuierrors.SystemError(context, err)
+		// If it's a FileError, treat it as a UserError so the message is shown
+		var fe *fileerrors.FileError
+		if errors.As(err, &fe) {
+			tuiErr = tuierrors.UserError(context, fe.Error())
+		} else {
+			tuiErr = tuierrors.SystemError(context, err)
+		}
 	}
 
 	// In the new architecture, we might want a global error handler like before

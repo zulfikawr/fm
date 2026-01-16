@@ -7,6 +7,7 @@ import (
 
 	"fm/internal/constants"
 	"fm/internal/files/core"
+	fileerrors "fm/internal/files/errors"
 	"fm/internal/files/listing"
 	"fm/internal/files/local"
 	"fm/internal/files/ops"
@@ -436,19 +437,19 @@ func navigateToSelected(m *tui_context.Model) tea.Cmd {
 
 	execCmd, isTerminal, err := ops.GetOpenCmd(m.FS, selected.Path, m.Config.EditorIndex)
 	if err != nil {
-		return SetErrMsg(m, "Error: "+err.Error())
+		return LogError(m, fileerrors.WrapError(err, "Open"), "Open")
 	}
 
 	if isTerminal {
 		return tea.ExecProcess(execCmd, func(err error) tea.Msg {
 			if err != nil {
-				return ErrorMsg{Err: err}
+				return ErrorMsg{Err: fileerrors.WrapError(err, "Open")}
 			}
 			return nil
 		})
 	} else {
 		if err := execCmd.Start(); err != nil {
-			return SetErrMsg(m, "Error: "+err.Error())
+			return LogError(m, fileerrors.WrapError(err, "Open"), "Open")
 		}
 		return nil
 	}
