@@ -155,9 +155,11 @@ func (m *Model) StartInput(mode InputMode) {
 }
 
 // StopInput exits any active input mode and cleans up the input state.
-func (m *Model) StopInput() {
+func (m *Model) StopInput(clearInput bool) {
 	m.UI.StopInput()
 	m.Inputs.Mode = InputNone
-	m.Inputs.ActiveInput.Reset()
+	if clearInput {
+		m.Inputs.ActiveInput.Reset()
+	}
 	m.Inputs.ActiveInput.Blur()
 }

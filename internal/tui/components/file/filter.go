@@ -9,8 +9,8 @@ import (
 
 // ApplyFilter filters the items based on the search query in the model
 func ApplyFilter(m *tui_context.Model) {
-	query := strings.ToLower(m.Inputs.ActiveInput.Value())
-	if !m.UI.InputActive || m.Inputs.Mode != tui_context.InputSearch || query == "" {
+	query := m.Navigation.FilterQuery
+	if query == "" {
 		m.Navigation.FilteredItems = make([]core.Item, len(m.Navigation.Items))
 		copy(m.Navigation.FilteredItems, m.Navigation.Items)
 		return

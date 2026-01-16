@@ -191,7 +191,12 @@ func HandleUpdate(m *context.Model, msg tea.Msg) tea.Cmd {
 				}
 				return tea.Batch(cmds...)
 			case "esc":
-				m.StopInput()
+				mode := m.Inputs.Mode
+				m.StopInput(true)
+				if mode == context.InputSearch {
+					m.Navigation.FilterQuery = ""
+					ApplyFilter(m)
+				}
 				return tea.Batch(cmds...)
 			}
 
@@ -246,9 +251,14 @@ func HandleUpdate(m *context.Model, msg tea.Msg) tea.Cmd {
 				return tea.Batch(cmds...)
 			}
 
-			// 3. Global esc handling for clearing selection
+			// 3. Global esc handling for clearing selection or filter
 			if !m.UI.InputActive && !m.UI.Confirming &&
 				!m.UI.RemoteAuth && !m.UI.HostConfirm {
+				if m.Navigation.FilterQuery != "" {
+					m.Navigation.FilterQuery = ""
+					ApplyFilter(m)
+					return tea.Batch(cmds...)
+				}
 				m.ClearSelection()
 				return tea.Batch(cmds...)
 			}
@@ -297,23 +307,23 @@ func finalizeInput(m *context.Model) tea.Cmd {
 
 	switch mode {
 	case context.InputSearch:
-		m.StopInput()
+		m.StopInput(false)
 		return nil
 	case context.InputRename:
-		m.StopInput()
+		m.StopInput(true)
 		return PerformRename(m, val)
 	case context.InputZip:
-		m.StopInput()
+		m.StopInput(true)
 		return PerformZip(m, val)
 	case context.InputUnzip:
-		m.StopInput()
+		m.StopInput(true)
 		return PerformUnzip(m, val)
 	case context.InputGoto:
 		// Implement HandleGoto logic from tui_old
-		m.StopInput()
+		m.StopInput(true)
 		return handleGotoFinalize(m, val)
 	case context.InputAuth:
-		m.StopInput()
+		m.StopInput(true)
 		return handleAuthFinalize(m, val)
 	case context.InputFuzzySearch:
 		if len(m.Search.Results) > 0 {
@@ -323,11 +333,11 @@ func finalizeInput(m *context.Model) tea.Cmd {
 				line = res.Matches[m.Search.CursorMatch].Line
 			}
 
-			m.StopInput()
+			m.StopInput(true)
 
 			return openFileAtLine(m, res.Path, line)
 		}
-		m.StopInput()
+		m.StopInput(true)
 	}
 	return nil
 }

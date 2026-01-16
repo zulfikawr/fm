@@ -318,6 +318,9 @@ func closeTab(m *tui_context.Model) tea.Cmd {
 
 // ApplyFilter filters the navigation items based on current search query
 func ApplyFilter(m *tui_context.Model) {
+	if m.UI.InputActive && m.Inputs.Mode == tui_context.InputSearch {
+		m.Navigation.FilterQuery = strings.ToLower(m.Inputs.ActiveInput.Value())
+	}
 	file.ApplyFilter(m)
 	syncOffset(m)
 }
@@ -445,11 +448,11 @@ func SwitchToLocal(m *tui_context.Model, path string) tea.Cmd {
 	}
 
 	m.Navigation.Path = targetPath
-	m.Navigation.PathGen++
-	m.Navigation.Cursor = 0
 	m.Navigation.Offset = 0
 	m.Navigation.Items = nil
 	m.Navigation.FilteredItems = nil
+	m.Navigation.FilterQuery = ""
+	m.Inputs.ActiveInput.Reset()
 
 	return Reload(m)
 }
@@ -479,6 +482,8 @@ func NavigateToPath(m *tui_context.Model, path string) tea.Cmd {
 	m.Navigation.Offset = 0
 	m.Navigation.Items = nil
 	m.Navigation.FilteredItems = nil
+	m.Navigation.FilterQuery = ""
+	m.Inputs.ActiveInput.Reset()
 
 	// Clear selection on navigation
 	m.ClearSelection()
@@ -643,7 +648,7 @@ func finalizeDirectoryLoad(m *tui_context.Model, msg LoadedItemsMsg) tea.Cmd {
 	}
 
 	m.Navigation.Items = msg.Items
-	m.Navigation.FilteredItems = msg.Items // Initially unfiltered
+	ApplyFilter(m)
 	m.Git.Branch = msg.GitBranch
 	m.Git.Root = msg.GitRoot
 	m.Display.ReadOnly = msg.IsReadOnly

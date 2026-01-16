@@ -23,6 +23,7 @@ type NavigationState struct {
 	SelectedPaths map[string]bool
 	FilterTimer   *time.Timer // Timer for debouncing filter
 	FilterGen     int         // Generation counter for filter
+	FilterQuery   string      // Current active filter query
 }
 
 // Select adds a path to the selection
