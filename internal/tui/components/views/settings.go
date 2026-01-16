@@ -104,6 +104,8 @@ func buildSettingGroups(props SettingsProps) []SettingGroup {
 			Settings: []SettingItem{
 				{Label: "Open", Value: "Enter/→/l"},
 				{Label: "Back", Value: "Backspace/←/h"},
+				{Label: "History Back", Value: "["},
+				{Label: "History Forward", Value: "]"},
 				{Label: "Select", Value: "Space"},
 				{Label: "New Tab", Value: "Alt+T"},
 				{Label: "Switch Tab", Value: "Alt+1-9"},

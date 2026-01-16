@@ -24,6 +24,8 @@ type NavigationState struct {
 	FilterTimer   *time.Timer // Timer for debouncing filter
 	FilterGen     int         // Generation counter for filter
 	FilterQuery   string      // Current active filter query
+	BackHistory   []string    // History for "Back" navigation
+	ForwardHistory []string    // History for "Forward" navigation
 }
 
 // Select adds a path to the selection
@@ -202,6 +204,8 @@ type Tab struct {
 	SelectedPaths map[string]bool
 	RemoteUser    string
 	RemoteHost    string
+	BackHistory   []string
+	ForwardHistory []string
 }
 
 // NewTab creates a new tab for the given path

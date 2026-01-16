@@ -225,6 +225,10 @@ func handleNavKeys(m *tui_context.Model, msg tea.KeyMsg) tea.Cmd {
 	case "alt+/":
 		m.StartInput(tui_context.InputFuzzySearch)
 		return m.Inputs.ActiveInput.FocusCmd()
+	case "[":
+		return NavigateBack(m)
+	case "]":
+		return NavigateForward(m)
 	}
 	return nil
 }
@@ -267,6 +271,10 @@ func saveTabState(m *tui_context.Model) {
 		t.SelectMode = m.UI.SelectMode
 		t.RemoteUser = m.Remote.User
 		t.RemoteHost = m.Remote.Host
+		t.BackHistory = make([]string, len(m.Navigation.BackHistory))
+		copy(t.BackHistory, m.Navigation.BackHistory)
+		t.ForwardHistory = make([]string, len(m.Navigation.ForwardHistory))
+		copy(t.ForwardHistory, m.Navigation.ForwardHistory)
 		t.SelectedPaths = make(map[string]bool)
 		for k, v := range m.Navigation.SelectedPaths {
 			t.SelectedPaths[k] = v
@@ -288,6 +296,10 @@ func syncTabToModel(m *tui_context.Model) tea.Cmd {
 		m.Git.Root = t.GitRoot
 		m.Remote.User = t.RemoteUser
 		m.Remote.Host = t.RemoteHost
+		m.Navigation.BackHistory = make([]string, len(t.BackHistory))
+		copy(m.Navigation.BackHistory, t.BackHistory)
+		m.Navigation.ForwardHistory = make([]string, len(t.ForwardHistory))
+		copy(m.Navigation.ForwardHistory, t.ForwardHistory)
 
 		var cmd tea.Cmd
 		if t.Searching {
@@ -461,6 +473,72 @@ func navigateToParent(m *tui_context.Model) tea.Cmd {
 	return NavigateToPath(m, parent)
 }
 
+// NavigateBack moves to the previous path in history
+func NavigateBack(m *tui_context.Model) tea.Cmd {
+	if len(m.Navigation.BackHistory) == 0 {
+		return nil
+	}
+
+	// Save current to ForwardHistory
+	m.Navigation.ForwardHistory = append(m.Navigation.ForwardHistory, m.Navigation.Path)
+
+	// Pop from BackHistory
+	prevPath := m.Navigation.BackHistory[len(m.Navigation.BackHistory)-1]
+	m.Navigation.BackHistory = m.Navigation.BackHistory[:len(m.Navigation.BackHistory)-1]
+
+	return navigateToPathInternal(m, prevPath, true)
+}
+
+// NavigateForward moves forward in history
+func NavigateForward(m *tui_context.Model) tea.Cmd {
+	if len(m.Navigation.ForwardHistory) == 0 {
+		return nil
+	}
+
+	// Save current to BackHistory
+	m.Navigation.BackHistory = append(m.Navigation.BackHistory, m.Navigation.Path)
+
+	// Pop from ForwardHistory
+	nextPath := m.Navigation.ForwardHistory[len(m.Navigation.ForwardHistory)-1]
+	m.Navigation.ForwardHistory = m.Navigation.ForwardHistory[:len(m.Navigation.ForwardHistory)-1]
+
+	return navigateToPathInternal(m, nextPath, true)
+}
+
+// navigateToPathInternal is a helper for history navigation that skips history pushing
+func navigateToPathInternal(m *tui_context.Model, path string, isHistory bool) tea.Cmd {
+	// Clean and validate path
+	info, err := m.FS.Stat(m.Context, path)
+	if err != nil {
+		return LogError(m, fileerrors.WrapError(err, "Stat"), "Navigate")
+	}
+
+	if !info.IsDir() {
+		return LogError(m, fmt.Errorf("not a directory"), "Navigate")
+	}
+
+	// Save current state to cache
+	m.Cache.CursorMemory.Put(m.Navigation.Path, m.Navigation.Cursor)
+	m.Cache.OffsetMemory.Put(m.Navigation.Path, m.Navigation.Offset)
+
+	// Memory Cleanup
+	oldParent := m.FS.Dir(m.Navigation.Path)
+	m.Cache.ItemCache.Unprotect(oldParent)
+
+	// Update path
+	m.Navigation.Path = path
+	m.Navigation.PathGen++
+
+	// Pin new parent
+	newParent := m.FS.Dir(path)
+	m.Cache.ItemCache.Protect(newParent)
+
+	// Clear selection on navigation
+	m.ClearSelection()
+
+	return Reload(m, false)
+}
+
 // SwitchToLocal switches the current filesystem back to local
 func SwitchToLocal(m *tui_context.Model, path string) tea.Cmd {
 	if m.FS.IsLocal() {
@@ -515,42 +593,19 @@ func SwitchToLocal(m *tui_context.Model, path string) tea.Cmd {
 
 // NavigateToPath handles navigation to a specific directory path
 func NavigateToPath(m *tui_context.Model, path string) tea.Cmd {
-	// Clean and validate path
-	info, err := m.FS.Stat(m.Context, path)
-	if err != nil {
-		return LogError(m, fileerrors.WrapError(err, "Stat"), "Navigate")
+	// Update history: Push current path to BackHistory and clear ForwardHistory
+	if m.Navigation.Path != "" {
+		if len(m.Navigation.BackHistory) == 0 || m.Navigation.BackHistory[len(m.Navigation.BackHistory)-1] != m.Navigation.Path {
+			m.Navigation.BackHistory = append(m.Navigation.BackHistory, m.Navigation.Path)
+			if len(m.Navigation.BackHistory) > 100 {
+				m.Navigation.BackHistory = m.Navigation.BackHistory[1:]
+			}
+		}
 	}
+	m.Navigation.ForwardHistory = nil
 
-	if !info.IsDir() {
-		return LogError(m, fmt.Errorf("not a directory"), "Navigate")
-	}
-
-	// Save current state to cache
-	m.Cache.CursorMemory.Put(m.Navigation.Path, m.Navigation.Cursor)
-	m.Cache.OffsetMemory.Put(m.Navigation.Path, m.Navigation.Offset)
-
-	// Memory Cleanup: Unprotect the previous parent
-	oldParent := m.FS.Dir(m.Navigation.Path)
-	m.Cache.ItemCache.Unprotect(oldParent)
-
-	// Update path
-	m.Navigation.Path = path
-	m.Navigation.PathGen++
-
-	// Pin new parent directory in cache
-	newParent := m.FS.Dir(path)
-	m.Cache.ItemCache.Protect(newParent)
-
-	// We DON'T clear items here anymore.
-	// This allows the "ncdu" feel where the old list stays visible
-	// until the new one is ready to swap in.
-
-	// Clear selection on navigation
-	m.ClearSelection()
-
-	return Reload(m, false)
+	return navigateToPathInternal(m, path, false)
 }
-
 // Reload triggers an asynchronous reload of the current directory.
 // If silent is true, it won't show the loading spinner.
 func Reload(m *tui_context.Model, silent bool) tea.Cmd {

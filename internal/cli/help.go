@@ -17,6 +17,7 @@ func PrintHelp(styles theme.Stylesheet, themeName string) {
 	fmt.Println("  j/down, k/up   Move cursor")
 	fmt.Println("  l/enter        Enter directory or open file")
 	fmt.Println("  h/backspace    Go to parent directory")
+	fmt.Println("  [ / ]          History Back / Forward")
 	fmt.Println("  Space          Toggle selection")
 	fmt.Println("  alt+t          Create new tab")
 	fmt.Println("  alt+1-9        Switch to tab 1-9")

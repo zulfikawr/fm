@@ -31,6 +31,7 @@ A fast, modular, and feature-rich TUI file manager written in Go.
 | --- | --- |
 | `Enter` / `→` / `l` | Open directory / Open file in editor |
 | `Backspace` / `←` / `h` | Navigate to parent directory |
+| `[` / `]` | History Back / Forward |
 | `Space` | Toggle selection for bulk actions |
 | `Alt+T` | New tab (max 9) |
 | `Alt+1`-`9` | Switch between tabs |

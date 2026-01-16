@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [v0.1.8] - 2026-01-16
 
 ### Added
+- Browser-like back and forward history navigation using `[` and `]` shortcuts.
 - SSH keep-alives and automatic session recovery for robust remote connections.
 - Comprehensive unit tests for the custom text input component.
 

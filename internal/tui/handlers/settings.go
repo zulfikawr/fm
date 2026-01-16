@@ -23,8 +23,8 @@ func HandleSettings(m *tui_context.Model, msg tea.Msg) tea.Cmd {
 
 func handleSettingsKeys(m *tui_context.Model, msg tea.KeyMsg) tea.Cmd {
 	// Total selectable items across all groups
-	// File Ops (6) + Display (6) + Appearance (1) + Keybindings (21) = 34
-	totalItems := 34
+	// File Ops (6) + Display (6) + Appearance (1) + Keybindings (23) = 36
+	totalItems := 36
 	var reload bool
 
 	switch msg.String() {
