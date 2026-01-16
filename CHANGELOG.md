@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - "Select All" functionality using `Alt+A` and "Deselect All" via `Esc`.
 - Browser-like back and forward history navigation using `[` and `]` shortcuts.
+- Increased test coverage for `internal/files/local` and `internal/files/remote`.
 - SSH keep-alives and automatic session recovery for robust remote connections.
 - Comprehensive unit tests for the custom text input component.
 
@@ -23,6 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Parent directory pinning in cache with automatic memory cleanup to ensure instantaneous "Go to Parent" (Backspace) navigation.
 
 ### Fixed
+- **SFTP Parallel Walk:** Fixed a bug where `Walk` would return before all background goroutines finished (added missing `g.Wait()`).
 - Input masking persistence after authentication prompts.
 - Filter behavior: preserved on Enter, cleaned on navigation, and reset via Esc.
 - `s` shortcut for cycling sort modes.

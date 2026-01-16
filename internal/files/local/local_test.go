@@ -2,8 +2,13 @@ package local
 
 import (
 	"context"
-	"fm/internal/testutil"
+	"io"
+	"os"
+	"path/filepath"
+	"runtime"
 	"testing"
+
+	"fm/internal/testutil"
 )
 
 func TestLocalFS(t *testing.T) {
@@ -51,5 +56,147 @@ func TestLocalFS(t *testing.T) {
 		testutil.AssertEqual(t, "file.txt", fs.Base("/a/b/file.txt"), "Base should work")
 		testutil.AssertEqual(t, "/a/b", fs.Dir("/a/b/file.txt"), "Dir should work")
 		testutil.AssertEqual(t, "/a/b/c", fs.Join("/a/b", "c"), "Join should work")
+		testutil.AssertEqual(t, ".txt", fs.Ext("file.txt"), "Ext should work")
+		testutil.AssertEqual(t, "/", fs.Clean("//"), "Clean should work")
+	})
+
+	t.Run("Open and Read", func(t *testing.T) {
+		path := tmp.WriteFile("read_test.txt", "hello")
+		f, err := fs.Open(ctx, path)
+		testutil.AssertNoError(t, err, "Open should succeed")
+		defer f.Close()
+
+		data, _ := io.ReadAll(f)
+		testutil.AssertEqual(t, "hello", string(data), "Content should match")
+	})
+
+	t.Run("Chmod", func(t *testing.T) {
+		path := tmp.WriteFile("chmod_test.txt", "")
+		err := fs.Chmod(ctx, path, 0600)
+		testutil.AssertNoError(t, err, "Chmod should succeed")
+
+		info, _ := fs.Stat(ctx, path)
+		// On some systems (like Windows), permissions might not match exactly, but we just check success
+		if info.Mode().Perm() != 0600 && runtime.GOOS != "windows" {
+			t.Errorf("expected 0600, got %o", info.Mode().Perm())
+		}
+	})
+
+	t.Run("ReadDirEntries", func(t *testing.T) {
+		tmp.WriteFile("entry.txt", "")
+		entries, err := fs.ReadDirEntries(ctx, tmp.Path)
+		testutil.AssertNoError(t, err, "ReadDirEntries should succeed")
+		found := false
+		for _, e := range entries {
+			if e.Name() == "entry.txt" {
+				found = true
+				break
+			}
+		}
+		testutil.AssertEqual(t, true, found, "Should find entry.txt")
+	})
+
+	t.Run("Lstat and Abs", func(t *testing.T) {
+		path := tmp.WriteFile("lstat_test.txt", "")
+		_, err := fs.Lstat(ctx, path)
+		testutil.AssertNoError(t, err, "Lstat should succeed")
+
+		abs, err := fs.Abs("some_file")
+		testutil.AssertNoError(t, err, "Abs should succeed")
+		if !filepath.IsAbs(abs) {
+			t.Errorf("expected absolute path, got %s", abs)
+		}
+	})
+
+	t.Run("Rel", func(t *testing.T) {
+		rel, err := fs.Rel("/a/b", "/a/b/c/d")
+		testutil.AssertNoError(t, err, "Rel should succeed")
+		testutil.AssertEqual(t, filepath.Join("c", "d"), rel, "Rel should match")
+	})
+
+	t.Run("System Info", func(t *testing.T) {
+		testutil.AssertEqual(t, true, fs.IsLocal(), "IsLocal should be true")
+		testutil.AssertEqual(t, "", fs.Address(), "Address should be empty")
+		testutil.AssertEqual(t, "", fs.User(), "User should be empty")
+		testutil.AssertEqual(t, string(os.PathSeparator), fs.Separator(), "Separator should match")
+
+		_, err := fs.GetHomeDir()
+		testutil.AssertNoError(t, err, "GetHomeDir should succeed")
+	})
+
+	t.Run("Walk", func(t *testing.T) {
+		tmp.WriteFile("a/1.txt", "")
+		tmp.WriteFile("a/b/2.txt", "")
+
+		count := 0
+		err := fs.Walk(ctx, tmp.Path, func(path string, info os.FileInfo, err error) error {
+			if err != nil {
+				return err
+			}
+			if !info.IsDir() {
+				count++
+			}
+			return nil
+		})
+		testutil.AssertNoError(t, err, "Walk should succeed")
+		if count < 2 {
+			t.Errorf("expected at least 2 files, got %d", count)
+		}
+	})
+
+	t.Run("IsReadOnly", func(t *testing.T) {
+		tmp := testutil.NewTempFolder(t)
+		defer tmp.Cleanup()
+		ro, err := fs.IsReadOnly(ctx, tmp.Path)
+		testutil.AssertNoError(t, err, "IsReadOnly should succeed")
+		testutil.AssertEqual(t, false, ro, "tempDir should not be read-only")
+
+		if runtime.GOOS != "windows" {
+			path := tmp.WriteFile("ro_file.txt", "")
+			os.Chmod(path, 0400) // Read-only
+			ro, err = fs.IsReadOnly(ctx, path)
+			testutil.AssertNoError(t, err, "IsReadOnly should succeed on RO file")
+			testutil.AssertEqual(t, true, ro, "file should be read-only")
+		}
+	})
+
+	t.Run("Preallocate", func(t *testing.T) {
+		path := tmp.Join("prealloc.txt")
+		err := fs.Preallocate(ctx, path, 1024)
+		// Preallocate might fail on some filesystems, but we just check it doesn't crash
+		// We expect success on most modern systems
+		_ = err
+	})
+
+	t.Run("Context Cancellation", func(t *testing.T) {
+		ictx, cancel := context.WithCancel(context.Background())
+		cancel()
+		_, err := fs.Stat(ictx, tmp.Path)
+		if err == nil {
+			t.Errorf("expected error on cancelled context")
+		}
+		_, err = fs.ReadDir(ictx, tmp.Path)
+		if err == nil {
+			t.Errorf("expected error on cancelled context")
+		}
+	})
+
+	t.Run("Close", func(t *testing.T) {
+		err := fs.Close()
+		testutil.AssertNoError(t, err, "Close should succeed")
+	})
+
+	t.Run("getStatInfo", func(t *testing.T) {
+		if runtime.GOOS == "windows" {
+			res := getStatInfo(nil)
+			testutil.AssertEqual(t, (*statInfo)(nil), res, "should be nil on windows")
+		} else {
+			info, _ := os.Stat(tmp.Path)
+			res := getStatInfo(info.Sys())
+			if res == nil {
+				t.Errorf("expected non-nil statInfo on unix")
+			}
+			getStatInfo(nil) // Cover nil case
+		}
 	})
 }

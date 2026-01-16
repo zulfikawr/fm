@@ -538,7 +538,11 @@ func (s *SftpFS) Walk(ctx context.Context, root string, walkFn func(path string,
 		return nil
 	}
 
-	return s.parallelWalk(ctx, g, root, walkFn)
+	if err := s.parallelWalk(ctx, g, root, walkFn); err != nil {
+		return err
+	}
+
+	return g.Wait()
 }
 
 func (s *SftpFS) parallelWalk(ctx context.Context, g *errgroup.Group, root string, walkFn func(path string, info os.FileInfo, err error) error) error {
