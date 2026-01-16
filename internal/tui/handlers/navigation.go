@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"time"
 
@@ -494,10 +495,18 @@ func SwitchToLocal(m *tui_context.Model, path string) tea.Cmd {
 		}
 	}
 
+	// Memory Cleanup
+	oldParent := m.FS.Dir(m.Navigation.Path)
+	m.Cache.ItemCache.Unprotect(oldParent)
+
 	m.Navigation.Path = targetPath
+	m.Navigation.PathGen++
+
+	// Pin parent
+	newParent := m.FS.Dir(targetPath)
+	m.Cache.ItemCache.Protect(newParent)
+
 	m.Navigation.Offset = 0
-	m.Navigation.Items = nil
-	m.Navigation.FilteredItems = nil
 	m.Navigation.FilterQuery = ""
 	m.Inputs.ActiveInput.Reset()
 
@@ -509,28 +518,32 @@ func NavigateToPath(m *tui_context.Model, path string) tea.Cmd {
 	// Clean and validate path
 	info, err := m.FS.Stat(m.Context, path)
 	if err != nil {
-		return SetErrMsg(m, "Error: "+err.Error())
+		return LogError(m, fileerrors.WrapError(err, "Stat"), "Navigate")
 	}
 
 	if !info.IsDir() {
-		return SetErrMsg(m, "Error: Not a directory")
+		return LogError(m, fmt.Errorf("not a directory"), "Navigate")
 	}
 
 	// Save current state to cache
 	m.Cache.CursorMemory.Put(m.Navigation.Path, m.Navigation.Cursor)
 	m.Cache.OffsetMemory.Put(m.Navigation.Path, m.Navigation.Offset)
 
+	// Memory Cleanup: Unprotect the previous parent
+	oldParent := m.FS.Dir(m.Navigation.Path)
+	m.Cache.ItemCache.Unprotect(oldParent)
+
 	// Update path
 	m.Navigation.Path = path
 	m.Navigation.PathGen++
 
-	// Reset view state for new directory
-	m.Navigation.Cursor = 0
-	m.Navigation.Offset = 0
-	m.Navigation.Items = nil
-	m.Navigation.FilteredItems = nil
-	m.Navigation.FilterQuery = ""
-	m.Inputs.ActiveInput.Reset()
+	// Pin new parent directory in cache
+	newParent := m.FS.Dir(path)
+	m.Cache.ItemCache.Protect(newParent)
+
+	// We DON'T clear items here anymore.
+	// This allows the "ncdu" feel where the old list stays visible
+	// until the new one is ready to swap in.
 
 	// Clear selection on navigation
 	m.ClearSelection()
@@ -541,9 +554,6 @@ func NavigateToPath(m *tui_context.Model, path string) tea.Cmd {
 // Reload triggers an asynchronous reload of the current directory.
 // If silent is true, it won't show the loading spinner.
 func Reload(m *tui_context.Model, silent bool) tea.Cmd {
-	if !silent {
-		m.UI.Loading = true
-	}
 	path := m.Navigation.Path
 	gen := m.Navigation.PathGen
 	fs := m.FS
@@ -554,34 +564,57 @@ func Reload(m *tui_context.Model, silent bool) tea.Cmd {
 	sizeFormatIdx := m.Config.SizeFormatIndex
 	dateFormatIdx := m.Config.DateFormatIndex
 
+	// 1. Synchronous Cache Check (The "Instant" Fix)
+	// If we have it in cache, populate immediately to avoid flicker
+	if items, ok := m.Cache.ItemCache.Get(path); ok {
+		m.Navigation.Items = items
+		ApplyFilter(m)
+
+		// Restore cursor/offset from memory if available
+		if val, ok := m.Cache.CursorMemory.Get(path); ok {
+			m.Navigation.Cursor = val
+		} else {
+			m.Navigation.Cursor = 0
+		}
+		if val, ok := m.Cache.OffsetMemory.Get(path); ok {
+			m.Navigation.Offset = val
+		} else {
+			m.Navigation.Offset = 0
+		}
+		syncOffset(m)
+
+		m.UI.Loading = false
+		silent = true // Force background refresh to be silent
+	} else {
+		// If NOT in cache, we need to reset the cursor for the upcoming new list
+		m.Navigation.Cursor = 0
+		m.Navigation.Offset = 0
+	}
+
+	if !silent {
+		m.UI.Loading = true
+	}
+
+	// 2. Immediate Skeleton (The "Stable UI" Fix)
+	// If the list is currently empty (not a cache hit), at least add the ".." entry
+	// so the UI doesn't completely disappear.
+	if len(m.Navigation.Items) == 0 && path != "/" && path != fs.Separator() {
+		m.Navigation.Items = []core.Item{{
+			Name:      "↑ ..",
+			IsDir:     true,
+			IsUp:      true,
+			SearchKey: "..",
+			Path:      fs.Dir(path),
+		}}
+		ApplyFilter(m)
+	}
+
 	// Cancel previous git operation if running
 	if m.Git.CancelFunc != nil {
 		m.Git.CancelFunc()
 	}
 
 	var cmds []tea.Cmd
-
-	// 1. Check Cache first for "Instant" feel
-	var cachedRoot string
-	if items, ok := m.Cache.ItemCache.Get(path); ok {
-		var gitBranch string
-		if gs.IsEnabled() {
-			if root, ok := m.Cache.GitRootCache.Get(path); ok {
-				cachedRoot = root
-			}
-		}
-
-		cmds = append(cmds, func() tea.Msg {
-			return LoadedItemsMsg{
-				Generation: gen,
-				Path:       path,
-				Items:      items,
-				GitBranch:  gitBranch,
-				GitRoot:    cachedRoot,
-				Cached:     true,
-			}
-		})
-	}
 
 	// 2. Load Skeleton (names only) quickly
 	loadSkeletonCmd := func() tea.Msg {

@@ -15,6 +15,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Concurrent remote metadata fetching to significantly reduce UI latency in large directories.
 - Immediate cursor memory synchronization to prevent "jumping" during background reloads.
 - High-performance parallel walking engine for remote filesystems, speeding up fuzzy content search (Alt+/).
+- Cache-first rendering engine for zero-latency navigation between recently visited folders.
+- Persistent UI by eliminating intermediate empty list states during navigation.
+- Skeleton-first directory loading to eliminate full-screen "Loading" flicker.
+- Parent directory pinning in cache with automatic memory cleanup to ensure instantaneous "Go to Parent" (Backspace) navigation.
 
 ### Fixed
 - Input masking persistence after authentication prompts.

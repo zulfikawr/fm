@@ -16,19 +16,21 @@ type CacheEntry[V any] struct {
 
 // SimpleCache implements a generic size-limited cache with optional TTL
 type SimpleCache[K comparable, V any] struct {
-	capacity int
-	ttl      time.Duration
-	cache    map[K]CacheEntry[V]
-	order    *list.List
+	capacity  int
+	ttl       time.Duration
+	cache     map[K]CacheEntry[V]
+	order     *list.List
+	protected map[K]bool
 }
 
 // NewSimpleCache creates a new generic cache
 func NewSimpleCache[K comparable, V any](capacity int, ttl time.Duration) *SimpleCache[K, V] {
 	return &SimpleCache[K, V]{
-		capacity: capacity,
-		ttl:      ttl,
-		cache:    make(map[K]CacheEntry[V]),
-		order:    list.New(),
+		capacity:  capacity,
+		ttl:       ttl,
+		cache:     make(map[K]CacheEntry[V]),
+		order:     list.New(),
+		protected: make(map[K]bool),
 	}
 }
 
@@ -40,7 +42,7 @@ func (c *SimpleCache[K, V]) Get(key K) (V, bool) {
 		return zero, false
 	}
 
-	if c.ttl > 0 && time.Since(entry.Created) > c.ttl {
+	if c.ttl > 0 && time.Since(entry.Created) > c.ttl && !c.protected[key] {
 		c.Delete(key)
 		var zero V
 		return zero, false
@@ -60,12 +62,35 @@ func (c *SimpleCache[K, V]) Put(key K, value V) {
 	c.order.PushFront(key)
 
 	if c.order.Len() > c.capacity {
-		oldest := c.order.Back()
-		if oldest != nil {
-			c.order.Remove(oldest)
-			delete(c.cache, oldest.Value.(K))
+		// Find first non-protected item from the back to evict
+		for e := c.order.Back(); e != nil; e = e.Prev() {
+			k := e.Value.(K)
+			if !c.protected[k] {
+				c.order.Remove(e)
+				delete(c.cache, k)
+				break
+			}
 		}
 	}
+}
+
+// Protect prevents a key from being evicted
+func (c *SimpleCache[K, V]) Protect(key K) {
+	if c == nil {
+		return
+	}
+	if c.protected == nil {
+		c.protected = make(map[K]bool)
+	}
+	c.protected[key] = true
+}
+
+// Unprotect allows a key to be evicted again
+func (c *SimpleCache[K, V]) Unprotect(key K) {
+	if c == nil || c.protected == nil {
+		return
+	}
+	delete(c.protected, key)
 }
 
 // Delete removes a specific key from the cache

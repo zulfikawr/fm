@@ -42,7 +42,8 @@ func Render(m *context.Model) string {
 
 	// 2. Render Body
 	var bodyStr string
-	if m.UI.Loading {
+	// Skeleton-First logic: Only show full screen loading if we have NO items to show
+	if m.UI.Loading && len(m.Navigation.FilteredItems) == 0 {
 		bodyStr = loading.Render(loading.Props{
 			Width:   layout.Width,
 			Height:  layout.BodyHeight,
