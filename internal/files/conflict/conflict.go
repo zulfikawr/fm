@@ -54,7 +54,7 @@ func ValidateSecurePath(fs core.FileSystem, baseDir, targetPath string) (string,
 	}
 
 	if strings.HasPrefix(rel, "..") || strings.HasPrefix(rel, fs.Separator()) {
-		return "", fmt.Errorf("secure path violation: %s is outside of %s", targetPath, baseDir)
+		return "", fmt.Errorf("Security block: Cannot write files outside the destination directory")
 	}
 
 	return cleanTarget, nil
@@ -77,7 +77,7 @@ func GenerateUniqueName(ctx context.Context, fs core.FileSystem, path string) (s
 		}
 		// Safety break to prevent infinite loop in case of errors other than NotExist
 		if i > 10000 {
-			return "", fmt.Errorf("failed to generate unique name after 10000 attempts")
+			return "", fmt.Errorf("Rename failed: Could not automatically generate a unique name after multiple attempts")
 		}
 	}
 }

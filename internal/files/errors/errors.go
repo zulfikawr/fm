@@ -109,12 +109,21 @@ func WrapErrorWithPath(err error, op string, path string) error {
 		return &FileError{Op: op, Path: path, Err: err, Msg: "unexpected end of file"}
 	}
 
+	// Detect "No Files Selected"
+	if strings.Contains(strings.ToLower(err.Error()), "no files selected") {
+		return &FileError{Op: op, Path: path, Err: err, Msg: "no files selected for this operation"}
+	}
+
 	// Detect "Not Found" (including executables)
 	if errors.Is(err, os.ErrNotExist) ||
 		strings.Contains(strings.ToLower(err.Error()), "no such file") ||
 		strings.Contains(strings.ToLower(err.Error()), "executable file not found") ||
 		strings.Contains(strings.ToLower(err.Error()), "not found") {
-		return &FileError{Op: op, Path: path, Err: err, Msg: err.Error()}
+		msg := "file or directory does not exist or command not found"
+		if path != "" {
+			msg = fmt.Sprintf("'%s' not found", path)
+		}
+		return &FileError{Op: op, Path: path, Err: err, Msg: msg}
 	}
 
 	// Detect "Already Exists"
@@ -129,7 +138,11 @@ func WrapErrorWithPath(err error, op string, path string) error {
 
 	// Detect Permission issues
 	if errors.Is(err, os.ErrPermission) || strings.Contains(strings.ToLower(err.Error()), "permission denied") {
-		return &FileError{Op: op, Path: path, Err: err, Msg: "permission denied"}
+		msg := "permission denied"
+		if path != "" {
+			msg = fmt.Sprintf("cannot access '%s': permission denied", path)
+		}
+		return &FileError{Op: op, Path: path, Err: err, Msg: msg}
 	}
 
 	// Detect Disk Full

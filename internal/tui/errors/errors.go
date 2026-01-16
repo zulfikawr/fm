@@ -168,6 +168,9 @@ func (e *Error) UserMessage() string {
 	case ErrorTypeUser:
 		return e.Message
 	case ErrorTypeSystem:
+		if e.Message != "" {
+			return fmt.Sprintf("System Error: %s", e.Message)
+		}
 		return "A system error occurred. Please try again."
 	case ErrorTypeFatal:
 		return "A critical error occurred. The application may need to restart."

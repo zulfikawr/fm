@@ -15,10 +15,10 @@ func Move(ctx context.Context, fs core.FileSystem, src, dst string, progChan cha
 	return CrossMove(ctx, fs, fs, src, dst, progChan, policy)
 }
 
-// CrossMove moves a file or directory from srcFS to dstFS.
+// CrossMove moves a file or directory between different filesystems.
 func CrossMove(ctx context.Context, srcFS, dstFS core.FileSystem, src, dst string, progChan chan<- core.Progress, policy conflict.Policy) error {
-	if src == "" || dst == "" {
-		return errors.WrapErrorWithPath(fmt.Errorf("empty path"), "CrossMove", fmt.Sprintf("%s -> %s", src, dst))
+	if src == "" {
+		return errors.WrapErrorWithPath(fmt.Errorf("no files selected"), "Move", "")
 	}
 
 	// Resolve conflict if any

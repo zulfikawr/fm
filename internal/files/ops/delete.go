@@ -15,7 +15,7 @@ import (
 // Delete removes a file or directory recursively.
 func Delete(ctx context.Context, fs core.FileSystem, path string, progChan chan<- core.Progress) error {
 	if path == "" {
-		return errors.WrapErrorWithPath(fmt.Errorf("empty path"), "Delete", path)
+		return errors.WrapErrorWithPath(fmt.Errorf("no files selected"), "Delete", "")
 	}
 	if progChan != nil {
 		select {
@@ -37,7 +37,7 @@ func Delete(ctx context.Context, fs core.FileSystem, path string, progChan chan<
 // Trash moves a file or directory to the system trash.
 func Trash(ctx context.Context, fs core.FileSystem, path string) error {
 	if path == "" {
-		return errors.WrapErrorWithPath(fmt.Errorf("empty path"), "Trash", path)
+		return errors.WrapErrorWithPath(fmt.Errorf("no files selected"), "Trash", "")
 	}
 	select {
 	case <-ctx.Done():

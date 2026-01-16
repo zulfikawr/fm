@@ -26,8 +26,8 @@ func TestError(t *testing.T) {
 		testutil.AssertEqual(t, "specific msg", err.UserMessage(), "User message should be the specific message")
 
 		sysErr := SystemError("Op", errors.New("internal"))
-		if sysErr.UserMessage() == "internal" {
-			t.Error("System error should not leak internal details to user")
+		if !strings.Contains(sysErr.UserMessage(), "System Error: internal") {
+			t.Errorf("System error should show internal message, got: %s", sysErr.UserMessage())
 		}
 
 		fatalErr := FatalError("Op", errors.New("internal"))

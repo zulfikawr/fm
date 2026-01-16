@@ -9,10 +9,10 @@ import (
 	"fm/internal/files/errors"
 )
 
-// Rename moves or renames a file or directory.
+// Rename renames a file or directory.
 func Rename(ctx context.Context, fs core.FileSystem, oldPath, newPath string, policy conflict.Policy) error {
-	if oldPath == "" || newPath == "" {
-		return errors.WrapErrorWithPath(fmt.Errorf("empty path"), "Rename", fmt.Sprintf("%s -> %s", oldPath, newPath))
+	if oldPath == "" {
+		return errors.WrapErrorWithPath(fmt.Errorf("no files selected"), "Rename", "")
 	}
 	// Validate new filename component
 	if err := ValidateFileName(fs.Base(newPath)); err != nil {
