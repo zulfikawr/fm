@@ -300,7 +300,7 @@ func createTab(m *tui_context.Model) tea.Cmd {
 	m.AddTab(m.Navigation.Path)
 	m.ActiveTab = len(m.Tabs) - 1
 	cmd := syncTabToModel(m)
-	return tea.Batch(cmd, Reload(m))
+	return tea.Batch(cmd, Reload(m, false))
 }
 
 func switchTab(m *tui_context.Model, tabNum int) tea.Cmd {
@@ -308,7 +308,7 @@ func switchTab(m *tui_context.Model, tabNum int) tea.Cmd {
 		saveTabState(m)
 		m.ActiveTab = tabNum - 1
 		cmd := syncTabToModel(m)
-		return tea.Batch(cmd, Reload(m))
+		return tea.Batch(cmd, Reload(m, false))
 	}
 	return nil
 }
@@ -316,7 +316,7 @@ func switchTab(m *tui_context.Model, tabNum int) tea.Cmd {
 func closeTab(m *tui_context.Model) tea.Cmd {
 	if m.CloseActiveTab() {
 		cmd := syncTabToModel(m)
-		return tea.Batch(cmd, Reload(m))
+		return tea.Batch(cmd, Reload(m, false))
 	}
 	return nil
 }
@@ -353,11 +353,17 @@ func moveCursor(m *tui_context.Model, delta int) {
 
 	m.Navigation.Cursor = newCursor
 	syncOffset(m)
+
+	// Save to memory immediately to prevent jumps during background reloads
+	m.Cache.CursorMemory.Put(m.Navigation.Path, m.Navigation.Cursor)
+	m.Cache.OffsetMemory.Put(m.Navigation.Path, m.Navigation.Offset)
 }
 
 func moveCursorToStart(m *tui_context.Model) {
 	m.Navigation.Cursor = 0
 	syncOffset(m)
+	m.Cache.CursorMemory.Put(m.Navigation.Path, m.Navigation.Cursor)
+	m.Cache.OffsetMemory.Put(m.Navigation.Path, m.Navigation.Offset)
 }
 
 func moveCursorToEnd(m *tui_context.Model) {
@@ -365,6 +371,8 @@ func moveCursorToEnd(m *tui_context.Model) {
 		m.Navigation.Cursor = len(m.Navigation.FilteredItems) - 1
 	}
 	syncOffset(m)
+	m.Cache.CursorMemory.Put(m.Navigation.Path, m.Navigation.Cursor)
+	m.Cache.OffsetMemory.Put(m.Navigation.Path, m.Navigation.Offset)
 }
 
 func syncOffset(m *tui_context.Model) {
@@ -459,7 +467,7 @@ func SwitchToLocal(m *tui_context.Model, path string) tea.Cmd {
 	m.Navigation.FilterQuery = ""
 	m.Inputs.ActiveInput.Reset()
 
-	return Reload(m)
+	return Reload(m, false)
 }
 
 // NavigateToPath handles navigation to a specific directory path
@@ -493,12 +501,15 @@ func NavigateToPath(m *tui_context.Model, path string) tea.Cmd {
 	// Clear selection on navigation
 	m.ClearSelection()
 
-	return Reload(m)
+	return Reload(m, false)
 }
 
-// Reload triggers an asynchronous reload of the current directory
-func Reload(m *tui_context.Model) tea.Cmd {
-	m.UI.Loading = true
+// Reload triggers an asynchronous reload of the current directory.
+// If silent is true, it won't show the loading spinner.
+func Reload(m *tui_context.Model, silent bool) tea.Cmd {
+	if !silent {
+		m.UI.Loading = true
+	}
 	path := m.Navigation.Path
 	gen := m.Navigation.PathGen
 	fs := m.FS
@@ -646,7 +657,7 @@ func finalizeDirectoryLoad(m *tui_context.Model, msg LoadedItemsMsg) tea.Cmd {
 			if parent != m.Navigation.Path {
 				m.Navigation.Path = parent
 				m.Navigation.PathGen++
-				return tea.Batch(cmd, Reload(m))
+				return tea.Batch(cmd, Reload(m, false))
 			}
 		}
 		return cmd

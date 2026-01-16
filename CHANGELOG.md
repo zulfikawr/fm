@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed list layout overflow when header is enabled.
 - Fixed inconsistent remote address display in breadcrumbs when opening new tabs.
 - Fixed SSH alias resolution in the `g` (Go to path) command.
+- Improved remote navigation stability by preventing cursor jumps and making background reloads non-disruptive.
 
 ## [v0.1.7] - 2026-01-15
 

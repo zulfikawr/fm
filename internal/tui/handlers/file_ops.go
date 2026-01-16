@@ -36,7 +36,7 @@ func HandleFileOps(m *tui_context.Model, msg tea.Msg) tea.Cmd {
 
 	case WatchEventMsg:
 		if m.Watcher.Watcher != nil {
-			return Reload(m)
+			return Reload(m, false)
 		}
 	}
 	return nil
@@ -151,7 +151,7 @@ func resolveConflict(m *tui_context.Model, choice string, applyToAll bool) tea.C
 				m.UI.StopConfirming()
 				m.Operations.ActionType = constants.ActionNone
 				m.Operations.ConflictPolicy = conflict.Ask
-				return Reload(m)
+				return Reload(m, false)
 			}
 			// For batch skip, we continue with the rest of the pending items
 			pending = pending[1:]
@@ -501,7 +501,7 @@ func finalizeOperation(m *tui_context.Model, msg OperationFinishedMsg) tea.Cmd {
 	m.UI.SelectMode = m.Navigation.SelectedCount > 0
 
 	return tea.Batch(
-		Reload(m),
+		Reload(m, false),
 		tea.Tick(constants.ProgressDisplayDuration, func(time.Time) tea.Msg {
 			return ClearMsg{}
 		}),
@@ -550,7 +550,7 @@ func PerformRename(m *tui_context.Model, newName string) tea.Cmd {
 
 	LogUpdate(m, logID, tui_context.StatusSuccess, tui_context.LogSuccess,
 		fmt.Sprintf("Renamed %s to %s", selected.Name, newName), "")
-	return Reload(m)
+	return Reload(m, false)
 }
 
 // --- Commands ---

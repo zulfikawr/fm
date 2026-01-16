@@ -168,5 +168,5 @@ func ConfirmSettingsReset(m *tui_context.Model) tea.Cmd {
 	m.Display.Styles = theme.GetStylesheet(m.Config.ThemeIndex)
 	m.UI.StopConfirming()
 	m.Operations.ActionType = ""
-	return tea.Batch(SetMsg(m, "Settings reset to defaults"), Reload(m))
+	return tea.Batch(SetMsg(m, "Settings reset to defaults"), Reload(m, false))
 }

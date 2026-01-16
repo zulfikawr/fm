@@ -55,7 +55,7 @@ func HandleUpdate(m *context.Model, msg tea.Msg) tea.Cmd {
 
 	case DebounceWatchMsg:
 		m.Watcher.IsListening = false
-		return Reload(m)
+		return Reload(m, false)
 
 	case WatcherErrorMsg:
 		m.Watcher.IsListening = false
@@ -75,7 +75,7 @@ func HandleUpdate(m *context.Model, msg tea.Msg) tea.Cmd {
 
 	case RemotePollMsg:
 		m.Watcher.IsListening = false
-		cmds = append(cmds, Reload(m))
+		cmds = append(cmds, Reload(m, true))
 		return tea.Batch(cmds...)
 
 	case DebounceFilterMsg:
@@ -113,7 +113,7 @@ func HandleUpdate(m *context.Model, msg tea.Msg) tea.Cmd {
 
 		cmds = append(cmds,
 			LogError(m, msg.Err, "Operation failed"),
-			Reload(m),
+			Reload(m, false),
 			tea.Tick(constants.ProgressDisplayDuration, func(time.Time) tea.Msg {
 				return ClearMsg{}
 			}),
