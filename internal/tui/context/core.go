@@ -205,12 +205,14 @@ type Tab struct {
 }
 
 // NewTab creates a new tab for the given path
-func NewTab(fs core.FileSystem, path string, sortMode sorting.SortMode) Tab {
+func NewTab(fs core.FileSystem, path string, sortMode sorting.SortMode, remoteUser, remoteHost string) Tab {
 	return Tab{
 		FS:            fs,
 		Path:          path,
 		SortMode:      sortMode,
 		SelectedPaths: make(map[string]bool),
+		RemoteUser:    remoteUser,
+		RemoteHost:    remoteHost,
 	}
 }
 

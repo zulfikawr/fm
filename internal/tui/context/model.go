@@ -101,7 +101,7 @@ func NewModel(fs core.FileSystem, startPath string) *Model {
 		},
 	}
 
-	m.Tabs = []Tab{NewTab(fs, startPath, sorting.SortDefault)}
+	m.Tabs = []Tab{NewTab(fs, startPath, sorting.SortDefault, "", "")}
 	m.ActiveTab = 0
 
 	return m
@@ -118,7 +118,7 @@ func (m *Model) AddTab(path string) {
 	if len(m.Tabs) >= 9 {
 		return
 	}
-	m.Tabs = append(m.Tabs, NewTab(m.FS, path, m.Display.SortMode))
+	m.Tabs = append(m.Tabs, NewTab(m.FS, path, m.Display.SortMode, m.Remote.User, m.Remote.Host))
 }
 
 // CloseActiveTab removes the current tab and adjusts the active index

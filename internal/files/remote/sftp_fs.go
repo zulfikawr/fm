@@ -23,9 +23,11 @@ import (
 
 // SftpFS implements FileSystem for SFTP.
 type SftpFS struct {
-	client *sftp.Client
-	conn   *ssh.Client
-	cache  *core.MetadataCache
+	client  *sftp.Client
+	conn    *ssh.Client
+	cache   *core.MetadataCache
+	address string
+	user    string
 }
 
 // NewSftpFS creates a new SFTP file system.
@@ -112,9 +114,11 @@ func NewSftpFS(address, user, password, keyPath string, hostKeyCallback ssh.Host
 	}
 
 	return &SftpFS{
-			client: client,
-			conn:   conn,
-			cache:  core.NewMetadataCache(2 * time.Second),
+			client:  client,
+			conn:    conn,
+			cache:   core.NewMetadataCache(2 * time.Second),
+			address: address,
+			user:    user,
 		},
 		nil
 }
@@ -314,6 +318,14 @@ func (s *SftpFS) Separator() string {
 
 func (s *SftpFS) IsLocal() bool {
 	return false
+}
+
+func (s *SftpFS) Address() string {
+	return s.address
+}
+
+func (s *SftpFS) User() string {
+	return s.user
 }
 
 func (s *SftpFS) Join(elem ...string) string {

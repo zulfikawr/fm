@@ -41,6 +41,8 @@ type MockFileSystem struct {
 	ExtFunc            func(path string) string
 	IsReadOnlyFunc     func(ctx context.Context, path string) (bool, error)
 	WalkFunc           func(ctx context.Context, root string, walkFn func(path string, info os.FileInfo, err error) error) error
+	AddressFunc        func() string
+	UserFunc           func() string
 	CloseFunc          func() error
 
 	// Call tracking
@@ -281,6 +283,20 @@ func (m *MockFileSystem) IsReadOnly(ctx context.Context, path string) (bool, err
 		return m.IsReadOnlyFunc(ctx, path)
 	}
 	return false, m.DefaultError
+}
+
+func (m *MockFileSystem) Address() string {
+	if m.AddressFunc != nil {
+		return m.AddressFunc()
+	}
+	return ""
+}
+
+func (m *MockFileSystem) User() string {
+	if m.UserFunc != nil {
+		return m.UserFunc()
+	}
+	return ""
 }
 
 func (m *MockFileSystem) Walk(ctx context.Context, root string, walkFn func(path string, info os.FileInfo, err error) error) error {

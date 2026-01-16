@@ -194,6 +194,14 @@ func (l *LocalFS) IsLocal() bool {
 	return true
 }
 
+func (l *LocalFS) Address() string {
+	return ""
+}
+
+func (l *LocalFS) User() string {
+	return ""
+}
+
 func (l *LocalFS) Join(elem ...string) string {
 	return filepath.Join(elem...)
 }

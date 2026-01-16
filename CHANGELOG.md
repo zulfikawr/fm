@@ -11,7 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed a bug where text input remained stuck in password masking mode after an authentication prompt.
 - Fixed filter persistence on Enter, automatic cleanup on navigation, and clearing via Esc.
 - Fixed the `s` shortcut to correctly cycle through sort modes.
-- Fixed a layout overflow bug when the list header was enabled, ensuring correct scrolling and synchronization.
+- Fixed list layout overflow when header is enabled.
+- Fixed inconsistent remote address display in breadcrumbs when opening new tabs.
 
 ## [v0.1.7] - 2026-01-15
 

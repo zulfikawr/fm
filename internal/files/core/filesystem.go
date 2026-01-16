@@ -46,5 +46,7 @@ type FileSystem interface {
 	IsLocal() bool
 	IsReadOnly(ctx context.Context, path string) (bool, error)
 	Walk(ctx context.Context, root string, walkFn func(path string, info os.FileInfo, err error) error) error
+	Address() string
+	User() string
 	Close() error
 }

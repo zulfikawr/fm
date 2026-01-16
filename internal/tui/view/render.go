@@ -188,11 +188,14 @@ func formatRemoteStr(m *context.Model) string {
 	if m.FS.IsLocal() {
 		return ""
 	}
-	if m.Remote.User != "" && m.Remote.Host != "" {
-		return m.Remote.User + "@" + m.Remote.Host
+	user := m.FS.User()
+	addr := m.FS.Address()
+
+	if user != "" && addr != "" {
+		return user + "@" + addr
 	}
-	if m.Remote.Host != "" {
-		return m.Remote.Host
+	if addr != "" {
+		return addr
 	}
 	return "Remote"
 }
