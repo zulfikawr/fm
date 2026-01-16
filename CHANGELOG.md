@@ -22,6 +22,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Layout overflow bug when list header is active.
 - Remote address display consistency in breadcrumbs across tabs.
 - SSH alias resolution in the `g` (Go to path) command.
+- Remote connection loss when switching filesystems across multiple tabs.
+- Settings synchronization: toggling options like "show hidden files" now refreshes the UI immediately.
 
 ## [v0.1.7] - 2026-01-15
 

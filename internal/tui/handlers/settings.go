@@ -25,6 +25,7 @@ func handleSettingsKeys(m *tui_context.Model, msg tea.KeyMsg) tea.Cmd {
 	// Total selectable items across all groups
 	// File Ops (6) + Display (6) + Appearance (1) + Keybindings (21) = 34
 	totalItems := 34
+	var reload bool
 
 	switch msg.String() {
 	case "up", "k":
@@ -36,9 +37,9 @@ func handleSettingsKeys(m *tui_context.Model, msg tea.KeyMsg) tea.Cmd {
 			m.Settings.Cursor++
 		}
 	case "enter", "right", "l", " ":
-		toggleSetting(m.Settings.Cursor, m)
+		reload = toggleSetting(m.Settings.Cursor, m)
 	case "left", "h":
-		toggleSettingPrev(m.Settings.Cursor, m)
+		reload = toggleSettingPrev(m.Settings.Cursor, m)
 	case "r":
 		m.Operations.ActionType = constants.ActionResetSettings
 		m.UI.StartConfirming()
@@ -47,6 +48,10 @@ func handleSettingsKeys(m *tui_context.Model, msg tea.KeyMsg) tea.Cmd {
 	}
 
 	m.Settings.Offset = scrollSettings(m)
+
+	if reload {
+		return Reload(m, false)
+	}
 	return nil
 }
 
@@ -95,13 +100,16 @@ func scrollSettings(m *tui_context.Model) int {
 	return offset
 }
 
-func toggleSetting(idx int, m *tui_context.Model) {
+func toggleSetting(idx int, m *tui_context.Model) bool {
 	cfg := &m.Config
+	reload := false
 	switch idx {
 	case 0:
 		cfg.ShowHidden = !cfg.ShowHidden
+		reload = true
 	case 1:
 		cfg.CaseSensitive = !cfg.CaseSensitive
+		reload = true
 	case 2:
 		cfg.ConfirmOperations = !cfg.ConfirmOperations
 	case 3:
@@ -112,19 +120,27 @@ func toggleSetting(idx int, m *tui_context.Model) {
 		cfg.UseTrash = !cfg.UseTrash
 	case 6:
 		cfg.ShowHeader = !cfg.ShowHeader
+		m.SyncViewportHeight()
 	case 7:
 		cfg.EnableGit = !cfg.EnableGit
+		reload = true
 	case 8:
 		cfg.ShowSize = !cfg.ShowSize
+		m.SyncViewportHeight()
+		reload = true
 	case 9:
 		if cfg.ShowSize {
 			cfg.SizeFormatIndex = (cfg.SizeFormatIndex + 1) % len(format.SizeFormats)
+			reload = true
 		}
 	case 10:
 		cfg.ShowDateModified = !cfg.ShowDateModified
+		m.SyncViewportHeight()
+		reload = true
 	case 11:
 		if cfg.ShowDateModified {
 			cfg.DateFormatIndex = (cfg.DateFormatIndex + 1) % len(format.DateFormats)
+			reload = true
 		}
 	case 12:
 		cfg.ThemeIndex = (cfg.ThemeIndex + 1) % len(theme.Themes)
@@ -134,9 +150,10 @@ func toggleSetting(idx int, m *tui_context.Model) {
 		m.Display.LoadingSpinner.Style = m.Display.LoadingSpinner.Style.Foreground(theme.Themes[cfg.ThemeIndex].Dir)
 	}
 	cfg.Save()
+	return reload
 }
 
-func toggleSettingPrev(idx int, m *tui_context.Model) {
+func toggleSettingPrev(idx int, m *tui_context.Model) bool {
 	cfg := &m.Config
 	switch idx {
 	case 4:
@@ -144,10 +161,14 @@ func toggleSettingPrev(idx int, m *tui_context.Model) {
 	case 9:
 		if cfg.ShowSize {
 			cfg.SizeFormatIndex = (cfg.SizeFormatIndex - 1 + len(format.SizeFormats)) % len(format.SizeFormats)
+			cfg.Save()
+			return true
 		}
 	case 11:
 		if cfg.ShowDateModified {
 			cfg.DateFormatIndex = (cfg.DateFormatIndex - 1 + len(format.DateFormats)) % len(format.DateFormats)
+			cfg.Save()
+			return true
 		}
 	case 12:
 		cfg.ThemeIndex = (cfg.ThemeIndex - 1 + len(theme.Themes)) % len(theme.Themes)
@@ -156,9 +177,10 @@ func toggleSettingPrev(idx int, m *tui_context.Model) {
 		// Update spinner style for the new theme
 		m.Display.LoadingSpinner.Style = m.Display.LoadingSpinner.Style.Foreground(theme.Themes[cfg.ThemeIndex].Dir)
 	default:
-		toggleSetting(idx, m)
+		return toggleSetting(idx, m)
 	}
 	cfg.Save()
+	return false
 }
 
 // ConfirmSettingsReset resets all settings to defaults
