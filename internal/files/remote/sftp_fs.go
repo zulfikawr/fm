@@ -20,6 +20,7 @@ import (
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/crypto/ssh/agent"
 	"golang.org/x/crypto/ssh/knownhosts"
+	"golang.org/x/sync/errgroup"
 )
 
 // SftpFS implements FileSystem for SFTP.
@@ -521,34 +522,58 @@ func (s *SftpFS) IsReadOnly(ctx context.Context, p string) (bool, error) {
 }
 
 func (s *SftpFS) Walk(ctx context.Context, root string, walkFn func(path string, info os.FileInfo, err error) error) error {
-	return s.runWithRetry(func() error {
-		walker := s.client.Walk(root)
-		for walker.Step() {
-			select {
-			case <-ctx.Done():
-				return ctx.Err()
-			case <-s.ctx.Done():
-				return fmt.Errorf("filesystem closed")
-			default:
-			}
-			if err := walker.Err(); err != nil {
-				if err := walkFn(walker.Path(), nil, err); err != nil {
-					if err == filepath.SkipDir {
-						walker.SkipDir()
-						continue
-					}
-					return err
-				}
+	g, ctx := errgroup.WithContext(ctx)
+	g.SetLimit(16) // Concurrency limit for parallel walking
+
+	// Start with the root
+	info, err := s.Stat(ctx, root)
+	if err := walkFn(root, info, err); err != nil {
+		if err == filepath.SkipDir {
+			return nil
+		}
+		return err
+	}
+
+	if info == nil || !info.IsDir() {
+		return nil
+	}
+
+	return s.parallelWalk(ctx, g, root, walkFn)
+}
+
+func (s *SftpFS) parallelWalk(ctx context.Context, g *errgroup.Group, root string, walkFn func(path string, info os.FileInfo, err error) error) error {
+	// Read current directory entries
+	entries, err := s.ReadDir(ctx, root)
+	if err != nil {
+		return walkFn(root, nil, err)
+	}
+
+	for _, entry := range entries {
+		entry := entry // capture
+		p := path.Join(root, entry.Name())
+
+		// Report the entry
+		if err := walkFn(p, entry, nil); err != nil {
+			if err == filepath.SkipDir {
 				continue
 			}
-			if err := walkFn(walker.Path(), walker.Stat(), nil); err != nil {
-				if err == filepath.SkipDir {
-					walker.SkipDir()
-					continue
-				}
-				return err
-			}
+			return err
 		}
-		return nil
-	})
+
+		// Recursively walk subdirectories in parallel
+		if entry.IsDir() {
+			g.Go(func() error {
+				select {
+				case <-ctx.Done():
+					return ctx.Err()
+				case <-s.ctx.Done():
+					return fmt.Errorf("filesystem closed")
+				default:
+					return s.parallelWalk(ctx, g, p, walkFn)
+				}
+			})
+		}
+	}
+
+	return nil
 }

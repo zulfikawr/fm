@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Performance
 - Concurrent remote metadata fetching to significantly reduce UI latency in large directories.
 - Immediate cursor memory synchronization to prevent "jumping" during background reloads.
+- High-performance parallel walking engine for remote filesystems, speeding up fuzzy content search (Alt+/).
 
 ### Fixed
 - Input masking persistence after authentication prompts.
