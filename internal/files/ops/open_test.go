@@ -39,6 +39,13 @@ func TestGetOpenCmd(t *testing.T) {
 	fs := testutil.NewMockFileSystem()
 	fs.ExtFunc = func(p string) string { return ".txt" }
 
+	// Mock lookPath to always succeed
+	oldLookPath := lookPath
+	lookPath = func(file string) (string, error) {
+		return "/usr/bin/" + file, nil
+	}
+	defer func() { lookPath = oldLookPath }()
+
 	t.Run("Terminal Editor", func(t *testing.T) {
 		// Index 0 is vim based on constants.Editors
 		cmd, isTerm, err := GetOpenCmd(fs, "file.txt", 0)

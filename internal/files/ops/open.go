@@ -10,6 +10,8 @@ import (
 	"fm/internal/files/core"
 )
 
+var lookPath = exec.LookPath
+
 // GetOpenCmd returns the command to open a file and a boolean indicating if it's a terminal-based editor.
 func GetOpenCmd(fs core.FileSystem, path string, editorIdx int) (*exec.Cmd, bool, error) {
 	return GetOpenAtLineCmd(fs, path, editorIdx, 0)
@@ -22,7 +24,7 @@ func GetOpenAtLineCmd(fs core.FileSystem, path string, editorIdx int, line int) 
 		isTerminalEditor := isTerminalEditor(editor)
 
 		// Check if editor exists
-		if _, err := exec.LookPath(editor); err != nil {
+		if _, err := lookPath(editor); err != nil {
 			return nil, false, fmt.Errorf("editor '%s' not found. Please install it or choose another editor in settings", editor)
 		}
 
@@ -49,13 +51,13 @@ func GetOpenAtLineCmd(fs core.FileSystem, path string, editorIdx int, line int) 
 	switch runtime.GOOS {
 	case "linux":
 		opener := "xdg-open"
-		if _, err := exec.LookPath(opener); err != nil {
+		if _, err := lookPath(opener); err != nil {
 			return nil, false, fmt.Errorf("'%s' not found. Please install xdg-utils to open this file type", opener)
 		}
 		cmd = exec.Command(opener, path)
 	case "darwin":
 		opener := "open"
-		if _, err := exec.LookPath(opener); err != nil {
+		if _, err := lookPath(opener); err != nil {
 			return nil, false, fmt.Errorf("'%s' not found", opener)
 		}
 		cmd = exec.Command(opener, path)
