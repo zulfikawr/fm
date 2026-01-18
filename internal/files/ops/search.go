@@ -101,16 +101,13 @@ func searchInFile(ctx context.Context, fs core.FileSystem, path, query string) (
 	}
 	defer f.Close()
 
-	// Handle binary check - requires ReadSeeker
-	if rs, ok := f.(io.ReadSeeker); ok {
-		if isBinary(rs) {
-			return core.FileResult{}, false
-		}
-		_, _ = rs.Seek(0, 0)
+	reader := bufio.NewReader(f)
+	if isBinary(reader) {
+		return core.FileResult{}, false
 	}
 
 	var matches []core.Match
-	scanner := bufio.NewScanner(f)
+	scanner := bufio.NewScanner(reader)
 	lineNum := 1
 	for scanner.Scan() {
 		select {
@@ -146,13 +143,12 @@ func searchInFile(ctx context.Context, fs core.FileSystem, path, query string) (
 }
 
 // isBinary checks if a file is likely binary by looking for null bytes in the first 1KB.
-func isBinary(r io.ReadSeeker) bool {
-	buf := make([]byte, 1024)
-	n, err := r.Read(buf)
-	if err != nil && err != io.EOF {
+func isBinary(r *bufio.Reader) bool {
+	buf, err := r.Peek(1024)
+	if err != nil && err != io.EOF && len(buf) == 0 {
 		return false
 	}
-	return bytes.Contains(buf[:n], []byte{0})
+	return bytes.Contains(buf, []byte{0})
 }
 
 // FuzzyMatch checks if query is a substring of s (case-insensitive) and returns indices of matched characters.

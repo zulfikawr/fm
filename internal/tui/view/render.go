@@ -209,4 +209,3 @@ func formatArchiveRoot(m *context.Model) string {
 	}
 	return m.FS.Address()
 }
-

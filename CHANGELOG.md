@@ -8,6 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [v0.1.8] - 2026-01-18
 
 ### Added
+- **Archive Browsing (Virtual File System):**
+  - Navigate `.zip`, `.tar`, and `.tar.gz` files as if they were directories.
+  - Transparent search within archives using the same fuzzy content search (`Alt+/`).
+  - Unified breadcrumb navigation: `/ > home > archive.zip > inner_folder`.
+  - Copy and Move support: extract specific files or folders from archives using standard clipboard operations (`c`/`x` and `v`).
 - "Select All" functionality using `Alt+A` and "Deselect All" via `Esc`.
 - Browser-like back and forward history navigation using `[` and `]` shortcuts.
 - Increased test coverage for `internal/files/local` and `internal/files/remote`.

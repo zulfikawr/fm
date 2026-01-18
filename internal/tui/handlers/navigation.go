@@ -472,7 +472,8 @@ func navigateToSelected(m *tui_context.Model) tea.Cmd {
 	}
 
 	// Handle archive entering
-	if strings.HasSuffix(strings.ToLower(selected.Name), ".zip") {
+	ext := strings.ToLower(m.FS.Ext(selected.Name))
+	if ext == ".zip" || ext == ".tar" || ext == ".gz" || ext == ".tgz" {
 		return enterArchive(m, selected)
 	}
 
