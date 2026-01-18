@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"fm/internal/constants"
+	"fm/internal/files/archive"
 	"fm/internal/files/core"
 	fileerrors "fm/internal/files/errors"
 	"fm/internal/files/listing"
@@ -29,6 +30,16 @@ func HandleNavigation(m *tui_context.Model, msg tea.Msg) tea.Cmd {
 		return handlePartialItems(m, msg)
 	case LoadedItemsMsg:
 		return finalizeDirectoryLoad(m, msg)
+	case ArchiveEnteredMsg:
+		m.UI.Loading = false
+		m.Navigation.ParentFS = msg.ParentFS
+		m.Navigation.ParentPath = msg.ParentPath
+		m.FS = msg.FS
+		m.Navigation.Path = "/"
+		m.Navigation.PathGen++
+		m.Navigation.Cursor = 0
+		m.Navigation.Offset = 0
+		return Reload(m, false)
 	}
 	return nil
 }
@@ -290,6 +301,8 @@ func saveTabState(m *tui_context.Model) {
 		for k, v := range m.Navigation.SelectedPaths {
 			t.SelectedPaths[k] = v
 		}
+		t.ParentFS = m.Navigation.ParentFS
+		t.ParentPath = m.Navigation.ParentPath
 	}
 }
 
@@ -311,6 +324,8 @@ func syncTabToModel(m *tui_context.Model) tea.Cmd {
 		copy(m.Navigation.BackHistory, t.BackHistory)
 		m.Navigation.ForwardHistory = make([]string, len(t.ForwardHistory))
 		copy(m.Navigation.ForwardHistory, t.ForwardHistory)
+		m.Navigation.ParentFS = t.ParentFS
+		m.Navigation.ParentPath = t.ParentPath
 
 		var cmd tea.Cmd
 		if t.Searching {
@@ -456,8 +471,69 @@ func navigateToSelected(m *tui_context.Model) tea.Cmd {
 		return NavigateToPath(m, m.FS.Join(m.Navigation.Path, selected.Name))
 	}
 
+	// Handle archive entering
+	if strings.HasSuffix(strings.ToLower(selected.Name), ".zip") {
+		return enterArchive(m, selected)
+	}
+
 	// File opening logic
 	return openFileAction(m, selected)
+}
+
+func enterArchive(m *tui_context.Model, selected core.Item) tea.Cmd {
+	m.UI.Loading = true
+	archivePath := selected.Path
+
+	return func() tea.Msg {
+		afs, err := archive.NewArchiveFS(archivePath)
+		if err != nil {
+			return ErrorMsg{Err: err}
+		}
+
+		return ArchiveEnteredMsg{
+			FS:         afs,
+			ParentFS:   m.FS,
+			ParentPath: m.Navigation.Path,
+		}
+	}
+}
+
+type ArchiveEnteredMsg struct {
+	FS         core.FileSystem
+	ParentFS   core.FileSystem
+	ParentPath string
+}
+
+func navigateToParent(m *tui_context.Model) tea.Cmd {
+	// If we are at the root of an archive FS, exit it
+	if m.Navigation.ParentFS != nil && (m.Navigation.Path == "/" || m.Navigation.Path == "") {
+		return ExitArchive(m)
+	}
+
+	parent := m.FS.Dir(m.Navigation.Path)
+	// On most systems Dir("/") == "/", so check if we actually moved
+	if parent == m.Navigation.Path {
+		return nil
+	}
+	return NavigateToPath(m, parent)
+}
+
+func ExitArchive(m *tui_context.Model) tea.Cmd {
+	if m.Navigation.ParentFS == nil {
+		return nil
+	}
+
+	oldFS := m.FS
+	m.FS = m.Navigation.ParentFS
+	targetPath := m.Navigation.ParentPath
+
+	m.Navigation.ParentFS = nil
+	m.Navigation.ParentPath = ""
+
+	// Close archive FS
+	oldFS.Close()
+
+	return NavigateToPath(m, targetPath)
 }
 
 func openFile(m *tui_context.Model, selected core.Item) tea.Cmd {
@@ -483,11 +559,6 @@ func openFile(m *tui_context.Model, selected core.Item) tea.Cmd {
 		}
 		return nil
 	}
-}
-
-func navigateToParent(m *tui_context.Model) tea.Cmd {
-	parent := m.FS.Dir(m.Navigation.Path)
-	return NavigateToPath(m, parent)
 }
 
 // NavigateBack moves to the previous path in history
@@ -637,7 +708,7 @@ func Reload(m *tui_context.Model, silent bool) tea.Cmd {
 	sizeFormatIdx := m.Config.SizeFormatIndex
 	dateFormatIdx := m.Config.DateFormatIndex
 
-	// 1. Synchronous Cache Check (The "Instant" Fix)
+	// 1. Synchronous Cache Check
 	// If we have it in cache, populate immediately to avoid flicker
 	if items, ok := m.Cache.ItemCache.Get(path); ok {
 		m.Navigation.Items = items
@@ -668,7 +739,7 @@ func Reload(m *tui_context.Model, silent bool) tea.Cmd {
 		m.UI.Loading = true
 	}
 
-	// 2. Immediate Skeleton (The "Stable UI" Fix)
+	// 2. Immediate Skeleton
 	// If the list is currently empty (not a cache hit), at least add the ".." entry
 	// so the UI doesn't completely disappear.
 	if len(m.Navigation.Items) == 0 && path != "/" && path != fs.Separator() {

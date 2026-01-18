@@ -21,11 +21,13 @@ type NavigationState struct {
 	FilteredItems  []core.Item // Filtered items for display
 	SelectedCount  int         // Number of selected items
 	SelectedPaths  map[string]bool
-	FilterTimer    *time.Timer // Timer for debouncing filter
-	FilterGen      int         // Generation counter for filter
-	FilterQuery    string      // Current active filter query
-	BackHistory    []string    // History for "Back" navigation
-	ForwardHistory []string    // History for "Forward" navigation
+	FilterTimer    *time.Timer     // Timer for debouncing filter
+	FilterGen      int             // Generation counter for filter
+	FilterQuery    string          // Current active filter query
+	BackHistory    []string        // History for "Back" navigation
+	ForwardHistory []string        // History for "Forward" navigation
+	ParentFS       core.FileSystem // Previous FS before entering archive
+	ParentPath     string          // Previous path before entering archive
 }
 
 // Select adds a path to the selection
@@ -227,6 +229,8 @@ type Tab struct {
 	RemoteHost     string
 	BackHistory    []string
 	ForwardHistory []string
+	ParentFS       core.FileSystem // Previous FS before entering archive
+	ParentPath     string          // Previous path before entering archive
 }
 
 // NewTab creates a new tab for the given path

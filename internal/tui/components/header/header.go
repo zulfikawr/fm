@@ -14,6 +14,7 @@ type Props struct {
 	Path          string
 	Separator     string
 	RemoteStr     string
+	RootOverride  string
 	GitBranch     string
 	ReadOnly      bool
 	TabCount      int
@@ -57,7 +58,7 @@ func Render(props Props) string {
 	if props.SettingsOpen || props.LogOpen || props.ClipboardOpen {
 		breadcrumb = props.Style.Header.UnsetPadding().UnsetWidth().Render(title)
 	} else {
-		breadcrumb = renderBreadcrumbPath(title, props.Separator, props.RemoteStr, props.Style)
+		breadcrumb = renderBreadcrumbPath(title, props.Separator, props.RemoteStr, props.RootOverride, props.Style)
 		breadcrumb = addGitBranch(breadcrumb, props.GitBranch, props.Style)
 		breadcrumb = addReadOnlyIndicator(breadcrumb, props.ReadOnly, props.Style)
 	}

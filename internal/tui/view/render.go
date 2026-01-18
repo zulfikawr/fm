@@ -30,6 +30,7 @@ func Render(m *context.Model) string {
 		Path:          m.Navigation.Path,
 		Separator:     m.FS.Separator(),
 		RemoteStr:     formatRemoteStr(m),
+		RootOverride:  formatArchiveRoot(m),
 		GitBranch:     m.Git.Branch,
 		ReadOnly:      m.Display.ReadOnly,
 		TabCount:      len(m.Tabs),
@@ -201,3 +202,11 @@ func formatRemoteStr(m *context.Model) string {
 	}
 	return "Remote"
 }
+
+func formatArchiveRoot(m *context.Model) string {
+	if m.Navigation.ParentFS == nil {
+		return ""
+	}
+	return m.FS.Address()
+}
+

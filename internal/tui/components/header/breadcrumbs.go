@@ -6,7 +6,7 @@ import (
 	"fm/internal/tui/theme"
 )
 
-func renderBreadcrumbPath(path, separator string, remoteStr string, styles theme.Stylesheet) string {
+func renderBreadcrumbPath(path, separator string, remoteStr string, rootOverride string, styles theme.Stylesheet) string {
 	sep := separator
 	parts := strings.Split(path, sep)
 	var cleanParts []string
@@ -23,16 +23,47 @@ func renderBreadcrumbPath(path, separator string, remoteStr string, styles theme
 	// Determine the root indicator (local sep or remote string)
 	rootIndicator := baseStyle.Render(sep)
 
-	// Handle Windows drive letters (e.g., C:)
-	if len(cleanParts) > 0 && strings.Contains(cleanParts[0], ":") && sep == "\\" {
-		rootIndicator = baseStyle.Render(cleanParts[0])
-		cleanParts = cleanParts[1:]
-	}
+	if rootOverride != "" {
+		// Use rootOverride for breadcrumbs (e.g. for archives)
+		// We split it by the separator to style it like a path
+		rootSep := "/" // Default for archives or fallback
+		if strings.Contains(rootOverride, "\\") {
+			rootSep = "\\"
+		}
 
-	if remoteStr != "" {
-		// Ensure remoteStr doesn't have a trailing slash if we're going to join it
-		r := strings.TrimSuffix(remoteStr, "/")
-		rootIndicator = baseStyle.Render(r)
+		rootParts := strings.Split(rootOverride, rootSep)
+		var cleanRootParts []string
+		for _, p := range rootParts {
+			if p != "" {
+				cleanRootParts = append(cleanRootParts, p)
+			}
+		}
+
+		var styledRootParts []string
+		for _, p := range cleanRootParts {
+			styledRootParts = append(styledRootParts, baseStyle.Render(p))
+		}
+
+		separatorStr := dimHeaderStyle.Render(" > ")
+		rootPath := strings.Join(styledRootParts, separatorStr)
+
+		if strings.HasPrefix(rootOverride, "/") || strings.HasPrefix(rootOverride, "\\") {
+			rootIndicator = baseStyle.Render(rootSep) + separatorStr + rootPath
+		} else {
+			rootIndicator = rootPath
+		}
+	} else {
+		// Handle Windows drive letters (e.g., C:)
+		if len(cleanParts) > 0 && strings.Contains(cleanParts[0], ":") && sep == "\\" {
+			rootIndicator = baseStyle.Render(cleanParts[0])
+			cleanParts = cleanParts[1:]
+		}
+
+		if remoteStr != "" {
+			// Ensure remoteStr doesn't have a trailing slash if we're going to join it
+			r := strings.TrimSuffix(remoteStr, "/")
+			rootIndicator = baseStyle.Render(r)
+		}
 	}
 
 	var styledParts []string
@@ -44,7 +75,7 @@ func renderBreadcrumbPath(path, separator string, remoteStr string, styles theme
 	breadcrumb := strings.Join(styledParts, separatorStr)
 
 	if breadcrumb == "" {
-		if remoteStr != "" && path == "/" {
+		if (remoteStr != "" || rootOverride != "") && path == "/" {
 			return rootIndicator
 		}
 		// If path is just "/" or empty and we have a root indicator
