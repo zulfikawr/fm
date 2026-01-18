@@ -69,3 +69,41 @@ func TestFooter_Stats(t *testing.T) {
 		t.Errorf("expected stats 6/10, got %q", stripped)
 	}
 }
+
+func TestFooter_Responsive(t *testing.T) {
+	styles := theme.GetStylesheet(0)
+
+	t.Run("Wide width shows shortcuts", func(t *testing.T) {
+		props := Props{
+			Mode:          ModeNormal,
+			Width:         100,
+			SelectedCount: 1,
+			Styles:        styles,
+		}
+		v := Render(props)
+		stripped := testutil.StripANSI(v)
+		if !strings.Contains(stripped, "1 selected") {
+			t.Error("expected '1 selected' to be present")
+		}
+		if !strings.Contains(stripped, "Copy") {
+			t.Error("expected shortcuts to be present")
+		}
+	})
+
+	t.Run("Narrow width hides shortcuts", func(t *testing.T) {
+		props := Props{
+			Mode:          ModeNormal,
+			Width:         20,
+			SelectedCount: 1,
+			Styles:        styles,
+		}
+		v := Render(props)
+		stripped := testutil.StripANSI(v)
+		if !strings.Contains(stripped, "1 selected") {
+			t.Error("expected '1 selected' to be present")
+		}
+		if strings.Contains(stripped, "Copy") {
+			t.Error("expected shortcuts to be hidden")
+		}
+	})
+}

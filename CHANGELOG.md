@@ -36,6 +36,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Settings synchronization: toggling options like "show hidden files" now refreshes the UI immediately.
 - Improved error messages across the application, making them more descriptive and actionable (e.g., specific permission errors, missing dependencies, and security blocks).
 
+### Changed
+- Made the TUI footer responsive: action shortcuts (Copy, Cut, etc.) are now automatically hidden if they don't fit the terminal width, while the selection indicator is prioritized and preserved.
+
 ## [v0.1.7] - 2026-01-15
 
 ### Added

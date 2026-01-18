@@ -123,18 +123,21 @@ func renderSortMode(sortMode sorting.SortMode, styles theme.Stylesheet) string {
 		return ""
 	}
 
-	dimStyle := styles.DimCol.Inherit(styles.Footer).UnsetPadding().UnsetWidth()
 	normalStyle := styles.Footer.UnsetPadding().UnsetWidth()
-
-	return dimStyle.Render("Sort: ") + normalStyle.Render(sortStr)
+	return normalStyle.Render(sortStr)
 }
 
-func buildActionHints(props Props) string {
+func buildSelectedIndicator(props Props) string {
+	dimStyle := props.Styles.DimCol.Inherit(props.Styles.Footer).UnsetPadding().UnsetWidth()
+	keyStyle := props.Styles.KeyCol.Inherit(props.Styles.Footer).UnsetPadding().UnsetWidth()
+
+	return dimStyle.Render("[") + keyStyle.Render(fmt.Sprintf("%d selected", props.SelectedCount)) + dimStyle.Render("]")
+}
+
+func buildActionShortcuts(props Props) string {
 	dimStyle := props.Styles.DimCol.Inherit(props.Styles.Footer).UnsetPadding().UnsetWidth()
 	keyStyle := props.Styles.KeyCol.Inherit(props.Styles.Footer).UnsetPadding().UnsetWidth()
 	normalStyle := props.Styles.Footer.UnsetPadding().UnsetWidth()
-
-	prefix := dimStyle.Render("[") + keyStyle.Render(fmt.Sprintf("%d selected", props.SelectedCount)) + dimStyle.Render("]  ")
 
 	hints := []string{
 		dimStyle.Render("[") + keyStyle.Render("c") + dimStyle.Render("]") + normalStyle.Render(" Copy"),
@@ -171,5 +174,5 @@ func buildActionHints(props Props) string {
 		hints = append(hints, dimStyle.Render("[")+keyStyle.Render("v")+dimStyle.Render("]")+normalStyle.Render(" Paste"))
 	}
 
-	return prefix + strings.Join(hints, dimStyle.Render(" | "))
+	return strings.Join(hints, dimStyle.Render(" | "))
 }

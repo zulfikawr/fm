@@ -503,7 +503,7 @@ func NavigateBack(m *tui_context.Model) tea.Cmd {
 	prevPath := m.Navigation.BackHistory[len(m.Navigation.BackHistory)-1]
 	m.Navigation.BackHistory = m.Navigation.BackHistory[:len(m.Navigation.BackHistory)-1]
 
-	return navigateToPathInternal(m, prevPath, true)
+	return navigateToPathInternal(m, prevPath)
 }
 
 // NavigateForward moves forward in history
@@ -519,11 +519,11 @@ func NavigateForward(m *tui_context.Model) tea.Cmd {
 	nextPath := m.Navigation.ForwardHistory[len(m.Navigation.ForwardHistory)-1]
 	m.Navigation.ForwardHistory = m.Navigation.ForwardHistory[:len(m.Navigation.ForwardHistory)-1]
 
-	return navigateToPathInternal(m, nextPath, true)
+	return navigateToPathInternal(m, nextPath)
 }
 
 // navigateToPathInternal is a helper for history navigation that skips history pushing
-func navigateToPathInternal(m *tui_context.Model, path string, isHistory bool) tea.Cmd {
+func navigateToPathInternal(m *tui_context.Model, path string) tea.Cmd {
 	// Clean and validate path
 	info, err := m.FS.Stat(m.Context, path)
 	if err != nil {
@@ -621,7 +621,7 @@ func NavigateToPath(m *tui_context.Model, path string) tea.Cmd {
 	}
 	m.Navigation.ForwardHistory = nil
 
-	return navigateToPathInternal(m, path, false)
+	return navigateToPathInternal(m, path)
 }
 
 // Reload triggers an asynchronous reload of the current directory.

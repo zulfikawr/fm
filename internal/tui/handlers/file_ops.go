@@ -173,16 +173,19 @@ func resolveConflict(m *tui_context.Model, choice string, applyToAll bool) tea.C
 		cmds = append(cmds, PerformUnzip(m, destName))
 	case "move":
 		m.UI.Loading = true
-		cmds = append(cmds, moveItems(ctx, srcFS, dstFS, pending, m.Navigation.Path, m.Operations.ConflictPolicy, logID))
+		cmds = append(cmds, moveItems(ctx, srcFS, pending, m.Navigation.Path, m.Operations.ConflictPolicy, logID))
 	case "copy":
 		m.UI.Loading = true
-		cmds = append(cmds, pasteItems(ctx, srcFS, dstFS, pending, m.Navigation.Path, m.Operations.ConflictPolicy, logID))
+		cmds = append(cmds, pasteItems(ctx, srcFS, pending, m.Navigation.Path, m.Operations.ConflictPolicy, logID))
 	default:
 		// Fallback for older code that might not set opType correctly
 		if isMove {
-			cmds = append(cmds, moveItems(ctx, srcFS, dstFS, pending, m.Navigation.Path, m.Operations.ConflictPolicy, logID))
+			cmds = append(cmds, func() tea.Cmd {
+				var _ core.FileSystem = dstFS
+				return moveItems(ctx, srcFS, pending, m.Navigation.Path, m.Operations.ConflictPolicy, logID)
+			}())
 		} else {
-			cmds = append(cmds, pasteItems(ctx, srcFS, dstFS, pending, m.Navigation.Path, m.Operations.ConflictPolicy, logID))
+			cmds = append(cmds, pasteItems(ctx, srcFS, pending, m.Navigation.Path, m.Operations.ConflictPolicy, logID))
 		}
 	}
 
@@ -334,9 +337,9 @@ func performPaste(m *tui_context.Model) tea.Cmd {
 
 	if isCut {
 		m.Operations.Clipboard.Clear()
-		return moveItems(ctx, srcFS, dstFS, paths, destDir, m.Operations.ConflictPolicy, logID)
+		return moveItems(ctx, srcFS, paths, destDir, m.Operations.ConflictPolicy, logID)
 	}
-	return pasteItems(ctx, srcFS, dstFS, paths, destDir, m.Operations.ConflictPolicy, logID)
+	return pasteItems(ctx, srcFS, paths, destDir, m.Operations.ConflictPolicy, logID)
 }
 
 func performDelete(m *tui_context.Model) tea.Cmd {
@@ -398,8 +401,8 @@ func startZip(m *tui_context.Model) tea.Cmd {
 	}
 
 	m.StartInput(tui_context.InputZip)
-	m.Inputs.ActiveInput.SetValue("Archive.zip")
-	m.Inputs.ActiveInput.SetCursor(len("Archive"))
+	m.Inputs.ActiveInput.SetValue("archive.zip")
+	m.Inputs.ActiveInput.SetCursor(len("archive"))
 	return m.Inputs.ActiveInput.FocusCmd()
 }
 
@@ -584,7 +587,7 @@ func deleteItems(ctx context.Context, fs core.FileSystem, targets []string, useT
 	)
 }
 
-func pasteItems(ctx context.Context, srcFS, dstFS core.FileSystem, sources []string, destDir string, policy conflict.Policy, logID string) tea.Cmd {
+func pasteItems(ctx context.Context, srcFS core.FileSystem, sources []string, destDir string, policy conflict.Policy, logID string) tea.Cmd {
 	progChan := make(chan core.Progress, 100)
 	return tea.Batch(
 		listenToProgress(progChan),
@@ -610,7 +613,7 @@ func pasteItems(ctx context.Context, srcFS, dstFS core.FileSystem, sources []str
 	)
 }
 
-func moveItems(ctx context.Context, srcFS, dstFS core.FileSystem, sources []string, destDir string, policy conflict.Policy, logID string) tea.Cmd {
+func moveItems(ctx context.Context, srcFS core.FileSystem, sources []string, destDir string, policy conflict.Policy, logID string) tea.Cmd {
 	progChan := make(chan core.Progress, 100)
 	return tea.Batch(
 		listenToProgress(progChan),

@@ -23,22 +23,65 @@ func renderStatsFooter(props Props) string {
 		parts = append(parts, permission)
 	}
 
-	leftContent := assembleFooterContent(parts, props.Width, props.Styles)
+	rightContent := renderSortMode(props.SortMode, props.Styles)
+	rightWidth := calculateWidth(rightContent)
+
+	// Calculate available width for the left side (all except rightContent and padding)
+	availableWidth := props.Width - rightWidth - 2
+	if availableWidth < 0 {
+		availableWidth = 0
+	}
+
+	indicator := ""
+	if props.SelectedCount > 0 {
+		indicator = buildSelectedIndicator(props)
+	}
+
+	// Calculate how much width to give to pagination/permissions
+	partsWidthLimit := availableWidth
+	if indicator != "" {
+		indicatorWidth := calculateWidth(indicator)
+		partsWidthLimit -= (indicatorWidth + 2) // 2 for spacer
+	}
+	if partsWidthLimit < 0 {
+		partsWidthLimit = 0
+	}
+
+	leftContent := assembleFooterContent(parts, partsWidthLimit, props.Styles)
 
 	if props.SelectedCount > 0 {
-		hints := buildActionHints(props)
-		if hints != "" {
-			spacer := baseFooterStyle.Render("  ")
-			leftContent = leftContent + spacer + hints
+		shortcuts := buildActionShortcuts(props)
+		spacer := baseFooterStyle.Render("  ")
+
+		leftWidth := calculateWidth(leftContent)
+		indicatorWidth := calculateWidth(indicator)
+		shortcutsWidth := calculateWidth(shortcuts)
+		spacerWidth := calculateWidth(spacer)
+
+		// Check if everything fits including shortcuts
+		totalLeftWidthWithShortcuts := leftWidth
+		if leftWidth > 0 {
+			totalLeftWidthWithShortcuts += spacerWidth
+		}
+		totalLeftWidthWithShortcuts += indicatorWidth + spacerWidth + shortcutsWidth
+
+		if totalLeftWidthWithShortcuts <= availableWidth {
+			if leftContent != "" {
+				leftContent = leftContent + spacer + indicator + spacer + shortcuts
+			} else {
+				leftContent = indicator + spacer + shortcuts
+			}
+		} else {
+			if leftContent != "" {
+				leftContent = leftContent + spacer + indicator
+			} else {
+				leftContent = indicator
+			}
 		}
 	}
 
-	rightContent := renderSortMode(props.SortMode, props.Styles)
-
 	fullContent := leftContent
-
 	leftWidth := calculateWidth(leftContent)
-	rightWidth := calculateWidth(rightContent)
 	gap := props.Width - leftWidth - rightWidth - 2
 	if gap > 0 {
 		fullContent += baseFooterStyle.Render(strings.Repeat(" ", gap))
