@@ -9,7 +9,7 @@ import (
 	"fm/internal/files/core"
 	"fm/internal/files/sorting"
 	"fm/internal/git"
-	"fm/internal/sshutil"
+	"fm/internal/ssh"
 	"fm/internal/tui/components/ui"
 	"fm/internal/tui/theme"
 
@@ -97,7 +97,7 @@ func NewModel(fs core.FileSystem, startPath string) *Model {
 			ProcessingItems: make(map[string]bool),
 		},
 		Remote: RemoteState{
-			HostConfirmChan: make(chan *sshutil.HostConfirmRequest),
+			HostConfirmChan: make(chan *ssh.HostConfirmRequest),
 		},
 	}
 

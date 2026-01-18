@@ -10,7 +10,7 @@ import (
 	fileerrors "fm/internal/files/errors"
 	"fm/internal/files/remote"
 	"fm/internal/logger"
-	"fm/internal/sshutil"
+	"fm/internal/ssh"
 	tui_context "fm/internal/tui/context"
 	tuierrors "fm/internal/tui/errors"
 
@@ -96,7 +96,7 @@ type RemoteConnectMsg struct {
 }
 
 type HostConfirmMsg struct {
-	Request *sshutil.HostConfirmRequest
+	Request *ssh.HostConfirmRequest
 }
 
 type SearchMsg struct {
@@ -218,9 +218,9 @@ func RestartWatcherAction(m *tui_context.Model) tea.Cmd {
 	}
 }
 
-func connectRemote(address, user, password, keyPath string, askChan chan *sshutil.HostConfirmRequest) tea.Cmd {
+func connectRemote(address, user, password, keyPath string, askChan chan *ssh.HostConfirmRequest) tea.Cmd {
 	return func() tea.Msg {
-		hkcb, err := sshutil.GetHostKeyCallback(askChan)
+		hkcb, err := ssh.GetHostKeyCallback(askChan)
 		if err != nil {
 			return RemoteConnectMsg{Err: err}
 		}
@@ -235,7 +235,7 @@ func connectRemote(address, user, password, keyPath string, askChan chan *sshuti
 	}
 }
 
-func listenForHostConfirmation(askChan chan *sshutil.HostConfirmRequest) tea.Cmd {
+func listenForHostConfirmation(askChan chan *ssh.HostConfirmRequest) tea.Cmd {
 	return func() tea.Msg {
 		req, ok := <-askChan
 		if !ok {

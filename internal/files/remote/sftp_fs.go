@@ -17,7 +17,7 @@ import (
 	"fm/internal/files/errors"
 
 	"github.com/pkg/sftp"
-	"golang.org/x/crypto/ssh"
+	sshx "golang.org/x/crypto/ssh"
 	"golang.org/x/crypto/ssh/agent"
 	"golang.org/x/crypto/ssh/knownhosts"
 	"golang.org/x/sync/errgroup"
@@ -27,13 +27,13 @@ import (
 type SftpFS struct {
 	mu     sync.RWMutex
 	client *sftp.Client
-	conn   *ssh.Client
+	conn   *sshx.Client
 	cache  *core.MetadataCache
 
 	// Connection details for reconnection
 	address string
 	user    string
-	config  *ssh.ClientConfig
+	config  *sshx.ClientConfig
 
 	// Lifecycle
 	ctx    context.Context
@@ -41,13 +41,13 @@ type SftpFS struct {
 }
 
 // NewSftpFS creates a new SFTP file system.
-func NewSftpFS(address, user, password, keyPath string, hostKeyCallback ssh.HostKeyCallback) (*SftpFS, error) {
-	auths := []ssh.AuthMethod{}
+func NewSftpFS(address, user, password, keyPath string, hostKeyCallback sshx.HostKeyCallback) (*SftpFS, error) {
+	auths := []sshx.AuthMethod{}
 
 	// 1. Try SSH Agent
 	if sock, err := net.Dial("unix", os.Getenv("SSH_AUTH_SOCK")); err == nil {
 		agentClient := agent.NewClient(sock)
-		auths = append(auths, ssh.PublicKeysCallback(agentClient.Signers))
+		auths = append(auths, sshx.PublicKeysCallback(agentClient.Signers))
 	}
 
 	// 2. Try Identity File (Key)
@@ -56,16 +56,16 @@ func NewSftpFS(address, user, password, keyPath string, hostKeyCallback ssh.Host
 		if err != nil {
 			return nil, fmt.Errorf("failed to read key file %s: %w", keyPath, err)
 		}
-		signer, err := ssh.ParsePrivateKey(key)
+		signer, err := sshx.ParsePrivateKey(key)
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse key file %s: %w", keyPath, err)
 		}
-		auths = append(auths, ssh.PublicKeys(signer))
+		auths = append(auths, sshx.PublicKeys(signer))
 	}
 
 	// 3. Try Password
 	if password != "" {
-		auths = append(auths, ssh.Password(password))
+		auths = append(auths, sshx.Password(password))
 	}
 
 	// Setup HostKeyCallback - REQUIRE known_hosts for security by default
@@ -98,7 +98,7 @@ func NewSftpFS(address, user, password, keyPath string, hostKeyCallback ssh.Host
 		}
 	}
 
-	config := &ssh.ClientConfig{
+	config := &sshx.ClientConfig{
 		User:            user,
 		Auth:            auths,
 		HostKeyCallback: hostKeyCallback,
@@ -110,7 +110,7 @@ func NewSftpFS(address, user, password, keyPath string, hostKeyCallback ssh.Host
 		address = address + ":22"
 	}
 
-	conn, err := ssh.Dial("tcp", address, config)
+	conn, err := sshx.Dial("tcp", address, config)
 	if err != nil {
 		return nil, errors.WrapError(err, "ssh dial failed: "+address)
 	}
@@ -182,7 +182,7 @@ func (fs *SftpFS) keepAlive() {
 
 			if conn != nil {
 				// Send a global request as a keep-alive heartbeat
-				_, _, _ = conn.SendRequest("keepalive@openssh.com", true, nil)
+				_, _, _ = conn.SendRequest("keepalive@opensshx.com", true, nil)
 			}
 		}
 	}
@@ -201,7 +201,7 @@ func (fs *SftpFS) reconnect() error {
 	}
 
 	// Dial again
-	conn, err := ssh.Dial("tcp", fs.address, fs.config)
+	conn, err := sshx.Dial("tcp", fs.address, fs.config)
 	if err != nil {
 		return fmt.Errorf("reconnect dial failed: %w", err)
 	}

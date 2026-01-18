@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"fm/internal/files/core"
-	"fm/internal/sshutil"
+	"fm/internal/ssh"
 )
 
 // --- Git State ---
@@ -20,10 +20,10 @@ type GitState struct {
 
 // RemoteState holds remote connection state
 type RemoteState struct {
-	Host            string                           // For interactive remote connection
-	User            string                           // For interactive remote connection
-	HostConfirmChan chan *sshutil.HostConfirmRequest // Channel for host confirmation requests
-	HostConfirmReq  *sshutil.HostConfirmRequest      // Current host confirmation request
+	Host            string                       // For interactive remote connection
+	User            string                       // For interactive remote connection
+	HostConfirmChan chan *ssh.HostConfirmRequest // Channel for host confirmation requests
+	HostConfirmReq  *ssh.HostConfirmRequest      // Current host confirmation request
 }
 
 // --- Search State ---

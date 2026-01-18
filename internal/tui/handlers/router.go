@@ -6,7 +6,7 @@ import (
 
 	"fm/internal/constants"
 	"fm/internal/files/ops"
-	"fm/internal/sshutil"
+	"fm/internal/ssh"
 	"fm/internal/tui/components/ui"
 	"fm/internal/tui/context"
 
@@ -381,7 +381,7 @@ func handleRemoteGoto(m *context.Model, input string) tea.Cmd {
 	keyPath := ""
 
 	// 1. Resolve alias from ~/.ssh/config
-	sshConfigs, _ := sshutil.ParseSSHConfig()
+	sshConfigs, _ := ssh.ParseSSHConfig()
 	if cfg, ok := sshConfigs[input]; ok {
 		host = cfg.HostName
 		if host == "" {

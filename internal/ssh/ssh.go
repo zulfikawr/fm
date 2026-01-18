@@ -1,4 +1,4 @@
-package sshutil
+package ssh
 
 import (
 	"bufio"
@@ -11,7 +11,7 @@ import (
 
 	"fm/internal/logger"
 
-	"golang.org/x/crypto/ssh"
+	sshx "golang.org/x/crypto/ssh"
 	"golang.org/x/crypto/ssh/knownhosts"
 )
 
@@ -23,11 +23,51 @@ type SSHConfig struct {
 	IdentityFile string
 }
 
+// RemoteConnectionDetails holds information needed to establish an SSH connection.
+type RemoteConnectionDetails struct {
+	Host      string
+	User      string
+	KeyPath   string
+	StartPath string
+}
+
+// ResolveRemote parses a remote string and returns connection details.
+// It checks SSH config first, then falls back to user@host:path format.
+func ResolveRemote(remoteStr string) *RemoteConnectionDetails {
+	details := &RemoteConnectionDetails{
+		Host: remoteStr,
+	}
+
+	// Check SSH config first
+	sshConfigs, _ := ParseSSHConfig()
+	if cfg, ok := sshConfigs[remoteStr]; ok {
+		if cfg.HostName != "" {
+			details.Host = cfg.HostName
+		}
+		details.User = cfg.User
+		details.KeyPath = cfg.IdentityFile
+	} else if strings.Contains(remoteStr, "@") {
+		parts := strings.SplitN(remoteStr, "@", 2)
+		details.User = parts[0]
+		rest := parts[1]
+
+		if strings.Contains(rest, ":") {
+			parts2 := strings.SplitN(rest, ":", 2)
+			details.Host = parts2[0]
+			details.StartPath = parts2[1]
+		} else {
+			details.Host = rest
+		}
+	}
+
+	return details
+}
+
 // HostNotFoundError is returned when a host is not in known_hosts.
 type HostNotFoundError struct {
 	Hostname string
 	Remote   net.Addr
-	Key      ssh.PublicKey
+	Key      sshx.PublicKey
 }
 
 func (e *HostNotFoundError) Error() string {
@@ -118,8 +158,8 @@ func ParseSSHConfig() (map[string]*SSHConfig, error) {
 	return configs, nil
 }
 
-// GetHostKeyCallback returns an ssh.HostKeyCallback that handles known_hosts.
-func GetHostKeyCallback(askChan chan<- *HostConfirmRequest) (ssh.HostKeyCallback, error) {
+// GetHostKeyCallback returns an sshx.HostKeyCallback that handles known_hosts.
+func GetHostKeyCallback(askChan chan<- *HostConfirmRequest) (sshx.HostKeyCallback, error) {
 	home, err := os.UserHomeDir()
 	if err != nil {
 		return nil, err
@@ -142,7 +182,7 @@ func GetHostKeyCallback(askChan chan<- *HostConfirmRequest) (ssh.HostKeyCallback
 		return nil, err
 	}
 
-	return func(hostname string, remote net.Addr, key ssh.PublicKey) error {
+	return func(hostname string, remote net.Addr, key sshx.PublicKey) error {
 		err := cb(hostname, remote, key)
 		if err == nil {
 			return nil
@@ -173,12 +213,12 @@ func GetHostKeyCallback(askChan chan<- *HostConfirmRequest) (ssh.HostKeyCallback
 type HostConfirmRequest struct {
 	Hostname string
 	Remote   net.Addr
-	Key      ssh.PublicKey
+	Key      sshx.PublicKey
 	Resolve  chan bool
 }
 
 // AddToKnownHosts adds a host key to the known_hosts file.
-func AddToKnownHosts(hostname string, remote net.Addr, key ssh.PublicKey) error {
+func AddToKnownHosts(hostname string, remote net.Addr, key sshx.PublicKey) error {
 	home, err := os.UserHomeDir()
 	if err != nil {
 		return err
@@ -195,4 +235,52 @@ func AddToKnownHosts(hostname string, remote net.Addr, key ssh.PublicKey) error 
 	entry := knownhosts.Line([]string{hostname, remote.String()}, key)
 	_, err = f.WriteString(entry + "\n")
 	return err
+}
+
+// CreateCLIHostKeyCallback returns an sshx.HostKeyCallback that prompts the user on the CLI.
+func CreateCLIHostKeyCallback() (sshx.HostKeyCallback, error) {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return nil, err
+	}
+	sshDir := filepath.Join(home, ".ssh")
+	knownHostsPath := filepath.Join(sshDir, "known_hosts")
+
+	// Ensure directory exists
+	if err := os.MkdirAll(sshDir, 0o700); err != nil {
+		logger.Warnf("Failed to create SSH directory: %v", err)
+	}
+	if _, err := os.Stat(knownHostsPath); os.IsNotExist(err) {
+		if err := os.WriteFile(knownHostsPath, []byte{}, 0o600); err != nil {
+			logger.Warnf("Failed to create known_hosts file: %v", err)
+		}
+	}
+
+	cb, err := knownhosts.New(knownHostsPath)
+	if err != nil {
+		return nil, err
+	}
+
+	return func(hostname string, remote net.Addr, key sshx.PublicKey) error {
+		err := cb(hostname, remote, key)
+		if err == nil {
+			return nil
+		}
+
+		var keyErr *knownhosts.KeyError
+		if errors.As(err, &keyErr) && len(keyErr.Want) == 0 {
+			// Host not found in known_hosts
+			fmt.Printf("The authenticity of host '%s' can't be established.\n", hostname)
+			fmt.Printf("%s key fingerprint is %s.\n", key.Type(), sshx.FingerprintSHA256(key))
+			fmt.Print("Are you sure you want to continue connecting [y] Yes [n] No? ")
+
+			var response string
+			_, _ = fmt.Scanln(&response)
+			if strings.ToLower(response) == "y" || strings.ToLower(response) == "yes" {
+				// Add to known_hosts
+				return AddToKnownHosts(hostname, remote, key)
+			}
+		}
+		return err
+	}, nil
 }

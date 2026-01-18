@@ -4,7 +4,7 @@ import (
 	"fm/internal/constants"
 	"fm/internal/files/core"
 	"fm/internal/files/sorting"
-	"fm/internal/sshutil"
+	"fm/internal/ssh"
 	"fm/internal/tui/components/messages"
 	"fm/internal/tui/components/ui"
 	"fm/internal/tui/components/views"
@@ -63,7 +63,7 @@ type Props struct {
 	ClipboardCount       int
 	ConflictDst          string
 	ConflictPendingCount int
-	HostConfirmReq       *sshutil.HostConfirmRequest
+	HostConfirmReq       *ssh.HostConfirmRequest
 
 	Styles      theme.Stylesheet
 	PromptCache map[string]string

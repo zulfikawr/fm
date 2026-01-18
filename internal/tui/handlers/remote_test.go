@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"fm/internal/sshutil"
+	"fm/internal/ssh"
 	"fm/internal/testutil"
 	tuictx "fm/internal/tui/context"
 
@@ -62,7 +62,7 @@ func TestRemote_HostConfirm(t *testing.T) {
 
 	t.Run("Handle HostConfirmMsg", func(t *testing.T) {
 		resolve := make(chan bool, 1)
-		req := &sshutil.HostConfirmRequest{
+		req := &ssh.HostConfirmRequest{
 			Hostname: "example.com",
 			Resolve:  resolve,
 		}
@@ -78,7 +78,7 @@ func TestRemote_HostConfirm(t *testing.T) {
 
 	t.Run("Accept Host", func(t *testing.T) {
 		resolve := make(chan bool, 1)
-		m.Remote.HostConfirmReq = &sshutil.HostConfirmRequest{
+		m.Remote.HostConfirmReq = &ssh.HostConfirmRequest{
 			Hostname: "example.com",
 			Resolve:  resolve,
 		}

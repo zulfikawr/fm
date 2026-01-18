@@ -1,0 +1,54 @@
+package factory
+
+import (
+	"fmt"
+	"syscall"
+
+	"fm/internal/files/core"
+	"fm/internal/files/local"
+	remotefs "fm/internal/files/remote"
+	"fm/internal/ssh"
+
+	sshx "golang.org/x/crypto/ssh"
+	"golang.org/x/term"
+)
+
+// RemoteInfo contains information about a remote connection
+type RemoteInfo struct {
+	Host      string
+	User      string
+	StartPath string
+}
+
+// FileSystemConnector defines the interface for creating file systems.
+type FileSystemConnector interface {
+	NewLocalFS() core.FileSystem
+	NewSftpFS(host, user, password, keyPath string, hkcb sshx.HostKeyCallback) (core.FileSystem, error)
+	ReadPassword() (string, error)
+	CreateHostKeyCallback() (sshx.HostKeyCallback, error)
+}
+
+// DefaultConnector is the production implementation of FileSystemConnector.
+type DefaultConnector struct{}
+
+func (c *DefaultConnector) NewLocalFS() core.FileSystem {
+	return local.NewLocalFS()
+}
+
+func (c *DefaultConnector) NewSftpFS(host, user, password, keyPath string, hkcb sshx.HostKeyCallback) (core.FileSystem, error) {
+	return remotefs.NewSftpFS(host, user, password, keyPath, hkcb)
+}
+
+func (c *DefaultConnector) ReadPassword() (string, error) {
+	fmt.Print("Password: ")
+	bytePw, err := term.ReadPassword(int(syscall.Stdin))
+	fmt.Println()
+	if err != nil {
+		return "", err
+	}
+	return string(bytePw), nil
+}
+
+func (c *DefaultConnector) CreateHostKeyCallback() (sshx.HostKeyCallback, error) {
+	return ssh.CreateCLIHostKeyCallback()
+}

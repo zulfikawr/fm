@@ -8,9 +8,10 @@ import (
 	"testing"
 
 	"fm/internal/files/core"
+	"fm/internal/ssh"
 	"fm/internal/testutil"
 
-	"golang.org/x/crypto/ssh"
+	sshx "golang.org/x/crypto/ssh"
 )
 
 func TestDefaultConnector(t *testing.T) {
@@ -47,14 +48,14 @@ type MockConnector struct {
 	ReadPasswordErr    error
 	HostKeyCallbackErr error
 	NewSftpFSCallCount int
-	NewSftpFSFunc      func(host, user, password, keyPath string, hkcb ssh.HostKeyCallback) (core.FileSystem, error)
+	NewSftpFSFunc      func(host, user, password, keyPath string, hkcb sshx.HostKeyCallback) (core.FileSystem, error)
 }
 
 func (m *MockConnector) NewLocalFS() core.FileSystem {
 	return m.MockLocalFS
 }
 
-func (m *MockConnector) NewSftpFS(host, user, password, keyPath string, hkcb ssh.HostKeyCallback) (core.FileSystem, error) {
+func (m *MockConnector) NewSftpFS(host, user, password, keyPath string, hkcb sshx.HostKeyCallback) (core.FileSystem, error) {
 	m.NewSftpFSCallCount++
 	if m.NewSftpFSFunc != nil {
 		return m.NewSftpFSFunc(host, user, password, keyPath, hkcb)
@@ -69,11 +70,11 @@ func (m *MockConnector) ReadPassword() (string, error) {
 	return m.ReadPasswordValue, m.ReadPasswordErr
 }
 
-func (m *MockConnector) CreateHostKeyCallback() (ssh.HostKeyCallback, error) {
+func (m *MockConnector) CreateHostKeyCallback() (sshx.HostKeyCallback, error) {
 	if m.HostKeyCallbackErr != nil {
 		return nil, m.HostKeyCallbackErr
 	}
-	return func(hostname string, remote net.Addr, key ssh.PublicKey) error { return nil }, nil
+	return func(hostname string, remote net.Addr, key sshx.PublicKey) error { return nil }, nil
 }
 
 func TestCreateFileSystem(t *testing.T) {
@@ -117,7 +118,7 @@ func TestCreateFileSystem(t *testing.T) {
 	t.Run("Remote Password fallback", func(t *testing.T) {
 		mockConnector.NewSftpFSCallCount = 0
 		mockConnector.ReadPasswordValue = "secret"
-		mockConnector.NewSftpFSFunc = func(host, user, password, keyPath string, hkcb ssh.HostKeyCallback) (core.FileSystem, error) {
+		mockConnector.NewSftpFSFunc = func(host, user, password, keyPath string, hkcb sshx.HostKeyCallback) (core.FileSystem, error) {
 			if password == "" {
 				return nil, fmt.Errorf("auth failed")
 			}
@@ -136,7 +137,7 @@ func TestCreateFileSystem(t *testing.T) {
 
 	t.Run("Remote Connection Failure", func(t *testing.T) {
 		mockConnector.NewSftpFSCallCount = 0
-		mockConnector.NewSftpFSFunc = func(host, user, password, keyPath string, hkcb ssh.HostKeyCallback) (core.FileSystem, error) {
+		mockConnector.NewSftpFSFunc = func(host, user, password, keyPath string, hkcb sshx.HostKeyCallback) (core.FileSystem, error) {
 			return nil, fmt.Errorf("total failure")
 		}
 
@@ -158,7 +159,7 @@ func TestCreateFileSystem(t *testing.T) {
 	})
 
 	t.Run("Remote SSH Config Mock", func(t *testing.T) {
-		mockConnector.NewSftpFSFunc = func(host, user, password, keyPath string, hkcb ssh.HostKeyCallback) (core.FileSystem, error) {
+		mockConnector.NewSftpFSFunc = func(host, user, password, keyPath string, hkcb sshx.HostKeyCallback) (core.FileSystem, error) {
 			return mockFS, nil
 		}
 		_, info, _ := CreateFileSystemWithConnector("random-alias", nil, mockConnector)
@@ -168,7 +169,7 @@ func TestCreateFileSystem(t *testing.T) {
 	})
 
 	t.Run("Key file from args", func(t *testing.T) {
-		mockConnector.NewSftpFSFunc = func(host, user, password, keyPath string, hkcb ssh.HostKeyCallback) (core.FileSystem, error) {
+		mockConnector.NewSftpFSFunc = func(host, user, password, keyPath string, hkcb sshx.HostKeyCallback) (core.FileSystem, error) {
 			if keyPath != "my-key" {
 				return nil, fmt.Errorf("wrong key: %s", keyPath)
 			}
@@ -188,11 +189,11 @@ func TestHostKeyCallbackInner(t *testing.T) {
 
 	keyData := "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOm6y8v0W6Wz7mHn6/W1uF1v7Q+V2b2u5u5u5u5u5u5u"
 	parts := strings.Split(keyData, " ")
-	pk, _, _, _, _ := ssh.ParseAuthorizedKey([]byte(parts[0] + " " + parts[1]))
+	pk, _, _, _, _ := sshx.ParseAuthorizedKey([]byte(parts[0] + " " + parts[1]))
 	addr, _ := net.ResolveTCPAddr("tcp", "example.com:22")
 
 	t.Run("Response No", func(t *testing.T) {
-		cb, _ := createHostKeyCallback()
+		cb, _ := ssh.CreateCLIHostKeyCallback()
 		r, w, _ := os.Pipe()
 		oldStdin := os.Stdin
 		os.Stdin = r
@@ -207,7 +208,7 @@ func TestHostKeyCallbackInner(t *testing.T) {
 	})
 
 	t.Run("Response Yes", func(t *testing.T) {
-		cb, _ := createHostKeyCallback()
+		cb, _ := ssh.CreateCLIHostKeyCallback()
 		r, w, _ := os.Pipe()
 		oldStdin := os.Stdin
 		os.Stdin = r
@@ -215,7 +216,7 @@ func TestHostKeyCallbackInner(t *testing.T) {
 		_, _ = w.Write([]byte("y\n"))
 		w.Close()
 
-		// This might still fail if sshutil.AddToKnownHosts fails, but it hits the branch
+		// This might still fail if sshx.AddToKnownHosts fails, but it hits the branch
 		_ = cb("example.com:22", addr, pk)
 	})
 }
@@ -228,7 +229,7 @@ func TestCreateHostKeyCallback(t *testing.T) {
 	defer os.Setenv("HOME", oldHome)
 
 	t.Run("Create new known_hosts", func(t *testing.T) {
-		cb, err := createHostKeyCallback()
+		cb, err := ssh.CreateCLIHostKeyCallback()
 		testutil.AssertNoError(t, err, "Should create callback")
 		if cb == nil {
 			t.Fatal("Callback is nil")
@@ -239,7 +240,7 @@ func TestCreateHostKeyCallback(t *testing.T) {
 	})
 
 	t.Run("Existing known_hosts", func(t *testing.T) {
-		_, err := createHostKeyCallback()
+		_, err := ssh.CreateCLIHostKeyCallback()
 		testutil.AssertNoError(t, err, "Should work with existing file")
 	})
 }
@@ -257,7 +258,7 @@ func TestCreateFileSystem_Errors(t *testing.T) {
 
 	t.Run("ReadPassword error", func(t *testing.T) {
 		mockConnector.HostKeyCallbackErr = nil
-		mockConnector.NewSftpFSFunc = func(host, user, password, keyPath string, hkcb ssh.HostKeyCallback) (core.FileSystem, error) {
+		mockConnector.NewSftpFSFunc = func(host, user, password, keyPath string, hkcb sshx.HostKeyCallback) (core.FileSystem, error) {
 			return nil, fmt.Errorf("first fail")
 		}
 		mockConnector.ReadPasswordErr = fmt.Errorf("read pw error")
