@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"fm/internal/files/core"
+	"fm/internal/files/errors"
 )
 
 // Policy defines how to handle existing destination files
@@ -42,20 +43,24 @@ func ValidateSecurePath(fs core.FileSystem, baseDir, targetPath string) (string,
 	fullPath := fs.Join(baseDir, targetPath)
 	cleanBase, err := fs.Abs(baseDir)
 	if err != nil {
-		return "", err
+		return "", errors.WrapError(err, "ValidateSecurePath")
 	}
 	cleanTarget, err := fs.Abs(fullPath)
 	if err != nil {
-		return "", err
+		return "", errors.WrapError(err, "ValidateSecurePath")
 	}
 
 	rel, err := fs.Rel(cleanBase, cleanTarget)
 	if err != nil {
-		return "", err
+		return "", errors.WrapError(err, "ValidateSecurePath")
 	}
 
 	if strings.HasPrefix(rel, "..") || strings.HasPrefix(rel, fs.Separator()) {
-		return "", fmt.Errorf("Security block: Cannot write files outside the destination directory")
+		return "", &errors.ValidationError{
+			Field:   "targetPath",
+			Value:   targetPath,
+			Message: "Security block: Cannot write files outside the destination directory",
+		}
 	}
 
 	return cleanTarget, nil
@@ -78,7 +83,11 @@ func GenerateUniqueName(ctx context.Context, fs core.FileSystem, path string) (s
 		}
 		// Safety break to prevent infinite loop in case of errors other than NotExist
 		if i > 10000 {
-			return "", fmt.Errorf("Rename failed: Could not automatically generate a unique name after multiple attempts")
+			return "", &errors.FileError{
+				Op:   "GenerateUniqueName",
+				Path: path,
+				Msg:  "Rename failed: Could not automatically generate a unique name after multiple attempts",
+			}
 		}
 	}
 }

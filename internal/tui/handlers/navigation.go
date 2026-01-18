@@ -9,7 +9,7 @@ import (
 	"fm/internal/constants"
 	"fm/internal/files/archive"
 	"fm/internal/files/core"
-	fileerrors "fm/internal/files/errors"
+	"fm/internal/files/errors"
 	"fm/internal/files/listing"
 	"fm/internal/files/local"
 	"fm/internal/files/ops"
@@ -536,19 +536,19 @@ func openFile(m *tui_context.Model, selected core.Item) tea.Cmd {
 
 	execCmd, isTerminal, err := ops.GetOpenCmd(m.FS, selected.Path, m.Config.EditorIndex)
 	if err != nil {
-		return LogError(m, fileerrors.WrapError(err, "Open"), "Open")
+		return LogError(m, errors.WrapError(err, "Open"), "Open")
 	}
 
 	if isTerminal {
 		return tea.ExecProcess(execCmd, func(err error) tea.Msg {
 			if err != nil {
-				return ErrorMsg{Err: fileerrors.WrapError(err, "Open")}
+				return ErrorMsg{Err: errors.WrapError(err, "Open")}
 			}
 			return nil
 		})
 	} else {
 		if err := execCmd.Start(); err != nil {
-			return LogError(m, fileerrors.WrapError(err, "Open"), "Open")
+			return LogError(m, errors.WrapError(err, "Open"), "Open")
 		}
 		return nil
 	}
@@ -591,7 +591,7 @@ func navigateToPathInternal(m *tui_context.Model, path string) tea.Cmd {
 	// Clean and validate path
 	info, err := m.FS.Stat(m.Context, path)
 	if err != nil {
-		return LogError(m, fileerrors.WrapError(err, "Stat"), "Navigate")
+		return LogError(m, errors.WrapError(err, "Stat"), "Navigate")
 	}
 
 	if !info.IsDir() {

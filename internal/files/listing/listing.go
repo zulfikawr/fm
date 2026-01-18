@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"fm/internal/files/core"
+	"fm/internal/files/errors"
 	"fm/internal/files/sorting"
 )
 
@@ -28,7 +29,7 @@ func LoadSkeleton(ctx context.Context, fs core.FileSystem, path string, showHidd
 
 	entries, err := fs.ReadDirEntries(ctx, path)
 	if err != nil {
-		return items, err
+		return items, errors.WrapErrorWithPath(err, "LoadSkeleton", path)
 	}
 
 	// Track seen files to identify ghosts later
@@ -67,7 +68,7 @@ func LoadSkeleton(ctx context.Context, fs core.FileSystem, path string, showHidd
 func Load(ctx context.Context, fs core.FileSystem, path string, mode sorting.SortMode, showHidden bool, gitStatuses map[string]string) ([]core.Item, error) {
 	items, err := LoadSkeleton(ctx, fs, path, showHidden, gitStatuses)
 	if err != nil {
-		return items, err
+		return items, err // LoadSkeleton already wraps
 	}
 
 	// For standard Load, we still want full metadata for everything (backward compatibility)

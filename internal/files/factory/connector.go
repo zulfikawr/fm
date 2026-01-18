@@ -5,6 +5,7 @@ import (
 	"syscall"
 
 	"fm/internal/files/core"
+	"fm/internal/files/errors"
 	"fm/internal/files/local"
 	remotefs "fm/internal/files/remote"
 	"fm/internal/ssh"
@@ -44,11 +45,12 @@ func (c *DefaultConnector) ReadPassword() (string, error) {
 	bytePw, err := term.ReadPassword(int(syscall.Stdin))
 	fmt.Println()
 	if err != nil {
-		return "", err
+		return "", errors.WrapError(err, "read password")
 	}
 	return string(bytePw), nil
 }
 
 func (c *DefaultConnector) CreateHostKeyCallback() (sshx.HostKeyCallback, error) {
-	return ssh.CreateCLIHostKeyCallback()
+	cb, err := ssh.CreateCLIHostKeyCallback()
+	return cb, errors.WrapError(err, "create host key callback")
 }

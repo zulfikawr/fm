@@ -3,7 +3,6 @@ package archive
 import (
 	"archive/zip"
 	"context"
-	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -89,7 +88,11 @@ func NewArchiveFS(path string) (core.FileSystem, error) {
 	if ext == ".tar" || ext == ".gz" || ext == ".tgz" {
 		return NewTarFS(path)
 	}
-	return nil, fmt.Errorf("unsupported archive format: %s", ext)
+	return nil, &errors.ValidationError{
+		Field:   "extension",
+		Value:   ext,
+		Message: "unsupported archive format",
+	}
 }
 
 // NewZipFS creates a new ZipFS from a zip file path.
@@ -249,27 +252,27 @@ func (fs *ZipFS) Open(ctx context.Context, path string) (io.ReadCloser, error) {
 // Writer operations (Read-Only)
 
 func (fs *ZipFS) Create(ctx context.Context, path string) (io.WriteCloser, error) {
-	return nil, fmt.Errorf("archive filesystem is read-only")
+	return nil, &errors.UnsupportedOperationError{Op: "Create", Filesystem: "Zip"}
 }
 
 func (fs *ZipFS) MkdirAll(ctx context.Context, path string, perm os.FileMode) error {
-	return fmt.Errorf("archive filesystem is read-only")
+	return &errors.UnsupportedOperationError{Op: "MkdirAll", Filesystem: "Zip"}
 }
 
 func (fs *ZipFS) RemoveAll(ctx context.Context, path string) error {
-	return fmt.Errorf("archive filesystem is read-only")
+	return &errors.UnsupportedOperationError{Op: "RemoveAll", Filesystem: "Zip"}
 }
 
 func (fs *ZipFS) Rename(ctx context.Context, oldPath, newPath string) error {
-	return fmt.Errorf("archive filesystem is read-only")
+	return &errors.UnsupportedOperationError{Op: "Rename", Filesystem: "Zip"}
 }
 
 func (fs *ZipFS) Chmod(ctx context.Context, path string, mode os.FileMode) error {
-	return fmt.Errorf("archive filesystem is read-only")
+	return &errors.UnsupportedOperationError{Op: "Chmod", Filesystem: "Zip"}
 }
 
 func (fs *ZipFS) Preallocate(ctx context.Context, path string, size int64) error {
-	return fmt.Errorf("archive filesystem is read-only")
+	return &errors.UnsupportedOperationError{Op: "Preallocate", Filesystem: "Zip"}
 }
 
 func (fs *ZipFS) Walk(ctx context.Context, root string, walkFn func(path string, info os.FileInfo, err error) error) error {

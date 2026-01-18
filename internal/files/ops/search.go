@@ -14,6 +14,7 @@ import (
 
 	"fm/internal/constants"
 	"fm/internal/files/core"
+	"fm/internal/files/errors"
 	"fm/internal/git"
 
 	"golang.org/x/sync/errgroup"
@@ -84,11 +85,11 @@ func Search(ctx context.Context, fs core.FileSystem, gs git.GitService, rootPath
 		return nil
 	})
 	if err != nil {
-		return nil, err
+		return nil, errors.WrapErrorWithPath(err, "Search", rootPath)
 	}
 
 	if err := g.Wait(); err != nil {
-		return nil, err
+		return nil, errors.WrapErrorWithPath(err, "Search", rootPath)
 	}
 
 	return results, nil

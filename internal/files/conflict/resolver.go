@@ -2,9 +2,9 @@ package conflict
 
 import (
 	"context"
-	"fmt"
 
 	"fm/internal/files/core"
+	"fm/internal/files/errors"
 )
 
 type defaultResolver struct{}
@@ -19,7 +19,11 @@ func (r *defaultResolver) Resolve(ctx context.Context, fs core.FileSystem, src, 
 	sAbs, _ := fs.Abs(src)
 	dAbs, _ := fs.Abs(dst)
 	if sAbs == dAbs && sAbs != "" {
-		return "", false, fmt.Errorf("source and destination are the same: %s", src)
+		return "", false, &errors.ValidationError{
+			Field:   "destination",
+			Value:   dst,
+			Message: "source and destination are the same",
+		}
 	}
 
 	// Check for conflict

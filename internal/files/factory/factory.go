@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"fm/internal/files/core"
+	fileerrors "fm/internal/files/errors"
 	"fm/internal/logger"
 	"fm/internal/ssh"
 
@@ -38,7 +39,7 @@ func CreateFileSystemWithConnector(remoteStr string, args []string, conn FileSys
 	// Create CLI host key callback (blocking)
 	hkcb, err := conn.CreateHostKeyCallback()
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to setup host key verification: %w", err)
+		return nil, nil, fileerrors.WrapError(err, "setup host key verification")
 	}
 
 	// Try connecting with provided key or agent first
@@ -47,19 +48,19 @@ func CreateFileSystemWithConnector(remoteStr string, args []string, conn FileSys
 		// Check if it's a host key verification failure (user said no or mismatch)
 		var keyErr *knownhosts.KeyError
 		if errors.As(err, &keyErr) {
-			return nil, nil, fmt.Errorf("host key verification failed")
+			return nil, nil, &fileerrors.PermissionError{Operation: "SSH", Path: host}
 		}
 
 		// If failed, prompt for password
 		fmt.Printf("Connection attempt failed: %v\n", err)
 		password, err := conn.ReadPassword()
 		if err != nil {
-			return nil, nil, fmt.Errorf("reading password: %w", err)
+			return nil, nil, fileerrors.WrapError(err, "reading password")
 		}
 
 		fs, err = conn.NewRemoteFS(host, user, password, keyPath, hkcb)
 		if err != nil {
-			return nil, nil, fmt.Errorf("connection failed: %w", err)
+			return nil, nil, fileerrors.WrapError(err, "connection failed")
 		}
 	}
 

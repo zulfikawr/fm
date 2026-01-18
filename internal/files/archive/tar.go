@@ -4,7 +4,6 @@ import (
 	"archive/tar"
 	"compress/gzip"
 	"context"
-	"fmt"
 	"io"
 	"os"
 	"strings"
@@ -192,7 +191,7 @@ func (fs *TarFS) Open(ctx context.Context, path string) (io.ReadCloser, error) {
 
 	f, err := os.Open(fs.archivePath)
 	if err != nil {
-		return nil, err
+		return nil, errors.WrapErrorWithPath(err, "OpenArchive", fs.archivePath)
 	}
 
 	var tr *tar.Reader
@@ -200,7 +199,7 @@ func (fs *TarFS) Open(ctx context.Context, path string) (io.ReadCloser, error) {
 		gzr, err := gzip.NewReader(f)
 		if err != nil {
 			f.Close()
-			return nil, err
+			return nil, errors.WrapErrorWithPath(err, "OpenArchive", fs.archivePath)
 		}
 		tr = tar.NewReader(gzr)
 	} else {
@@ -215,7 +214,7 @@ func (fs *TarFS) Open(ctx context.Context, path string) (io.ReadCloser, error) {
 		}
 		if err != nil {
 			f.Close()
-			return nil, err
+			return nil, errors.WrapErrorWithPath(err, "ReadArchive", fs.archivePath)
 		}
 
 		if strings.TrimSuffix(header.Name, "/") == path {
@@ -256,27 +255,27 @@ func (fs *TarFS) Walk(ctx context.Context, root string, walkFn func(path string,
 // Writer operations (Read-Only)
 
 func (fs *TarFS) Create(ctx context.Context, path string) (io.WriteCloser, error) {
-	return nil, fmt.Errorf("archive filesystem is read-only")
+	return nil, &errors.UnsupportedOperationError{Op: "Create", Filesystem: "Tar"}
 }
 
 func (fs *TarFS) MkdirAll(ctx context.Context, path string, perm os.FileMode) error {
-	return fmt.Errorf("archive filesystem is read-only")
+	return &errors.UnsupportedOperationError{Op: "MkdirAll", Filesystem: "Tar"}
 }
 
 func (fs *TarFS) RemoveAll(ctx context.Context, path string) error {
-	return fmt.Errorf("archive filesystem is read-only")
+	return &errors.UnsupportedOperationError{Op: "RemoveAll", Filesystem: "Tar"}
 }
 
 func (fs *TarFS) Rename(ctx context.Context, oldPath, newPath string) error {
-	return fmt.Errorf("archive filesystem is read-only")
+	return &errors.UnsupportedOperationError{Op: "Rename", Filesystem: "Tar"}
 }
 
 func (fs *TarFS) Chmod(ctx context.Context, path string, mode os.FileMode) error {
-	return fmt.Errorf("archive filesystem is read-only")
+	return &errors.UnsupportedOperationError{Op: "Chmod", Filesystem: "Tar"}
 }
 
 func (fs *TarFS) Preallocate(ctx context.Context, path string, size int64) error {
-	return fmt.Errorf("archive filesystem is read-only")
+	return &errors.UnsupportedOperationError{Op: "Preallocate", Filesystem: "Tar"}
 }
 
 // Helper structs

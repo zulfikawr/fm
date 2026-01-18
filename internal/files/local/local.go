@@ -177,7 +177,7 @@ func (fs *LocalFS) Chmod(ctx context.Context, path string, mode os.FileMode) err
 }
 
 func (fs *LocalFS) Preallocate(ctx context.Context, path string, size int64) error {
-	return preallocate(path, size)
+	return errors.WrapErrorWithPath(preallocate(path, size), "Preallocate", path)
 }
 
 func (fs *LocalFS) GetHomeDir() (string, error) {
@@ -206,11 +206,13 @@ func (fs *LocalFS) Join(elem ...string) string {
 }
 
 func (fs *LocalFS) Abs(path string) (string, error) {
-	return filepath.Abs(path)
+	abs, err := filepath.Abs(path)
+	return abs, errors.WrapErrorWithPath(err, "Abs", path)
 }
 
 func (fs *LocalFS) Rel(basepath, targpath string) (string, error) {
-	return filepath.Rel(basepath, targpath)
+	rel, err := filepath.Rel(basepath, targpath)
+	return rel, errors.WrapError(err, "Rel")
 }
 
 func (fs *LocalFS) Clean(path string) string {
@@ -230,11 +232,12 @@ func (fs *LocalFS) Ext(path string) string {
 }
 
 func (fs *LocalFS) IsReadOnly(ctx context.Context, path string) (bool, error) {
-	return isReadOnly(path)
+	isRO, err := isReadOnly(path)
+	return isRO, errors.WrapErrorWithPath(err, "IsReadOnly", path)
 }
 
 func (fs *LocalFS) Walk(ctx context.Context, root string, walkFn func(path string, info os.FileInfo, err error) error) error {
-	return filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
+	err := filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
 		select {
 		case <-ctx.Done():
 			return ctx.Err()
@@ -242,4 +245,5 @@ func (fs *LocalFS) Walk(ctx context.Context, root string, walkFn func(path strin
 		}
 		return walkFn(path, info, err)
 	})
+	return errors.WrapErrorWithPath(err, "Walk", root)
 }

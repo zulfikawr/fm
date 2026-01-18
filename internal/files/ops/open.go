@@ -8,6 +8,7 @@ import (
 
 	"fm/internal/constants"
 	"fm/internal/files/core"
+	"fm/internal/files/errors"
 )
 
 var lookPath = exec.LookPath
@@ -25,7 +26,7 @@ func GetOpenAtLineCmd(fs core.FileSystem, path string, editorIdx int, line int) 
 
 		// Check if editor exists
 		if _, err := lookPath(editor); err != nil {
-			return nil, false, fmt.Errorf("editor '%s' not found. Please install it or choose another editor in settings", editor)
+			return nil, false, errors.WrapError(err, "OpenWithEditor")
 		}
 
 		var args []string
@@ -52,13 +53,13 @@ func GetOpenAtLineCmd(fs core.FileSystem, path string, editorIdx int, line int) 
 	case "linux":
 		opener := "xdg-open"
 		if _, err := lookPath(opener); err != nil {
-			return nil, false, fmt.Errorf("'%s' not found. Please install xdg-utils to open this file type", opener)
+			return nil, false, errors.WrapError(err, "OpenWithXdgOpen")
 		}
 		cmd = exec.Command(opener, path)
 	case "darwin":
 		opener := "open"
 		if _, err := lookPath(opener); err != nil {
-			return nil, false, fmt.Errorf("'%s' not found", opener)
+			return nil, false, errors.WrapError(err, "OpenWithMacOSOpen")
 		}
 		cmd = exec.Command(opener, path)
 	case "windows":
