@@ -24,8 +24,8 @@ func TestDefaultConnector(t *testing.T) {
 		}
 	})
 
-	t.Run("NewSftpFS Error", func(t *testing.T) {
-		_, err := conn.NewSftpFS("localhost:1", "user", "pass", "", nil)
+	t.Run("NewRemoteFS Error", func(t *testing.T) {
+		_, err := conn.NewRemoteFS("localhost:1", "user", "pass", "", nil)
 		if err == nil {
 			t.Error("Expected error connecting to invalid address")
 		}
@@ -41,29 +41,29 @@ func TestDefaultConnector(t *testing.T) {
 }
 
 type MockConnector struct {
-	MockLocalFS        core.FileSystem
-	MockSftpFS         core.FileSystem
-	NewSftpFSErr       error
-	ReadPasswordValue  string
-	ReadPasswordErr    error
-	HostKeyCallbackErr error
-	NewSftpFSCallCount int
-	NewSftpFSFunc      func(host, user, password, keyPath string, hkcb sshx.HostKeyCallback) (core.FileSystem, error)
+	MockLocalFS          core.FileSystem
+	MockRemoteFS         core.FileSystem
+	NewRemoteFSErr       error
+	ReadPasswordValue    string
+	ReadPasswordErr      error
+	HostKeyCallbackErr   error
+	NewRemoteFSCallCount int
+	NewRemoteFSFunc      func(host, user, password, keyPath string, hkcb sshx.HostKeyCallback) (core.FileSystem, error)
 }
 
 func (m *MockConnector) NewLocalFS() core.FileSystem {
 	return m.MockLocalFS
 }
 
-func (m *MockConnector) NewSftpFS(host, user, password, keyPath string, hkcb sshx.HostKeyCallback) (core.FileSystem, error) {
-	m.NewSftpFSCallCount++
-	if m.NewSftpFSFunc != nil {
-		return m.NewSftpFSFunc(host, user, password, keyPath, hkcb)
+func (m *MockConnector) NewRemoteFS(host, user, password, keyPath string, hkcb sshx.HostKeyCallback) (core.FileSystem, error) {
+	m.NewRemoteFSCallCount++
+	if m.NewRemoteFSFunc != nil {
+		return m.NewRemoteFSFunc(host, user, password, keyPath, hkcb)
 	}
-	if m.NewSftpFSErr != nil {
-		return nil, m.NewSftpFSErr
+	if m.NewRemoteFSErr != nil {
+		return nil, m.NewRemoteFSErr
 	}
-	return m.MockSftpFS, nil
+	return m.MockRemoteFS, nil
 }
 
 func (m *MockConnector) ReadPassword() (string, error) {
@@ -80,8 +80,8 @@ func (m *MockConnector) CreateHostKeyCallback() (sshx.HostKeyCallback, error) {
 func TestCreateFileSystem(t *testing.T) {
 	mockFS := testutil.NewMockFileSystem()
 	mockConnector := &MockConnector{
-		MockLocalFS: mockFS,
-		MockSftpFS:  mockFS,
+		MockLocalFS:  mockFS,
+		MockRemoteFS: mockFS,
 	}
 
 	t.Run("Local Filesystem", func(t *testing.T) {
@@ -96,7 +96,7 @@ func TestCreateFileSystem(t *testing.T) {
 	})
 
 	t.Run("Remote Parsing user@host:path", func(t *testing.T) {
-		mockConnector.NewSftpFSCallCount = 0
+		mockConnector.NewRemoteFSCallCount = 0
 		fs, info, err := CreateFileSystemWithConnector("user@example.com:/home/user", nil, mockConnector)
 		testutil.AssertNoError(t, err, "Should not error")
 		if fs != mockFS {
@@ -108,7 +108,7 @@ func TestCreateFileSystem(t *testing.T) {
 	})
 
 	t.Run("Remote Parsing host", func(t *testing.T) {
-		mockConnector.NewSftpFSCallCount = 0
+		mockConnector.NewRemoteFSCallCount = 0
 		_, info, _ := CreateFileSystemWithConnector("example.com", nil, mockConnector)
 		if info.Host != "example.com" {
 			t.Errorf("Expected host example.com, got %s", info.Host)
@@ -116,9 +116,9 @@ func TestCreateFileSystem(t *testing.T) {
 	})
 
 	t.Run("Remote Password fallback", func(t *testing.T) {
-		mockConnector.NewSftpFSCallCount = 0
+		mockConnector.NewRemoteFSCallCount = 0
 		mockConnector.ReadPasswordValue = "secret"
-		mockConnector.NewSftpFSFunc = func(host, user, password, keyPath string, hkcb sshx.HostKeyCallback) (core.FileSystem, error) {
+		mockConnector.NewRemoteFSFunc = func(host, user, password, keyPath string, hkcb sshx.HostKeyCallback) (core.FileSystem, error) {
 			if password == "" {
 				return nil, fmt.Errorf("auth failed")
 			}
@@ -130,14 +130,14 @@ func TestCreateFileSystem(t *testing.T) {
 		if fs != mockFS {
 			t.Error("Expected mock remote FS")
 		}
-		if mockConnector.NewSftpFSCallCount != 2 {
-			t.Errorf("Expected 2 calls to NewSftpFS, got %d", mockConnector.NewSftpFSCallCount)
+		if mockConnector.NewRemoteFSCallCount != 2 {
+			t.Errorf("Expected 2 calls to NewRemoteFS, got %d", mockConnector.NewRemoteFSCallCount)
 		}
 	})
 
 	t.Run("Remote Connection Failure", func(t *testing.T) {
-		mockConnector.NewSftpFSCallCount = 0
-		mockConnector.NewSftpFSFunc = func(host, user, password, keyPath string, hkcb sshx.HostKeyCallback) (core.FileSystem, error) {
+		mockConnector.NewRemoteFSCallCount = 0
+		mockConnector.NewRemoteFSFunc = func(host, user, password, keyPath string, hkcb sshx.HostKeyCallback) (core.FileSystem, error) {
 			return nil, fmt.Errorf("total failure")
 		}
 
@@ -159,7 +159,7 @@ func TestCreateFileSystem(t *testing.T) {
 	})
 
 	t.Run("Remote SSH Config Mock", func(t *testing.T) {
-		mockConnector.NewSftpFSFunc = func(host, user, password, keyPath string, hkcb sshx.HostKeyCallback) (core.FileSystem, error) {
+		mockConnector.NewRemoteFSFunc = func(host, user, password, keyPath string, hkcb sshx.HostKeyCallback) (core.FileSystem, error) {
 			return mockFS, nil
 		}
 		_, info, _ := CreateFileSystemWithConnector("random-alias", nil, mockConnector)
@@ -169,7 +169,7 @@ func TestCreateFileSystem(t *testing.T) {
 	})
 
 	t.Run("Key file from args", func(t *testing.T) {
-		mockConnector.NewSftpFSFunc = func(host, user, password, keyPath string, hkcb sshx.HostKeyCallback) (core.FileSystem, error) {
+		mockConnector.NewRemoteFSFunc = func(host, user, password, keyPath string, hkcb sshx.HostKeyCallback) (core.FileSystem, error) {
 			if keyPath != "my-key" {
 				return nil, fmt.Errorf("wrong key: %s", keyPath)
 			}
@@ -258,7 +258,7 @@ func TestCreateFileSystem_Errors(t *testing.T) {
 
 	t.Run("ReadPassword error", func(t *testing.T) {
 		mockConnector.HostKeyCallbackErr = nil
-		mockConnector.NewSftpFSFunc = func(host, user, password, keyPath string, hkcb sshx.HostKeyCallback) (core.FileSystem, error) {
+		mockConnector.NewRemoteFSFunc = func(host, user, password, keyPath string, hkcb sshx.HostKeyCallback) (core.FileSystem, error) {
 			return nil, fmt.Errorf("first fail")
 		}
 		mockConnector.ReadPasswordErr = fmt.Errorf("read pw error")

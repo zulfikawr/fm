@@ -15,8 +15,8 @@ import (
 	"github.com/pkg/sftp"
 )
 
-func TestSftpFS_Helpers(t *testing.T) {
-	fs := &SftpFS{
+func TestRemoteFS_Helpers(t *testing.T) {
+	fs := &RemoteFS{
 		address: "example.com:22",
 		user:    "user",
 	}
@@ -71,7 +71,7 @@ type rwCloser struct {
 	io.Closer
 }
 
-func TestSftpFS_ClientMethods(t *testing.T) {
+func TestRemoteFS_ClientMethods(t *testing.T) {
 	// Pair 1: client to server
 	c2sr, c2sw := io.Pipe()
 	// Pair 2: server to client
@@ -95,7 +95,7 @@ func TestSftpFS_ClientMethods(t *testing.T) {
 	}
 
 	ictx, cancel := context.WithCancel(context.Background())
-	fs := &SftpFS{
+	fs := &RemoteFS{
 		client: client,
 		cache:  core.NewMetadataCache(time.Second),
 		ctx:    ictx,

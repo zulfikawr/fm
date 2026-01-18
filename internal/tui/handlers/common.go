@@ -225,7 +225,7 @@ func connectRemote(address, user, password, keyPath string, askChan chan *ssh.Ho
 			return RemoteConnectMsg{Err: err}
 		}
 
-		fs, err := remote.NewSftpFS(address, user, password, keyPath, hkcb)
+		fs, err := remote.NewRemoteFS(address, user, password, keyPath, hkcb)
 		if err != nil {
 			return RemoteConnectMsg{Err: err}
 		}

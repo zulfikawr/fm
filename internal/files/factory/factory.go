@@ -11,7 +11,7 @@ import (
 	"golang.org/x/crypto/ssh/knownhosts"
 )
 
-// CreateFileSystem instantiates a LocalFS or SftpFS based on the remote string.
+// CreateFileSystem instantiates a LocalFS or RemoteFS based on the remote string.
 func CreateFileSystem(remoteStr string, args []string) (core.FileSystem, *RemoteInfo, error) {
 	return CreateFileSystemWithConnector(remoteStr, args, &DefaultConnector{})
 }
@@ -42,7 +42,7 @@ func CreateFileSystemWithConnector(remoteStr string, args []string, conn FileSys
 	}
 
 	// Try connecting with provided key or agent first
-	fs, err := conn.NewSftpFS(host, user, "", keyPath, hkcb)
+	fs, err := conn.NewRemoteFS(host, user, "", keyPath, hkcb)
 	if err != nil {
 		// Check if it's a host key verification failure (user said no or mismatch)
 		var keyErr *knownhosts.KeyError
@@ -57,7 +57,7 @@ func CreateFileSystemWithConnector(remoteStr string, args []string, conn FileSys
 			return nil, nil, fmt.Errorf("reading password: %w", err)
 		}
 
-		fs, err = conn.NewSftpFS(host, user, password, keyPath, hkcb)
+		fs, err = conn.NewRemoteFS(host, user, password, keyPath, hkcb)
 		if err != nil {
 			return nil, nil, fmt.Errorf("connection failed: %w", err)
 		}

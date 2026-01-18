@@ -23,7 +23,7 @@ type RemoteInfo struct {
 // FileSystemConnector defines the interface for creating file systems.
 type FileSystemConnector interface {
 	NewLocalFS() core.FileSystem
-	NewSftpFS(host, user, password, keyPath string, hkcb sshx.HostKeyCallback) (core.FileSystem, error)
+	NewRemoteFS(host, user, password, keyPath string, hkcb sshx.HostKeyCallback) (core.FileSystem, error)
 	ReadPassword() (string, error)
 	CreateHostKeyCallback() (sshx.HostKeyCallback, error)
 }
@@ -35,8 +35,8 @@ func (c *DefaultConnector) NewLocalFS() core.FileSystem {
 	return local.NewLocalFS()
 }
 
-func (c *DefaultConnector) NewSftpFS(host, user, password, keyPath string, hkcb sshx.HostKeyCallback) (core.FileSystem, error) {
-	return remotefs.NewSftpFS(host, user, password, keyPath, hkcb)
+func (c *DefaultConnector) NewRemoteFS(host, user, password, keyPath string, hkcb sshx.HostKeyCallback) (core.FileSystem, error) {
+	return remotefs.NewRemoteFS(host, user, password, keyPath, hkcb)
 }
 
 func (c *DefaultConnector) ReadPassword() (string, error) {

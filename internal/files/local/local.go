@@ -62,7 +62,6 @@ func (fs *LocalFS) ReadDir(ctx context.Context, path string) ([]os.FileInfo, err
 	g.SetLimit(constants.MaxReadDirWorkers)
 
 	for i, entry := range entries {
-		i, entry := i, entry // capture for closure
 		g.Go(func() error {
 			select {
 			case <-ctx.Done():
