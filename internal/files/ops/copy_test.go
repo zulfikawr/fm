@@ -2,11 +2,12 @@ package ops
 
 import (
 	"context"
-	"fm/internal/files/conflict"
-	"fm/internal/testutil"
 	"io"
 	"os"
 	"testing"
+
+	"fm/internal/files/conflict"
+	"fm/internal/testutil"
 )
 
 func TestCrossCopy_EdgeCases(t *testing.T) {

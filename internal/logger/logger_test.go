@@ -1,10 +1,11 @@
 package logger
 
 import (
-	"fm/internal/testutil"
 	"os"
 	"strings"
 	"testing"
+
+	"fm/internal/testutil"
 )
 
 func TestLogger(t *testing.T) {

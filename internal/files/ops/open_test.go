@@ -1,9 +1,10 @@
 package ops
 
 import (
-	"fm/internal/testutil"
 	"strings"
 	"testing"
+
+	"fm/internal/testutil"
 )
 
 func TestIsTextFile(t *testing.T) {

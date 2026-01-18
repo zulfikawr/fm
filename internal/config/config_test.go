@@ -1,11 +1,12 @@
 package config
 
 import (
-	"fm/internal/testutil"
 	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
+
+	"fm/internal/testutil"
 )
 
 func TestDefaultConfig(t *testing.T) {

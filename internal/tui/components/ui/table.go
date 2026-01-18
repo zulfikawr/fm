@@ -1,10 +1,12 @@
 package ui
 
 import (
-	"fm/internal/tui/theme"
 	"fmt"
-	"github.com/charmbracelet/lipgloss"
 	"strings"
+
+	"github.com/charmbracelet/lipgloss"
+
+	"fm/internal/tui/theme"
 )
 
 // Column defines a table column's properties

@@ -1,11 +1,12 @@
 package handlers
 
 import (
+	tea "github.com/charmbracelet/bubbletea"
+
 	"fm/internal/files/core"
 	"fm/internal/testutil"
 	tuictx "fm/internal/tui/context"
 	"fm/internal/tui/view"
-	tea "github.com/charmbracelet/bubbletea"
 )
 
 type testModelWrapper struct {

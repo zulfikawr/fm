@@ -1,8 +1,9 @@
 package git
 
 import (
-	"fm/internal/testutil"
 	"testing"
+
+	"fm/internal/testutil"
 )
 
 func TestGitService_Enabled(t *testing.T) {

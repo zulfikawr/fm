@@ -2,9 +2,10 @@ package conflict
 
 import (
 	"context"
-	"fm/internal/testutil"
 	"os"
 	"testing"
+
+	"fm/internal/testutil"
 )
 
 func TestGenerateUniqueName(t *testing.T) {

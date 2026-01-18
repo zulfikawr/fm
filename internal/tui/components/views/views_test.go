@@ -1,13 +1,14 @@
 package views
 
 import (
+	"strings"
+	"testing"
+
 	"fm/internal/config"
 	"fm/internal/files/core"
 	"fm/internal/testutil"
 	tui_context "fm/internal/tui/context"
 	"fm/internal/tui/theme"
-	"strings"
-	"testing"
 )
 
 func TestRenderSettings(t *testing.T) {

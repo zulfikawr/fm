@@ -2,9 +2,10 @@ package errors
 
 import (
 	"errors"
-	"fm/internal/testutil"
 	"strings"
 	"testing"
+
+	"fm/internal/testutil"
 )
 
 func TestError(t *testing.T) {

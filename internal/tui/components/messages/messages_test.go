@@ -1,11 +1,12 @@
 package messages
 
 import (
+	"strings"
+	"testing"
+
 	"fm/internal/constants"
 	"fm/internal/testutil"
 	"fm/internal/tui/theme"
-	"strings"
-	"testing"
 
 	"github.com/charmbracelet/lipgloss"
 	"github.com/muesli/termenv"

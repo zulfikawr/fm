@@ -1,9 +1,10 @@
 package ops
 
 import (
+	"testing"
+
 	"fm/internal/files/core"
 	"fm/internal/testutil"
-	"testing"
 )
 
 func TestProgressWriter(t *testing.T) {

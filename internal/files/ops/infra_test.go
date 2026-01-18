@@ -3,8 +3,9 @@ package ops
 import (
 	"bytes"
 	"context"
-	"fm/internal/testutil"
 	"testing"
+
+	"fm/internal/testutil"
 )
 
 func TestBufferPool(t *testing.T) {

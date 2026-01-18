@@ -1,9 +1,10 @@
 package handlers
 
 import (
+	"testing"
+
 	"fm/internal/testutil"
 	"fm/internal/tui/context"
-	"testing"
 
 	tea "github.com/charmbracelet/bubbletea"
 )

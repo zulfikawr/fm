@@ -1,10 +1,11 @@
 package view
 
 import (
-	"fm/internal/testutil"
-	"fm/internal/tui/context"
 	"strings"
 	"testing"
+
+	"fm/internal/testutil"
+	"fm/internal/tui/context"
 )
 
 func TestRender_Modals(t *testing.T) {

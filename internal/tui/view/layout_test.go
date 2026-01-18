@@ -1,9 +1,10 @@
 package view
 
 import (
+	"testing"
+
 	"fm/internal/testutil"
 	"fm/internal/tui/context"
-	"testing"
 )
 
 func TestCalculateLayout(t *testing.T) {

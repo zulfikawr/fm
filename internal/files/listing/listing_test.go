@@ -2,13 +2,14 @@ package listing
 
 import (
 	"context"
-	"fm/internal/files/sorting"
-	"fm/internal/testutil"
 	"fmt"
 	"os"
 	"strings"
 	"testing"
 	"time"
+
+	"fm/internal/files/sorting"
+	"fm/internal/testutil"
 )
 
 func TestLoad(t *testing.T) {

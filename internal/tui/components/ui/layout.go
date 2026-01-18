@@ -1,8 +1,9 @@
 package ui
 
 import (
-	"github.com/charmbracelet/lipgloss"
 	"strings"
+
+	"github.com/charmbracelet/lipgloss"
 )
 
 // FlexRow joins multiple items into a single line, ensuring the total width is met.

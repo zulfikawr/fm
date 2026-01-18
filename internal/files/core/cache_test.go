@@ -1,10 +1,11 @@
 package core
 
 import (
-	"fm/internal/testutil"
 	"os"
 	"testing"
 	"time"
+
+	"fm/internal/testutil"
 )
 
 func TestMetadataCache(t *testing.T) {

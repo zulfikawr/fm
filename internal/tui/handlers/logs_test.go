@@ -4,9 +4,10 @@ import (
 	"testing"
 	"time"
 
+	tea "github.com/charmbracelet/bubbletea"
+
 	"fm/internal/testutil"
 	tuictx "fm/internal/tui/context"
-	tea "github.com/charmbracelet/bubbletea"
 )
 
 func TestLogs_Handler(t *testing.T) {

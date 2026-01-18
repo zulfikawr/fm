@@ -2,10 +2,11 @@ package ops
 
 import (
 	"context"
-	"fm/internal/files/conflict"
-	"fm/internal/testutil"
 	"os"
 	"testing"
+
+	"fm/internal/files/conflict"
+	"fm/internal/testutil"
 )
 
 func TestRename(t *testing.T) {

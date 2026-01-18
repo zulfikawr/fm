@@ -1,10 +1,11 @@
 package bootstrap
 
 import (
-	"fm/internal/testutil"
 	"os"
 	"path/filepath"
 	"testing"
+
+	"fm/internal/testutil"
 )
 
 func TestInitializeApp_Local(t *testing.T) {

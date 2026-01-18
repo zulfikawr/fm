@@ -4,10 +4,11 @@ import (
 	"testing"
 	"time"
 
+	tea "github.com/charmbracelet/bubbletea"
+
 	"fm/internal/files/core"
 	"fm/internal/testutil"
 	tuictx "fm/internal/tui/context"
-	tea "github.com/charmbracelet/bubbletea"
 )
 
 func TestSearch_Msg(t *testing.T) {

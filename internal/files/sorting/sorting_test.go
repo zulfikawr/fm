@@ -1,9 +1,10 @@
 package sorting
 
 import (
+	"testing"
+
 	"fm/internal/files/core"
 	"fm/internal/testutil"
-	"testing"
 )
 
 func TestSortItems(t *testing.T) {

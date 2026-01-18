@@ -1,9 +1,10 @@
 package ui
 
 import (
-	"fm/internal/tui/theme"
 	"strings"
 	"time"
+
+	"fm/internal/tui/theme"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"

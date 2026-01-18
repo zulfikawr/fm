@@ -1,10 +1,11 @@
 package ui
 
 import (
-	"fm/internal/testutil"
-	"fm/internal/tui/theme"
 	"strings"
 	"testing"
+
+	"fm/internal/testutil"
+	"fm/internal/tui/theme"
 )
 
 func TestTruncate(t *testing.T) {

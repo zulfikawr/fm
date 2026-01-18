@@ -2,8 +2,9 @@ package conflict
 
 import (
 	"context"
-	"fm/internal/files/core"
 	"fmt"
+
+	"fm/internal/files/core"
 )
 
 type defaultResolver struct{}

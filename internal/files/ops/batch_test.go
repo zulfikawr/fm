@@ -2,14 +2,15 @@ package ops
 
 import (
 	"context"
-	"fm/internal/files/conflict"
-	"fm/internal/files/core"
-	"fm/internal/testutil"
 	"fmt"
 	"io"
 	"os"
 	"strings"
 	"testing"
+
+	"fm/internal/files/conflict"
+	"fm/internal/files/core"
+	"fm/internal/testutil"
 )
 
 func TestDeleteMultiple(t *testing.T) {

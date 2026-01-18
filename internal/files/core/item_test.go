@@ -1,9 +1,10 @@
 package core
 
 import (
-	"fm/internal/testutil"
 	"testing"
 	"time"
+
+	"fm/internal/testutil"
 )
 
 func TestNewItem(t *testing.T) {

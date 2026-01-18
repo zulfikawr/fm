@@ -1,8 +1,9 @@
 package ui
 
 import (
-	"fm/internal/tui/theme"
 	"testing"
+
+	"fm/internal/tui/theme"
 )
 
 func TestInput_Reset(t *testing.T) {

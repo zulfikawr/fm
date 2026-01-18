@@ -4,8 +4,9 @@ import (
 	"container/list"
 	"time"
 
-	"fm/internal/files/core"
 	"github.com/fsnotify/fsnotify"
+
+	"fm/internal/files/core"
 )
 
 // CacheEntry holds a value and its metadata

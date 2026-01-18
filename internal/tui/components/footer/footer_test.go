@@ -1,11 +1,12 @@
 package footer
 
 import (
+	"strings"
+	"testing"
+
 	"fm/internal/testutil"
 	"fm/internal/tui/components/ui"
 	"fm/internal/tui/theme"
-	"strings"
-	"testing"
 )
 
 func TestFooter_RenderModes(t *testing.T) {

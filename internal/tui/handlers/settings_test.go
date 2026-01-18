@@ -3,9 +3,10 @@ package handlers
 import (
 	"testing"
 
+	tea "github.com/charmbracelet/bubbletea"
+
 	"fm/internal/testutil"
 	tuictx "fm/internal/tui/context"
-	tea "github.com/charmbracelet/bubbletea"
 )
 
 func TestSettings_ToggleLogic(t *testing.T) {

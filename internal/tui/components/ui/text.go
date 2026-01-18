@@ -1,8 +1,9 @@
 package ui
 
 import (
-	"fm/internal/tui/theme"
 	"github.com/charmbracelet/lipgloss"
+
+	"fm/internal/tui/theme"
 )
 
 // Truncate ensures a string fits within a maximum width, adding an ellipsis if needed.

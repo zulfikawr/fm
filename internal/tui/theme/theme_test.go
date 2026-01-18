@@ -1,8 +1,9 @@
 package theme
 
 import (
-	"fm/internal/testutil"
 	"testing"
+
+	"fm/internal/testutil"
 )
 
 func TestGetStylesheet(t *testing.T) {

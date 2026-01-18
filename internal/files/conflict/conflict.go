@@ -2,9 +2,10 @@ package conflict
 
 import (
 	"context"
-	"fm/internal/files/core"
 	"fmt"
 	"strings"
+
+	"fm/internal/files/core"
 )
 
 // Policy defines how to handle existing destination files

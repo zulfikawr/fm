@@ -6,8 +6,9 @@ import (
 	"testing"
 	"time"
 
-	"fm/internal/testutil"
 	"github.com/charmbracelet/x/exp/teatest"
+
+	"fm/internal/testutil"
 )
 
 func TestApp_Integration(t *testing.T) {

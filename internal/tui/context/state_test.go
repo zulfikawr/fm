@@ -1,8 +1,9 @@
 package context
 
 import (
-	"fm/internal/testutil"
 	"testing"
+
+	"fm/internal/testutil"
 )
 
 func TestUIState(t *testing.T) {

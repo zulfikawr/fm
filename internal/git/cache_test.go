@@ -2,8 +2,9 @@ package git
 
 import (
 	"context"
-	"fm/internal/testutil"
 	"testing"
+
+	"fm/internal/testutil"
 )
 
 func TestGitService_GetRoot(t *testing.T) {

@@ -2,9 +2,10 @@ package ops
 
 import (
 	"context"
+	"testing"
+
 	"fm/internal/files/core"
 	"fm/internal/testutil"
-	"testing"
 )
 
 func TestDelete(t *testing.T) {
