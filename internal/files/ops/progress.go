@@ -4,7 +4,7 @@ import (
 	"io"
 	"time"
 
-	"fm/internal/files/core"
+	"github.com/zulfikawr/fm/internal/files/core"
 )
 
 type progressWriter struct {

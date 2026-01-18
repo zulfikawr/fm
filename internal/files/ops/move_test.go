@@ -6,8 +6,8 @@ import (
 	"os"
 	"testing"
 
-	"fm/internal/files/conflict"
-	"fm/internal/testutil"
+	"github.com/zulfikawr/fm/internal/files/conflict"
+	"github.com/zulfikawr/fm/internal/testutil"
 )
 
 func TestMove(t *testing.T) {

@@ -3,8 +3,8 @@ package context
 import (
 	"context"
 
-	"fm/internal/files/core"
-	"fm/internal/ssh"
+	"github.com/zulfikawr/fm/internal/files/core"
+	"github.com/zulfikawr/fm/internal/ssh"
 )
 
 // --- Git State ---

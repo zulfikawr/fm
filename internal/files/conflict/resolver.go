@@ -3,8 +3,8 @@ package conflict
 import (
 	"context"
 
-	"fm/internal/files/core"
-	"fm/internal/files/errors"
+	"github.com/zulfikawr/fm/internal/files/core"
+	"github.com/zulfikawr/fm/internal/files/errors"
 )
 
 type defaultResolver struct{}

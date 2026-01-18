@@ -4,12 +4,12 @@ import (
 	"fmt"
 	"strings"
 
-	"fm/internal/config"
-	"fm/internal/constants"
-	"fm/internal/files/format"
-	"fm/internal/tui/components/messages"
-	"fm/internal/tui/components/ui"
-	"fm/internal/tui/theme"
+	"github.com/zulfikawr/fm/internal/config"
+	"github.com/zulfikawr/fm/internal/constants"
+	"github.com/zulfikawr/fm/internal/files/format"
+	"github.com/zulfikawr/fm/internal/tui/components/messages"
+	"github.com/zulfikawr/fm/internal/tui/components/ui"
+	"github.com/zulfikawr/fm/internal/tui/theme"
 
 	"github.com/charmbracelet/lipgloss"
 )

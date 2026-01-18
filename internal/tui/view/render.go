@@ -1,12 +1,12 @@
 package view
 
 import (
-	"fm/internal/tui/components/file"
-	"fm/internal/tui/components/footer"
-	"fm/internal/tui/components/header"
-	"fm/internal/tui/components/loading"
-	"fm/internal/tui/components/views"
-	"fm/internal/tui/context"
+	"github.com/zulfikawr/fm/internal/tui/components/file"
+	"github.com/zulfikawr/fm/internal/tui/components/footer"
+	"github.com/zulfikawr/fm/internal/tui/components/header"
+	"github.com/zulfikawr/fm/internal/tui/components/loading"
+	"github.com/zulfikawr/fm/internal/tui/components/views"
+	"github.com/zulfikawr/fm/internal/tui/context"
 
 	"github.com/charmbracelet/lipgloss"
 )

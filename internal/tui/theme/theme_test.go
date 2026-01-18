@@ -3,7 +3,7 @@ package theme
 import (
 	"testing"
 
-	"fm/internal/testutil"
+	"github.com/zulfikawr/fm/internal/testutil"
 )
 
 func TestGetStylesheet(t *testing.T) {

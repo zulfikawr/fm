@@ -3,7 +3,7 @@ package ui
 import (
 	"fmt"
 
-	"fm/internal/tui/theme"
+	"github.com/zulfikawr/fm/internal/tui/theme"
 )
 
 // Picker renders a cycling option selection indicator.

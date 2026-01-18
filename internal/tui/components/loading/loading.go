@@ -3,8 +3,8 @@ package loading
 import (
 	"fmt"
 
-	"fm/internal/tui/components/ui"
-	"fm/internal/tui/theme"
+	"github.com/zulfikawr/fm/internal/tui/components/ui"
+	"github.com/zulfikawr/fm/internal/tui/theme"
 
 	"github.com/charmbracelet/lipgloss"
 )

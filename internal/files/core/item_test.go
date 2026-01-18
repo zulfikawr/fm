@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"fm/internal/testutil"
+	"github.com/zulfikawr/fm/internal/testutil"
 )
 
 func TestNewItem(t *testing.T) {

@@ -1,14 +1,14 @@
 package footer
 
 import (
-	"fm/internal/constants"
-	"fm/internal/files/core"
-	"fm/internal/files/sorting"
-	"fm/internal/ssh"
-	"fm/internal/tui/components/messages"
-	"fm/internal/tui/components/ui"
-	"fm/internal/tui/components/views"
-	"fm/internal/tui/theme"
+	"github.com/zulfikawr/fm/internal/constants"
+	"github.com/zulfikawr/fm/internal/files/core"
+	"github.com/zulfikawr/fm/internal/files/sorting"
+	"github.com/zulfikawr/fm/internal/ssh"
+	"github.com/zulfikawr/fm/internal/tui/components/messages"
+	"github.com/zulfikawr/fm/internal/tui/components/ui"
+	"github.com/zulfikawr/fm/internal/tui/components/views"
+	"github.com/zulfikawr/fm/internal/tui/theme"
 )
 
 // Mode represents the current footer display mode

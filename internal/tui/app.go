@@ -1,9 +1,9 @@
 package tui
 
 import (
-	"fm/internal/tui/context"
-	"fm/internal/tui/handlers"
-	"fm/internal/tui/view"
+	"github.com/zulfikawr/fm/internal/tui/context"
+	"github.com/zulfikawr/fm/internal/tui/handlers"
+	"github.com/zulfikawr/fm/internal/tui/view"
 
 	tea "github.com/charmbracelet/bubbletea"
 )

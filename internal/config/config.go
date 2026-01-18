@@ -5,7 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"fm/internal/logger"
+	"github.com/zulfikawr/fm/internal/logger"
 )
 
 // Config holds the user preferences.

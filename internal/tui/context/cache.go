@@ -6,7 +6,7 @@ import (
 
 	"github.com/fsnotify/fsnotify"
 
-	"fm/internal/files/core"
+	"github.com/zulfikawr/fm/internal/files/core"
 )
 
 // CacheEntry holds a value and its metadata

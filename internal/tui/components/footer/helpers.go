@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"strings"
 
-	"fm/internal/files/core"
-	"fm/internal/files/sorting"
-	"fm/internal/tui/theme"
+	"github.com/zulfikawr/fm/internal/files/core"
+	"github.com/zulfikawr/fm/internal/files/sorting"
+	"github.com/zulfikawr/fm/internal/tui/theme"
 
 	"github.com/charmbracelet/lipgloss"
 )

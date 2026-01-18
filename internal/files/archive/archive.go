@@ -9,8 +9,8 @@ import (
 	"strings"
 	"time"
 
-	"fm/internal/files/core"
-	"fm/internal/files/errors"
+	"github.com/zulfikawr/fm/internal/files/core"
+	"github.com/zulfikawr/fm/internal/files/errors"
 )
 
 // baseArchiveFS provides shared path resolution and metadata logic for archives.

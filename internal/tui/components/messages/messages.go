@@ -1,10 +1,10 @@
 package messages
 
 import (
-	"fm/internal/constants"
-	"fm/internal/ssh"
-	"fm/internal/tui/components/ui"
-	"fm/internal/tui/theme"
+	"github.com/zulfikawr/fm/internal/constants"
+	"github.com/zulfikawr/fm/internal/ssh"
+	"github.com/zulfikawr/fm/internal/tui/components/ui"
+	"github.com/zulfikawr/fm/internal/tui/theme"
 )
 
 // Mode represents the type of message/interaction in the footer

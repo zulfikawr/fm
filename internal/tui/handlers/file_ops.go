@@ -7,11 +7,11 @@ import (
 	"strings"
 	"time"
 
-	"fm/internal/constants"
-	"fm/internal/files/conflict"
-	"fm/internal/files/core"
-	"fm/internal/files/ops"
-	tui_context "fm/internal/tui/context"
+	"github.com/zulfikawr/fm/internal/constants"
+	"github.com/zulfikawr/fm/internal/files/conflict"
+	"github.com/zulfikawr/fm/internal/files/core"
+	"github.com/zulfikawr/fm/internal/files/ops"
+	tui_context "github.com/zulfikawr/fm/internal/tui/context"
 
 	tea "github.com/charmbracelet/bubbletea"
 )

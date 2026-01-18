@@ -9,10 +9,10 @@ import (
 	"path/filepath"
 	"strings"
 
-	"fm/internal/files/conflict"
-	"fm/internal/files/core"
-	"fm/internal/files/errors"
-	"fm/internal/logger"
+	"github.com/zulfikawr/fm/internal/files/conflict"
+	"github.com/zulfikawr/fm/internal/files/core"
+	"github.com/zulfikawr/fm/internal/files/errors"
+	"github.com/zulfikawr/fm/internal/logger"
 )
 
 // Zip compresses multiple files or directories into a single zip archive.

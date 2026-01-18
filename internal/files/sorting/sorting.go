@@ -4,7 +4,7 @@ import (
 	"sort"
 	"strings"
 
-	"fm/internal/files/core"
+	"github.com/zulfikawr/fm/internal/files/core"
 )
 
 // SortMode defines the sorting strategy for directory contents.

@@ -4,11 +4,11 @@ import (
 	"strings"
 	"testing"
 
-	"fm/internal/config"
-	"fm/internal/files/core"
-	"fm/internal/testutil"
-	tui_context "fm/internal/tui/context"
-	"fm/internal/tui/theme"
+	"github.com/zulfikawr/fm/internal/config"
+	"github.com/zulfikawr/fm/internal/files/core"
+	"github.com/zulfikawr/fm/internal/testutil"
+	tui_context "github.com/zulfikawr/fm/internal/tui/context"
+	"github.com/zulfikawr/fm/internal/tui/theme"
 )
 
 func TestRenderSettings(t *testing.T) {

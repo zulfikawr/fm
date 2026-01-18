@@ -3,7 +3,7 @@ package ui
 import (
 	"github.com/charmbracelet/lipgloss"
 
-	"fm/internal/tui/theme"
+	"github.com/zulfikawr/fm/internal/tui/theme"
 )
 
 // WindowProps contains all data needed to render a window container.

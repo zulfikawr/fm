@@ -1,4 +1,4 @@
-module fm
+module github.com/zulfikawr/fm
 
 go 1.25.5
 

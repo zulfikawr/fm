@@ -4,10 +4,10 @@ import (
 	"errors"
 	"fmt"
 
-	"fm/internal/files/core"
-	fileerrors "fm/internal/files/errors"
-	"fm/internal/logger"
-	"fm/internal/ssh"
+	"github.com/zulfikawr/fm/internal/files/core"
+	fileerrors "github.com/zulfikawr/fm/internal/files/errors"
+	"github.com/zulfikawr/fm/internal/logger"
+	"github.com/zulfikawr/fm/internal/ssh"
 
 	"golang.org/x/crypto/ssh/knownhosts"
 )

@@ -5,7 +5,7 @@ import (
 	"strings"
 	"time"
 
-	"fm/internal/files/format"
+	"github.com/zulfikawr/fm/internal/files/format"
 )
 
 // Item represents a single file or directory entry in the file manager.

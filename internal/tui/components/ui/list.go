@@ -1,7 +1,7 @@
 package ui
 
 import (
-	"fm/internal/tui/theme"
+	"github.com/zulfikawr/fm/internal/tui/theme"
 )
 
 // Marker renders a selection checkbox marker.

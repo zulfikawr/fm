@@ -8,8 +8,8 @@ import (
 	"runtime"
 	"time"
 
-	"fm/internal/files/core"
-	"fm/internal/files/errors"
+	"github.com/zulfikawr/fm/internal/files/core"
+	"github.com/zulfikawr/fm/internal/files/errors"
 )
 
 // Delete removes a file or directory recursively.

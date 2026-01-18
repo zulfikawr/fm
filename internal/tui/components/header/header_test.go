@@ -4,8 +4,8 @@ import (
 	"strings"
 	"testing"
 
-	"fm/internal/testutil"
-	"fm/internal/tui/theme"
+	"github.com/zulfikawr/fm/internal/testutil"
+	"github.com/zulfikawr/fm/internal/tui/theme"
 )
 
 func TestHeader_Render(t *testing.T) {

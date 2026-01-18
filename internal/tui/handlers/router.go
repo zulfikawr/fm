@@ -4,11 +4,11 @@ import (
 	"strings"
 	"time"
 
-	"fm/internal/constants"
-	"fm/internal/files/ops"
-	"fm/internal/ssh"
-	"fm/internal/tui/components/ui"
-	"fm/internal/tui/context"
+	"github.com/zulfikawr/fm/internal/constants"
+	"github.com/zulfikawr/fm/internal/files/ops"
+	"github.com/zulfikawr/fm/internal/ssh"
+	"github.com/zulfikawr/fm/internal/tui/components/ui"
+	"github.com/zulfikawr/fm/internal/tui/context"
 
 	tea "github.com/charmbracelet/bubbletea"
 )

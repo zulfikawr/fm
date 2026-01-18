@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"fm/internal/testutil"
+	"github.com/zulfikawr/fm/internal/testutil"
 )
 
 func TestInitializeApp_Local(t *testing.T) {

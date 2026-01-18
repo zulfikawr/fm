@@ -4,8 +4,8 @@ import (
 	"context"
 	"os"
 
-	"fm/internal/testutil"
-	tuictx "fm/internal/tui/context"
+	"github.com/zulfikawr/fm/internal/testutil"
+	tuictx "github.com/zulfikawr/fm/internal/tui/context"
 )
 
 // SetupTestApp creates a new App with a MockFileSystem and MockGitService for testing

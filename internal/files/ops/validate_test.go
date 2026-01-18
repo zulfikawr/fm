@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"fm/internal/testutil"
+	"github.com/zulfikawr/fm/internal/testutil"
 )
 
 func TestValidateFileName(t *testing.T) {

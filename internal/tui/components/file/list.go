@@ -3,10 +3,10 @@ package file
 import (
 	"strings"
 
-	"fm/internal/files/core"
-	"fm/internal/files/format"
-	"fm/internal/tui/components/ui"
-	"fm/internal/tui/theme"
+	"github.com/zulfikawr/fm/internal/files/core"
+	"github.com/zulfikawr/fm/internal/files/format"
+	"github.com/zulfikawr/fm/internal/tui/components/ui"
+	"github.com/zulfikawr/fm/internal/tui/theme"
 )
 
 // Props contains all data needed to render the file list

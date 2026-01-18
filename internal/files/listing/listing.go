@@ -4,9 +4,9 @@ import (
 	"context"
 	"strings"
 
-	"fm/internal/files/core"
-	"fm/internal/files/errors"
-	"fm/internal/files/sorting"
+	"github.com/zulfikawr/fm/internal/files/core"
+	"github.com/zulfikawr/fm/internal/files/errors"
+	"github.com/zulfikawr/fm/internal/files/sorting"
 )
 
 // LoadSkeleton reads only the directory entries without full stats.

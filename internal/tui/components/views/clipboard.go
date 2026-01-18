@@ -3,10 +3,10 @@ package views
 import (
 	"strings"
 
-	"fm/internal/files/core"
-	"fm/internal/tui/components/messages"
-	"fm/internal/tui/components/ui"
-	"fm/internal/tui/theme"
+	"github.com/zulfikawr/fm/internal/files/core"
+	"github.com/zulfikawr/fm/internal/tui/components/messages"
+	"github.com/zulfikawr/fm/internal/tui/components/ui"
+	"github.com/zulfikawr/fm/internal/tui/theme"
 )
 
 // ClipboardProps contains all data needed to render the clipboard view

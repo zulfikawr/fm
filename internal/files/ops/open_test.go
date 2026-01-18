@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"fm/internal/testutil"
+	"github.com/zulfikawr/fm/internal/testutil"
 )
 
 func TestIsTextFile(t *testing.T) {

@@ -1,12 +1,12 @@
 package handlers
 
 import (
-	"fm/internal/config"
-	"fm/internal/constants"
-	"fm/internal/files/format"
-	"fm/internal/logger"
-	tui_context "fm/internal/tui/context"
-	"fm/internal/tui/theme"
+	"github.com/zulfikawr/fm/internal/config"
+	"github.com/zulfikawr/fm/internal/constants"
+	"github.com/zulfikawr/fm/internal/files/format"
+	"github.com/zulfikawr/fm/internal/logger"
+	tui_context "github.com/zulfikawr/fm/internal/tui/context"
+	"github.com/zulfikawr/fm/internal/tui/theme"
 
 	tea "github.com/charmbracelet/bubbletea"
 )

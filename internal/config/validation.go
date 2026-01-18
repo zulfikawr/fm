@@ -3,7 +3,7 @@ package config
 import (
 	"fmt"
 
-	"fm/internal/constants"
+	"github.com/zulfikawr/fm/internal/constants"
 )
 
 // ValidationBounds holds the valid ranges for config fields

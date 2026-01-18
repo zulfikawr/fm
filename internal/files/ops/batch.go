@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"fm/internal/files/conflict"
-	"fm/internal/files/core"
+	"github.com/zulfikawr/fm/internal/files/conflict"
+	"github.com/zulfikawr/fm/internal/files/core"
 )
 
 // DeleteMultiple removes multiple files or directories recursively.

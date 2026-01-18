@@ -4,14 +4,14 @@ import (
 	"context"
 	"time"
 
-	"fm/internal/config"
-	"fm/internal/constants"
-	"fm/internal/files/core"
-	"fm/internal/files/sorting"
-	"fm/internal/git"
-	"fm/internal/ssh"
-	"fm/internal/tui/components/ui"
-	"fm/internal/tui/theme"
+	"github.com/zulfikawr/fm/internal/config"
+	"github.com/zulfikawr/fm/internal/constants"
+	"github.com/zulfikawr/fm/internal/files/core"
+	"github.com/zulfikawr/fm/internal/files/sorting"
+	"github.com/zulfikawr/fm/internal/git"
+	"github.com/zulfikawr/fm/internal/ssh"
+	"github.com/zulfikawr/fm/internal/tui/components/ui"
+	"github.com/zulfikawr/fm/internal/tui/theme"
 
 	"github.com/fsnotify/fsnotify"
 )

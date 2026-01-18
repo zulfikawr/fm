@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"fm/internal/constants"
+	"github.com/zulfikawr/fm/internal/constants"
 )
 
 func (gs *gitService) GetStatus(ctx context.Context, path string) (map[string]string, string) {

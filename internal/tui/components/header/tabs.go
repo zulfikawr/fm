@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"fm/internal/tui/theme"
+	"github.com/zulfikawr/fm/internal/tui/theme"
 )
 
 // TabConfig holds configuration for rendering tabs

@@ -8,7 +8,7 @@ import (
 	"runtime"
 	"testing"
 
-	"fm/internal/testutil"
+	"github.com/zulfikawr/fm/internal/testutil"
 )
 
 func TestLocalFS(t *testing.T) {

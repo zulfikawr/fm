@@ -1,7 +1,7 @@
 package header
 
 import (
-	"fm/internal/tui/theme"
+	"github.com/zulfikawr/fm/internal/tui/theme"
 )
 
 // TitleProps contains data for rendering the header title

@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"fm/internal/logger"
+	"github.com/zulfikawr/fm/internal/logger"
 
 	sshx "golang.org/x/crypto/ssh"
 	"golang.org/x/crypto/ssh/knownhosts"

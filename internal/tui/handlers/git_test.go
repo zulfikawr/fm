@@ -3,9 +3,9 @@ package handlers
 import (
 	"testing"
 
-	"fm/internal/files/core"
-	"fm/internal/testutil"
-	tuictx "fm/internal/tui/context"
+	"github.com/zulfikawr/fm/internal/files/core"
+	"github.com/zulfikawr/fm/internal/testutil"
+	tuictx "github.com/zulfikawr/fm/internal/tui/context"
 )
 
 func TestGit_StatusMsg(t *testing.T) {

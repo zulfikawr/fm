@@ -3,7 +3,7 @@ package ops
 import (
 	"sync"
 
-	"fm/internal/constants"
+	"github.com/zulfikawr/fm/internal/constants"
 )
 
 // bufferPool reuses memory buffers for I/O operations to reduce GC pressure

@@ -5,9 +5,9 @@ import (
 	"os"
 	"path/filepath"
 
-	"fm/internal/files/factory"
-	"fm/internal/tui"
-	"fm/internal/tui/context"
+	"github.com/zulfikawr/fm/internal/files/factory"
+	"github.com/zulfikawr/fm/internal/tui"
+	"github.com/zulfikawr/fm/internal/tui/context"
 )
 
 // InitializeApp sets up the filesystem and creates the TUI app.

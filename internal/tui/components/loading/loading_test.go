@@ -4,9 +4,9 @@ import (
 	"strings"
 	"testing"
 
-	"fm/internal/testutil"
-	"fm/internal/tui/components/ui"
-	"fm/internal/tui/theme"
+	"github.com/zulfikawr/fm/internal/testutil"
+	"github.com/zulfikawr/fm/internal/tui/components/ui"
+	"github.com/zulfikawr/fm/internal/tui/theme"
 )
 
 func TestRender(t *testing.T) {

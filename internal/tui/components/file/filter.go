@@ -3,8 +3,8 @@ package file
 import (
 	"strings"
 
-	"fm/internal/files/core"
-	tui_context "fm/internal/tui/context"
+	"github.com/zulfikawr/fm/internal/files/core"
+	tui_context "github.com/zulfikawr/fm/internal/tui/context"
 )
 
 // ApplyFilter filters the items based on the search query in the model

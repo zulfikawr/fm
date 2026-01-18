@@ -3,7 +3,7 @@ package git
 import (
 	"testing"
 
-	"fm/internal/testutil"
+	"github.com/zulfikawr/fm/internal/testutil"
 )
 
 func TestParseGitStatusPorcelain(t *testing.T) {

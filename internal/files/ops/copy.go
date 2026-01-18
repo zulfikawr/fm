@@ -6,11 +6,11 @@ import (
 	"io"
 	"sync"
 
-	"fm/internal/constants"
-	"fm/internal/files/conflict"
-	"fm/internal/files/core"
-	"fm/internal/files/errors"
-	"fm/internal/logger"
+	"github.com/zulfikawr/fm/internal/constants"
+	"github.com/zulfikawr/fm/internal/files/conflict"
+	"github.com/zulfikawr/fm/internal/files/core"
+	"github.com/zulfikawr/fm/internal/files/errors"
+	"github.com/zulfikawr/fm/internal/logger"
 
 	"golang.org/x/sync/errgroup"
 )

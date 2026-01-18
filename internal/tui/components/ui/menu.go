@@ -1,7 +1,7 @@
 package ui
 
 import (
-	"fm/internal/tui/theme"
+	"github.com/zulfikawr/fm/internal/tui/theme"
 )
 
 // SelectableRow renders a row that highlights when it is the active cursor position.

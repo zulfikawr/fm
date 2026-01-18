@@ -1,7 +1,7 @@
 package view
 
 import (
-	"fm/internal/tui/context"
+	"github.com/zulfikawr/fm/internal/tui/context"
 )
 
 // CalculateLayout computes heights for all UI areas based on current state

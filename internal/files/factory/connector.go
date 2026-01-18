@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"syscall"
 
-	"fm/internal/files/core"
-	"fm/internal/files/errors"
-	"fm/internal/files/local"
-	remotefs "fm/internal/files/remote"
-	"fm/internal/ssh"
+	"github.com/zulfikawr/fm/internal/files/core"
+	"github.com/zulfikawr/fm/internal/files/errors"
+	"github.com/zulfikawr/fm/internal/files/local"
+	remotefs "github.com/zulfikawr/fm/internal/files/remote"
+	"github.com/zulfikawr/fm/internal/ssh"
 
 	sshx "golang.org/x/crypto/ssh"
 	"golang.org/x/term"

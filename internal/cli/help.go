@@ -3,7 +3,7 @@ package cli
 import (
 	"fmt"
 
-	"fm/internal/tui/theme"
+	"github.com/zulfikawr/fm/internal/tui/theme"
 )
 
 // PrintHelp displays the help information to the console

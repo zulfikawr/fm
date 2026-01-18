@@ -4,9 +4,9 @@ import (
 	"strings"
 	"testing"
 
-	"fm/internal/files/core"
-	"fm/internal/testutil"
-	"fm/internal/tui/theme"
+	"github.com/zulfikawr/fm/internal/files/core"
+	"github.com/zulfikawr/fm/internal/testutil"
+	"github.com/zulfikawr/fm/internal/tui/theme"
 )
 
 func TestList_Render(t *testing.T) {

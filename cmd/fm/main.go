@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"os"
 
-	"fm/internal/bootstrap"
-	"fm/internal/cli"
-	"fm/internal/tui"
+	"github.com/zulfikawr/fm/internal/bootstrap"
+	"github.com/zulfikawr/fm/internal/cli"
+	"github.com/zulfikawr/fm/internal/tui"
 
 	tea "github.com/charmbracelet/bubbletea"
 )

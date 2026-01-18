@@ -1,7 +1,7 @@
 package handlers
 
 import (
-	tui_context "fm/internal/tui/context"
+	tui_context "github.com/zulfikawr/fm/internal/tui/context"
 
 	tea "github.com/charmbracelet/bubbletea"
 )

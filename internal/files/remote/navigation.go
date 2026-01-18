@@ -4,7 +4,7 @@ import (
 	"path"
 	"strings"
 
-	"fm/internal/files/errors"
+	"github.com/zulfikawr/fm/internal/files/errors"
 )
 
 func (fs *RemoteFS) Join(elem ...string) string {

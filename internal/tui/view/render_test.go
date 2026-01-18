@@ -4,8 +4,8 @@ import (
 	"strings"
 	"testing"
 
-	"fm/internal/testutil"
-	"fm/internal/tui/context"
+	"github.com/zulfikawr/fm/internal/testutil"
+	"github.com/zulfikawr/fm/internal/tui/context"
 )
 
 func TestRender_Modals(t *testing.T) {

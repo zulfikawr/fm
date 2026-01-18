@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"fm/internal/testutil"
+	"github.com/zulfikawr/fm/internal/testutil"
 )
 
 func TestDefaultConfig(t *testing.T) {

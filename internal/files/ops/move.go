@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"time"
 
-	"fm/internal/files/conflict"
-	"fm/internal/files/core"
-	"fm/internal/files/errors"
-	"fm/internal/logger"
+	"github.com/zulfikawr/fm/internal/files/conflict"
+	"github.com/zulfikawr/fm/internal/files/core"
+	"github.com/zulfikawr/fm/internal/files/errors"
+	"github.com/zulfikawr/fm/internal/logger"
 )
 
 // Move moves a file or directory. It tries Rename first, and falls back to Copy+Delete if Rename fails.

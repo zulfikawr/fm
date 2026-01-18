@@ -6,8 +6,8 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 
-	"fm/internal/testutil"
-	tuictx "fm/internal/tui/context"
+	"github.com/zulfikawr/fm/internal/testutil"
+	tuictx "github.com/zulfikawr/fm/internal/tui/context"
 )
 
 func TestLogs_Handler(t *testing.T) {

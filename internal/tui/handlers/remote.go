@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"strings"
 
-	"fm/internal/tui/components/ui"
-	tui_context "fm/internal/tui/context"
+	"github.com/zulfikawr/fm/internal/tui/components/ui"
+	tui_context "github.com/zulfikawr/fm/internal/tui/context"
 
 	tea "github.com/charmbracelet/bubbletea"
 )

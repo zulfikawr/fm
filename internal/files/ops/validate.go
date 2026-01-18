@@ -4,9 +4,9 @@ import (
 	"context"
 	"strings"
 
-	"fm/internal/constants"
-	"fm/internal/files/core"
-	"fm/internal/files/errors"
+	"github.com/zulfikawr/fm/internal/constants"
+	"github.com/zulfikawr/fm/internal/files/core"
+	"github.com/zulfikawr/fm/internal/files/errors"
 )
 
 // ValidatePath checks if a path is safe and doesn't contain traversal attempts

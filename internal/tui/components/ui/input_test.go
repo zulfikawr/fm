@@ -3,7 +3,7 @@ package ui
 import (
 	"testing"
 
-	"fm/internal/tui/theme"
+	"github.com/zulfikawr/fm/internal/tui/theme"
 )
 
 func TestInput_Reset(t *testing.T) {

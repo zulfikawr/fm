@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"fm/internal/files/sorting"
-	"fm/internal/testutil"
+	"github.com/zulfikawr/fm/internal/files/sorting"
+	"github.com/zulfikawr/fm/internal/testutil"
 )
 
 func TestLoad(t *testing.T) {

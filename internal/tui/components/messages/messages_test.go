@@ -4,9 +4,9 @@ import (
 	"strings"
 	"testing"
 
-	"fm/internal/constants"
-	"fm/internal/testutil"
-	"fm/internal/tui/theme"
+	"github.com/zulfikawr/fm/internal/constants"
+	"github.com/zulfikawr/fm/internal/testutil"
+	"github.com/zulfikawr/fm/internal/tui/theme"
 
 	"github.com/charmbracelet/lipgloss"
 	"github.com/muesli/termenv"

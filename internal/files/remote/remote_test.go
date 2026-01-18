@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
-	"fm/internal/files/core"
-	"fm/internal/testutil"
+	"github.com/zulfikawr/fm/internal/files/core"
+	"github.com/zulfikawr/fm/internal/testutil"
 
 	"github.com/pkg/sftp"
 )

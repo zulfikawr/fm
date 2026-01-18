@@ -5,7 +5,7 @@ import (
 	"os/exec"
 	"strings"
 
-	"fm/internal/constants"
+	"github.com/zulfikawr/fm/internal/constants"
 )
 
 func (gs *gitService) GetRoot(ctx context.Context, path string) string {

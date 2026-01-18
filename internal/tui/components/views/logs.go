@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"strings"
 
-	"fm/internal/tui/components/messages"
-	tui_context "fm/internal/tui/context"
-	"fm/internal/tui/theme"
+	"github.com/zulfikawr/fm/internal/tui/components/messages"
+	tui_context "github.com/zulfikawr/fm/internal/tui/context"
+	"github.com/zulfikawr/fm/internal/tui/theme"
 
 	"github.com/charmbracelet/lipgloss"
 )

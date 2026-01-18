@@ -9,10 +9,10 @@ import (
 	"path/filepath"
 	"testing"
 
-	"fm/internal/files/conflict"
-	"fm/internal/files/core"
-	"fm/internal/files/local"
-	"fm/internal/testutil"
+	"github.com/zulfikawr/fm/internal/files/conflict"
+	"github.com/zulfikawr/fm/internal/files/core"
+	"github.com/zulfikawr/fm/internal/files/local"
+	"github.com/zulfikawr/fm/internal/testutil"
 )
 
 func TestZipUnzip(t *testing.T) {

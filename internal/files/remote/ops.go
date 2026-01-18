@@ -7,7 +7,7 @@ import (
 	"os"
 	"path"
 
-	"fm/internal/files/errors"
+	"github.com/zulfikawr/fm/internal/files/errors"
 )
 
 func (fs *RemoteFS) ReadDirEntries(ctx context.Context, p string) ([]os.DirEntry, error) {

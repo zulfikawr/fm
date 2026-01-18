@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"fm/internal/testutil"
+	"github.com/zulfikawr/fm/internal/testutil"
 )
 
 func TestFuzzyMatch(t *testing.T) {

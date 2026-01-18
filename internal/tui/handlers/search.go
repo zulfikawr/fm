@@ -4,8 +4,8 @@ import (
 	"context"
 	"time"
 
-	"fm/internal/files/ops"
-	tui_context "fm/internal/tui/context"
+	"github.com/zulfikawr/fm/internal/files/ops"
+	tui_context "github.com/zulfikawr/fm/internal/tui/context"
 
 	tea "github.com/charmbracelet/bubbletea"
 )

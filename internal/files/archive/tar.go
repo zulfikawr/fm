@@ -8,7 +8,7 @@ import (
 	"os"
 	"strings"
 
-	"fm/internal/files/errors"
+	"github.com/zulfikawr/fm/internal/files/errors"
 )
 
 // TarFS implements FileSystem for a tar archive.

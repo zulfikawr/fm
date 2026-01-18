@@ -9,7 +9,7 @@ import (
 	"os"
 	"testing"
 
-	"fm/internal/testutil"
+	"github.com/zulfikawr/fm/internal/testutil"
 )
 
 func createTestZip(t *testing.T) string {

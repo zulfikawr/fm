@@ -8,9 +8,9 @@ import (
 	"path/filepath"
 	"time"
 
-	"fm/internal/constants"
-	"fm/internal/files/core"
-	"fm/internal/files/errors"
+	"github.com/zulfikawr/fm/internal/constants"
+	"github.com/zulfikawr/fm/internal/files/core"
+	"github.com/zulfikawr/fm/internal/files/errors"
 
 	"golang.org/x/sync/errgroup"
 )

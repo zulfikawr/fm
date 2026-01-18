@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"strings"
 
-	"fm/internal/files/core"
-	"fm/internal/tui/components/loading"
-	"fm/internal/tui/components/ui"
-	"fm/internal/tui/theme"
+	"github.com/zulfikawr/fm/internal/files/core"
+	"github.com/zulfikawr/fm/internal/tui/components/loading"
+	"github.com/zulfikawr/fm/internal/tui/components/ui"
+	"github.com/zulfikawr/fm/internal/tui/theme"
 
 	"github.com/charmbracelet/lipgloss"
 )

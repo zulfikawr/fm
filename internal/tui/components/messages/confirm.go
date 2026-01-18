@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"fm/internal/constants"
+	"github.com/zulfikawr/fm/internal/constants"
 )
 
 // RenderConfirmationPrompt renders confirmation prompts

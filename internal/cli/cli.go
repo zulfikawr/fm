@@ -4,8 +4,8 @@ import (
 	"flag"
 	"os"
 
-	"fm/internal/config"
-	"fm/internal/tui/theme"
+	"github.com/zulfikawr/fm/internal/config"
+	"github.com/zulfikawr/fm/internal/tui/theme"
 )
 
 // Args contains the parsed command line arguments

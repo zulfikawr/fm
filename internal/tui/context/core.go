@@ -3,10 +3,10 @@ package context
 import (
 	"time"
 
-	"fm/internal/files/core"
-	"fm/internal/files/sorting"
-	"fm/internal/tui/components/ui"
-	"fm/internal/tui/theme"
+	"github.com/zulfikawr/fm/internal/files/core"
+	"github.com/zulfikawr/fm/internal/files/sorting"
+	"github.com/zulfikawr/fm/internal/tui/components/ui"
+	"github.com/zulfikawr/fm/internal/tui/theme"
 )
 
 // --- Navigation State ---

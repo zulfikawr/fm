@@ -3,8 +3,8 @@ package view
 import (
 	"testing"
 
-	"fm/internal/testutil"
-	"fm/internal/tui/context"
+	"github.com/zulfikawr/fm/internal/testutil"
+	"github.com/zulfikawr/fm/internal/tui/context"
 )
 
 func TestCalculateLayout(t *testing.T) {

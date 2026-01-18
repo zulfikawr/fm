@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"fm/internal/files/conflict"
-	"fm/internal/files/core"
-	"fm/internal/files/errors"
+	"github.com/zulfikawr/fm/internal/files/conflict"
+	"github.com/zulfikawr/fm/internal/files/core"
+	"github.com/zulfikawr/fm/internal/files/errors"
 )
 
 // Rename renames a file or directory.

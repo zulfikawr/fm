@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"fm/internal/testutil"
+	"github.com/zulfikawr/fm/internal/testutil"
 )
 
 func TestGitService_GetRoot(t *testing.T) {

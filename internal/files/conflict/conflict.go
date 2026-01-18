@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"strings"
 
-	"fm/internal/files/core"
-	"fm/internal/files/errors"
+	"github.com/zulfikawr/fm/internal/files/core"
+	"github.com/zulfikawr/fm/internal/files/errors"
 )
 
 // Policy defines how to handle existing destination files

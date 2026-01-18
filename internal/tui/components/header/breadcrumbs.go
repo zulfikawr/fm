@@ -3,7 +3,7 @@ package header
 import (
 	"strings"
 
-	"fm/internal/tui/theme"
+	"github.com/zulfikawr/fm/internal/tui/theme"
 )
 
 func renderBreadcrumbPath(path, separator string, remoteStr string, rootOverride string, styles theme.Stylesheet) string {

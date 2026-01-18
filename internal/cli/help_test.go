@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"fm/internal/tui/theme"
+	"github.com/zulfikawr/fm/internal/tui/theme"
 )
 
 func TestPrintHelp(t *testing.T) {

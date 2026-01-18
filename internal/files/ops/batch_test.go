@@ -8,9 +8,9 @@ import (
 	"strings"
 	"testing"
 
-	"fm/internal/files/conflict"
-	"fm/internal/files/core"
-	"fm/internal/testutil"
+	"github.com/zulfikawr/fm/internal/files/conflict"
+	"github.com/zulfikawr/fm/internal/files/core"
+	"github.com/zulfikawr/fm/internal/testutil"
 )
 
 func TestDeleteMultiple(t *testing.T) {

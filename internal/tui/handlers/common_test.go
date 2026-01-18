@@ -4,10 +4,10 @@ import (
 	"errors"
 	"testing"
 
-	"fm/internal/files/core"
-	"fm/internal/testutil"
-	tuictx "fm/internal/tui/context"
-	tuierrors "fm/internal/tui/errors"
+	"github.com/zulfikawr/fm/internal/files/core"
+	"github.com/zulfikawr/fm/internal/testutil"
+	tuictx "github.com/zulfikawr/fm/internal/tui/context"
+	tuierrors "github.com/zulfikawr/fm/internal/tui/errors"
 )
 
 func TestCommon_Helpers(t *testing.T) {

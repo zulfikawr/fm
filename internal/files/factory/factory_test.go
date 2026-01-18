@@ -7,9 +7,9 @@ import (
 	"strings"
 	"testing"
 
-	"fm/internal/files/core"
-	"fm/internal/ssh"
-	"fm/internal/testutil"
+	"github.com/zulfikawr/fm/internal/files/core"
+	"github.com/zulfikawr/fm/internal/ssh"
+	"github.com/zulfikawr/fm/internal/testutil"
 
 	sshx "golang.org/x/crypto/ssh"
 )

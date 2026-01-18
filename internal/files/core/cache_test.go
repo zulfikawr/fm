@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"fm/internal/testutil"
+	"github.com/zulfikawr/fm/internal/testutil"
 )
 
 func TestMetadataCache(t *testing.T) {

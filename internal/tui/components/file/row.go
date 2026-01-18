@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"strings"
 
-	"fm/internal/files/core"
-	"fm/internal/tui/components/ui"
+	"github.com/zulfikawr/fm/internal/files/core"
+	"github.com/zulfikawr/fm/internal/tui/components/ui"
 )
 
 // renderRow renders a single row in the file list

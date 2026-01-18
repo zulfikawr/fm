@@ -5,9 +5,9 @@ import (
 	"testing"
 	"time"
 
-	"fm/internal/ssh"
-	"fm/internal/testutil"
-	tuictx "fm/internal/tui/context"
+	"github.com/zulfikawr/fm/internal/ssh"
+	"github.com/zulfikawr/fm/internal/testutil"
+	tuictx "github.com/zulfikawr/fm/internal/tui/context"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
