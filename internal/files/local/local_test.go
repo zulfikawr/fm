@@ -151,7 +151,7 @@ func TestLocalFS(t *testing.T) {
 		testutil.AssertNoError(t, err, "IsReadOnly should succeed")
 		testutil.AssertEqual(t, false, ro, "tempDir should not be read-only")
 
-		if runtime.GOOS != "windows" {
+		if runtime.GOOS != "windows" && os.Getuid() != 0 {
 			path := tmp.WriteFile("ro_file.txt", "")
 			os.Chmod(path, 0400) // Read-only
 			ro, err = fs.IsReadOnly(ctx, path)
