@@ -9,6 +9,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	"fm/internal/logger"
+
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/crypto/ssh/knownhosts"
 )
@@ -126,9 +128,13 @@ func GetHostKeyCallback(askChan chan<- *HostConfirmRequest) (ssh.HostKeyCallback
 	knownHostsPath := filepath.Join(sshDir, "known_hosts")
 
 	// Ensure directory exists
-	_ = os.MkdirAll(sshDir, 0o700)
+	if err := os.MkdirAll(sshDir, 0o700); err != nil {
+		logger.Warnf("Failed to create SSH directory: %v", err)
+	}
 	if _, err := os.Stat(knownHostsPath); os.IsNotExist(err) {
-		_ = os.WriteFile(knownHostsPath, []byte{}, 0o600)
+		if err := os.WriteFile(knownHostsPath, []byte{}, 0o600); err != nil {
+			logger.Warnf("Failed to create known_hosts file: %v", err)
+		}
 	}
 
 	cb, err := knownhosts.New(knownHostsPath)

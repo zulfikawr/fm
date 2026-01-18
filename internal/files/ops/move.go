@@ -8,6 +8,7 @@ import (
 	"fm/internal/files/conflict"
 	"fm/internal/files/core"
 	"fm/internal/files/errors"
+	"fm/internal/logger"
 )
 
 // Move moves a file or directory. It tries Rename first, and falls back to Copy+Delete if Rename fails.
@@ -37,7 +38,9 @@ func CrossMove(ctx context.Context, srcFS, dstFS core.FileSystem, src, dst strin
 		return nil // Skip
 	}
 	if resolvedPath == dst && policy == conflict.Overwrite {
-		_ = dstFS.RemoveAll(ctx, dst)
+		if err := dstFS.RemoveAll(ctx, dst); err != nil {
+			logger.Warnf("Failed to remove existing item for overwrite: %v", err)
+		}
 	}
 	dst = resolvedPath
 
@@ -68,13 +71,17 @@ func CrossMove(ctx context.Context, srcFS, dstFS core.FileSystem, src, dst strin
 
 	// 2. Fallback for cross-device/FS moves: Copy then Delete
 	if err := CrossCopy(ctx, srcFS, dstFS, src, dst, progChan, conflict.Overwrite); err != nil {
-		_ = dstFS.RemoveAll(ctx, dst)
+		if cleanupErr := dstFS.RemoveAll(ctx, dst); cleanupErr != nil {
+			logger.Warnf("Failed to clean up destination after failed move: %v", cleanupErr)
+		}
 		return err
 	}
 
 	// 3. Verify the copy was successful
 	if err := verifyCrossMove(ctx, srcFS, dstFS, src, dst); err != nil {
-		_ = dstFS.RemoveAll(ctx, dst)
+		if cleanupErr := dstFS.RemoveAll(ctx, dst); cleanupErr != nil {
+			logger.Warnf("Failed to clean up destination after failed move verification: %v", cleanupErr)
+		}
 		return errors.WrapErrorWithPath(fmt.Errorf("move verification failed: %w", err), "CrossMove", src)
 	}
 

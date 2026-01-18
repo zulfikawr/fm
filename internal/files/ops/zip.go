@@ -12,6 +12,7 @@ import (
 	"fm/internal/files/conflict"
 	"fm/internal/files/core"
 	"fm/internal/files/errors"
+	"fm/internal/logger"
 )
 
 // Zip compresses multiple files or directories into a single zip archive.
@@ -278,7 +279,9 @@ func Unzip(ctx context.Context, fs core.FileSystem, src, dst string, progChan ch
 				continue // Skip
 			}
 			if resolvedPath == fpath && policy == conflict.Overwrite {
-				_ = fs.RemoveAll(ctx, fpath)
+				if err := fs.RemoveAll(ctx, fpath); err != nil {
+					logger.Warnf("Failed to remove existing file for unzip overwrite: %v", err)
+				}
 			}
 			fpath = resolvedPath
 
@@ -308,7 +311,9 @@ func Unzip(ctx context.Context, fs core.FileSystem, src, dst string, progChan ch
 				return errors.WrapErrorWithPath(err, "CopyExtract", fpath)
 			}
 
-			_ = fs.Chmod(ctx, fpath, f.Mode())
+			if err := fs.Chmod(ctx, fpath, f.Mode()); err != nil {
+				logger.Warnf("Failed to set permissions on extracted file %s: %v", fpath, err)
+			}
 		}
 
 		processedFiles++

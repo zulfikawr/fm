@@ -14,6 +14,7 @@ import (
 	"fm/internal/files/local"
 	"fm/internal/files/ops"
 	"fm/internal/files/sorting"
+	"fm/internal/logger"
 	"fm/internal/tui/components/file"
 	tui_context "fm/internal/tui/context"
 
@@ -129,7 +130,9 @@ func fetchMetadata(m *tui_context.Model) tea.Cmd {
 			})
 		}
 
-		_ = g.Wait()
+		if err := g.Wait(); err != nil {
+			logger.Debugf("Error fetching priority metadata: %v", err)
+		}
 
 		// 3. Fetch the rest in the background
 		g, ctx = errgroup.WithContext(ctx)
@@ -156,9 +159,14 @@ func fetchMetadata(m *tui_context.Model) tea.Cmd {
 			})
 		}
 
-		_ = g.Wait()
+		if err := g.Wait(); err != nil {
+			logger.Debugf("Error fetching remaining metadata: %v", err)
+		}
 
-		ro, _ := fs.IsReadOnly(ctx, path)
+		ro, err := fs.IsReadOnly(ctx, path)
+		if err != nil {
+			logger.Debugf("Failed to check if path %s is read-only: %v", path, err)
+		}
 
 		return LoadedItemsMsg{
 			Generation: gen,
@@ -820,7 +828,9 @@ func WatchDirAction(m *tui_context.Model) tea.Cmd {
 	// Update the watched directory if it changed
 	if m.Watcher.LastWatched != m.Navigation.Path {
 		if m.Watcher.LastWatched != "" {
-			_ = m.Watcher.Watcher.Remove(m.Watcher.LastWatched)
+			if err := m.Watcher.Watcher.Remove(m.Watcher.LastWatched); err != nil {
+				logger.Debugf("Failed to remove directory from watcher: %v", err)
+			}
 		}
 		if err := m.Watcher.Watcher.Add(m.Navigation.Path); err != nil {
 			return nil

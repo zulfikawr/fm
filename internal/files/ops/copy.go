@@ -10,6 +10,7 @@ import (
 	"fm/internal/files/conflict"
 	"fm/internal/files/core"
 	"fm/internal/files/errors"
+	"fm/internal/logger"
 
 	"golang.org/x/sync/errgroup"
 )
@@ -49,7 +50,9 @@ func CrossCopy(ctx context.Context, srcFS, dstFS core.FileSystem, src, dst strin
 		return nil // Skip
 	}
 	if resolvedPath == dst && policy == conflict.Overwrite {
-		_ = dstFS.RemoveAll(ctx, dst)
+		if err := dstFS.RemoveAll(ctx, dst); err != nil {
+			logger.Warnf("Failed to remove existing item for overwrite: %v", err)
+		}
 	}
 	dst = resolvedPath
 
@@ -100,13 +103,17 @@ func crossCopyFile(ctx context.Context, srcFS, dstFS core.FileSystem, src, dst s
 
 	// Pre-allocate disk space if destination supports it
 	if !info.IsDir() {
-		_ = dstFS.Preallocate(ctx, dst, info.Size())
+		if err := dstFS.Preallocate(ctx, dst, info.Size()); err != nil {
+			logger.Debugf("Preallocate not supported or failed: %v", err)
+		}
 	}
 
 	in, err := srcFS.Open(ctx, src)
 	if err != nil {
 		out.Close()
-		_ = dstFS.RemoveAll(ctx, dst) // Clean up partial file
+		if err := dstFS.RemoveAll(ctx, dst); err != nil {
+			logger.Warnf("Failed to clean up partial file %s: %v", dst, err)
+		}
 		return errors.WrapErrorWithPath(err, "Open", src)
 	}
 	defer in.Close()
@@ -133,7 +140,9 @@ func crossCopyFile(ctx context.Context, srcFS, dstFS core.FileSystem, src, dst s
 
 	if err != nil {
 		out.Close()
-		_ = dstFS.RemoveAll(ctx, dst) // Clean up partial file
+		if err := dstFS.RemoveAll(ctx, dst); err != nil {
+			logger.Warnf("Failed to clean up partial file %s: %v", dst, err)
+		}
 		return errors.WrapErrorWithPath(err, "CrossCopyFile", fmt.Sprintf("%s -> %s", src, dst))
 	}
 

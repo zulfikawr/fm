@@ -2,9 +2,10 @@ package config
 
 import (
 	"encoding/json"
-	"fmt"
 	"os"
 	"path/filepath"
+
+	"fm/internal/logger"
 )
 
 // Config holds the user preferences.
@@ -87,13 +88,13 @@ func Load() Config {
 
 	cfg := DefaultConfig()
 	if err := json.Unmarshal(data, &cfg); err != nil {
-		fmt.Fprintf(os.Stderr, "config parse failed: %s: %v\n", path, err)
+		logger.Warnf("config parse failed: %s: %v, using defaults", path, err)
 		return DefaultConfig()
 	}
 
 	// Validate and migrate if needed
 	if err := cfg.Validate(); err != nil {
-		fmt.Fprintf(os.Stderr, "config validation failed: %v, using defaults\n", err)
+		logger.Warnf("config validation failed: %v, using defaults", err)
 		return DefaultConfig()
 	}
 
@@ -105,7 +106,9 @@ func Load() Config {
 		} else {
 			cfg.ConfigVersion = CurrentConfigVersion
 		}
-		_ = cfg.Save()
+		if err := cfg.Save(); err != nil {
+			logger.Errorf("Failed to save migrated config: %v", err)
+		}
 	}
 
 	return cfg

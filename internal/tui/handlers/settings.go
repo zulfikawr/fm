@@ -4,6 +4,7 @@ import (
 	"fm/internal/config"
 	"fm/internal/constants"
 	"fm/internal/files/format"
+	"fm/internal/logger"
 	tui_context "fm/internal/tui/context"
 	"fm/internal/tui/theme"
 
@@ -149,7 +150,9 @@ func toggleSetting(idx int, m *tui_context.Model) bool {
 		// Update spinner style for the new theme
 		m.Display.LoadingSpinner.Style = m.Display.LoadingSpinner.Style.Foreground(theme.Themes[cfg.ThemeIndex].Dir)
 	}
-	_ = cfg.Save()
+	if err := cfg.Save(); err != nil {
+		logger.Errorf("Failed to save config: %v", err)
+	}
 	return reload
 }
 
@@ -161,13 +164,17 @@ func toggleSettingPrev(idx int, m *tui_context.Model) bool {
 	case 9:
 		if cfg.ShowSize {
 			cfg.SizeFormatIndex = (cfg.SizeFormatIndex - 1 + len(format.SizeFormats)) % len(format.SizeFormats)
-			_ = cfg.Save()
+			if err := cfg.Save(); err != nil {
+				logger.Errorf("Failed to save config: %v", err)
+			}
 			return true
 		}
 	case 11:
 		if cfg.ShowDateModified {
 			cfg.DateFormatIndex = (cfg.DateFormatIndex - 1 + len(format.DateFormats)) % len(format.DateFormats)
-			_ = cfg.Save()
+			if err := cfg.Save(); err != nil {
+				logger.Errorf("Failed to save config: %v", err)
+			}
 			return true
 		}
 	case 12:
@@ -179,14 +186,18 @@ func toggleSettingPrev(idx int, m *tui_context.Model) bool {
 	default:
 		return toggleSetting(idx, m)
 	}
-	_ = cfg.Save()
+	if err := cfg.Save(); err != nil {
+		logger.Errorf("Failed to save config: %v", err)
+	}
 	return false
 }
 
 // ConfirmSettingsReset resets all settings to defaults
 func ConfirmSettingsReset(m *tui_context.Model) tea.Cmd {
 	m.Config = config.DefaultConfig()
-	_ = m.Config.Save()
+	if err := m.Config.Save(); err != nil {
+		logger.Errorf("Failed to save config: %v", err)
+	}
 	m.Display.Styles = theme.GetStylesheet(m.Config.ThemeIndex)
 	m.UI.StopConfirming()
 	m.Operations.ActionType = ""

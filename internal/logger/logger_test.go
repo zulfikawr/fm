@@ -13,10 +13,10 @@ func TestLogger(t *testing.T) {
 	SetLogger(mock)
 
 	Info("test info message")
-	mock.AssertLogContains(t, "INFO", "test info message")
+	mock.AssertLogContains(t, LevelInfo, "test info message")
 
 	Error("test error message")
-	mock.AssertLogContains(t, "ERROR", "test error message")
+	mock.AssertLogContains(t, LevelError, "test error message")
 }
 
 func TestFileLogger(t *testing.T) {
@@ -32,7 +32,7 @@ func TestFileLogger(t *testing.T) {
 	SetLogger(realLogger)
 
 	msg := "test log entry"
-	Log("TEST", msg)
+	Log(LevelDebug, msg)
 
 	content, err := os.ReadFile(logPath)
 	testutil.AssertNoError(t, err, "Log file should be readable")

@@ -12,6 +12,7 @@ import (
 	"fm/internal/files/core"
 	"fm/internal/files/local"
 	remotefs "fm/internal/files/remote"
+	"fm/internal/logger"
 	"fm/internal/sshutil"
 
 	"golang.org/x/crypto/ssh"
@@ -103,7 +104,7 @@ func CreateFileSystemWithConnector(remoteStr string, args []string, conn FileSys
 		keyPath = args[0]
 	}
 
-	fmt.Printf("Connecting to %s@%s...\n", user, host)
+	logger.Infof("Connecting to %s@%s...", user, host)
 
 	// Create CLI host key callback (blocking)
 	hkcb, err := conn.CreateHostKeyCallback()
@@ -154,9 +155,13 @@ func createHostKeyCallback() (ssh.HostKeyCallback, error) {
 	knownHostsPath := filepath.Join(sshDir, "known_hosts")
 
 	// Ensure directory exists
-	_ = os.MkdirAll(sshDir, 0o700)
+	if err := os.MkdirAll(sshDir, 0o700); err != nil {
+		logger.Warnf("Failed to create SSH directory: %v", err)
+	}
 	if _, err := os.Stat(knownHostsPath); os.IsNotExist(err) {
-		_ = os.WriteFile(knownHostsPath, []byte{}, 0o600)
+		if err := os.WriteFile(knownHostsPath, []byte{}, 0o600); err != nil {
+			logger.Warnf("Failed to create known_hosts file: %v", err)
+		}
 	}
 
 	cb, err := knownhosts.New(knownHostsPath)
