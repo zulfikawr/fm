@@ -178,7 +178,7 @@ func createHostKeyCallback() (ssh.HostKeyCallback, error) {
 				fmt.Print("Are you sure you want to continue connecting [y] Yes [n] No? ")
 
 				var response string
-				fmt.Scanln(&response)
+				_, _ = fmt.Scanln(&response)
 				if strings.ToLower(response) == "y" || strings.ToLower(response) == "yes" {
 					// Add to known_hosts
 					return sshutil.AddToKnownHosts(hostname, remote, key)

@@ -50,7 +50,7 @@ func TestClipboard_Handler(t *testing.T) {
 		}
 	})
 
-	tm.Quit()
+	_ = tm.Quit()
 }
 
 func TestScrollClipboard(t *testing.T) {

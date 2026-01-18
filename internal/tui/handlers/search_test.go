@@ -99,5 +99,5 @@ func TestSearch_Keys(t *testing.T) {
 		t.Error("expected results to be collapsed after tab")
 	}
 
-	tm.Quit()
+	_ = tm.Quit()
 }

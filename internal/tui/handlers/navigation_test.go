@@ -45,7 +45,7 @@ func TestNavigation_Basic(t *testing.T) {
 		t.Errorf("expected cursor at 0, got %d", m.Navigation.Cursor)
 	}
 
-	tm.Quit()
+	_ = tm.Quit()
 }
 
 func TestNavigation_Deep(t *testing.T) {
@@ -81,7 +81,7 @@ func TestNavigation_Deep(t *testing.T) {
 		t.Errorf("expected path to return to /test, got %s", m.Navigation.Path)
 	}
 
-	tm.Quit()
+	_ = tm.Quit()
 }
 
 func TestNavigation_Tabs(t *testing.T) {
@@ -111,7 +111,7 @@ func TestNavigation_Tabs(t *testing.T) {
 		t.Errorf("expected 1 tab, got %d", len(m.Tabs))
 	}
 
-	tm.Quit()
+	_ = tm.Quit()
 }
 
 func TestNavigation_Selection(t *testing.T) {
@@ -129,7 +129,7 @@ func TestNavigation_Selection(t *testing.T) {
 	// Toggle selection on first item
 	tm.Send(tea.KeyMsg{Type: tea.KeySpace})
 	time.Sleep(10 * time.Millisecond)
-	tm.Quit()
+	_ = tm.Quit()
 }
 
 func TestNavigation_SelectAll(t *testing.T) {
@@ -168,7 +168,7 @@ func TestNavigation_SelectAll(t *testing.T) {
 		t.Errorf("expected SelectMode to be false after Esc")
 	}
 
-	tm.Quit()
+	_ = tm.Quit()
 }
 
 func TestNavigation_SelectAllWithFilter(t *testing.T) {
@@ -217,7 +217,7 @@ func TestNavigation_SelectAllWithFilter(t *testing.T) {
 		t.Errorf("expected 0 selected items after second Esc, got %d", m.Navigation.SelectedCount)
 	}
 
-	tm.Quit()
+	_ = tm.Quit()
 }
 
 func TestNavigation_Memory(t *testing.T) {
@@ -275,5 +275,5 @@ func TestNavigation_Memory(t *testing.T) {
 	if m.Navigation.Cursor != 1 {
 		t.Errorf("expected cursor to be restored to 1, got %d", m.Navigation.Cursor)
 	}
-	tm.Quit()
+	_ = tm.Quit()
 }

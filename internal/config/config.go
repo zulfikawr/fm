@@ -105,7 +105,7 @@ func Load() Config {
 		} else {
 			cfg.ConfigVersion = CurrentConfigVersion
 		}
-		cfg.Save()
+		_ = cfg.Save()
 	}
 
 	return cfg

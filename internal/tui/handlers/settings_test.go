@@ -42,7 +42,7 @@ func TestSettings_Keys(t *testing.T) {
 	// 3. Test Close (Esc)
 	tm.Send(tea.KeyMsg{Type: tea.KeyEsc})
 
-	tm.Quit()
+	_ = tm.Quit()
 
 	finalModel := tm.FinalModel(t).(*testModelWrapper).m
 	if !finalModel.Config.CaseSensitive {

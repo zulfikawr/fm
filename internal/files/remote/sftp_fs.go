@@ -182,11 +182,7 @@ func (s *SftpFS) keepAlive() {
 
 			if conn != nil {
 				// Send a global request as a keep-alive heartbeat
-				_, _, err := conn.SendRequest("keepalive@openssh.com", true, nil)
-				if err != nil {
-					// Connection might be dead, but let runWithRetry handle the actual reconnection
-					// when a real operation is attempted.
-				}
+				_, _, _ = conn.SendRequest("keepalive@openssh.com", true, nil)
 			}
 		}
 	}

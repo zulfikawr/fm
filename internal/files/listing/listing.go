@@ -78,10 +78,6 @@ func Load(ctx context.Context, fs core.FileSystem, path string, mode sorting.Sor
 		info, statErr := fs.Stat(ctx, items[i].Path)
 		if statErr == nil {
 			items[i] = core.NewItem(info, items[i].Path, items[i].GitStatus)
-		} else {
-			// If stat fails, we still mark it as "metadata present" (even if empty)
-			// to avoid infinite retry loops, or we can leave it as skeleton.
-			// Let's leave it as skeleton for now.
 		}
 	}
 

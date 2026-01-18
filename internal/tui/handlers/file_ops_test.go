@@ -36,7 +36,7 @@ func TestFileOps_Clipboard(t *testing.T) {
 		t.Error("expected clipboard to be in Cut mode")
 	}
 
-	tm.Quit()
+	_ = tm.Quit()
 }
 
 func TestFileOps_DeleteConfirm(t *testing.T) {
@@ -64,7 +64,7 @@ func TestFileOps_DeleteConfirm(t *testing.T) {
 		t.Error("expected UI to stop confirming after 'n'")
 	}
 
-	tm.Quit()
+	_ = tm.Quit()
 }
 
 func TestFileOps_Rename(t *testing.T) {
@@ -89,5 +89,5 @@ func TestFileOps_Rename(t *testing.T) {
 		t.Errorf("expected input to be old.txt, got %q", m.Inputs.ActiveInput.Value())
 	}
 
-	tm.Quit()
+	_ = tm.Quit()
 }

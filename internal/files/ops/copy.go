@@ -100,15 +100,13 @@ func crossCopyFile(ctx context.Context, srcFS, dstFS core.FileSystem, src, dst s
 
 	// Pre-allocate disk space if destination supports it
 	if !info.IsDir() {
-		if err := dstFS.Preallocate(ctx, dst, info.Size()); err != nil {
-			// Some filesystems (like SFTP) might not support preallocate, we continue anyway
-		}
+		_ = dstFS.Preallocate(ctx, dst, info.Size())
 	}
 
 	in, err := srcFS.Open(ctx, src)
 	if err != nil {
 		out.Close()
-		dstFS.RemoveAll(ctx, dst) // Clean up partial file
+		_ = dstFS.RemoveAll(ctx, dst) // Clean up partial file
 		return errors.WrapErrorWithPath(err, "Open", src)
 	}
 	defer in.Close()
@@ -135,7 +133,7 @@ func crossCopyFile(ctx context.Context, srcFS, dstFS core.FileSystem, src, dst s
 
 	if err != nil {
 		out.Close()
-		dstFS.RemoveAll(ctx, dst) // Clean up partial file
+		_ = dstFS.RemoveAll(ctx, dst) // Clean up partial file
 		return errors.WrapErrorWithPath(err, "CrossCopyFile", fmt.Sprintf("%s -> %s", src, dst))
 	}
 

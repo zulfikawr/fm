@@ -69,9 +69,9 @@ func NewInput(styles theme.Stylesheet) Input {
 		EchoMode:         EchoNormal,
 		EchoCharacter:    '*',
 		Cursor:           Cursor{Style: lipgloss.NewStyle().Background(primary).Foreground(bg)},
-		TextStyle:        styles.Footer.Copy().UnsetPadding().UnsetWidth().Background(bg),
-		PromptStyle:      styles.Footer.Copy().UnsetPadding().UnsetWidth().Background(bg),
-		PlaceholderStyle: styles.DimCol.Copy().Background(bg),
+		TextStyle:        styles.Footer.UnsetPadding().UnsetWidth().Background(bg),
+		PromptStyle:      styles.Footer.UnsetPadding().UnsetWidth().Background(bg),
+		PlaceholderStyle: styles.DimCol.Background(bg),
 	}
 }
 
@@ -151,9 +151,9 @@ func (i *Input) SetStyles(styles theme.Stylesheet) {
 	if primary == nil {
 		primary = lipgloss.Color("15")
 	}
-	i.TextStyle = styles.Footer.Copy().UnsetPadding().UnsetWidth().Background(bg)
-	i.PromptStyle = styles.Footer.Copy().UnsetPadding().UnsetWidth().Background(bg)
-	i.PlaceholderStyle = styles.DimCol.Copy().Background(bg)
+	i.TextStyle = styles.Footer.UnsetPadding().UnsetWidth().Background(bg)
+	i.PromptStyle = styles.Footer.UnsetPadding().UnsetWidth().Background(bg)
+	i.PlaceholderStyle = styles.DimCol.Background(bg)
 	i.Cursor.Style = lipgloss.NewStyle().Background(primary).Foreground(bg)
 }
 
@@ -245,13 +245,14 @@ func (i Input) View() string {
 
 	// Render value with cursor
 	val := i.value
-	if i.EchoMode == EchoPassword {
+	switch i.EchoMode {
+	case EchoPassword:
 		masked := make([]rune, len(i.value))
 		for idx := range masked {
 			masked[idx] = i.EchoCharacter
 		}
 		val = masked
-	} else if i.EchoMode == EchoNone {
+	case EchoNone:
 		val = []rune{}
 	}
 

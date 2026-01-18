@@ -32,7 +32,7 @@ func NewSpinner(styles theme.Stylesheet) Spinner {
 	return Spinner{
 		Frames:   DefaultFrames,
 		Interval: 100 * time.Millisecond,
-		Style:    styles.DirCol.Copy(),
+		Style:    styles.DirCol,
 	}
 }
 

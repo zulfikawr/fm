@@ -99,7 +99,7 @@ func TestUnzip_ZipSlip(t *testing.T) {
 		Method: zip.Deflate,
 	}
 	writer, _ := zw.CreateHeader(header)
-	io.WriteString(writer, "evil")
+	_, _ = io.WriteString(writer, "evil")
 	zw.Close()
 	f.Close()
 
@@ -138,7 +138,7 @@ func TestUnzip_Remote(t *testing.T) {
 	f, _ := os.Create(realZip)
 	zw := zip.NewWriter(f)
 	w, _ := zw.Create("test.txt")
-	w.Write([]byte("content"))
+	_, _ = w.Write([]byte("content"))
 	zw.Close()
 	f.Close()
 
@@ -208,7 +208,7 @@ func TestUnzip_ConflictPolicies(t *testing.T) {
 	f, _ := os.Create(zipFile)
 	zw := zip.NewWriter(f)
 	w, _ := zw.Create("file1.txt")
-	w.Write([]byte("new content"))
+	_, _ = w.Write([]byte("new content"))
 	zw.Close()
 	f.Close()
 
@@ -307,7 +307,7 @@ func TestUnzip_ConflictError(t *testing.T) {
 	f, _ := os.Create(zipFile)
 	zw := zip.NewWriter(f)
 	w, _ := zw.Create("file1.txt")
-	w.Write([]byte("content"))
+	_, _ = w.Write([]byte("content"))
 	zw.Close()
 	f.Close()
 
@@ -337,7 +337,7 @@ func TestUnzip_MultipleFiles(t *testing.T) {
 	zw := zip.NewWriter(f)
 	for i := 1; i <= 3; i++ {
 		w, _ := zw.Create(fmt.Sprintf("file%d.txt", i))
-		w.Write([]byte(fmt.Sprintf("content%d", i)))
+		_, _ = w.Write([]byte(fmt.Sprintf("content%d", i)))
 	}
 	zw.Close()
 	f.Close()

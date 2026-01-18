@@ -197,10 +197,7 @@ func TestCopyMultiple(t *testing.T) {
 		testutil.AssertNoError(t, err, "Should succeed with Rename policy")
 
 		close(progChan)
-		for p := range progChan {
-			if p.Label == "Copying a as a_1..." || p.Label == "Copying a as a (1)..." || (len(p.Label) > 10 && p.Label[:8] == "Copying ") {
-				// The exact rename pattern depends on resolver, but we just want to see if it hit that branch
-			}
+		for range progChan {
 		}
 	})
 

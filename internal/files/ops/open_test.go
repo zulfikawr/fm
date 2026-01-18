@@ -74,13 +74,9 @@ func TestGetOpenCmd(t *testing.T) {
 
 	t.Run("Non-text file", func(t *testing.T) {
 		fs.ExtFunc = func(p string) string { return ".png" }
-		cmd, isTerm, err := GetOpenCmd(fs, "image.png", 0)
+		_, isTerm, err := GetOpenCmd(fs, "image.png", 0)
 		testutil.AssertNoError(t, err, "Should get open cmd for image")
 		testutil.AssertEqual(t, false, isTerm, "Image should not be opened in terminal editor")
-		// On linux it should be xdg-open
-		if !strings.Contains(cmd.Path, "xdg-open") && !strings.Contains(cmd.Path, "open") && !strings.Contains(cmd.Path, "rundll32") {
-			// This depends on GOOS, but at least one should be there if it's supported
-		}
 	})
 }
 

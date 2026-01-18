@@ -85,7 +85,7 @@ func TestRouter_GlobalKeys(t *testing.T) {
 		}
 	})
 
-	tm.Quit()
+	_ = tm.Quit()
 }
 
 func TestRouter_FinalizeInput(t *testing.T) {
@@ -154,5 +154,5 @@ func TestRouter_FinalizeInput(t *testing.T) {
 		}
 	})
 
-	tm.Quit()
+	_ = tm.Quit()
 }

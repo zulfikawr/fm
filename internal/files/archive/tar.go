@@ -20,7 +20,6 @@ type TarFS struct {
 
 type tarEntry struct {
 	header *tar.Header
-	offset int64
 }
 
 // NewTarFS creates a new TarFS from a tar file path.

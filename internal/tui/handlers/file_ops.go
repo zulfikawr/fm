@@ -194,40 +194,6 @@ func resolveConflict(m *tui_context.Model, choice string, applyToAll bool) tea.C
 	return tea.Batch(cmds...)
 }
 
-func overwriteItem(ctx context.Context, srcFS, dstFS core.FileSystem, src, dst string, isMove bool, logID string) tea.Cmd {
-	progChan := make(chan core.Progress, 100)
-	return tea.Batch(
-		listenToProgress(progChan),
-		func() tea.Msg {
-			defer close(progChan)
-			var err error
-			if isMove {
-				err = ops.CrossMove(ctx, srcFS, dstFS, src, dst, progChan, conflict.Overwrite)
-			} else {
-				err = ops.CrossCopy(ctx, srcFS, dstFS, src, dst, progChan, conflict.Overwrite)
-			}
-
-			if err != nil {
-				return ErrorMsg{Err: err, LogID: logID}
-			}
-			return OperationFinishedMsg{Paths: []string{src, dst}, LogID: logID}
-		},
-	)
-}
-
-func hasTargets(m *tui_context.Model) bool {
-	if m.Navigation.SelectedCount > 0 {
-		return true
-	}
-	if len(m.Navigation.FilteredItems) > 0 {
-		cursor := m.Navigation.Cursor
-		if cursor < len(m.Navigation.FilteredItems) {
-			return !m.Navigation.FilteredItems[cursor].IsUp
-		}
-	}
-	return false
-}
-
 func getTargets(m *tui_context.Model) []string {
 	var targets []string
 	if m.Navigation.SelectedCount > 0 {

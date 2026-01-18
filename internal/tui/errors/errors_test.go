@@ -107,7 +107,7 @@ func TestHandler(t *testing.T) {
 	}
 
 	err := UserError("Op", "msg")
-	h.Handle(err)
+	_ = h.Handle(err)
 	testutil.AssertEqual(t, true, called, "OnUser handler should be called")
 
 	// Test default wrap
@@ -118,7 +118,7 @@ func TestHandler(t *testing.T) {
 		},
 	}
 	called = false
-	h2.Handle(errors.New("raw"))
+	_ = h2.Handle(errors.New("raw"))
 	if !called {
 		t.Error("Handler should wrap raw errors as System")
 	}

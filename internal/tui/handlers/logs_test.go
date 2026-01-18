@@ -37,5 +37,5 @@ func TestLogs_Handler(t *testing.T) {
 		t.Error("expected logs closed")
 	}
 
-	tm.Quit()
+	_ = tm.Quit()
 }

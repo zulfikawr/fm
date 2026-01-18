@@ -197,7 +197,7 @@ func TestHostKeyCallbackInner(t *testing.T) {
 		oldStdin := os.Stdin
 		os.Stdin = r
 		defer func() { os.Stdin = oldStdin }()
-		w.Write([]byte("n\n"))
+		_, _ = w.Write([]byte("n\n"))
 		w.Close()
 
 		err := cb("example.com:22", addr, pk)
@@ -212,7 +212,7 @@ func TestHostKeyCallbackInner(t *testing.T) {
 		oldStdin := os.Stdin
 		os.Stdin = r
 		defer func() { os.Stdin = oldStdin }()
-		w.Write([]byte("y\n"))
+		_, _ = w.Write([]byte("y\n"))
 		w.Close()
 
 		// This might still fail if sshutil.AddToKnownHosts fails, but it hits the branch

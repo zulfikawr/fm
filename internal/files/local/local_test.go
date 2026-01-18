@@ -35,7 +35,7 @@ func TestLocalFS(t *testing.T) {
 		filePath := tmp.Join("write_test.txt")
 		f, err := fs.Create(ctx, filePath)
 		testutil.AssertNoError(t, err, "Create should succeed")
-		f.Write([]byte("data"))
+		_, _ = f.Write([]byte("data"))
 		f.Close()
 
 		err = fs.RemoveAll(ctx, filePath)
@@ -153,7 +153,7 @@ func TestLocalFS(t *testing.T) {
 
 		if runtime.GOOS != "windows" && os.Getuid() != 0 {
 			path := tmp.WriteFile("ro_file.txt", "")
-			os.Chmod(path, 0400) // Read-only
+			_ = os.Chmod(path, 0400) // Read-only
 			ro, err = fs.IsReadOnly(ctx, path)
 			testutil.AssertNoError(t, err, "IsReadOnly should succeed on RO file")
 			testutil.AssertEqual(t, true, ro, "file should be read-only")

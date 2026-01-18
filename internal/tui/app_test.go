@@ -35,7 +35,7 @@ func TestApp_Integration(t *testing.T) {
 	tm.Type("j")
 
 	// 5. Quit
-	tm.Quit()
+	_ = tm.Quit()
 }
 
 func TestApp_Lifecycle(t *testing.T) {

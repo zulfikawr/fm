@@ -85,7 +85,7 @@ func TestSftpFS_ClientMethods(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	go server.Serve()
+	go func() { _ = server.Serve() }()
 	defer server.Close()
 
 	// Create a client on the client end of the pipe
@@ -135,7 +135,7 @@ func TestSftpFS_ClientMethods(t *testing.T) {
 
 		w, err := fs.Create(ctx, path)
 		testutil.AssertNoError(t, err, "Create should succeed")
-		w.Write([]byte("data"))
+		_, _ = w.Write([]byte("data"))
 		w.Close()
 
 		r, err := fs.Open(ctx, path)
@@ -166,7 +166,7 @@ func TestSftpFS_ClientMethods(t *testing.T) {
 		testutil.AssertNoError(t, err, "RemoveAll file should succeed")
 
 		dir := tmp.Join("dir_to_delete")
-		fs.MkdirAll(ctx, dir, 0755)
+		_ = fs.MkdirAll(ctx, dir, 0755)
 		tmp.WriteFile("dir_to_delete/file.txt", "")
 		err = fs.RemoveAll(ctx, dir)
 		testutil.AssertNoError(t, err, "RemoveAll dir should succeed")

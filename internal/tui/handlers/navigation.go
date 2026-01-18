@@ -417,22 +417,6 @@ func moveCursor(m *tui_context.Model, delta int) {
 	m.Cache.OffsetMemory.Put(m.Navigation.Path, m.Navigation.Offset)
 }
 
-func moveCursorToStart(m *tui_context.Model) {
-	m.Navigation.Cursor = 0
-	syncOffset(m)
-	m.Cache.CursorMemory.Put(m.Navigation.Path, m.Navigation.Cursor)
-	m.Cache.OffsetMemory.Put(m.Navigation.Path, m.Navigation.Offset)
-}
-
-func moveCursorToEnd(m *tui_context.Model) {
-	if len(m.Navigation.FilteredItems) > 0 {
-		m.Navigation.Cursor = len(m.Navigation.FilteredItems) - 1
-	}
-	syncOffset(m)
-	m.Cache.CursorMemory.Put(m.Navigation.Path, m.Navigation.Cursor)
-	m.Cache.OffsetMemory.Put(m.Navigation.Path, m.Navigation.Offset)
-}
-
 func syncOffset(m *tui_context.Model) {
 	if m.Display.ViewportHeight == 0 {
 		return
@@ -783,7 +767,7 @@ func Reload(m *tui_context.Model, silent bool) tea.Cmd {
 
 		items, err := listing.LoadSkeleton(ctx, fs, path, showHidden, gitStatuses)
 		if err != nil {
-			return LoadedItemsMsg{Generation: gen, Path: path, Err: err}
+			return LoadedItemsMsg{Generation: gen, Path: path, Err: err, GitRoot: gitRoot}
 		}
 
 		// Pre-calculate formatted strings for items that already have metadata

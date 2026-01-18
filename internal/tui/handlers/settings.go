@@ -149,7 +149,7 @@ func toggleSetting(idx int, m *tui_context.Model) bool {
 		// Update spinner style for the new theme
 		m.Display.LoadingSpinner.Style = m.Display.LoadingSpinner.Style.Foreground(theme.Themes[cfg.ThemeIndex].Dir)
 	}
-	cfg.Save()
+	_ = cfg.Save()
 	return reload
 }
 
@@ -161,13 +161,13 @@ func toggleSettingPrev(idx int, m *tui_context.Model) bool {
 	case 9:
 		if cfg.ShowSize {
 			cfg.SizeFormatIndex = (cfg.SizeFormatIndex - 1 + len(format.SizeFormats)) % len(format.SizeFormats)
-			cfg.Save()
+			_ = cfg.Save()
 			return true
 		}
 	case 11:
 		if cfg.ShowDateModified {
 			cfg.DateFormatIndex = (cfg.DateFormatIndex - 1 + len(format.DateFormats)) % len(format.DateFormats)
-			cfg.Save()
+			_ = cfg.Save()
 			return true
 		}
 	case 12:
@@ -179,14 +179,14 @@ func toggleSettingPrev(idx int, m *tui_context.Model) bool {
 	default:
 		return toggleSetting(idx, m)
 	}
-	cfg.Save()
+	_ = cfg.Save()
 	return false
 }
 
 // ConfirmSettingsReset resets all settings to defaults
 func ConfirmSettingsReset(m *tui_context.Model) tea.Cmd {
 	m.Config = config.DefaultConfig()
-	m.Config.Save()
+	_ = m.Config.Save()
 	m.Display.Styles = theme.GetStylesheet(m.Config.ThemeIndex)
 	m.UI.StopConfirming()
 	m.Operations.ActionType = ""

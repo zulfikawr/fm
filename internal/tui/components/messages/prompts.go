@@ -21,7 +21,8 @@ func RenderInputPrompt(props Props) string {
 	dimStyle := props.Style.DimCol.Inherit(props.Style.Footer).UnsetPadding().UnsetWidth()
 
 	// Update prompt dynamically
-	if props.Mode == ModeGoto {
+	switch props.Mode {
+	case ModeGoto:
 		isRemote := props.AltMode
 		if props.RemoteConnected {
 			isRemote = !props.AltMode
@@ -32,21 +33,21 @@ func RenderInputPrompt(props Props) string {
 			label = "Remote"
 		}
 		input.Prompt = baseStyle.Render("Go to ") + dimStyle.Render("("+label+")") + baseStyle.Render(": ")
-	} else if props.Mode == ModeAuth {
+	case ModeAuth:
 		label := "Password"
 		if props.AltMode {
 			label = "Path"
 		}
 		input.Prompt = baseStyle.Render(label + ": ")
-	} else if props.Mode == ModeSearching {
+	case ModeSearching:
 		input.Prompt = baseStyle.Render("Filter: ")
-	} else if props.Mode == ModeFuzzySearch {
+	case ModeFuzzySearch:
 		input.Prompt = baseStyle.Render("Search: ")
-	} else if props.Mode == ModeRenaming {
+	case ModeRenaming:
 		input.Prompt = baseStyle.Render("Rename: ")
-	} else if props.Mode == ModeZip {
+	case ModeZip:
 		input.Prompt = baseStyle.Render("Zip name: ")
-	} else if props.Mode == ModeUnzip {
+	case ModeUnzip:
 		input.Prompt = baseStyle.Render("Unzip to: ")
 	}
 
@@ -56,19 +57,20 @@ func RenderInputPrompt(props Props) string {
 		dimStyle := props.Style.DimCol.Inherit(props.Style.Footer).UnsetPadding().UnsetWidth()
 		keyStyle := props.Style.KeyCol.Inherit(props.Style.Footer).UnsetPadding().UnsetWidth()
 
-		if props.Mode == ModeGoto {
+		switch props.Mode {
+		case ModeGoto:
 			target := "Remote"
 			if props.AltMode {
 				target = "Local"
 			}
 			rightPart = dimStyle.Render("[") + keyStyle.Render("Tab") + dimStyle.Render("] ") + dimStyle.Render(target) + baseStyle.Render(" ")
-		} else if props.Mode == ModeAuth {
+		case ModeAuth:
 			target := "Key Path"
 			if props.AltMode {
 				target = "Password"
 			}
 			rightPart = dimStyle.Render("[") + keyStyle.Render("Tab") + dimStyle.Render("] ") + dimStyle.Render(target) + baseStyle.Render(" ")
-		} else if props.Mode == ModeFuzzySearch {
+		case ModeFuzzySearch:
 			rightPart = dimStyle.Render("[") + keyStyle.Render("Tab") + dimStyle.Render("] ") + dimStyle.Render("Collapse") +
 				dimStyle.Render(" | [") + keyStyle.Render("Alt+n/m") + dimStyle.Render("] ") + dimStyle.Render("Files") +
 				dimStyle.Render(" | [") + keyStyle.Render("Alt+j/k") + dimStyle.Render("] ") + dimStyle.Render("Matches") + baseStyle.Render(" ")
