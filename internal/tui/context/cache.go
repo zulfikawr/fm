@@ -36,15 +36,15 @@ func NewSimpleCache[K comparable, V any](capacity int, ttl time.Duration) *Simpl
 }
 
 // Get retrieves a value from the cache if it hasn't expired
-func (c *SimpleCache[K, V]) Get(key K) (V, bool) {
-	entry, ok := c.cache[key]
+func (sc *SimpleCache[K, V]) Get(key K) (V, bool) {
+	entry, ok := sc.cache[key]
 	if !ok {
 		var zero V
 		return zero, false
 	}
 
-	if c.ttl > 0 && time.Since(entry.Created) > c.ttl && !c.protected[key] {
-		c.Delete(key)
+	if sc.ttl > 0 && time.Since(entry.Created) > sc.ttl && !sc.protected[key] {
+		sc.Delete(key)
 		var zero V
 		return zero, false
 	}
@@ -53,22 +53,22 @@ func (c *SimpleCache[K, V]) Get(key K) (V, bool) {
 }
 
 // Put adds or updates a value in the cache
-func (c *SimpleCache[K, V]) Put(key K, value V) {
-	if _, ok := c.cache[key]; ok {
-		c.cache[key] = CacheEntry[V]{Value: value, Created: time.Now()}
+func (sc *SimpleCache[K, V]) Put(key K, value V) {
+	if _, ok := sc.cache[key]; ok {
+		sc.cache[key] = CacheEntry[V]{Value: value, Created: time.Now()}
 		return
 	}
 
-	c.cache[key] = CacheEntry[V]{Value: value, Created: time.Now()}
-	c.order.PushFront(key)
+	sc.cache[key] = CacheEntry[V]{Value: value, Created: time.Now()}
+	sc.order.PushFront(key)
 
-	if c.order.Len() > c.capacity {
+	if sc.order.Len() > sc.capacity {
 		// Find first non-protected item from the back to evict
-		for e := c.order.Back(); e != nil; e = e.Prev() {
+		for e := sc.order.Back(); e != nil; e = e.Prev() {
 			k := e.Value.(K)
-			if !c.protected[k] {
-				c.order.Remove(e)
-				delete(c.cache, k)
+			if !sc.protected[k] {
+				sc.order.Remove(e)
+				delete(sc.cache, k)
 				break
 			}
 		}
@@ -76,39 +76,39 @@ func (c *SimpleCache[K, V]) Put(key K, value V) {
 }
 
 // Protect prevents a key from being evicted
-func (c *SimpleCache[K, V]) Protect(key K) {
-	if c == nil {
+func (sc *SimpleCache[K, V]) Protect(key K) {
+	if sc == nil {
 		return
 	}
-	if c.protected == nil {
-		c.protected = make(map[K]bool)
+	if sc.protected == nil {
+		sc.protected = make(map[K]bool)
 	}
-	c.protected[key] = true
+	sc.protected[key] = true
 }
 
 // Unprotect allows a key to be evicted again
-func (c *SimpleCache[K, V]) Unprotect(key K) {
-	if c == nil || c.protected == nil {
+func (sc *SimpleCache[K, V]) Unprotect(key K) {
+	if sc == nil || sc.protected == nil {
 		return
 	}
-	delete(c.protected, key)
+	delete(sc.protected, key)
 }
 
 // Delete removes a specific key from the cache
-func (c *SimpleCache[K, V]) Delete(key K) {
-	delete(c.cache, key)
-	for e := c.order.Front(); e != nil; e = e.Next() {
+func (sc *SimpleCache[K, V]) Delete(key K) {
+	delete(sc.cache, key)
+	for e := sc.order.Front(); e != nil; e = e.Next() {
 		if e.Value.(K) == key {
-			c.order.Remove(e)
+			sc.order.Remove(e)
 			break
 		}
 	}
 }
 
 // Clear empties the cache
-func (c *SimpleCache[K, V]) Clear() {
-	c.cache = make(map[K]CacheEntry[V])
-	c.order.Init()
+func (sc *SimpleCache[K, V]) Clear() {
+	sc.cache = make(map[K]CacheEntry[V])
+	sc.order.Init()
 }
 
 // --- Cache State ---

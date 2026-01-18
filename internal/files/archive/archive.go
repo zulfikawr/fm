@@ -19,58 +19,58 @@ type baseArchiveFS struct {
 	archivePath string
 }
 
-func (b *baseArchiveFS) Separator() string {
+func (fs *baseArchiveFS) Separator() string {
 	return "/"
 }
 
-func (b *baseArchiveFS) Join(elem ...string) string {
+func (fs *baseArchiveFS) Join(elem ...string) string {
 	return filepath.ToSlash(filepath.Join(elem...))
 }
 
-func (b *baseArchiveFS) Abs(path string) (string, error) {
+func (fs *baseArchiveFS) Abs(path string) (string, error) {
 	if filepath.IsAbs(path) {
-		return b.Clean(path), nil
+		return fs.Clean(path), nil
 	}
-	return b.Join("/", path), nil
+	return fs.Join("/", path), nil
 }
 
-func (b *baseArchiveFS) Rel(basepath, targpath string) (string, error) {
+func (fs *baseArchiveFS) Rel(basepath, targpath string) (string, error) {
 	return filepath.Rel(basepath, targpath)
 }
 
-func (b *baseArchiveFS) Clean(path string) string {
+func (fs *baseArchiveFS) Clean(path string) string {
 	return filepath.ToSlash(filepath.Clean(path))
 }
 
-func (b *baseArchiveFS) Dir(path string) string {
+func (fs *baseArchiveFS) Dir(path string) string {
 	return filepath.ToSlash(filepath.Dir(path))
 }
 
-func (b *baseArchiveFS) Base(path string) string {
+func (fs *baseArchiveFS) Base(path string) string {
 	return filepath.Base(path)
 }
 
-func (b *baseArchiveFS) Ext(path string) string {
+func (fs *baseArchiveFS) Ext(path string) string {
 	return filepath.Ext(path)
 }
 
-func (b *baseArchiveFS) GetHomeDir() (string, error) {
+func (fs *baseArchiveFS) GetHomeDir() (string, error) {
 	return "/", nil
 }
 
-func (b *baseArchiveFS) IsLocal() bool {
+func (fs *baseArchiveFS) IsLocal() bool {
 	return false
 }
 
-func (b *baseArchiveFS) IsReadOnly(ctx context.Context, path string) (bool, error) {
+func (fs *baseArchiveFS) IsReadOnly(ctx context.Context, path string) (bool, error) {
 	return true, nil
 }
 
-func (b *baseArchiveFS) Address() string {
-	return b.archivePath
+func (fs *baseArchiveFS) Address() string {
+	return fs.archivePath
 }
 
-func (b *baseArchiveFS) User() string {
+func (fs *baseArchiveFS) User() string {
 	return ""
 }
 
@@ -105,14 +105,14 @@ func NewZipFS(path string) (*ZipFS, error) {
 	}, nil
 }
 
-func (a *ZipFS) ReadDir(ctx context.Context, path string) ([]os.FileInfo, error) {
+func (fs *ZipFS) ReadDir(ctx context.Context, path string) ([]os.FileInfo, error) {
 	select {
 	case <-ctx.Done():
 		return nil, ctx.Err()
 	default:
 	}
 
-	entries, err := a.ReadDirEntries(ctx, path)
+	entries, err := fs.ReadDirEntries(ctx, path)
 	if err != nil {
 		return nil, err
 	}
@@ -128,14 +128,14 @@ func (a *ZipFS) ReadDir(ctx context.Context, path string) ([]os.FileInfo, error)
 	return infos, nil
 }
 
-func (a *ZipFS) ReadDirEntries(ctx context.Context, path string) ([]os.DirEntry, error) {
+func (fs *ZipFS) ReadDirEntries(ctx context.Context, path string) ([]os.DirEntry, error) {
 	select {
 	case <-ctx.Done():
 		return nil, ctx.Err()
 	default:
 	}
 
-	path = a.Clean(path)
+	path = fs.Clean(path)
 	if path == "." || path == "/" {
 		path = ""
 	} else {
@@ -148,7 +148,7 @@ func (a *ZipFS) ReadDirEntries(ctx context.Context, path string) ([]os.DirEntry,
 	seen := make(map[string]bool)
 	var entries []os.DirEntry
 
-	for _, file := range a.reader.File {
+	for _, file := range fs.reader.File {
 		select {
 		case <-ctx.Done():
 			return nil, ctx.Err()
@@ -184,17 +184,17 @@ func (a *ZipFS) ReadDirEntries(ctx context.Context, path string) ([]os.DirEntry,
 	return entries, nil
 }
 
-func (a *ZipFS) Stat(ctx context.Context, path string) (os.FileInfo, error) {
+func (fs *ZipFS) Stat(ctx context.Context, path string) (os.FileInfo, error) {
 	select {
 	case <-ctx.Done():
 		return nil, ctx.Err()
 	default:
 	}
 
-	path = a.Clean(path)
+	path = fs.Clean(path)
 	if path == "." || path == "/" || path == "" {
 		return &archiveFileInfo{
-			name:  a.Base(a.archivePath),
+			name:  fs.Base(fs.archivePath),
 			isDir: true,
 		}, nil
 	}
@@ -202,7 +202,7 @@ func (a *ZipFS) Stat(ctx context.Context, path string) (os.FileInfo, error) {
 	path = strings.TrimPrefix(path, "/")
 
 	// Check for exact file match
-	for _, file := range a.reader.File {
+	for _, file := range fs.reader.File {
 		if strings.TrimSuffix(file.Name, "/") == path {
 			return file.FileInfo(), nil
 		}
@@ -213,10 +213,10 @@ func (a *ZipFS) Stat(ctx context.Context, path string) (os.FileInfo, error) {
 	if !strings.HasSuffix(dirPath, "/") {
 		dirPath += "/"
 	}
-	for _, file := range a.reader.File {
+	for _, file := range fs.reader.File {
 		if strings.HasPrefix(file.Name, dirPath) {
 			return &archiveFileInfo{
-				name:  a.Base(path),
+				name:  fs.Base(path),
 				isDir: true,
 			}, nil
 		}
@@ -225,19 +225,19 @@ func (a *ZipFS) Stat(ctx context.Context, path string) (os.FileInfo, error) {
 	return nil, errors.WrapErrorWithPath(os.ErrNotExist, "Stat", path)
 }
 
-func (a *ZipFS) Lstat(ctx context.Context, path string) (os.FileInfo, error) {
-	return a.Stat(ctx, path)
+func (fs *ZipFS) Lstat(ctx context.Context, path string) (os.FileInfo, error) {
+	return fs.Stat(ctx, path)
 }
 
-func (a *ZipFS) Open(ctx context.Context, path string) (io.ReadCloser, error) {
+func (fs *ZipFS) Open(ctx context.Context, path string) (io.ReadCloser, error) {
 	select {
 	case <-ctx.Done():
 		return nil, ctx.Err()
 	default:
 	}
 
-	path = strings.TrimPrefix(a.Clean(path), "/")
-	for _, file := range a.reader.File {
+	path = strings.TrimPrefix(fs.Clean(path), "/")
+	for _, file := range fs.reader.File {
 		if file.Name == path {
 			f, err := file.Open()
 			return f, errors.WrapErrorWithPath(err, "Open", path)
@@ -248,38 +248,38 @@ func (a *ZipFS) Open(ctx context.Context, path string) (io.ReadCloser, error) {
 
 // Writer operations (Read-Only)
 
-func (a *ZipFS) Create(ctx context.Context, path string) (io.WriteCloser, error) {
+func (fs *ZipFS) Create(ctx context.Context, path string) (io.WriteCloser, error) {
 	return nil, fmt.Errorf("archive filesystem is read-only")
 }
 
-func (a *ZipFS) MkdirAll(ctx context.Context, path string, perm os.FileMode) error {
+func (fs *ZipFS) MkdirAll(ctx context.Context, path string, perm os.FileMode) error {
 	return fmt.Errorf("archive filesystem is read-only")
 }
 
-func (a *ZipFS) RemoveAll(ctx context.Context, path string) error {
+func (fs *ZipFS) RemoveAll(ctx context.Context, path string) error {
 	return fmt.Errorf("archive filesystem is read-only")
 }
 
-func (a *ZipFS) Rename(ctx context.Context, oldPath, newPath string) error {
+func (fs *ZipFS) Rename(ctx context.Context, oldPath, newPath string) error {
 	return fmt.Errorf("archive filesystem is read-only")
 }
 
-func (a *ZipFS) Chmod(ctx context.Context, path string, mode os.FileMode) error {
+func (fs *ZipFS) Chmod(ctx context.Context, path string, mode os.FileMode) error {
 	return fmt.Errorf("archive filesystem is read-only")
 }
 
-func (a *ZipFS) Preallocate(ctx context.Context, path string, size int64) error {
+func (fs *ZipFS) Preallocate(ctx context.Context, path string, size int64) error {
 	return fmt.Errorf("archive filesystem is read-only")
 }
 
-func (a *ZipFS) Walk(ctx context.Context, root string, walkFn func(path string, info os.FileInfo, err error) error) error {
+func (fs *ZipFS) Walk(ctx context.Context, root string, walkFn func(path string, info os.FileInfo, err error) error) error {
 	// Simple implementation: iterate over all files in reader
-	root = strings.TrimPrefix(a.Clean(root), "/")
+	root = strings.TrimPrefix(fs.Clean(root), "/")
 	if root == "." {
 		root = ""
 	}
 
-	for _, file := range a.reader.File {
+	for _, file := range fs.reader.File {
 		select {
 		case <-ctx.Done():
 			return ctx.Err()
@@ -296,10 +296,10 @@ func (a *ZipFS) Walk(ctx context.Context, root string, walkFn func(path string, 
 	return nil
 }
 
-func (a *ZipFS) Close() error {
-	if a.reader != nil {
-		err := a.reader.Close()
-		return errors.WrapErrorWithPath(err, "CloseArchive", a.archivePath)
+func (fs *ZipFS) Close() error {
+	if fs.reader != nil {
+		err := fs.reader.Close()
+		return errors.WrapErrorWithPath(err, "CloseArchive", fs.archivePath)
 	}
 	return nil
 }

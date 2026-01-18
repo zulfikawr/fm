@@ -44,27 +44,27 @@ func Tick(interval time.Duration) tea.Cmd {
 }
 
 // Update handles the tick message and advances the spinner
-func (m Spinner) Update(msg tea.Msg) (Spinner, tea.Cmd) {
+func (s Spinner) Update(msg tea.Msg) (Spinner, tea.Cmd) {
 	switch msg.(type) {
 	case TickMsg:
-		m.Index = (m.Index + 1) % len(m.Frames)
-		return m, Tick(m.Interval)
+		s.Index = (s.Index + 1) % len(s.Frames)
+		return s, Tick(s.Interval)
 	}
-	return m, nil
+	return s, nil
 }
 
 // View renders the current frame of the spinner
-func (m Spinner) View() string {
-	if len(m.Frames) == 0 {
+func (s Spinner) View() string {
+	if len(s.Frames) == 0 {
 		return ""
 	}
-	if m.Index >= len(m.Frames) {
-		m.Index = 0
+	if s.Index >= len(s.Frames) {
+		s.Index = 0
 	}
-	return m.Style.Render(m.Frames[m.Index])
+	return s.Style.Render(s.Frames[s.Index])
 }
 
 // Start returns a command to start the spinner animation
-func (m Spinner) Start() tea.Cmd {
-	return Tick(m.Interval)
+func (s Spinner) Start() tea.Cmd {
+	return Tick(s.Interval)
 }

@@ -113,75 +113,75 @@ type UIState struct {
 }
 
 // Reset resets all UI flags to false
-func (s *UIState) Reset() {
-	s.Confirming = false
-	s.SettingsOpen = false
-	s.LogOpen = false
-	s.ClipboardOpen = false
-	s.Loading = false
-	s.SelectMode = false
-	s.InputActive = false
-	s.RemoteAuth = false
-	s.HostConfirm = false
-	s.PromptCache = make(map[string]string)
+func (ui *UIState) Reset() {
+	ui.Confirming = false
+	ui.SettingsOpen = false
+	ui.LogOpen = false
+	ui.ClipboardOpen = false
+	ui.Loading = false
+	ui.SelectMode = false
+	ui.InputActive = false
+	ui.RemoteAuth = false
+	ui.HostConfirm = false
+	ui.PromptCache = make(map[string]string)
 }
 
 // StartInput enters an input mode
-func (s *UIState) StartInput() {
-	s.InputActive = true
-	s.LogOpen = false
-	s.ClipboardOpen = false
-	s.Confirming = false
+func (ui *UIState) StartInput() {
+	ui.InputActive = true
+	ui.LogOpen = false
+	ui.ClipboardOpen = false
+	ui.Confirming = false
 }
 
 // StopInput exits input mode
-func (s *UIState) StopInput() {
-	s.InputActive = false
+func (ui *UIState) StopInput() {
+	ui.InputActive = false
 }
 
 // StartConfirming enters confirmation mode
-func (s *UIState) StartConfirming() {
-	s.Confirming = true
-	s.InputActive = false
-	s.LogOpen = false
-	s.ClipboardOpen = false
+func (ui *UIState) StartConfirming() {
+	ui.Confirming = true
+	ui.InputActive = false
+	ui.LogOpen = false
+	ui.ClipboardOpen = false
 }
 
 // StopConfirming exits confirmation mode
-func (s *UIState) StopConfirming() {
-	s.Confirming = false
+func (ui *UIState) StopConfirming() {
+	ui.Confirming = false
 }
 
 // ToggleSettings toggles the settings view
-func (s *UIState) ToggleSettings() {
-	s.SettingsOpen = !s.SettingsOpen
-	if s.SettingsOpen {
-		s.InputActive = false
-		s.Confirming = false
-		s.LogOpen = false
-		s.ClipboardOpen = false
+func (ui *UIState) ToggleSettings() {
+	ui.SettingsOpen = !ui.SettingsOpen
+	if ui.SettingsOpen {
+		ui.InputActive = false
+		ui.Confirming = false
+		ui.LogOpen = false
+		ui.ClipboardOpen = false
 	}
 }
 
 // ToggleLogs toggles the log view
-func (s *UIState) ToggleLogs() {
-	s.LogOpen = !s.LogOpen
-	if s.LogOpen {
-		s.InputActive = false
-		s.Confirming = false
-		s.SettingsOpen = false
-		s.ClipboardOpen = false
+func (ui *UIState) ToggleLogs() {
+	ui.LogOpen = !ui.LogOpen
+	if ui.LogOpen {
+		ui.InputActive = false
+		ui.Confirming = false
+		ui.SettingsOpen = false
+		ui.ClipboardOpen = false
 	}
 }
 
 // ToggleClipboard toggles the clipboard view
-func (s *UIState) ToggleClipboard() {
-	s.ClipboardOpen = !s.ClipboardOpen
-	if s.ClipboardOpen {
-		s.InputActive = false
-		s.Confirming = false
-		s.SettingsOpen = false
-		s.LogOpen = false
+func (ui *UIState) ToggleClipboard() {
+	ui.ClipboardOpen = !ui.ClipboardOpen
+	if ui.ClipboardOpen {
+		ui.InputActive = false
+		ui.Confirming = false
+		ui.SettingsOpen = false
+		ui.LogOpen = false
 	}
 }
 

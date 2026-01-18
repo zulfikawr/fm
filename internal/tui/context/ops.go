@@ -35,33 +35,33 @@ type ClipboardState struct {
 }
 
 // Clear clears the clipboard
-func (c *ClipboardState) Clear() {
-	c.Paths = nil
-	c.SourceFS = nil
-	c.IsCut = false
-	c.Action = ""
-	c.Cursor = 0
-	c.Offset = 0
+func (cs *ClipboardState) Clear() {
+	cs.Paths = nil
+	cs.SourceFS = nil
+	cs.IsCut = false
+	cs.Action = ""
+	cs.Cursor = 0
+	cs.Offset = 0
 }
 
 // SetCopy sets the clipboard for copy operation
-func (c *ClipboardState) SetCopy(fs core.FileSystem, paths []string) {
-	c.Paths = paths
-	c.SourceFS = fs
-	c.IsCut = false
-	c.Action = "copy"
-	c.Cursor = 0
-	c.Offset = 0
+func (cs *ClipboardState) SetCopy(fs core.FileSystem, paths []string) {
+	cs.Paths = paths
+	cs.SourceFS = fs
+	cs.IsCut = false
+	cs.Action = "copy"
+	cs.Cursor = 0
+	cs.Offset = 0
 }
 
 // SetCut sets the clipboard for cut operation
-func (c *ClipboardState) SetCut(fs core.FileSystem, paths []string) {
-	c.Paths = paths
-	c.SourceFS = fs
-	c.IsCut = true
-	c.Action = "cut"
-	c.Cursor = 0
-	c.Offset = 0
+func (cs *ClipboardState) SetCut(fs core.FileSystem, paths []string) {
+	cs.Paths = paths
+	cs.SourceFS = fs
+	cs.IsCut = true
+	cs.Action = "cut"
+	cs.Cursor = 0
+	cs.Offset = 0
 }
 
 // --- Progress State ---
@@ -75,22 +75,22 @@ type ProgressState struct {
 }
 
 // Show shows the progress bar with a label
-func (p *ProgressState) Show(label string) {
-	p.Visible = true
-	p.Label = label
-	p.Percent = 0
+func (ps *ProgressState) Show(label string) {
+	ps.Visible = true
+	ps.Label = label
+	ps.Percent = 0
 }
 
 // Hide hides the progress bar
-func (p *ProgressState) Hide() {
-	p.Visible = false
-	p.Percent = 0
-	p.Label = ""
+func (ps *ProgressState) Hide() {
+	ps.Visible = false
+	ps.Percent = 0
+	ps.Label = ""
 }
 
 // Update updates the progress percentage
-func (p *ProgressState) Update(percent float64) {
-	p.Percent = percent
+func (ps *ProgressState) Update(percent float64) {
+	ps.Percent = percent
 }
 
 // --- Log State ---
@@ -134,28 +134,28 @@ type LogState struct {
 }
 
 // AddEntry adds a new entry to the log state
-func (s *LogState) AddEntry(entry LogEntry) {
+func (ls *LogState) AddEntry(entry LogEntry) {
 	if entry.Timestamp.IsZero() {
 		entry.Timestamp = time.Now()
 	}
 	// Limit history to last 200 entries
-	if len(s.Entries) >= 200 {
-		s.Entries = s.Entries[1:]
+	if len(ls.Entries) >= 200 {
+		ls.Entries = ls.Entries[1:]
 	}
-	s.Entries = append(s.Entries, entry)
+	ls.Entries = append(ls.Entries, entry)
 }
 
 // UpdateStatus updates the status and level of an existing entry by ID
-func (s *LogState) UpdateStatus(id string, status LogStatus, level LogLevel, message string, details string) {
-	for i := range s.Entries {
-		if s.Entries[i].ID == id {
-			s.Entries[i].Status = status
-			s.Entries[i].Level = level
+func (ls *LogState) UpdateStatus(id string, status LogStatus, level LogLevel, message string, details string) {
+	for i := range ls.Entries {
+		if ls.Entries[i].ID == id {
+			ls.Entries[i].Status = status
+			ls.Entries[i].Level = level
 			if message != "" {
-				s.Entries[i].Message = message
+				ls.Entries[i].Message = message
 			}
 			if details != "" {
-				s.Entries[i].Details = details
+				ls.Entries[i].Details = details
 			}
 			break
 		}
@@ -180,26 +180,26 @@ type MessageState struct {
 }
 
 // Push adds a new message to the stack
-func (s *MessageState) Push(text string, isErr bool) {
+func (ms *MessageState) Push(text string, isErr bool) {
 	msg := Message{
 		Text:  text,
 		Time:  time.Now(),
 		IsErr: isErr,
 	}
-	s.Stack = append(s.Stack, msg)
-	s.Text = text // Maintain compatibility
-	s.Time = msg.Time
+	ms.Stack = append(ms.Stack, msg)
+	ms.Text = text // Maintain compatibility
+	ms.Time = msg.Time
 }
 
 // Pop removes the oldest message
-func (s *MessageState) Pop() {
-	if len(s.Stack) > 0 {
-		s.Stack = s.Stack[1:]
-		if len(s.Stack) > 0 {
-			s.Text = s.Stack[0].Text
-			s.Time = s.Stack[0].Time
+func (ms *MessageState) Pop() {
+	if len(ms.Stack) > 0 {
+		ms.Stack = ms.Stack[1:]
+		if len(ms.Stack) > 0 {
+			ms.Text = ms.Stack[0].Text
+			ms.Time = ms.Stack[0].Time
 		} else {
-			s.Text = ""
+			ms.Text = ""
 		}
 	}
 }
@@ -218,28 +218,28 @@ type ConflictState struct {
 }
 
 // Clear resets the conflict state
-func (c *ConflictState) Clear() {
-	c.Source = ""
-	c.Destination = ""
-	c.PendingItems = nil
-	c.IsMove = false
-	c.OpType = ""
-	c.ApplyToAll = false
-	c.LogID = ""
+func (cf *ConflictState) Clear() {
+	cf.Source = ""
+	cf.Destination = ""
+	cf.PendingItems = nil
+	cf.IsMove = false
+	cf.OpType = ""
+	cf.ApplyToAll = false
+	cf.LogID = ""
 }
 
 // Set initializes the conflict state
-func (c *ConflictState) Set(src, dst string, pending []string, isMove bool, opType string, logID string) {
-	c.Source = src
-	c.Destination = dst
-	c.PendingItems = pending
-	c.IsMove = isMove
-	c.OpType = opType
-	c.ApplyToAll = false
-	c.LogID = logID
+func (cf *ConflictState) Set(src, dst string, pending []string, isMove bool, opType string, logID string) {
+	cf.Source = src
+	cf.Destination = dst
+	cf.PendingItems = pending
+	cf.IsMove = isMove
+	cf.OpType = opType
+	cf.ApplyToAll = false
+	cf.LogID = logID
 }
 
 // HasConflict returns true if there is an active conflict
-func (c *ConflictState) HasConflict() bool {
-	return c.Source != "" && c.Destination != ""
+func (cf *ConflictState) HasConflict() bool {
+	return cf.Source != "" && cf.Destination != ""
 }

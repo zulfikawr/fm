@@ -142,22 +142,22 @@ func NewSftpFS(address, user, password, keyPath string, hostKeyCallback ssh.Host
 }
 
 // Close releases the SFTP client and the underlying SSH connection.
-func (s *SftpFS) Close() error {
-	if s.cancel != nil {
-		s.cancel()
+func (fs *SftpFS) Close() error {
+	if fs.cancel != nil {
+		fs.cancel()
 	}
 
-	s.mu.Lock()
-	defer s.mu.Unlock()
+	fs.mu.Lock()
+	defer fs.mu.Unlock()
 
 	var errs []string
-	if s.client != nil {
-		if err := s.client.Close(); err != nil {
+	if fs.client != nil {
+		if err := fs.client.Close(); err != nil {
 			errs = append(errs, fmt.Sprintf("sftp client: %v", err))
 		}
 	}
-	if s.conn != nil {
-		if err := s.conn.Close(); err != nil {
+	if fs.conn != nil {
+		if err := fs.conn.Close(); err != nil {
 			errs = append(errs, fmt.Sprintf("ssh connection: %v", err))
 		}
 	}
@@ -167,18 +167,18 @@ func (s *SftpFS) Close() error {
 	return nil
 }
 
-func (s *SftpFS) keepAlive() {
+func (fs *SftpFS) keepAlive() {
 	ticker := time.NewTicker(30 * time.Second)
 	defer ticker.Stop()
 
 	for {
 		select {
-		case <-s.ctx.Done():
+		case <-fs.ctx.Done():
 			return
 		case <-ticker.C:
-			s.mu.RLock()
-			conn := s.conn
-			s.mu.RUnlock()
+			fs.mu.RLock()
+			conn := fs.conn
+			fs.mu.RUnlock()
 
 			if conn != nil {
 				// Send a global request as a keep-alive heartbeat
@@ -188,20 +188,20 @@ func (s *SftpFS) keepAlive() {
 	}
 }
 
-func (s *SftpFS) reconnect() error {
-	s.mu.Lock()
-	defer s.mu.Unlock()
+func (fs *SftpFS) reconnect() error {
+	fs.mu.Lock()
+	defer fs.mu.Unlock()
 
 	// Close old connection if still open
-	if s.client != nil {
-		s.client.Close()
+	if fs.client != nil {
+		fs.client.Close()
 	}
-	if s.conn != nil {
-		s.conn.Close()
+	if fs.conn != nil {
+		fs.conn.Close()
 	}
 
 	// Dial again
-	conn, err := ssh.Dial("tcp", s.address, s.config)
+	conn, err := ssh.Dial("tcp", fs.address, fs.config)
 	if err != nil {
 		return fmt.Errorf("reconnect dial failed: %w", err)
 	}
@@ -212,12 +212,12 @@ func (s *SftpFS) reconnect() error {
 		return fmt.Errorf("reconnect sftp failed: %w", err)
 	}
 
-	s.conn = conn
-	s.client = client
+	fs.conn = conn
+	fs.client = client
 	return nil
 }
 
-func (s *SftpFS) isConnectionError(err error) bool {
+func (fs *SftpFS) isConnectionError(err error) bool {
 	if err == nil {
 		return false
 	}
@@ -230,10 +230,10 @@ func (s *SftpFS) isConnectionError(err error) bool {
 		strings.Contains(errStr, "use of closed network connection")
 }
 
-func (s *SftpFS) ReadDirEntries(ctx context.Context, p string) ([]os.DirEntry, error) {
+func (fs *SftpFS) ReadDirEntries(ctx context.Context, p string) ([]os.DirEntry, error) {
 	var entries []os.DirEntry
-	err := s.runWithRetry(func() error {
-		infos, err := s.client.ReadDir(p)
+	err := fs.runWithRetry(func() error {
+		infos, err := fs.client.ReadDir(p)
 		if err != nil {
 			return err
 		}
@@ -249,22 +249,22 @@ func (s *SftpFS) ReadDirEntries(ctx context.Context, p string) ([]os.DirEntry, e
 	return entries, nil
 }
 
-func (s *SftpFS) runWithRetry(fn func() error) error {
+func (fs *SftpFS) runWithRetry(fn func() error) error {
 	// Try 1: Standard attempt
-	s.mu.RLock()
-	client := s.client
-	s.mu.RUnlock()
+	fs.mu.RLock()
+	client := fs.client
+	fs.mu.RUnlock()
 
 	if client == nil {
-		if err := s.reconnect(); err != nil {
+		if err := fs.reconnect(); err != nil {
 			return err
 		}
 	}
 
 	err := fn()
-	if s.isConnectionError(err) {
+	if fs.isConnectionError(err) {
 		// Try 2: Reconnect and retry once
-		if recErr := s.reconnect(); recErr == nil {
+		if recErr := fs.reconnect(); recErr == nil {
 			return fn()
 		}
 	}
@@ -284,15 +284,15 @@ func infoToDirEntry(info os.FileInfo) os.DirEntry {
 	return &dirEntry{info: info}
 }
 
-func (s *SftpFS) ReadDir(ctx context.Context, p string) ([]os.FileInfo, error) {
-	if entries, ok := s.cache.Get(p); ok {
+func (fs *SftpFS) ReadDir(ctx context.Context, p string) ([]os.FileInfo, error) {
+	if entries, ok := fs.cache.Get(p); ok {
 		return entries, nil
 	}
 
 	var entries []os.FileInfo
-	err := s.runWithRetry(func() error {
+	err := fs.runWithRetry(func() error {
 		var err error
-		entries, err = s.client.ReadDir(p)
+		entries, err = fs.client.ReadDir(p)
 		return err
 	})
 
@@ -300,142 +300,142 @@ func (s *SftpFS) ReadDir(ctx context.Context, p string) ([]os.FileInfo, error) {
 		return nil, errors.WrapErrorWithPath(err, "ReadDir", p)
 	}
 
-	s.cache.Put(p, entries)
+	fs.cache.Put(p, entries)
 	return entries, nil
 }
 
-func (s *SftpFS) Stat(ctx context.Context, p string) (os.FileInfo, error) {
+func (fs *SftpFS) Stat(ctx context.Context, p string) (os.FileInfo, error) {
 	var info os.FileInfo
-	err := s.runWithRetry(func() error {
+	err := fs.runWithRetry(func() error {
 		var err error
-		info, err = s.client.Stat(p)
+		info, err = fs.client.Stat(p)
 		return err
 	})
 	return info, errors.WrapErrorWithPath(err, "Stat", p)
 }
 
-func (s *SftpFS) Lstat(ctx context.Context, p string) (os.FileInfo, error) {
+func (fs *SftpFS) Lstat(ctx context.Context, p string) (os.FileInfo, error) {
 	var info os.FileInfo
-	err := s.runWithRetry(func() error {
+	err := fs.runWithRetry(func() error {
 		var err error
-		info, err = s.client.Lstat(p)
+		info, err = fs.client.Lstat(p)
 		return err
 	})
 	return info, errors.WrapErrorWithPath(err, "Lstat", p)
 }
 
-func (s *SftpFS) RemoveAll(ctx context.Context, p string) error {
-	s.cache.Invalidate(path.Dir(p))
-	return s.runWithRetry(func() error {
-		info, err := s.client.Stat(p)
+func (fs *SftpFS) RemoveAll(ctx context.Context, p string) error {
+	fs.cache.Invalidate(path.Dir(p))
+	return fs.runWithRetry(func() error {
+		info, err := fs.client.Stat(p)
 		if err != nil {
 			return err
 		}
 		if !info.IsDir() {
-			return s.client.Remove(p)
+			return fs.client.Remove(p)
 		}
 
-		entries, err := s.client.ReadDir(p)
+		entries, err := fs.client.ReadDir(p)
 		if err != nil {
 			return err
 		}
 
 		for _, entry := range entries {
 			childPath := path.Join(p, entry.Name())
-			if err := s.RemoveAll(ctx, childPath); err != nil {
+			if err := fs.RemoveAll(ctx, childPath); err != nil {
 				return err
 			}
 		}
-		return s.client.RemoveDirectory(p)
+		return fs.client.RemoveDirectory(p)
 	})
 }
 
-func (s *SftpFS) Rename(ctx context.Context, oldPath, newPath string) error {
-	s.cache.Invalidate(path.Dir(oldPath))
-	s.cache.Invalidate(path.Dir(newPath))
-	err := s.runWithRetry(func() error {
-		return s.client.Rename(oldPath, newPath)
+func (fs *SftpFS) Rename(ctx context.Context, oldPath, newPath string) error {
+	fs.cache.Invalidate(path.Dir(oldPath))
+	fs.cache.Invalidate(path.Dir(newPath))
+	err := fs.runWithRetry(func() error {
+		return fs.client.Rename(oldPath, newPath)
 	})
 	return errors.WrapErrorWithPath(err, "Rename", fmt.Sprintf("%s -> %s", oldPath, newPath))
 }
 
-func (s *SftpFS) Create(ctx context.Context, p string) (io.WriteCloser, error) {
-	s.cache.Invalidate(path.Dir(p))
+func (fs *SftpFS) Create(ctx context.Context, p string) (io.WriteCloser, error) {
+	fs.cache.Invalidate(path.Dir(p))
 	var f io.WriteCloser
-	err := s.runWithRetry(func() error {
+	err := fs.runWithRetry(func() error {
 		var err error
-		f, err = s.client.Create(p)
+		f, err = fs.client.Create(p)
 		return err
 	})
 	return f, errors.WrapErrorWithPath(err, "Create", p)
 }
 
-func (s *SftpFS) Open(ctx context.Context, p string) (io.ReadCloser, error) {
+func (fs *SftpFS) Open(ctx context.Context, p string) (io.ReadCloser, error) {
 	var f io.ReadCloser
-	err := s.runWithRetry(func() error {
+	err := fs.runWithRetry(func() error {
 		var err error
-		f, err = s.client.Open(p)
+		f, err = fs.client.Open(p)
 		return err
 	})
 	return f, errors.WrapErrorWithPath(err, "Open", p)
 }
 
-func (s *SftpFS) MkdirAll(ctx context.Context, p string, perm os.FileMode) error {
-	s.cache.Invalidate(path.Dir(p))
-	return s.runWithRetry(func() error {
-		return s.client.MkdirAll(p)
+func (fs *SftpFS) MkdirAll(ctx context.Context, p string, perm os.FileMode) error {
+	fs.cache.Invalidate(path.Dir(p))
+	return fs.runWithRetry(func() error {
+		return fs.client.MkdirAll(p)
 	})
 }
 
-func (s *SftpFS) Chmod(ctx context.Context, p string, mode os.FileMode) error {
-	return s.runWithRetry(func() error {
-		return s.client.Chmod(p, mode)
+func (fs *SftpFS) Chmod(ctx context.Context, p string, mode os.FileMode) error {
+	return fs.runWithRetry(func() error {
+		return fs.client.Chmod(p, mode)
 	})
 }
 
-func (s *SftpFS) Preallocate(ctx context.Context, path string, size int64) error {
+func (fs *SftpFS) Preallocate(ctx context.Context, path string, size int64) error {
 	// SFTP doesn't support fallocate natively.
 	// We could use StatVFS to check free space, but for now we'll keep it as a no-op.
 	return nil
 }
 
-func (s *SftpFS) GetHomeDir() (string, error) {
-	dir, err := s.client.Getwd()
+func (fs *SftpFS) GetHomeDir() (string, error) {
+	dir, err := fs.client.Getwd()
 	return dir, errors.WrapError(err, "GetHomeDir")
 }
 
-func (s *SftpFS) Separator() string {
+func (fs *SftpFS) Separator() string {
 	return "/"
 }
 
-func (s *SftpFS) IsLocal() bool {
+func (fs *SftpFS) IsLocal() bool {
 	return false
 }
 
-func (s *SftpFS) Address() string {
-	return s.address
+func (fs *SftpFS) Address() string {
+	return fs.address
 }
 
-func (s *SftpFS) User() string {
-	return s.user
+func (fs *SftpFS) User() string {
+	return fs.user
 }
 
-func (s *SftpFS) Join(elem ...string) string {
+func (fs *SftpFS) Join(elem ...string) string {
 	return path.Join(elem...)
 }
 
-func (s *SftpFS) Abs(p string) (string, error) {
+func (fs *SftpFS) Abs(p string) (string, error) {
 	if path.IsAbs(p) {
 		return path.Clean(p), nil
 	}
-	wd, err := s.client.Getwd()
+	wd, err := fs.client.Getwd()
 	if err != nil {
 		return "", errors.WrapError(err, "Abs")
 	}
 	return path.Join(wd, p), nil
 }
 
-func (s *SftpFS) Rel(basepath, targpath string) (string, error) {
+func (fs *SftpFS) Rel(basepath, targpath string) (string, error) {
 	base := path.Clean(basepath)
 	targ := path.Clean(targpath)
 
@@ -472,27 +472,27 @@ func (s *SftpFS) Rel(basepath, targpath string) (string, error) {
 	return strings.Join(rel, "/"), nil
 }
 
-func (s *SftpFS) Clean(p string) string {
+func (fs *SftpFS) Clean(p string) string {
 	return path.Clean(p)
 }
 
-func (s *SftpFS) Dir(p string) string {
+func (fs *SftpFS) Dir(p string) string {
 	return path.Dir(p)
 }
 
-func (s *SftpFS) Base(p string) string {
+func (fs *SftpFS) Base(p string) string {
 	return path.Base(p)
 }
 
-func (s *SftpFS) Ext(p string) string {
+func (fs *SftpFS) Ext(p string) string {
 	return path.Ext(p)
 }
 
-func (s *SftpFS) IsReadOnly(ctx context.Context, p string) (bool, error) {
+func (fs *SftpFS) IsReadOnly(ctx context.Context, p string) (bool, error) {
 	var isReadOnly bool
-	err := s.runWithRetry(func() error {
+	err := fs.runWithRetry(func() error {
 		// 1. Try StatVFS extension (OpenSSH) to check mount flags
-		if vfs, err := s.client.StatVFS(p); err == nil {
+		if vfs, err := fs.client.StatVFS(p); err == nil {
 			// 1 is ST_RDONLY on most systems
 			if vfs.Flag&1 != 0 {
 				isReadOnly = true
@@ -501,7 +501,7 @@ func (s *SftpFS) IsReadOnly(ctx context.Context, p string) (bool, error) {
 		}
 
 		// 2. Fallback to checking permission bits of the directory/file itself
-		info, err := s.client.Stat(p)
+		info, err := fs.client.Stat(p)
 		if err != nil {
 			return err
 		}
@@ -517,12 +517,12 @@ func (s *SftpFS) IsReadOnly(ctx context.Context, p string) (bool, error) {
 	return isReadOnly, nil
 }
 
-func (s *SftpFS) Walk(ctx context.Context, root string, walkFn func(path string, info os.FileInfo, err error) error) error {
+func (fs *SftpFS) Walk(ctx context.Context, root string, walkFn func(path string, info os.FileInfo, err error) error) error {
 	g, ctx := errgroup.WithContext(ctx)
 	g.SetLimit(16) // Concurrency limit for parallel walking
 
 	// Start with the root
-	info, err := s.Stat(ctx, root)
+	info, err := fs.Stat(ctx, root)
 	if err := walkFn(root, info, err); err != nil {
 		if err == filepath.SkipDir {
 			return nil
@@ -534,16 +534,16 @@ func (s *SftpFS) Walk(ctx context.Context, root string, walkFn func(path string,
 		return nil
 	}
 
-	if err := s.parallelWalk(ctx, g, root, walkFn); err != nil {
+	if err := fs.parallelWalk(ctx, g, root, walkFn); err != nil {
 		return err
 	}
 
 	return g.Wait()
 }
 
-func (s *SftpFS) parallelWalk(ctx context.Context, g *errgroup.Group, root string, walkFn func(path string, info os.FileInfo, err error) error) error {
+func (fs *SftpFS) parallelWalk(ctx context.Context, g *errgroup.Group, root string, walkFn func(path string, info os.FileInfo, err error) error) error {
 	// Read current directory entries
-	entries, err := s.ReadDir(ctx, root)
+	entries, err := fs.ReadDir(ctx, root)
 	if err != nil {
 		return walkFn(root, nil, err)
 	}
@@ -566,10 +566,10 @@ func (s *SftpFS) parallelWalk(ctx context.Context, g *errgroup.Group, root strin
 				select {
 				case <-ctx.Done():
 					return ctx.Err()
-				case <-s.ctx.Done():
+				case <-fs.ctx.Done():
 					return fmt.Errorf("filesystem closed")
 				default:
-					return s.parallelWalk(ctx, g, p, walkFn)
+					return fs.parallelWalk(ctx, g, p, walkFn)
 				}
 			})
 		}

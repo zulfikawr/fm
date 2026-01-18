@@ -73,27 +73,27 @@ func NewItem(info os.FileInfo, path string, gitStatus string) Item {
 }
 
 // UpdateFormatting updates the display strings for the item
-func (i *Item) UpdateFormatting(sizeFormatIdx, dateFormatIdx int) {
-	if i.IsUp {
+func (item *Item) UpdateFormatting(sizeFormatIdx, dateFormatIdx int) {
+	if item.IsUp {
 		return
 	}
 
 	// Hide size and date for deleted files
-	if i.GitStatus == "D" && !i.IsDir {
-		i.FormattedSize = ""
-		i.FormattedDate = ""
+	if item.GitStatus == "D" && !item.IsDir {
+		item.FormattedSize = ""
+		item.FormattedDate = ""
 		return
 	}
 
-	i.FormattedSize = format.FormatSize(i.Size, sizeFormatIdx)
+	item.FormattedSize = format.FormatSize(item.Size, sizeFormatIdx)
 
 	// Check for "zero" dates. Some filesystems use 1970 or 1980 as a default/null value.
-	isSuspiciouslyOld := i.MTime.Year() <= 1980
-	if dateFormatIdx < len(format.DateFormats) && !i.MTime.IsZero() && !isSuspiciouslyOld {
+	isSuspiciouslyOld := item.MTime.Year() <= 1980
+	if dateFormatIdx < len(format.DateFormats) && !item.MTime.IsZero() && !isSuspiciouslyOld {
 		layout := format.DateFormats[dateFormatIdx].Layout
-		i.FormattedDate = i.MTime.Format(layout)
+		item.FormattedDate = item.MTime.Format(layout)
 	} else {
-		i.FormattedDate = ""
+		item.FormattedDate = ""
 	}
 }
 

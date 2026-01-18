@@ -76,180 +76,180 @@ func NewInput(styles theme.Stylesheet) Input {
 }
 
 // Value returns the current text value.
-func (i Input) Value() string {
-	return string(i.value)
+func (in Input) Value() string {
+	return string(in.value)
 }
 
 // SetValue sets the text value and moves the cursor to the end.
-func (i *Input) SetValue(s string) {
-	i.value = []rune(s)
-	i.cursor = len(i.value)
+func (in *Input) SetValue(s string) {
+	in.value = []rune(s)
+	in.cursor = len(in.value)
 }
 
 // Reset clears the value and resets state.
-func (i *Input) Reset() {
-	i.value = []rune{}
-	i.cursor = 0
-	i.EchoMode = EchoNormal
-	i.Placeholder = ""
+func (in *Input) Reset() {
+	in.value = []rune{}
+	in.cursor = 0
+	in.EchoMode = EchoNormal
+	in.Placeholder = ""
 }
 
 // SetCursor sets the cursor position.
-func (i *Input) SetCursor(pos int) {
+func (in *Input) SetCursor(pos int) {
 	if pos < 0 {
-		i.cursor = 0
-	} else if pos > len(i.value) {
-		i.cursor = len(i.value)
+		in.cursor = 0
+	} else if pos > len(in.value) {
+		in.cursor = len(in.value)
 	} else {
-		i.cursor = pos
+		in.cursor = pos
 	}
 }
 
 // Focus sets focus on the input and starts blinking.
-func (i *Input) Focus() {
-	i.focused = true
-	i.showCursor = true
-	i.blinkID++
+func (in *Input) Focus() {
+	in.focused = true
+	in.showCursor = true
+	in.blinkID++
 }
 
 // FocusCmd sets focus and returns a command to start the blink loop.
-func (i *Input) FocusCmd() tea.Cmd {
-	i.Focus()
-	return i.Blink()
+func (in *Input) FocusCmd() tea.Cmd {
+	in.Focus()
+	return in.Blink()
 }
 
 // Blur removes focus from the input.
-func (i *Input) Blur() {
-	i.focused = false
-	i.showCursor = false
-	i.blinkID++
+func (in *Input) Blur() {
+	in.focused = false
+	in.showCursor = false
+	in.blinkID++
 }
 
 // Focused returns whether the input is focused.
-func (i Input) Focused() bool {
-	return i.focused
+func (in Input) Focused() bool {
+	return in.focused
 }
 
 // SetPrompt sets the prompt string.
-func (i *Input) SetPrompt(p string) {
-	i.Prompt = p
+func (in *Input) SetPrompt(p string) {
+	in.Prompt = p
 }
 
 // Blink returns a command that toggles the cursor visibility.
-func (i Input) Blink() tea.Cmd {
-	id := i.blinkID
+func (in Input) Blink() tea.Cmd {
+	id := in.blinkID
 	return tea.Tick(time.Millisecond*500, func(t time.Time) tea.Msg {
 		return BlinkMsg{ID: id}
 	})
 }
 
 // SetStyles updates the styles of the input.
-func (i *Input) SetStyles(styles theme.Stylesheet) {
-	i.styles = styles
+func (in *Input) SetStyles(styles theme.Stylesheet) {
+	in.styles = styles
 	bg := styles.Footer.GetBackground()
 	primary := styles.KeyCol.GetForeground()
 	if primary == nil {
 		primary = lipgloss.Color("15")
 	}
-	i.TextStyle = styles.Footer.UnsetPadding().UnsetWidth().Background(bg)
-	i.PromptStyle = styles.Footer.UnsetPadding().UnsetWidth().Background(bg)
-	i.PlaceholderStyle = styles.DimCol.Background(bg)
-	i.Cursor.Style = lipgloss.NewStyle().Background(primary).Foreground(bg)
+	in.TextStyle = styles.Footer.UnsetPadding().UnsetWidth().Background(bg)
+	in.PromptStyle = styles.Footer.UnsetPadding().UnsetWidth().Background(bg)
+	in.PlaceholderStyle = styles.DimCol.Background(bg)
+	in.Cursor.Style = lipgloss.NewStyle().Background(primary).Foreground(bg)
 }
 
 // FixBackground ensures the background matches the theme.
-func (i *Input) FixBackground() {
-	bg := i.styles.Footer.GetBackground()
-	primary := i.styles.KeyCol.GetForeground()
+func (in *Input) FixBackground() {
+	bg := in.styles.Footer.GetBackground()
+	primary := in.styles.KeyCol.GetForeground()
 	if primary == nil {
 		primary = lipgloss.Color("15")
 	}
-	i.TextStyle = i.TextStyle.Background(bg)
-	i.PromptStyle = i.PromptStyle.Background(bg)
-	i.PlaceholderStyle = i.PlaceholderStyle.Background(bg)
-	i.Cursor.Style = i.Cursor.Style.Background(primary).Foreground(bg)
+	in.TextStyle = in.TextStyle.Background(bg)
+	in.PromptStyle = in.PromptStyle.Background(bg)
+	in.PlaceholderStyle = in.PlaceholderStyle.Background(bg)
+	in.Cursor.Style = in.Cursor.Style.Background(primary).Foreground(bg)
 }
 
-func (i Input) Update(msg tea.Msg) (Input, tea.Cmd) {
+func (in Input) Update(msg tea.Msg) (Input, tea.Cmd) {
 	switch msg := msg.(type) {
 	case BlinkMsg:
-		if i.focused && msg.ID == i.blinkID {
-			i.showCursor = !i.showCursor
-			return i, i.Blink()
+		if in.focused && msg.ID == in.blinkID {
+			in.showCursor = !in.showCursor
+			return in, in.Blink()
 		}
-		return i, nil
+		return in, nil
 	}
 
-	if !i.focused {
-		return i, nil
+	if !in.focused {
+		return in, nil
 	}
 
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		i.showCursor = true // Reset blink on keypress
+		in.showCursor = true // Reset blink on keypress
 		switch msg.Type {
 		case tea.KeyBackspace:
-			if i.cursor > 0 {
-				i.value = append(i.value[:i.cursor-1], i.value[i.cursor:]...)
-				i.cursor--
+			if in.cursor > 0 {
+				in.value = append(in.value[:in.cursor-1], in.value[in.cursor:]...)
+				in.cursor--
 			}
 		case tea.KeyDelete:
-			if i.cursor < len(i.value) {
-				i.value = append(i.value[:i.cursor], i.value[i.cursor+1:]...)
+			if in.cursor < len(in.value) {
+				in.value = append(in.value[:in.cursor], in.value[in.cursor+1:]...)
 			}
 		case tea.KeyLeft:
-			if i.cursor > 0 {
-				i.cursor--
+			if in.cursor > 0 {
+				in.cursor--
 			}
 		case tea.KeyRight:
-			if i.cursor < len(i.value) {
-				i.cursor++
+			if in.cursor < len(in.value) {
+				in.cursor++
 			}
 		case tea.KeyHome:
-			i.cursor = 0
+			in.cursor = 0
 		case tea.KeyEnd:
-			i.cursor = len(i.value)
+			in.cursor = len(in.value)
 		case tea.KeyRunes:
-			if i.CharLimit <= 0 || len(i.value) < i.CharLimit {
+			if in.CharLimit <= 0 || len(in.value) < in.CharLimit {
 				runes := msg.Runes
-				newVal := make([]rune, len(i.value)+len(runes))
-				copy(newVal, i.value[:i.cursor])
-				copy(newVal[i.cursor:], runes)
-				copy(newVal[i.cursor+len(runes):], i.value[i.cursor:])
-				i.value = newVal
-				i.cursor += len(runes)
+				newVal := make([]rune, len(in.value)+len(runes))
+				copy(newVal, in.value[:in.cursor])
+				copy(newVal[in.cursor:], runes)
+				copy(newVal[in.cursor+len(runes):], in.value[in.cursor:])
+				in.value = newVal
+				in.cursor += len(runes)
 			}
 		case tea.KeySpace:
-			if i.CharLimit <= 0 || len(i.value) < i.CharLimit {
-				newVal := make([]rune, len(i.value)+1)
-				copy(newVal, i.value[:i.cursor])
-				newVal[i.cursor] = ' '
-				copy(newVal[i.cursor+1:], i.value[i.cursor:])
-				i.value = newVal
-				i.cursor++
+			if in.CharLimit <= 0 || len(in.value) < in.CharLimit {
+				newVal := make([]rune, len(in.value)+1)
+				copy(newVal, in.value[:in.cursor])
+				newVal[in.cursor] = ' '
+				copy(newVal[in.cursor+1:], in.value[in.cursor:])
+				in.value = newVal
+				in.cursor++
 			}
 		}
 	}
 
-	return i, nil
+	return in, nil
 }
 
 // View renders the input component.
-func (i Input) View() string {
+func (in Input) View() string {
 	var b strings.Builder
 
 	// Render prompt
-	if i.Prompt != "" {
-		b.WriteString(i.PromptStyle.Render(i.Prompt))
+	if in.Prompt != "" {
+		b.WriteString(in.PromptStyle.Render(in.Prompt))
 	}
 
 	// Render value with cursor
-	val := i.value
-	switch i.EchoMode {
+	val := in.value
+	switch in.EchoMode {
 	case EchoPassword:
-		masked := make([]rune, len(i.value))
+		masked := make([]rune, len(in.value))
 		for idx := range masked {
-			masked[idx] = i.EchoCharacter
+			masked[idx] = in.EchoCharacter
 		}
 		val = masked
 	case EchoNone:
@@ -258,25 +258,25 @@ func (i Input) View() string {
 
 	// Simple scrolling/clipping if Width is set
 	displayOffset := 0
-	if i.Width > 0 && i.cursor >= i.Width {
-		displayOffset = i.cursor - i.Width + 1
+	if in.Width > 0 && in.cursor >= in.Width {
+		displayOffset = in.cursor - in.Width + 1
 	}
 
 	for idx := displayOffset; ; idx++ {
 		// Stop if we reach the Width limit or the end of the value
-		if i.Width > 0 && idx-displayOffset >= i.Width {
+		if in.Width > 0 && idx-displayOffset >= in.Width {
 			break
 		}
 
-		if idx == i.cursor && i.focused {
+		if idx == in.cursor && in.focused {
 			char := " "
 			if idx < len(val) {
 				char = string(val[idx])
 			}
-			if i.showCursor {
-				b.WriteString(i.Cursor.Style.Render(char))
+			if in.showCursor {
+				b.WriteString(in.Cursor.Style.Render(char))
 			} else {
-				b.WriteString(i.TextStyle.Render(char))
+				b.WriteString(in.TextStyle.Render(char))
 			}
 			if idx >= len(val) {
 				break
@@ -285,19 +285,19 @@ func (i Input) View() string {
 		}
 
 		if idx < len(val) {
-			b.WriteString(i.TextStyle.Render(string(val[idx])))
+			b.WriteString(in.TextStyle.Render(string(val[idx])))
 		} else {
-			if idx == displayOffset && len(val) == 0 && i.Placeholder != "" {
-				b.WriteString(i.PlaceholderStyle.Render(i.Placeholder))
+			if idx == displayOffset && len(val) == 0 && in.Placeholder != "" {
+				b.WriteString(in.PlaceholderStyle.Render(in.Placeholder))
 				break
 			}
 			// Fill remaining Width with spaces if focused (for trailing cursor)
-			if !i.focused || idx > i.cursor {
+			if !in.focused || idx > in.cursor {
 				break
 			}
 		}
 
-		if idx >= len(val) && (!i.focused || idx >= i.cursor) {
+		if idx >= len(val) && (!in.focused || idx >= in.cursor) {
 			break
 		}
 	}

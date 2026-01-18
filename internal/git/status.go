@@ -9,8 +9,8 @@ import (
 	"fm/internal/constants"
 )
 
-func (s *gitService) GetStatus(ctx context.Context, path string) (map[string]string, string) {
-	if !s.IsEnabled() {
+func (gs *gitService) GetStatus(ctx context.Context, path string) (map[string]string, string) {
+	if !gs.IsEnabled() {
 		return nil, ""
 	}
 
@@ -20,7 +20,7 @@ func (s *gitService) GetStatus(ctx context.Context, path string) (map[string]str
 	ctx, cancel := context.WithTimeout(ctx, constants.GitCommandTimeout)
 	defer cancel()
 
-	repoRoot := s.GetRoot(ctx, path)
+	repoRoot := gs.GetRoot(ctx, path)
 	if repoRoot == "" {
 		return statuses, ""
 	}

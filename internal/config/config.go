@@ -114,14 +114,14 @@ func Load() Config {
 var marshalIndent = json.MarshalIndent
 
 // Save writes the current config to disk.
-func (c Config) Save() error {
+func (cfg Config) Save() error {
 	path := GetConfigPath()
 	dir := filepath.Dir(path)
 	if err := os.MkdirAll(dir, 0o755); err != nil {
 		return err
 	}
 
-	data, err := marshalIndent(c, "", "  ")
+	data, err := marshalIndent(cfg, "", "  ")
 	if err != nil {
 		return err
 	}

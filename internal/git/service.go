@@ -34,14 +34,14 @@ func NewGitService(enabled bool) GitService {
 	}
 }
 
-func (s *gitService) IsEnabled() bool {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-	return s.enabled
+func (gs *gitService) IsEnabled() bool {
+	gs.mu.RLock()
+	defer gs.mu.RUnlock()
+	return gs.enabled
 }
 
-func (s *gitService) SetEnabled(enabled bool) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	s.enabled = enabled
+func (gs *gitService) SetEnabled(enabled bool) {
+	gs.mu.Lock()
+	defer gs.mu.Unlock()
+	gs.enabled = enabled
 }

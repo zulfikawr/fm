@@ -62,12 +62,12 @@ func NewTarFS(path string) (*TarFS, error) {
 	}, nil
 }
 
-func (a *TarFS) Close() error {
+func (fs *TarFS) Close() error {
 	return nil
 }
 
-func (a *TarFS) ReadDir(ctx context.Context, path string) ([]os.FileInfo, error) {
-	entries, err := a.ReadDirEntries(ctx, path)
+func (fs *TarFS) ReadDir(ctx context.Context, path string) ([]os.FileInfo, error) {
+	entries, err := fs.ReadDirEntries(ctx, path)
 	if err != nil {
 		return nil, err
 	}
@@ -83,14 +83,14 @@ func (a *TarFS) ReadDir(ctx context.Context, path string) ([]os.FileInfo, error)
 	return infos, nil
 }
 
-func (a *TarFS) ReadDirEntries(ctx context.Context, path string) ([]os.DirEntry, error) {
+func (fs *TarFS) ReadDirEntries(ctx context.Context, path string) ([]os.DirEntry, error) {
 	select {
 	case <-ctx.Done():
 		return nil, ctx.Err()
 	default:
 	}
 
-	path = a.Clean(path)
+	path = fs.Clean(path)
 	if path == "." || path == "/" {
 		path = ""
 	} else {
@@ -103,7 +103,7 @@ func (a *TarFS) ReadDirEntries(ctx context.Context, path string) ([]os.DirEntry,
 	seen := make(map[string]bool)
 	var entries []os.DirEntry
 
-	for _, entry := range a.entries {
+	for _, entry := range fs.entries {
 		select {
 		case <-ctx.Done():
 			return nil, ctx.Err()
@@ -139,24 +139,24 @@ func (a *TarFS) ReadDirEntries(ctx context.Context, path string) ([]os.DirEntry,
 	return entries, nil
 }
 
-func (a *TarFS) Stat(ctx context.Context, path string) (os.FileInfo, error) {
+func (fs *TarFS) Stat(ctx context.Context, path string) (os.FileInfo, error) {
 	select {
 	case <-ctx.Done():
 		return nil, ctx.Err()
 	default:
 	}
 
-	path = a.Clean(path)
+	path = fs.Clean(path)
 	if path == "." || path == "/" || path == "" {
 		return &archiveFileInfo{
-			name:  a.Base(a.archivePath),
+			name:  fs.Base(fs.archivePath),
 			isDir: true,
 		}, nil
 	}
 
 	path = strings.TrimPrefix(path, "/")
 
-	for _, entry := range a.entries {
+	for _, entry := range fs.entries {
 		if strings.TrimSuffix(entry.header.Name, "/") == path {
 			return entry.header.FileInfo(), nil
 		}
@@ -167,10 +167,10 @@ func (a *TarFS) Stat(ctx context.Context, path string) (os.FileInfo, error) {
 	if !strings.HasSuffix(dirPath, "/") {
 		dirPath += "/"
 	}
-	for _, entry := range a.entries {
+	for _, entry := range fs.entries {
 		if strings.HasPrefix(entry.header.Name, dirPath) {
 			return &archiveFileInfo{
-				name:  a.Base(path),
+				name:  fs.Base(path),
 				isDir: true,
 			}, nil
 		}
@@ -179,24 +179,24 @@ func (a *TarFS) Stat(ctx context.Context, path string) (os.FileInfo, error) {
 	return nil, errors.WrapErrorWithPath(os.ErrNotExist, "Stat", path)
 }
 
-func (a *TarFS) Lstat(ctx context.Context, path string) (os.FileInfo, error) {
-	return a.Stat(ctx, path)
+func (fs *TarFS) Lstat(ctx context.Context, path string) (os.FileInfo, error) {
+	return fs.Stat(ctx, path)
 }
 
-func (a *TarFS) Open(ctx context.Context, path string) (io.ReadCloser, error) {
+func (fs *TarFS) Open(ctx context.Context, path string) (io.ReadCloser, error) {
 	select {
 	case <-ctx.Done():
 		return nil, ctx.Err()
 	default:
 	}
 
-	f, err := os.Open(a.archivePath)
+	f, err := os.Open(fs.archivePath)
 	if err != nil {
 		return nil, err
 	}
 
 	var tr *tar.Reader
-	if strings.HasSuffix(a.archivePath, ".gz") || strings.HasSuffix(a.archivePath, ".tgz") {
+	if strings.HasSuffix(fs.archivePath, ".gz") || strings.HasSuffix(fs.archivePath, ".tgz") {
 		gzr, err := gzip.NewReader(f)
 		if err != nil {
 			f.Close()
@@ -207,7 +207,7 @@ func (a *TarFS) Open(ctx context.Context, path string) (io.ReadCloser, error) {
 		tr = tar.NewReader(f)
 	}
 
-	path = strings.TrimPrefix(a.Clean(path), "/")
+	path = strings.TrimPrefix(fs.Clean(path), "/")
 	for {
 		header, err := tr.Next()
 		if err == io.EOF {
@@ -230,13 +230,13 @@ func (a *TarFS) Open(ctx context.Context, path string) (io.ReadCloser, error) {
 	return nil, errors.WrapErrorWithPath(os.ErrNotExist, "Open", path)
 }
 
-func (a *TarFS) Walk(ctx context.Context, root string, walkFn func(path string, info os.FileInfo, err error) error) error {
-	root = strings.TrimPrefix(a.Clean(root), "/")
+func (fs *TarFS) Walk(ctx context.Context, root string, walkFn func(path string, info os.FileInfo, err error) error) error {
+	root = strings.TrimPrefix(fs.Clean(root), "/")
 	if root == "." {
 		root = ""
 	}
 
-	for _, entry := range a.entries {
+	for _, entry := range fs.entries {
 		select {
 		case <-ctx.Done():
 			return ctx.Err()
@@ -255,27 +255,27 @@ func (a *TarFS) Walk(ctx context.Context, root string, walkFn func(path string, 
 
 // Writer operations (Read-Only)
 
-func (a *TarFS) Create(ctx context.Context, path string) (io.WriteCloser, error) {
+func (fs *TarFS) Create(ctx context.Context, path string) (io.WriteCloser, error) {
 	return nil, fmt.Errorf("archive filesystem is read-only")
 }
 
-func (a *TarFS) MkdirAll(ctx context.Context, path string, perm os.FileMode) error {
+func (fs *TarFS) MkdirAll(ctx context.Context, path string, perm os.FileMode) error {
 	return fmt.Errorf("archive filesystem is read-only")
 }
 
-func (a *TarFS) RemoveAll(ctx context.Context, path string) error {
+func (fs *TarFS) RemoveAll(ctx context.Context, path string) error {
 	return fmt.Errorf("archive filesystem is read-only")
 }
 
-func (a *TarFS) Rename(ctx context.Context, oldPath, newPath string) error {
+func (fs *TarFS) Rename(ctx context.Context, oldPath, newPath string) error {
 	return fmt.Errorf("archive filesystem is read-only")
 }
 
-func (a *TarFS) Chmod(ctx context.Context, path string, mode os.FileMode) error {
+func (fs *TarFS) Chmod(ctx context.Context, path string, mode os.FileMode) error {
 	return fmt.Errorf("archive filesystem is read-only")
 }
 
-func (a *TarFS) Preallocate(ctx context.Context, path string, size int64) error {
+func (fs *TarFS) Preallocate(ctx context.Context, path string, size int64) error {
 	return fmt.Errorf("archive filesystem is read-only")
 }
 

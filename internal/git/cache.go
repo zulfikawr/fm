@@ -8,13 +8,13 @@ import (
 	"fm/internal/constants"
 )
 
-func (s *gitService) GetRoot(ctx context.Context, path string) string {
-	if !s.IsEnabled() {
+func (gs *gitService) GetRoot(ctx context.Context, path string) string {
+	if !gs.IsEnabled() {
 		return ""
 	}
 
 	// Check cache
-	if root, ok := s.rootCache.Load(path); ok {
+	if root, ok := gs.rootCache.Load(path); ok {
 		return root.(string)
 	}
 
@@ -28,6 +28,6 @@ func (s *gitService) GetRoot(ctx context.Context, path string) string {
 	}
 
 	root := strings.TrimSpace(string(out))
-	s.rootCache.Store(path, root)
+	gs.rootCache.Store(path, root)
 	return root
 }
