@@ -33,7 +33,7 @@ type Logger interface {
 
 type fileLogger struct{}
 
-func (fs *fileLogger) Log(level string, msg string) {
+func (l *fileLogger) Log(level string, msg string) {
 	path := GetLogPath()
 	dir := filepath.Dir(path)
 	if err := os.MkdirAll(dir, 0o755); err != nil {

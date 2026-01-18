@@ -287,16 +287,16 @@ type tarDirEntry struct {
 	entry tarEntry
 }
 
-func (d *tarDirEntry) Name() string               { return d.name }
-func (d *tarDirEntry) IsDir() bool                { return d.isDir }
-func (d *tarDirEntry) Type() os.FileMode          { return d.entry.header.FileInfo().Mode().Type() }
-func (d *tarDirEntry) Info() (os.FileInfo, error) { return d.entry.header.FileInfo(), nil }
+func (e *tarDirEntry) Name() string               { return e.name }
+func (e *tarDirEntry) IsDir() bool                { return e.isDir }
+func (e *tarDirEntry) Type() os.FileMode          { return e.entry.header.FileInfo().Mode().Type() }
+func (e *tarDirEntry) Info() (os.FileInfo, error) { return e.entry.header.FileInfo(), nil }
 
 type tarFileReadCloser struct {
 	io.Reader
 	f *os.File
 }
 
-func (t *tarFileReadCloser) Close() error {
-	return t.f.Close()
+func (rc *tarFileReadCloser) Close() error {
+	return rc.f.Close()
 }

@@ -312,19 +312,19 @@ type archiveDirEntry struct {
 	file  *zip.File
 }
 
-func (d *archiveDirEntry) Name() string               { return d.name }
-func (d *archiveDirEntry) IsDir() bool                { return d.isDir }
-func (d *archiveDirEntry) Type() os.FileMode          { return d.file.Mode().Type() }
-func (d *archiveDirEntry) Info() (os.FileInfo, error) { return d.file.FileInfo(), nil }
+func (e *archiveDirEntry) Name() string               { return e.name }
+func (e *archiveDirEntry) IsDir() bool                { return e.isDir }
+func (e *archiveDirEntry) Type() os.FileMode          { return e.file.Mode().Type() }
+func (e *archiveDirEntry) Info() (os.FileInfo, error) { return e.file.FileInfo(), nil }
 
 type archiveFileInfo struct {
 	name  string
 	isDir bool
 }
 
-func (f *archiveFileInfo) Name() string       { return f.name }
-func (f *archiveFileInfo) Size() int64        { return 0 }
-func (f *archiveFileInfo) Mode() os.FileMode  { return os.ModeDir | 0555 }
-func (f *archiveFileInfo) ModTime() time.Time { return time.Time{} }
-func (f *archiveFileInfo) IsDir() bool        { return f.isDir }
-func (f *archiveFileInfo) Sys() interface{}   { return nil }
+func (info *archiveFileInfo) Name() string       { return info.name }
+func (info *archiveFileInfo) Size() int64        { return 0 }
+func (info *archiveFileInfo) Mode() os.FileMode  { return os.ModeDir | 0555 }
+func (info *archiveFileInfo) ModTime() time.Time { return time.Time{} }
+func (info *archiveFileInfo) IsDir() bool        { return info.isDir }
+func (info *archiveFileInfo) Sys() interface{}   { return nil }
