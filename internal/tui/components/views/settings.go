@@ -192,12 +192,14 @@ func RenderSettingsFooter(width int, cursor int, styles theme.Stylesheet) string
 	baseFooterStyle := styles.Footer.UnsetPadding().UnsetWidth()
 
 	leftPart := " [↑↓] Navigate | [⏎/Space] Toggle | [r] Reset | [Esc/.] Back"
-	rightPart := getSettingsHelp(cursor) + " "
+	rightPart := " " + getSettingsHelp(cursor) + " "
 
-	gap := width - lipgloss.Width(leftPart) - lipgloss.Width(rightPart)
-	if gap < 0 {
-		gap = 0
+	// If width is small, hide shortcuts and show only help text
+	if width < 100 {
+		return styles.Footer.Width(width).Render(rightPart)
 	}
+
+	gap := max(width - lipgloss.Width(leftPart) - lipgloss.Width(rightPart), 0)
 
 	footerContent := messages.ColorizeKeys(messages.Props{Style: styles}, leftPart) + baseFooterStyle.Render(strings.Repeat(" ", gap)) + baseFooterStyle.Render(rightPart)
 	return styles.Footer.Width(width).Render(footerContent)
