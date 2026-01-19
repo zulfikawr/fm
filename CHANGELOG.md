@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.1.10] - 2026-01-19
+
+### Changed
+- The app is now more responsive for smaller terminal window size.
+- Redesign the help cli to respect current theme.
+
+## [v0.1.9] - 2026-01-18
+
+### Changed
+- Finalized project structure and documentation for `go mod` and `pkg.go.dev` publishing. No functional code changes.
+
 ## [v0.1.8] - 2026-01-18
 
 ### Added

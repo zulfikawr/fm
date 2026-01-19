@@ -122,7 +122,19 @@ func renderMetaPart(props Props, item core.Item, isCursor bool, layout Layout) s
 	sStyle := props.Styles.SelectedItem.UnsetPadding().UnsetWidth()
 
 	if !item.HasMetadata && !item.IsUp && !item.IsGhost {
-		content := fmt.Sprintf("%*s%*s", layout.ColumnGap, "", layout.DateWidth+layout.ColumnGap+layout.SizeWidth, "...")
+		metaWidth := 0
+		if layout.ShowDate {
+			metaWidth += layout.DateWidth + layout.ColumnGap
+		}
+		if layout.ShowSize {
+			metaWidth += layout.SizeWidth + layout.ColumnGap
+		}
+
+		if metaWidth == 0 {
+			return ""
+		}
+
+		content := fmt.Sprintf("%*s", metaWidth, "...")
 		if isCursor {
 			return props.Styles.DimCol.Inherit(sStyle).Render(content)
 		}
@@ -130,7 +142,7 @@ func renderMetaPart(props Props, item core.Item, isCursor bool, layout Layout) s
 	}
 
 	datePart := ""
-	if props.ShowDateModified {
+	if layout.ShowDate {
 		dateStr := item.FormattedDate
 		content := fmt.Sprintf("%*s%*s", layout.ColumnGap, "", layout.DateWidth, dateStr)
 		if isCursor {
@@ -141,7 +153,7 @@ func renderMetaPart(props Props, item core.Item, isCursor bool, layout Layout) s
 	}
 
 	sizePart := ""
-	if props.ShowSize {
+	if layout.ShowSize {
 		sizeStr := item.FormattedSize
 		content := fmt.Sprintf("%*s%*s", layout.ColumnGap, "", layout.SizeWidth, sizeStr)
 		if isCursor {

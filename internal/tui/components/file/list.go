@@ -37,6 +37,8 @@ type Layout struct {
 	GitMarkerWidth     int
 	PermIndicatorWidth int
 	ColumnGap          int
+	ShowSize           bool
+	ShowDate           bool
 }
 
 // Render renders the complete file list view
@@ -91,10 +93,10 @@ func renderHeaderRows(props Props, layout Layout) []string {
 	prefixWidth := layout.MarkerWidth + layout.GitMarkerWidth + layout.PermIndicatorWidth
 	columns = append(columns, ui.Column{Title: "Name", Width: layout.NameWidth + prefixWidth})
 
-	if props.ShowDateModified {
+	if layout.ShowDate {
 		columns = append(columns, ui.Column{Title: "Date Modified", Width: layout.DateWidth})
 	}
-	if props.ShowSize {
+	if layout.ShowSize {
 		columns = append(columns, ui.Column{Title: "Size", Width: layout.SizeWidth})
 	}
 
@@ -123,13 +125,35 @@ func calculateLayout(props Props) Layout {
 		markerWidth = 4
 	}
 	gitMarkerWidth := 2
+	permIndicatorWidth := 1
 
-	nameWidth := props.Width - markerWidth - gitMarkerWidth - 2
-	if props.ShowSize {
+	// Initial available width for name, size and date
+	// -2 for safety margin/padding
+	availableWidth := props.Width - markerWidth - gitMarkerWidth - permIndicatorWidth - 2
+
+	showSize := props.ShowSize
+	showDate := props.ShowDateModified
+
+	const minNameWidth = 20
+
+	nameWidth := availableWidth
+	if showSize {
 		nameWidth -= (sizeWidth + columnGap)
 	}
-	if props.ShowDateModified {
+	if showDate {
 		nameWidth -= (dateWidth + columnGap)
+	}
+
+	// If name width is too small, hide Date Modified first
+	if nameWidth < minNameWidth && showDate {
+		showDate = false
+		nameWidth += (dateWidth + columnGap)
+	}
+
+	// If still too small, hide Size
+	if nameWidth < minNameWidth && showSize {
+		showSize = false
+		nameWidth += (sizeWidth + columnGap)
 	}
 
 	if nameWidth < 1 {
@@ -143,7 +167,9 @@ func calculateLayout(props Props) Layout {
 		SizeWidth:          sizeWidth,
 		MarkerWidth:        markerWidth,
 		GitMarkerWidth:     gitMarkerWidth,
-		PermIndicatorWidth: 1,
+		PermIndicatorWidth: permIndicatorWidth,
 		ColumnGap:          columnGap,
+		ShowSize:           showSize,
+		ShowDate:           showDate,
 	}
 }
