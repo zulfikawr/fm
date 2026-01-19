@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/zulfikawr/fm/internal/files/remote"
+	"github.com/zulfikawr/fm/internal/ssh"
 	"github.com/zulfikawr/fm/internal/tui/components/ui"
 	tui_context "github.com/zulfikawr/fm/internal/tui/context"
 
@@ -23,6 +25,33 @@ func HandleRemote(m *tui_context.Model, msg tea.Msg) tea.Cmd {
 		return handleHostConfirm(m, msg)
 	}
 	return nil
+}
+
+func connectRemote(address, user, password, keyPath string, askChan chan *ssh.HostConfirmRequest) tea.Cmd {
+	return func() tea.Msg {
+		hkcb, err := ssh.GetHostKeyCallback(askChan)
+		if err != nil {
+			return RemoteConnectMsg{Err: err}
+		}
+
+		fs, err := remote.NewRemoteFS(address, user, password, keyPath, hkcb)
+		if err != nil {
+			return RemoteConnectMsg{Err: err}
+		}
+
+		home, _ := fs.GetHomeDir()
+		return RemoteConnectMsg{FS: fs, Path: home}
+	}
+}
+
+func listenForHostConfirmation(askChan chan *ssh.HostConfirmRequest) tea.Cmd {
+	return func() tea.Msg {
+		req, ok := <-askChan
+		if !ok {
+			return nil
+		}
+		return HostConfirmMsg{Request: req}
+	}
 }
 
 func finalizeRemoteConnect(m *tui_context.Model, msg RemoteConnectMsg) tea.Cmd {

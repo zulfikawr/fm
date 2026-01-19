@@ -6,106 +6,14 @@ import (
 	"time"
 
 	"github.com/zulfikawr/fm/internal/constants"
-	"github.com/zulfikawr/fm/internal/files/core"
 	fileerrors "github.com/zulfikawr/fm/internal/files/errors"
-	"github.com/zulfikawr/fm/internal/files/remote"
 	"github.com/zulfikawr/fm/internal/logger"
-	"github.com/zulfikawr/fm/internal/ssh"
 	tui_context "github.com/zulfikawr/fm/internal/tui/context"
 	tuierrors "github.com/zulfikawr/fm/internal/tui/errors"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/fsnotify/fsnotify"
 )
-
-// --- Shared Messages ---
-
-type LoadedItemsMsg struct {
-	Generation  int
-	Path        string
-	Items       []core.Item
-	GitStatuses map[string]string
-	GitBranch   string
-	GitRoot     string
-	IsReadOnly  bool
-	Cached      bool
-	Err         error
-}
-
-type PartialItemsMsg struct {
-	Generation int
-	Path       string
-	Items      []core.Item
-}
-
-type ErrorMsg struct {
-	Err   error
-	LogID string
-}
-
-type ClearMsg struct{}
-
-type WatchEventMsg struct {
-	Event fsnotify.Event
-}
-
-type WatcherErrorMsg struct {
-	Err error
-}
-
-type WatcherClosedMsg struct{}
-
-type DebounceWatchMsg struct{}
-
-type DebounceFilterMsg struct {
-	Generation int
-}
-
-type RemotePollMsg struct{}
-
-type ProgressMsg struct {
-	Percent float64
-	Label   string
-	Channel chan core.Progress
-}
-
-type OperationFinishedMsg struct {
-	Paths []string
-	LogID string
-}
-
-type ConflictMsg struct {
-	Src          string
-	Dst          string
-	PendingItems []string
-	IsMove       bool
-	OpType       string
-	LogID        string
-}
-
-type GitStatusMsg struct {
-	Path     string
-	Statuses map[string]string
-	Branch   string
-}
-
-type RemoteConnectMsg struct {
-	FS   core.FileSystem
-	Path string
-	Err  error
-}
-
-type HostConfirmMsg struct {
-	Request *ssh.HostConfirmRequest
-}
-
-type SearchMsg struct {
-	Query   string
-	Results []core.FileResult
-	Err     error
-}
-
-// --- Shared Command Factories ---
 
 // SetMsg sets a temporary message in the footer
 func SetMsg(m *tui_context.Model, msg string) tea.Cmd {
@@ -161,8 +69,6 @@ func LogError(m *tui_context.Model, err error, context string) tea.Cmd {
 		}
 	}
 
-	// In the new architecture, we might want a global error handler like before
-	// For now, let's just log it and set it in the model
 	logger.Error(tuiErr.LogMessage())
 
 	m.Message.Error = tuiErr
@@ -215,32 +121,5 @@ func RestartWatcherAction(m *tui_context.Model) tea.Cmd {
 		m.Watcher.IsListening = false
 
 		return nil
-	}
-}
-
-func connectRemote(address, user, password, keyPath string, askChan chan *ssh.HostConfirmRequest) tea.Cmd {
-	return func() tea.Msg {
-		hkcb, err := ssh.GetHostKeyCallback(askChan)
-		if err != nil {
-			return RemoteConnectMsg{Err: err}
-		}
-
-		fs, err := remote.NewRemoteFS(address, user, password, keyPath, hkcb)
-		if err != nil {
-			return RemoteConnectMsg{Err: err}
-		}
-
-		home, _ := fs.GetHomeDir()
-		return RemoteConnectMsg{FS: fs, Path: home}
-	}
-}
-
-func listenForHostConfirmation(askChan chan *ssh.HostConfirmRequest) tea.Cmd {
-	return func() tea.Msg {
-		req, ok := <-askChan
-		if !ok {
-			return nil
-		}
-		return HostConfirmMsg{Request: req}
 	}
 }

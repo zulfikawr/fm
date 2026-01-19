@@ -100,3 +100,26 @@ func TestRemote_HostConfirm(t *testing.T) {
 		}
 	})
 }
+
+func TestRemote_ListenForHostConfirmation(t *testing.T) {
+	askChan := make(chan *ssh.HostConfirmRequest, 1)
+	req := &ssh.HostConfirmRequest{Hostname: "test-host"}
+	askChan <- req
+
+	cmd := listenForHostConfirmation(askChan)
+	msg := cmd()
+
+	confirmMsg, ok := msg.(HostConfirmMsg)
+	if !ok {
+		t.Fatalf("expected HostConfirmMsg, got %T", msg)
+	}
+	if confirmMsg.Request != req {
+		t.Errorf("expected request %v, got %v", req, confirmMsg.Request)
+	}
+
+	close(askChan)
+	msg = listenForHostConfirmation(askChan)()
+	if msg != nil {
+		t.Errorf("expected nil msg from closed channel, got %v", msg)
+	}
+}

@@ -277,3 +277,25 @@ func TestNavigation_Memory(t *testing.T) {
 	}
 	_ = tm.Quit()
 }
+
+func TestNavigation_HandleUpdate(t *testing.T) {
+	fs := testutil.NewMockFileSystem()
+	m := tuictx.NewModel(fs, "/test")
+
+	msg := LoadedItemsMsg{
+		Generation: m.Navigation.PathGen,
+		Path:       "/test",
+		Items: []core.Item{
+			{Name: "f1.txt"},
+		},
+	}
+
+	HandleUpdate(m, msg)
+
+	if len(m.Navigation.Items) != 1 {
+		t.Errorf("expected 1 item, got %d", len(m.Navigation.Items))
+	}
+	if m.UI.Loading {
+		t.Error("expected UI.Loading to be false after load")
+	}
+}

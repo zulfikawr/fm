@@ -4,13 +4,12 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/zulfikawr/fm/internal/files/core"
 	"github.com/zulfikawr/fm/internal/testutil"
 	tuictx "github.com/zulfikawr/fm/internal/tui/context"
 	tuierrors "github.com/zulfikawr/fm/internal/tui/errors"
 )
 
-func TestCommon_Helpers(t *testing.T) {
+func TestCommands_Helpers(t *testing.T) {
 	fs := testutil.NewMockFileSystem()
 	m := tuictx.NewModel(fs, "/test")
 
@@ -51,24 +50,19 @@ func TestCommon_Helpers(t *testing.T) {
 	})
 }
 
-func TestCommon_DirectoryLoad(t *testing.T) {
-	fs := testutil.NewMockFileSystem()
-	m := tuictx.NewModel(fs, "/test")
+func TestCommands_Watcher(t *testing.T) {
+	t.Run("WatchRemoteDir", func(t *testing.T) {
+		cmd := WatchRemoteDir()
+		msg := cmd()
+		if _, ok := msg.(RemotePollMsg); !ok {
+			t.Errorf("expected RemotePollMsg, got %T", msg)
+		}
+	})
 
-	msg := LoadedItemsMsg{
-		Generation: m.Navigation.PathGen,
-		Path:       "/test",
-		Items: []core.Item{
-			{Name: "f1.txt"},
-		},
-	}
-
-	HandleNavigation(m, msg)
-
-	if len(m.Navigation.Items) != 1 {
-		t.Errorf("expected 1 item, got %d", len(m.Navigation.Items))
-	}
-	if m.UI.Loading {
-		t.Error("expected UI.Loading to be false after load")
-	}
+	t.Run("WatchDir Nil", func(t *testing.T) {
+		cmd := WatchDir(nil)
+		if cmd != nil {
+			t.Error("expected nil cmd for nil watcher")
+		}
+	})
 }
