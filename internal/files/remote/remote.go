@@ -25,7 +25,7 @@ type RemoteFS struct {
 	mu     sync.RWMutex
 	client *sftp.Client
 	conn   *sshx.Client
-	cache  *core.MetadataCache
+	cache  *core.SimpleCache[string, []os.FileInfo]
 
 	// Connection details for reconnection
 	address string
@@ -124,7 +124,7 @@ func NewRemoteFS(address, user, password, keyPath string, hostKeyCallback sshx.H
 	fs := &RemoteFS{
 		client:  client,
 		conn:    conn,
-		cache:   core.NewMetadataCache(2 * time.Second),
+		cache:   core.NewSimpleCache[string, []os.FileInfo](100, 2*time.Second),
 		address: address,
 		user:    user,
 		config:  config,

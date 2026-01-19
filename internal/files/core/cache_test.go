@@ -8,9 +8,9 @@ import (
 	"github.com/zulfikawr/fm/internal/testutil"
 )
 
-func TestMetadataCache(t *testing.T) {
+func TestSimpleCache(t *testing.T) {
 	ttl := 100 * time.Millisecond
-	cache := NewMetadataCache(ttl)
+	cache := NewSimpleCache[string, []os.FileInfo](10, ttl)
 
 	entries := []os.FileInfo{&testutil.MockFileInfo{NameStr: "file1"}}
 	path := "/test/path"

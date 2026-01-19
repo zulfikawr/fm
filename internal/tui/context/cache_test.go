@@ -3,11 +3,12 @@ package context
 import (
 	"testing"
 
+	"github.com/zulfikawr/fm/internal/files/core"
 	"github.com/zulfikawr/fm/internal/testutil"
 )
 
 func TestSimpleCache(t *testing.T) {
-	c := NewSimpleCache[string, int](2, 0)
+	c := core.NewSimpleCache[string, int](2, 0)
 
 	t.Run("Put and Get", func(t *testing.T) {
 		c.Put("a", 1)

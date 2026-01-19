@@ -97,7 +97,7 @@ func TestRemoteFS_ClientMethods(t *testing.T) {
 	ictx, cancel := context.WithCancel(context.Background())
 	fs := &RemoteFS{
 		client: client,
-		cache:  core.NewMetadataCache(time.Second),
+		cache:  core.NewSimpleCache[string, []os.FileInfo](100, time.Second),
 		ctx:    ictx,
 		cancel: cancel,
 	}

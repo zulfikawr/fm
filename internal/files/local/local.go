@@ -17,12 +17,12 @@ import (
 
 // LocalFS implements FileSystem for the local disk.
 type LocalFS struct {
-	cache *core.MetadataCache
+	cache *core.SimpleCache[string, []os.FileInfo]
 }
 
 func NewLocalFS() *LocalFS {
 	return &LocalFS{
-		cache: core.NewMetadataCache(2 * time.Second),
+		cache: core.NewSimpleCache[string, []os.FileInfo](100, 2*time.Second),
 	}
 }
 

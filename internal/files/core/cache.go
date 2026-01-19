@@ -1,77 +1,141 @@
 package core
 
 import (
-	"os"
+	"container/list"
 	"sync"
 	"time"
 )
 
-// CachedDir represents a directory's contents and its expiration time
-type CachedDir struct {
-	Entries []os.FileInfo
-	Expiry  time.Time
+// CacheEntry holds a value and its metadata
+type CacheEntry[V any] struct {
+	Value   V
+	Created time.Time
 }
 
-// MetadataCache implements a short-lived TTL cache for directory listings
-type MetadataCache struct {
-	mu    sync.RWMutex
-	cache map[string]CachedDir
-	ttl   time.Duration
+// SimpleCache implements a generic thread-safe size-limited cache with optional TTL.
+type SimpleCache[K comparable, V any] struct {
+	mu        sync.RWMutex
+	capacity  int
+	ttl       time.Duration
+	cache     map[K]CacheEntry[V]
+	order     *list.List
+	protected map[K]bool
 }
 
-// NewMetadataCache creates a new metadata cache with the specified TTL
-func NewMetadataCache(ttl time.Duration) *MetadataCache {
-	return &MetadataCache{
-		cache: make(map[string]CachedDir),
-		ttl:   ttl,
+// NewSimpleCache creates a new generic cache.
+func NewSimpleCache[K comparable, V any](capacity int, ttl time.Duration) *SimpleCache[K, V] {
+	return &SimpleCache[K, V]{
+		capacity:  capacity,
+		ttl:       ttl,
+		cache:     make(map[K]CacheEntry[V]),
+		order:     list.New(),
+		protected: make(map[K]bool),
 	}
 }
 
-// Get retrieves a cached directory listing if it hasn't expired
-func (c *MetadataCache) Get(path string) ([]os.FileInfo, bool) {
-	if c == nil {
-		return nil, false
-	}
-	c.mu.RLock()
-	defer c.mu.RUnlock()
+// Get retrieves a value from the cache if it hasn't expired.
+func (sc *SimpleCache[K, V]) Get(key K) (V, bool) {
+	sc.mu.RLock()
+	entry, ok := sc.cache[key]
+	sc.mu.RUnlock()
 
-	entry, ok := c.cache[path]
-	if !ok || time.Now().After(entry.Expiry) {
-		return nil, false
+	if !ok {
+		var zero V
+		return zero, false
 	}
-	return entry.Entries, true
+
+	if sc.ttl > 0 && time.Since(entry.Created) > sc.ttl && !sc.isProtected(key) {
+		sc.Delete(key)
+		var zero V
+		return zero, false
+	}
+
+	return entry.Value, true
 }
 
-// Put stores a directory listing in the cache
-func (c *MetadataCache) Put(path string, entries []os.FileInfo) {
-	if c == nil {
+// Put adds or updates a value in the cache.
+func (sc *SimpleCache[K, V]) Put(key K, value V) {
+	sc.mu.Lock()
+	defer sc.mu.Unlock()
+
+	if _, ok := sc.cache[key]; ok {
+		sc.cache[key] = CacheEntry[V]{Value: value, Created: time.Now()}
 		return
 	}
-	c.mu.Lock()
-	defer c.mu.Unlock()
 
-	c.cache[path] = CachedDir{
-		Entries: entries,
-		Expiry:  time.Now().Add(c.ttl),
+	sc.cache[key] = CacheEntry[V]{Value: value, Created: time.Now()}
+	sc.order.PushFront(key)
+
+	if sc.capacity > 0 && sc.order.Len() > sc.capacity {
+		// Find first non-protected item from the back to evict
+		for e := sc.order.Back(); e != nil; e = e.Prev() {
+			k := e.Value.(K)
+			if !sc.protected[k] {
+				sc.order.Remove(e)
+				delete(sc.cache, k)
+				break
+			}
+		}
 	}
 }
 
-// Invalidate removes a specific path from the cache
-func (c *MetadataCache) Invalidate(path string) {
-	if c == nil {
+// Protect prevents a key from being evicted.
+func (sc *SimpleCache[K, V]) Protect(key K) {
+	if sc == nil {
 		return
 	}
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	delete(c.cache, path)
+	sc.mu.Lock()
+	defer sc.mu.Unlock()
+	if sc.protected == nil {
+		sc.protected = make(map[K]bool)
+	}
+	sc.protected[key] = true
 }
 
-// Clear empties the entire cache
-func (c *MetadataCache) Clear() {
-	if c == nil {
+// Unprotect allows a key to be evicted again.
+func (sc *SimpleCache[K, V]) Unprotect(key K) {
+	if sc == nil {
 		return
 	}
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	c.cache = make(map[string]CachedDir)
+	sc.mu.Lock()
+	defer sc.mu.Unlock()
+	if sc.protected == nil {
+		return
+	}
+	delete(sc.protected, key)
+}
+
+func (sc *SimpleCache[K, V]) isProtected(key K) bool {
+	sc.mu.RLock()
+	defer sc.mu.RUnlock()
+	if sc.protected == nil {
+		return false
+	}
+	return sc.protected[key]
+}
+
+// Delete removes a specific key from the cache.
+func (sc *SimpleCache[K, V]) Delete(key K) {
+	sc.mu.Lock()
+	defer sc.mu.Unlock()
+	delete(sc.cache, key)
+	for e := sc.order.Front(); e != nil; e = e.Next() {
+		if e.Value.(K) == key {
+			sc.order.Remove(e)
+			break
+		}
+	}
+}
+
+// Invalidate is an alias for Delete, to maintain compatibility with some callers.
+func (sc *SimpleCache[K, V]) Invalidate(key K) {
+	sc.Delete(key)
+}
+
+// Clear empties the cache.
+func (sc *SimpleCache[K, V]) Clear() {
+	sc.mu.Lock()
+	defer sc.mu.Unlock()
+	sc.cache = make(map[K]CacheEntry[V])
+	sc.order.Init()
 }

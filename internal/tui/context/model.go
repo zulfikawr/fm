@@ -84,11 +84,11 @@ func NewModel(fs core.FileSystem, startPath string) *Model {
 			Mode:        InputNone,
 		},
 		Cache: CacheState{
-			CursorMemory:   NewSimpleCache[string, int](constants.MaxCacheEntries, 0), // No TTL for cursors
-			OffsetMemory:   NewSimpleCache[string, int](constants.MaxCacheEntries, 0),
-			GitStatusCache: NewSimpleCache[string, map[string]string](constants.MaxCacheEntries, 30*time.Second),
-			GitRootCache:   NewSimpleCache[string, string](constants.MaxCacheEntries, 1*time.Hour),
-			ItemCache:      NewSimpleCache[string, []core.Item](constants.MaxCacheEntries, 5*time.Minute),
+			CursorMemory:   core.NewSimpleCache[string, int](constants.MaxCacheEntries, 0), // No TTL for cursors
+			OffsetMemory:   core.NewSimpleCache[string, int](constants.MaxCacheEntries, 0),
+			GitStatusCache: core.NewSimpleCache[string, map[string]string](constants.MaxCacheEntries, 30*time.Second),
+			GitRootCache:   core.NewSimpleCache[string, string](constants.MaxCacheEntries, 1*time.Hour),
+			ItemCache:      core.NewSimpleCache[string, []core.Item](constants.MaxCacheEntries, 5*time.Minute),
 		},
 		Watcher: WatcherState{
 			Watcher: watcher,
