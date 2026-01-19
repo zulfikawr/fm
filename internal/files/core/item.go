@@ -96,9 +96,3 @@ func (item *Item) UpdateFormatting(sizeFormatIdx, dateFormatIdx int) {
 		item.FormattedDate = ""
 	}
 }
-
-// Progress represents the current state of a file operation.
-type Progress struct {
-	Percent float64
-	Label   string
-}
