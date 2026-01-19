@@ -4,11 +4,18 @@ import (
 	"bytes"
 	"io"
 	"os"
+	"regexp"
 	"strings"
 	"testing"
 
 	"github.com/zulfikawr/fm/internal/tui/theme"
 )
+
+var ansiRegex = regexp.MustCompile("[\u001b\u009b][[()#;?]*(?:[0-9]{1,4}(?:;[0-9]{0,4})*)?[0-9A-ORZcf-nqry=><]")
+
+func stripANSI(str string) string {
+	return ansiRegex.ReplaceAllString(str, "")
+}
 
 func TestPrintHelp(t *testing.T) {
 	// Capture stdout
@@ -24,11 +31,11 @@ func TestPrintHelp(t *testing.T) {
 	_, _ = io.Copy(&buf, r)
 	os.Stdout = oldStdout
 
-	output := buf.String()
+	// Strip ANSI codes for easier comparison
+	output := stripANSI(buf.String())
 
 	expectedSubstrings := []string{
 		"FM - Terminal File Manager",
-		"Active Theme: Gruvbox",
 		"Usage:",
 		"Keybindings:",
 		"j/down, k/up",
@@ -36,7 +43,7 @@ func TestPrintHelp(t *testing.T) {
 
 	for _, s := range expectedSubstrings {
 		if !strings.Contains(output, s) {
-			t.Errorf("Expected output to contain %q", s)
+			t.Errorf("Expected output to contain %q, but got:\n%s", s, output)
 		}
 	}
 }

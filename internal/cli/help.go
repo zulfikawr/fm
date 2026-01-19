@@ -2,40 +2,81 @@ package cli
 
 import (
 	"fmt"
+	"strings"
 
+	"github.com/charmbracelet/lipgloss"
 	"github.com/zulfikawr/fm/internal/tui/theme"
 )
 
 // PrintHelp displays the help information to the console
 func PrintHelp(styles theme.Stylesheet, themeName string) {
-	fmt.Println("FM - Terminal File Manager")
-	fmt.Printf("Active Theme: %s\n\n", themeName)
-	fmt.Println("Usage:")
-	fmt.Println("  fm [path]                Open fm in the specified directory")
-	fmt.Println("  fm -r user@host[:path]   Open fm on a remote server via SFTP")
-	fmt.Println("\nKeybindings:")
-	fmt.Println("  j/down, k/up   Move cursor")
-	fmt.Println("  l/enter        Enter directory or open file")
-	fmt.Println("  h/backspace    Go to parent directory")
-	fmt.Println("  [ / ]          History Back / Forward")
-	fmt.Println("  Space          Toggle selection")
-	fmt.Println("  alt+a          Select all")
-	fmt.Println("  alt+t          Create new tab")
-	fmt.Println("  alt+1-9        Switch to tab 1-9")
-	fmt.Println("  alt+w          Close current tab")
-	fmt.Println("  alt+l          Toggle operation logs")
-	fmt.Println("  alt+c          Toggle clipboard view")
-	fmt.Println("  alt+/          Fuzzy content search")
-	fmt.Println("  /              Filter current directory")
-	fmt.Println("  g              Go to path (local/remote)")
-	fmt.Println("  c/y            Copy selected items")
-	fmt.Println("  x              Cut selected items")
-	fmt.Println("  v              Paste items from clipboard")
-	fmt.Println("  d              Delete selected items")
-	fmt.Println("  r              Rename selected item")
-	fmt.Println("  z              Zip selected items")
-	fmt.Println("  u              Unzip selected item")
-	fmt.Println("  .              Toggle settings")
-	fmt.Println("  Esc            Back / Clear selection")
-	fmt.Println("  ctrl+c         Quit")
+	fmt.Println(styles.DirCol.Render("FM - Terminal File Manager"))
+
+	// Define keybindings first to determine max width
+	keys := []struct {
+		Key  string
+		Desc string
+	}{
+		{"j/down, k/up", "Move cursor"},
+		{"l/enter", "Enter directory or open file"},
+		{"h/backspace", "Go to parent directory"},
+		{"[ / ]", "History Back / Forward"},
+		{"Space", "Toggle selection"},
+		{"alt+a", "Select all"},
+		{"alt+t", "Create new tab"},
+		{"alt+1-9", "Switch to tab 1-9"},
+		{"alt+w", "Close current tab"},
+		{"alt+l", "Toggle operation logs"},
+		{"alt+c", "Toggle clipboard view"},
+		{"alt+/", "Fuzzy content search"},
+		{"/", "Filter current directory"},
+		{"g", "Go to path (local/remote)"},
+		{"c", "Copy selected items"},
+		{"x", "Cut selected items"},
+		{"v", "Paste items from clipboard"},
+		{"d", "Delete selected items"},
+		{"r", "Rename selected item"},
+		{"z", "Zip selected items"},
+		{"u", "Unzip selected item"},
+		{".", "Toggle settings"},
+		{"Esc", "Back / Clear selection"},
+		{"ctrl+c", "Quit"},
+	}
+
+	// Determine max visible width for alignment
+	maxWidth := lipgloss.Width(styles.DirCol.Render("fm") + " " + styles.DimCol.Render("-r user@host[:path]"))
+
+	// Check against keybindings
+	for _, k := range keys {
+		if w := lipgloss.Width(styles.KeyCol.Render(k.Key)); w > maxWidth {
+			maxWidth = w
+		}
+	}
+	maxWidth += 3
+
+	fmt.Println()
+	fmt.Println(styles.DirCol.Render("Usage:"))
+	usage1Command := styles.GitStaged.Render("fm") + " " + styles.FileCol.Render("[path]")
+	fmt.Printf("  %s %s\n", padString(usage1Command, maxWidth), styles.DimCol.Render("Open fm in the specified directory"))
+	usage2Command := styles.GitStaged.Render("fm") + " " + styles.FileCol.Render("-r user@host[:path]")
+	fmt.Printf("  %s %s\n\n", padString(usage2Command, maxWidth), styles.DimCol.Render("Open fm on a remote server via SFTP"))
+
+	fmt.Println(styles.DirCol.Render("Keybindings:"))
+
+	for _, k := range keys {
+		// Render the key, calculate its visible width, then pad with spaces
+		renderedKey := styles.GitStaged.Render(k.Key)
+		visibleWidth := lipgloss.Width(renderedKey)
+		padding := strings.Repeat(" ", maxWidth-visibleWidth)
+		fmt.Printf("  %s%s %s\n", renderedKey, padding, styles.DimCol.Render(k.Desc))
+	}
+}
+
+// padString takes a string that might contain ANSI codes, and pads it to the targetWidth based on its visible width.
+func padString(s string, targetWidth int) string {
+	visibleWidth := lipgloss.Width(s)
+	if visibleWidth >= targetWidth {
+		return s
+	}
+	return s + strings.Repeat(" ", targetWidth-visibleWidth)
 }
