@@ -199,7 +199,7 @@ func RenderSettingsFooter(width int, cursor int, styles theme.Stylesheet) string
 		return styles.Footer.Width(width).Render(rightPart)
 	}
 
-	gap := max(width - lipgloss.Width(leftPart) - lipgloss.Width(rightPart), 0)
+	gap := max(width-lipgloss.Width(leftPart)-lipgloss.Width(rightPart), 0)
 
 	footerContent := messages.ColorizeKeys(messages.Props{Style: styles}, leftPart) + baseFooterStyle.Render(strings.Repeat(" ", gap)) + baseFooterStyle.Render(rightPart)
 	return styles.Footer.Width(width).Render(footerContent)

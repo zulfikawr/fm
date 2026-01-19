@@ -3,10 +3,11 @@ package header
 import (
 	"strings"
 
+	"github.com/charmbracelet/lipgloss"
 	"github.com/zulfikawr/fm/internal/tui/theme"
 )
 
-func renderBreadcrumbPath(path, separator string, remoteStr string, rootOverride string, styles theme.Stylesheet) string {
+func renderBreadcrumbPath(path, separator string, remoteStr string, rootOverride string, styles theme.Stylesheet, maxWidth int) string {
 	sep := separator
 	parts := strings.Split(path, sep)
 	var cleanParts []string
@@ -21,68 +22,79 @@ func renderBreadcrumbPath(path, separator string, remoteStr string, rootOverride
 	baseStyle := styles.Header.UnsetPadding().UnsetWidth()
 
 	// Determine the root indicator (local sep or remote string)
-	rootIndicator := baseStyle.Render(sep)
+	var rootIndicator string
+	rootIndicatorRaw := sep
 
 	if rootOverride != "" {
 		// Use rootOverride for breadcrumbs (e.g. for archives)
-		// We split it by the separator to style it like a path
-		rootSep := "/" // Default for archives or fallback
-		if strings.Contains(rootOverride, "\\") {
-			rootSep = "\\"
-		}
-
-		rootParts := strings.Split(rootOverride, rootSep)
-		var cleanRootParts []string
-		for _, p := range rootParts {
-			if p != "" {
-				cleanRootParts = append(cleanRootParts, p)
-			}
-		}
-
-		var styledRootParts []string
-		for _, p := range cleanRootParts {
-			styledRootParts = append(styledRootParts, baseStyle.Render(p))
-		}
-
-		separatorStr := dimHeaderStyle.Render(" > ")
-		rootPath := strings.Join(styledRootParts, separatorStr)
-
-		if strings.HasPrefix(rootOverride, "/") || strings.HasPrefix(rootOverride, "\\") {
-			rootIndicator = baseStyle.Render(rootSep) + separatorStr + rootPath
-		} else {
-			rootIndicator = rootPath
-		}
+		rootIndicatorRaw = rootOverride
 	} else {
 		// Handle Windows drive letters (e.g., C:)
 		if len(cleanParts) > 0 && strings.Contains(cleanParts[0], ":") && sep == "\\" {
-			rootIndicator = baseStyle.Render(cleanParts[0])
+			rootIndicatorRaw = cleanParts[0]
 			cleanParts = cleanParts[1:]
 		}
 
 		if remoteStr != "" {
-			// Ensure remoteStr doesn't have a trailing slash if we're going to join it
-			r := strings.TrimSuffix(remoteStr, "/")
-			rootIndicator = baseStyle.Render(r)
+			rootIndicatorRaw = strings.TrimSuffix(remoteStr, "/")
 		}
 	}
 
+	rootIndicator = baseStyle.Render(rootIndicatorRaw)
+
+	// Build the components
 	var styledParts []string
 	for _, p := range cleanParts {
 		styledParts = append(styledParts, baseStyle.Render(p))
 	}
 
 	separatorStr := dimHeaderStyle.Render(" > ")
-	breadcrumb := strings.Join(styledParts, separatorStr)
 
-	if breadcrumb == "" {
-		if (remoteStr != "" || rootOverride != "") && path == "/" {
-			return rootIndicator
-		}
-		// If path is just "/" or empty and we have a root indicator
-		return rootIndicator
+	// If it fits, return the full breadcrumb
+	fullBreadcrumb := rootIndicator
+	if len(styledParts) > 0 {
+		fullBreadcrumb += separatorStr + strings.Join(styledParts, separatorStr)
 	}
 
-	return rootIndicator + separatorStr + breadcrumb
+	if maxWidth <= 0 || lipgloss.Width(fullBreadcrumb) <= maxWidth {
+		return fullBreadcrumb
+	}
+
+	// Collapse if too long
+	// Keep root, first part (if any), last part, and use ... in between
+	if len(cleanParts) > 2 {
+		collapsedParts := []string{
+			baseStyle.Render(cleanParts[0]),
+			baseStyle.Render("..."),
+			baseStyle.Render(cleanParts[len(cleanParts)-1]),
+		}
+		collapsed := rootIndicator + separatorStr + strings.Join(collapsedParts, separatorStr)
+		if lipgloss.Width(collapsed) <= maxWidth {
+			return collapsed
+		}
+	}
+
+	// If still too long, just root and last part
+	if len(cleanParts) > 1 {
+		collapsedParts := []string{
+			baseStyle.Render("..."),
+			baseStyle.Render(cleanParts[len(cleanParts)-1]),
+		}
+		collapsed := rootIndicator + separatorStr + strings.Join(collapsedParts, separatorStr)
+		if lipgloss.Width(collapsed) <= maxWidth {
+			return collapsed
+		}
+	}
+
+	// If still too long, just the last part or root
+	if len(cleanParts) > 0 {
+		lastPart := baseStyle.Render(cleanParts[len(cleanParts)-1])
+		if lipgloss.Width(lastPart) <= maxWidth {
+			return lastPart
+		}
+	}
+
+	return lipgloss.NewStyle().MaxWidth(maxWidth).Render(fullBreadcrumb)
 }
 
 func addGitBranch(breadcrumb, gitBranch string, styles theme.Stylesheet) string {

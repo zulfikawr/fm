@@ -39,6 +39,7 @@ func Render(props Props) string {
 			TabCount:     props.TabCount,
 			ActiveIndex:  props.ActiveTab,
 			ShowShortcut: true,
+			Width:        props.Width,
 		}, props.Style)
 	}
 
@@ -53,18 +54,6 @@ func Render(props Props) string {
 		Style:         props.Style,
 	})
 
-	// Breadcrumb rendering
-	var breadcrumb string
-	if props.SettingsOpen || props.LogOpen || props.ClipboardOpen {
-		breadcrumb = props.Style.Header.UnsetPadding().UnsetWidth().Render(title)
-	} else {
-		breadcrumb = renderBreadcrumbPath(title, props.Separator, props.RemoteStr, props.RootOverride, props.Style)
-		breadcrumb = addGitBranch(breadcrumb, props.GitBranch, props.Style)
-		breadcrumb = addReadOnlyIndicator(breadcrumb, props.ReadOnly, props.Style)
-	}
-
-	breadcrumbWidth := lipgloss.Width(breadcrumb)
-
 	// Maximum width for breadcrumb is availableWidth - tabsWidth - gap(1)
 	maxBreadcrumbWidth := availableWidth - tabsWidth
 	if tabsWidth > 0 {
@@ -74,10 +63,20 @@ func Render(props Props) string {
 		maxBreadcrumbWidth = 0
 	}
 
-	if breadcrumbWidth > maxBreadcrumbWidth {
-		breadcrumb = lipgloss.NewStyle().MaxWidth(maxBreadcrumbWidth).Render(breadcrumb)
-		breadcrumbWidth = lipgloss.Width(breadcrumb)
+	// Breadcrumb rendering
+	var breadcrumb string
+	if props.SettingsOpen || props.LogOpen || props.ClipboardOpen {
+		breadcrumb = props.Style.Header.UnsetPadding().UnsetWidth().Render(title)
+		if lipgloss.Width(breadcrumb) > maxBreadcrumbWidth {
+			breadcrumb = lipgloss.NewStyle().MaxWidth(maxBreadcrumbWidth).Render(breadcrumb)
+		}
+	} else {
+		breadcrumb = renderBreadcrumbPath(title, props.Separator, props.RemoteStr, props.RootOverride, props.Style, maxBreadcrumbWidth)
+		breadcrumb = addGitBranch(breadcrumb, props.GitBranch, props.Style)
+		breadcrumb = addReadOnlyIndicator(breadcrumb, props.ReadOnly, props.Style)
 	}
+
+	breadcrumbWidth := lipgloss.Width(breadcrumb)
 
 	gap := availableWidth - breadcrumbWidth - tabsWidth
 	if gap < 0 {

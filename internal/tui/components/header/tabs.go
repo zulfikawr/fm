@@ -12,6 +12,7 @@ type TabConfig struct {
 	TabCount     int
 	ActiveIndex  int
 	ShowShortcut bool
+	Width        int
 }
 
 func renderTabList(config TabConfig, styles theme.Stylesheet) string {
@@ -25,7 +26,7 @@ func renderTabList(config TabConfig, styles theme.Stylesheet) string {
 
 	var tabParts []string
 	for i := 0; i < config.TabCount; i++ {
-		tabLabel := formatTabLabel(i, config.ShowShortcut)
+		tabLabel := fmt.Sprintf("[%d]", i+1)
 
 		if i == config.ActiveIndex {
 			tabParts = append(tabParts, activeTabStyle.Render(tabLabel))
