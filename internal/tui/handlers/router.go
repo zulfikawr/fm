@@ -262,6 +262,10 @@ func HandleUpdate(m *context.Model, msg tea.Msg) tea.Cmd {
 		}
 	}
 
+	if cmd := HandleUpdateMessages(m, msg); cmd != nil {
+		return cmd
+	}
+
 	// 2. Delegate to domain handlers based on message type or UI state
 	if cmd := HandleNavigation(m, msg); cmd != nil {
 		cmds = append(cmds, cmd)

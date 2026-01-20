@@ -100,16 +100,18 @@ func (n *NavigationState) IsSelected(path string) bool {
 
 // UIState holds UI mode flags
 type UIState struct {
-	Confirming    bool
-	SettingsOpen  bool
-	LogOpen       bool
-	ClipboardOpen bool
-	Loading       bool
-	SelectMode    bool
-	InputActive   bool              // Consolidated flag for any text input (search, rename, etc)
-	RemoteAuth    bool              // Specific flag for remote auth (uses input)
-	HostConfirm   bool              // Waiting for known_hosts confirmation (uses y/n keys)
-	PromptCache   map[string]string // Pre-calculated styled prompts
+	Confirming      bool
+	SettingsOpen    bool
+	LogOpen         bool
+	ClipboardOpen   bool
+	Loading         bool
+	SelectMode      bool
+	InputActive     bool              // Consolidated flag for any text input (search, rename, etc)
+	RemoteAuth      bool              // Specific flag for remote auth (uses input)
+	HostConfirm     bool              // Waiting for known_hosts confirmation (uses y/n keys)
+	UpdateAvailable bool              // New version is available
+	LatestVersion   string            // Latest version string
+	PromptCache     map[string]string // Pre-calculated styled prompts
 }
 
 // Reset resets all UI flags to false

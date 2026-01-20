@@ -134,6 +134,7 @@ func Render(m *context.Model) string {
 		ConflictDst:          m.Operations.Conflict.Destination,
 		ConflictPendingCount: len(m.Operations.Conflict.PendingItems),
 		HostConfirmReq:       m.Remote.HostConfirmReq,
+		LatestVersion:        m.UI.LatestVersion,
 		Styles:               styles,
 		PromptCache:          m.UI.PromptCache,
 	})

@@ -2,6 +2,9 @@ package constants
 
 import "time"
 
+// Application version
+var AppVersion = "v0.0.0-dev"
+
 // Timeouts
 const (
 	DirectoryLoadTimeout    = 30 * time.Second
@@ -34,6 +37,7 @@ const (
 	ActionCopy          ActionType = "copy"
 	ActionCut           ActionType = "cut"
 	ActionConflict      ActionType = "conflict"
+	ActionUpdate        ActionType = "update"
 	ActionResetSettings ActionType = "reset-settings"
 	ActionCancel        ActionType = "cancel"
 )

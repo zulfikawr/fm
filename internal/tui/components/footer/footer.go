@@ -64,6 +64,7 @@ type Props struct {
 	ConflictDst          string
 	ConflictPendingCount int
 	HostConfirmReq       *ssh.HostConfirmRequest
+	LatestVersion        string
 
 	Styles      theme.Stylesheet
 	PromptCache map[string]string
@@ -123,6 +124,7 @@ func renderPromptsFooter(props Props) string {
 		ConflictDst:          props.ConflictDst,
 		ConflictPendingCount: props.ConflictPendingCount,
 		HostConfirmReq:       props.HostConfirmReq,
+		LatestVersion:        props.LatestVersion,
 		Style:                props.Styles,
 		PromptCache:          props.PromptCache,
 	})

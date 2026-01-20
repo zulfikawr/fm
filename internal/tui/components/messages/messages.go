@@ -43,6 +43,7 @@ type Props struct {
 	ConflictDst          string
 	ConflictPendingCount int
 	HostConfirmReq       *ssh.HostConfirmRequest
+	LatestVersion        string
 
 	Style       theme.Stylesheet
 	PromptCache map[string]string

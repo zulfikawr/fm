@@ -14,6 +14,8 @@ require (
 	golang.org/x/term v0.39.0
 )
 
+require golang.org/x/mod v0.32.0
+
 require (
 	github.com/aymanbagabas/go-osc52/v2 v2.0.1 // indirect
 	github.com/aymanbagabas/go-udiff v0.3.1 // indirect

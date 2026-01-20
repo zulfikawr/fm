@@ -90,3 +90,13 @@ type SearchMsg struct {
 	Results []core.FileResult
 	Err     error
 }
+
+type UpdateAvailableMsg struct {
+	Version string
+}
+
+type UpdateFinishedMsg struct {
+	Err error
+}
+
+type UpdateProgressMsg float64

@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [v0.1.10] - 2026-01-19
 
+### Added
+- **New Versioning and Update System:**
+  - Integrated automated update checks using the GitHub Releases API.
+  - Added an interactive update flow: users are notified when a new version is available and can download/install it directly within the TUI.
+  - Added a self-restart mechanism to immediately launch the updated version.
+
 ### Changed
 - The app is now more responsive for smaller terminal window size.
 - Redesign the help cli to respect current theme.

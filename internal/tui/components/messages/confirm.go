@@ -34,6 +34,8 @@ func BuildConfirmationPrompt(props Props) string {
 		return fmt.Sprintf("'%s' exists. [y] Overwrite | [n] Skip | [r] Rename", baseName)
 	case constants.ActionCancel:
 		return "Cancel ongoing operation? [y] Yes | [n] No"
+	case constants.ActionUpdate:
+		return fmt.Sprintf("A new version of fm (%s) is available. Update? [y] Yes | [n] No", props.LatestVersion)
 	default:
 		return "Confirm? [y] Yes | [n] No"
 	}

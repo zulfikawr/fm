@@ -12,6 +12,7 @@ import (
 func (a *App) Initialize() tea.Cmd {
 	return tea.Batch(
 		handlers.Reload(a.Model, false),
+		handlers.CheckForUpdates(),
 		a.Model.Display.LoadingSpinner.Start(),
 	)
 }
