@@ -6,6 +6,7 @@ import (
 
 	"github.com/zulfikawr/fm/internal/bootstrap"
 	"github.com/zulfikawr/fm/internal/cli"
+	"github.com/zulfikawr/fm/internal/constants"
 	"github.com/zulfikawr/fm/internal/tui"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -20,6 +21,11 @@ func main() {
 
 func run() error {
 	args := cli.Parse()
+
+	if args.ShowVersion {
+		fmt.Printf("fm version %s\n", constants.AppVersion)
+		return nil
+	}
 
 	a, err := bootstrap.InitializeApp(args.Remote, args.Args)
 	if err != nil {

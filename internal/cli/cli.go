@@ -10,8 +10,9 @@ import (
 
 // Args contains the parsed command line arguments
 type Args struct {
-	Remote string
-	Args   []string
+	Remote      string
+	ShowVersion bool
+	Args        []string
 }
 
 // Parse handles command line flag parsing
@@ -21,8 +22,11 @@ func Parse() *Args {
 
 func parse(f *flag.FlagSet, args []string) *Args {
 	var remoteStr string
+	var showVersion bool
 	f.StringVar(&remoteStr, "remote", "", "Remote address (user@host[:path] or ssh-alias)")
 	f.StringVar(&remoteStr, "r", "", "Remote address (shorthand)")
+	f.BoolVar(&showVersion, "version", false, "Show version information")
+	f.BoolVar(&showVersion, "v", false, "Show version information (shorthand)")
 
 	// Custom Usage
 	f.Usage = func() {
@@ -35,7 +39,8 @@ func parse(f *flag.FlagSet, args []string) *Args {
 	_ = f.Parse(args)
 
 	return &Args{
-		Remote: remoteStr,
-		Args:   f.Args(),
+		Remote:      remoteStr,
+		ShowVersion: showVersion,
+		Args:        f.Args(),
 	}
 }
