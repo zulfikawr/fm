@@ -2,7 +2,9 @@ package handlers
 
 import (
 	"os"
+	"strings"
 
+	"github.com/zulfikawr/fm/internal/constants"
 	"github.com/zulfikawr/fm/internal/tui/context"
 	"github.com/zulfikawr/fm/internal/update"
 
@@ -12,6 +14,9 @@ import (
 // CheckForUpdates triggers an update check
 func CheckForUpdates() tea.Cmd {
 	return func() tea.Msg {
+		if strings.Contains(constants.AppVersion, "-dev") {
+			return nil
+		}
 		version, err := update.CheckForUpdate()
 		if err != nil || version == "" {
 			return nil

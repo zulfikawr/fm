@@ -40,7 +40,7 @@ func TestFooter_RenderModes(t *testing.T) {
 
 			props := Props{
 				Mode:        tt.mode,
-				Width:       80,
+				Width:       100,
 				Message:     "Alert",
 				Styles:      styles,
 				ActiveInput: ti,

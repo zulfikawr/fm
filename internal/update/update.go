@@ -40,10 +40,6 @@ type Asset struct {
 
 // CheckForUpdate checks if a new version is available
 func CheckForUpdate() (string, error) {
-	if strings.Contains(constants.AppVersion, "-dev") {
-		return "", nil
-	}
-
 	client := &http.Client{
 		Timeout: timeout,
 	}
