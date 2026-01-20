@@ -20,7 +20,9 @@ func TestFuzzyMatch(t *testing.T) {
 	}{
 		{"Hello World", "hello", true},
 		{"Hello World", "world", true},
-		{"Hello World", "word", false},
+		{"Hello World", "word", false}, // substring match: no
+		{"Hello World", "lo wo", true},
+		{"Hello World", "wrong", false},
 		{"", "test", false},
 		{"anything", "", true},
 	}

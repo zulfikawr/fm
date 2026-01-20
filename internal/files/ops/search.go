@@ -10,7 +10,6 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
-	"unicode"
 
 	"github.com/zulfikawr/fm/internal/constants"
 	"github.com/zulfikawr/fm/internal/files/core"
@@ -96,18 +95,43 @@ func Search(ctx context.Context, fs core.FileSystem, gs git.GitService, rootPath
 }
 
 func searchInFile(ctx context.Context, fs core.FileSystem, path, query string) (core.FileResult, bool) {
+	fileName := fs.Base(path)
+	var matches []core.Match
+
+	// Check filename first
+	if ok, matchedIdx := FuzzyMatch(fileName, query); ok {
+		matches = append(matches, core.Match{
+			Line:       0, // 0 indicates filename match
+			Content:    fileName,
+			MatchedIdx: matchedIdx,
+		})
+	}
+
 	f, err := fs.Open(ctx, path)
 	if err != nil {
+		if len(matches) > 0 {
+			return core.FileResult{
+				Path:     path,
+				FileName: fileName,
+				Matches:  matches,
+			}, true
+		}
 		return core.FileResult{}, false
 	}
 	defer f.Close()
 
 	reader := bufio.NewReader(f)
 	if isBinary(reader) {
+		if len(matches) > 0 {
+			return core.FileResult{
+				Path:     path,
+				FileName: fileName,
+				Matches:  matches,
+			}, true
+		}
 		return core.FileResult{}, false
 	}
 
-	var matches []core.Match
 	scanner := bufio.NewScanner(reader)
 	lineNum := 1
 	for scanner.Scan() {
@@ -135,7 +159,7 @@ func searchInFile(ctx context.Context, fs core.FileSystem, path, query string) (
 	if len(matches) > 0 {
 		return core.FileResult{
 			Path:     path,
-			FileName: fs.Base(path),
+			FileName: fileName,
 			Matches:  matches,
 		}, true
 	}
@@ -152,35 +176,26 @@ func isBinary(r *bufio.Reader) bool {
 	return bytes.Contains(buf, []byte{0})
 }
 
-// FuzzyMatch checks if query is a substring of s (case-insensitive) and returns indices of matched characters.
+// FuzzyMatch checks if query is a substring of s (case-insensitive)
+// and returns indices of matched characters.
 func FuzzyMatch(s, query string) (bool, []int) {
 	if query == "" {
 		return true, nil
 	}
 
-	sRunes := []rune(s)
-	qRunes := []rune(strings.ToLower(query))
+	sLower := strings.ToLower(s)
+	qLower := strings.ToLower(query)
 
-	if len(qRunes) > len(sRunes) {
+	idx := strings.Index(sLower, qLower)
+	if idx == -1 {
 		return false, nil
 	}
 
-	for i := 0; i <= len(sRunes)-len(qRunes); i++ {
-		match := true
-		for j := 0; j < len(qRunes); j++ {
-			if unicode.ToLower(sRunes[i+j]) != qRunes[j] {
-				match = false
-				break
-			}
-		}
-		if match {
-			matchedIdx := make([]int, len(qRunes))
-			for j := 0; j < len(qRunes); j++ {
-				matchedIdx[j] = i + j
-			}
-			return true, matchedIdx
-		}
+	// For content search, we prefer substring matches to avoid excessive noise
+	matchedIdx := make([]int, len(query))
+	for i := 0; i < len(query); i++ {
+		matchedIdx[i] = idx + i
 	}
 
-	return false, nil
+	return true, matchedIdx
 }

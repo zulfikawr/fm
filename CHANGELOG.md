@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.0.1] - 2026-01-21
+
+### Added
+- **CLI Fuzzy Search:**
+  - New `search` subcommand and `-s`/`--search` flags for finding files and content directly from the terminal.
+  - Theme-aware CLI output with prioritized filename highlighting.
+  - Interactive TUI results handling filename matches with clear labeling.
+- **Improved Search Engine:**
+  - Standardized case-insensitive substring matching for reliable word finding.
+  - Simultaneous filename and content search results.
+
 ## [v1.0.0] - 2026-01-20
 
 ### Added

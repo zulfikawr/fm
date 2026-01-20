@@ -69,22 +69,45 @@ func RenderSearch(props SearchProps) string {
 			prefix = "▶ "
 		}
 
-		fileName := res.FileName
-		if fIdx == props.CursorFile && (res.Collapsed || props.CursorMatch == -1) {
-			fileName = props.Style.SelectedItem.Render(fileName)
-		} else {
-			fileName = props.Style.FileCol.Render(fileName)
+		// Find filename match if any
+		var fileNameMatch *core.Match
+		for i := range res.Matches {
+			if res.Matches[i].Line == 0 {
+				fileNameMatch = &res.Matches[i]
+				break
+			}
 		}
 
-		fileHeader := fmt.Sprintf("%s%s (%d)", prefix, fileName, len(res.Matches))
+		fileNameStr := res.FileName
+		isHeaderSelected := fIdx == props.CursorFile && (res.Collapsed || props.CursorMatch == -1)
+
+		var fileNameView string
+		if fileNameMatch != nil {
+			fileNameView = renderMatchContent(fileNameStr, fileNameMatch.MatchedIdx, isHeaderSelected, props.Style)
+			// Apply DirCol if not selected
+			if !isHeaderSelected {
+				fileNameView = props.Style.DirCol.Render(fileNameView)
+			}
+		} else {
+			if isHeaderSelected {
+				fileNameView = props.Style.SelectedItem.Render(fileNameStr)
+			} else {
+				fileNameView = props.Style.DirCol.Render(fileNameStr)
+			}
+		}
+
+		fileHeader := fmt.Sprintf("%s%s (%d)", prefix, fileNameView, len(res.Matches))
 		allLines = append(allLines, fileHeader)
 
 		if !res.Collapsed {
 			// Render matches
 			for mIdx, match := range props.Results[fIdx].Matches {
+				if match.Line == 0 {
+					continue // Skip redundant name line
+				}
 				isSelected := fIdx == props.CursorFile && mIdx == props.CursorMatch
 
-				lineNum := props.Style.DimCol.Render(fmt.Sprintf("%4d: ", match.Line))
+				lineNum := props.Style.DimCol.Render(fmt.Sprintf("%5d: ", match.Line))
 				content := renderMatchContent(match.Content, match.MatchedIdx, isSelected, props.Style)
 
 				matchLine := "  " + lineNum + content
@@ -146,14 +169,25 @@ func renderMatchContent(content string, matchedIdx []int, isSelected bool, style
 		idxMap[idx] = true
 	}
 
+	// Highlight style: use theme's selected colors for the match background
+	highlightStyle := lipgloss.NewStyle().
+		Background(styles.SelectedItem.GetBackground()).
+		Foreground(styles.Success.GetForeground()).
+		Bold(true)
+
+	// Simple match style: just the success color, no background
+	matchStyle := lipgloss.NewStyle().
+		Foreground(styles.Success.GetForeground()).
+		Bold(true)
+
 	runes := []rune(content)
 	for i, r := range runes {
 		char := string(r)
 		if idxMap[i] {
 			if isSelected {
-				sb.WriteString(lipgloss.NewStyle().Foreground(lipgloss.Color("0")).Background(lipgloss.Color("6")).Render(char))
+				sb.WriteString(highlightStyle.Render(char))
 			} else {
-				sb.WriteString(styles.KeyCol.Render(char))
+				sb.WriteString(matchStyle.Render(char))
 			}
 		} else {
 			sb.WriteString(char)

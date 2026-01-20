@@ -59,7 +59,9 @@ func PrintHelp(styles theme.Stylesheet, themeName string) {
 	usage1Command := styles.GitStaged.Render("fm") + " " + styles.FileCol.Render("[path]")
 	fmt.Printf("  %s %s\n", padString(usage1Command, maxWidth), styles.DimCol.Render("Open fm in the specified directory"))
 	usage2Command := styles.GitStaged.Render("fm") + " " + styles.FileCol.Render("-r user@host[:path]")
-	fmt.Printf("  %s %s\n\n", padString(usage2Command, maxWidth), styles.DimCol.Render("Open fm on a remote server via SFTP"))
+	fmt.Printf("  %s %s\n", padString(usage2Command, maxWidth), styles.DimCol.Render("Open fm on a remote server via SFTP"))
+	usage3Command := styles.GitStaged.Render("fm") + " " + styles.GitConflict.Render("search") + " " + styles.FileCol.Render("<query>")
+	fmt.Printf("  %s %s\n\n", padString(usage3Command, maxWidth), styles.DimCol.Render("Perform fuzzy search for files and content"))
 
 	fmt.Println(styles.DirCol.Render("Keybindings:"))
 

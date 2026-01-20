@@ -20,6 +20,7 @@ A fast, modular, and feature-rich TUI file manager written in Go.
 - **🎨 Theme System:** Multiple color schemes including Nord, Dracula, and Gruvbox.
 - **🔍 Search & Filter:** Real-time fuzzy-style filtering within directories.
 - **🔎 Fuzzy Content Search:** Deep content search (`Alt+/`) across all files in a directory using a high-performance concurrent engine.
+- **🖥️ CLI Search:** Direct terminal search via `fm search <query>` with theme-aware highlighting.
 - **📜 Operation Logs:** Full history of all background operations (`Alt+L`) with real-time status tracking.
 - **⚙️ Persistent Config:** Settings saved automatically to `~/.config/fm/config.json`.
 - **💾 Memory:** Remembers your cursor and scroll position for every directory visited.
@@ -62,6 +63,9 @@ go build -o fm ./cmd/fm
 
 # Run
 ./fm [path]
+
+# Search content and filenames from terminal
+./fm search "query" [path]
 ```
 
 ## Fuzzy Content Search (Find in Files)

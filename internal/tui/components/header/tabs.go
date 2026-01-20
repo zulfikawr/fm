@@ -38,10 +38,6 @@ func renderTabList(config TabConfig, styles theme.Stylesheet) string {
 	return strings.Join(tabParts, spacerStyle.Render(" "))
 }
 
-func formatTabLabel(index int, showShortcut bool) string {
-	return fmt.Sprintf("[%d]", index+1)
-}
-
 func shouldShowTabs(tabCount int) bool {
 	return tabCount > 1
 }

@@ -27,6 +27,10 @@ func run() error {
 		return nil
 	}
 
+	if args.IsSearch {
+		return cli.RunSearch(args)
+	}
+
 	a, err := bootstrap.InitializeApp(args.Remote, args.Args)
 	if err != nil {
 		return err

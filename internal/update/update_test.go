@@ -38,7 +38,7 @@ func TestCheckForUpdate(t *testing.T) {
 		release := Release{
 			TagName: "v99.99.99",
 		}
-		json.NewEncoder(w).Encode(release)
+		_ = json.NewEncoder(w).Encode(release)
 	}))
 	defer server.Close()
 
@@ -74,7 +74,7 @@ func TestCheckForUpdate_Error(t *testing.T) {
 
 func TestCheckForUpdate_InvalidJSON(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("invalid json"))
+		_, _ = w.Write([]byte("invalid json"))
 	}))
 	defer server.Close()
 
@@ -166,7 +166,7 @@ func TestDownloadAndInstall_NoBinary(t *testing.T) {
 				{Name: "fm-wrong-os-arch", BrowserDownloadURL: "http://example.com"},
 			},
 		}
-		json.NewEncoder(w).Encode(release)
+		_ = json.NewEncoder(w).Encode(release)
 	}))
 	defer server.Close()
 
@@ -200,7 +200,7 @@ func TestDownloadAndInstall_HttpError(t *testing.T) {
 
 func TestDownloadAndInstall_InvalidJSON(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("invalid json"))
+		_, _ = w.Write([]byte("invalid json"))
 	}))
 	defer server.Close()
 
@@ -224,7 +224,7 @@ func TestDownloadAndInstall_Success(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/binary" {
 			w.WriteHeader(http.StatusOK)
-			w.Write([]byte("fake binary content"))
+			_, _ = w.Write([]byte("fake binary content"))
 			return
 		}
 		release := Release{
@@ -237,7 +237,7 @@ func TestDownloadAndInstall_Success(t *testing.T) {
 				},
 			},
 		}
-		json.NewEncoder(w).Encode(release)
+		_ = json.NewEncoder(w).Encode(release)
 	}))
 	defer server.Close()
 
