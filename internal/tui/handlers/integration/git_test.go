@@ -1,4 +1,4 @@
-package integration
+package integration_test
 
 import (
 	"testing"
@@ -6,6 +6,7 @@ import (
 	"github.com/zulfikawr/fm/internal/files/core"
 	"github.com/zulfikawr/fm/internal/testutil"
 	tuictx "github.com/zulfikawr/fm/internal/tui/context"
+	"github.com/zulfikawr/fm/internal/tui/handlers/integration"
 	"github.com/zulfikawr/fm/internal/tui/messages"
 )
 
@@ -24,7 +25,7 @@ func TestGit_Status(t *testing.T) {
 		Branch: "main",
 	}
 
-	HandleGit(m, msg)
+	integration.HandleGit(m, msg)
 
 	if m.Navigation.Items[0].GitStatus != "M" {
 		t.Errorf("expected GitStatus M, got %s", m.Navigation.Items[0].GitStatus)

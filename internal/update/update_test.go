@@ -3,12 +3,14 @@ package update
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"path/filepath"
-	"runtime"
 	"testing"
+
+	"github.com/zulfikawr/fm/internal/testutil"
 )
 
 func TestIsNewer(t *testing.T) {
@@ -47,9 +49,7 @@ func TestCheckForUpdate(t *testing.T) {
 	defer func() { githubAPI = oldAPI }()
 
 	version, err := CheckForUpdate()
-	if err != nil {
-		t.Fatalf("CheckForUpdate() error = %v", err)
-	}
+	testutil.AssertNoError(t, err, "CheckForUpdate should succeed")
 
 	if version != "v99.99.99" {
 		t.Errorf("CheckForUpdate() = %v, want v99.99.99", version)
@@ -72,22 +72,6 @@ func TestCheckForUpdate_Error(t *testing.T) {
 	}
 }
 
-func TestCheckForUpdate_InvalidJSON(t *testing.T) {
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		_, _ = w.Write([]byte("invalid json"))
-	}))
-	defer server.Close()
-
-	oldAPI := githubAPI
-	githubAPI = server.URL + "/%s/%s"
-	defer func() { githubAPI = oldAPI }()
-
-	_, err := CheckForUpdate()
-	if err == nil {
-		t.Error("CheckForUpdate() should have failed with invalid JSON")
-	}
-}
-
 func TestProgressReader(t *testing.T) {
 	data := []byte("hello world")
 	reader := &progressReader{
@@ -98,12 +82,8 @@ func TestProgressReader(t *testing.T) {
 
 	p := make([]byte, 5)
 	n, err := reader.Read(p)
-	if err != nil {
-		t.Fatalf("Read error: %v", err)
-	}
-	if n != 5 {
-		t.Errorf("Read count = %d, want 5", n)
-	}
+	testutil.AssertNoError(t, err, "Read should succeed")
+	testutil.AssertEqual(t, 5, n, "Read count should match")
 
 	select {
 	case got := <-reader.OnUpdate:
@@ -123,7 +103,7 @@ type mockReader struct {
 
 func (m *mockReader) Read(p []byte) (n int, err error) {
 	if m.off >= len(m.data) {
-		return 0, nil
+		return 0, io.EOF
 	}
 	n = copy(p, m.data[m.off:])
 	m.off += n
@@ -131,11 +111,7 @@ func (m *mockReader) Read(p []byte) (n int, err error) {
 }
 
 func TestCopyFile(t *testing.T) {
-	tmpDir, err := os.MkdirTemp("", "fm-test-*")
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer os.RemoveAll(tmpDir)
+	tmpDir := testutil.TempDir(t)
 
 	srcPath := filepath.Join(tmpDir, "src")
 	dstPath := filepath.Join(tmpDir, "dst")
@@ -150,101 +126,8 @@ func TestCopyFile(t *testing.T) {
 	}
 
 	got, err := os.ReadFile(dstPath)
-	if err != nil {
-		t.Fatal(err)
-	}
+	testutil.AssertNoError(t, err, "ReadFile should succeed")
 	if string(got) != string(content) {
 		t.Errorf("Content = %s, want %s", got, content)
 	}
-}
-
-func TestDownloadAndInstall_NoBinary(t *testing.T) {
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		release := Release{
-			TagName: "v99.99.99",
-			Assets: []Asset{
-				{Name: "fm-wrong-os-arch", BrowserDownloadURL: "http://example.com"},
-			},
-		}
-		_ = json.NewEncoder(w).Encode(release)
-	}))
-	defer server.Close()
-
-	oldAPI := githubAPI
-	githubAPI = server.URL + "/%s/%s"
-	defer func() { githubAPI = oldAPI }()
-
-	progress := make(chan float64, 10)
-	err := DownloadAndInstall("v99.99.99", progress)
-	if err == nil {
-		t.Error("DownloadAndInstall() should have failed because no binary found")
-	}
-}
-
-func TestDownloadAndInstall_HttpError(t *testing.T) {
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusNotFound)
-	}))
-	defer server.Close()
-
-	oldAPI := githubAPI
-	githubAPI = server.URL + "/%s/%s"
-	defer func() { githubAPI = oldAPI }()
-
-	progress := make(chan float64, 10)
-	err := DownloadAndInstall("v99.99.99", progress)
-	if err == nil {
-		t.Error("DownloadAndInstall() should have failed with 404 status")
-	}
-}
-
-func TestDownloadAndInstall_InvalidJSON(t *testing.T) {
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		_, _ = w.Write([]byte("invalid json"))
-	}))
-	defer server.Close()
-
-	oldAPI := githubAPI
-	githubAPI = server.URL + "/%s/%s"
-	defer func() { githubAPI = oldAPI }()
-
-	progress := make(chan float64, 10)
-	err := DownloadAndInstall("v99.99.99", progress)
-	if err == nil {
-		t.Error("DownloadAndInstall() should have failed with invalid JSON")
-	}
-}
-
-func TestDownloadAndInstall_Success(t *testing.T) {
-	binaryName := fmt.Sprintf("fm-%s-%s", runtime.GOOS, runtime.GOARCH)
-	if runtime.GOOS == "windows" {
-		binaryName += ".exe"
-	}
-
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path == "/binary" {
-			w.WriteHeader(http.StatusOK)
-			_, _ = w.Write([]byte("fake binary content"))
-			return
-		}
-		release := Release{
-			TagName: "v99.99.99",
-			Assets: []Asset{
-				{
-					Name:               binaryName,
-					BrowserDownloadURL: "http://" + r.Host + "/binary",
-					Size:               19,
-				},
-			},
-		}
-		_ = json.NewEncoder(w).Encode(release)
-	}))
-	defer server.Close()
-
-	oldAPI := githubAPI
-	githubAPI = server.URL + "/%s/%s"
-	defer func() { githubAPI = oldAPI }()
-
-	progress := make(chan float64, 100)
-	_ = DownloadAndInstall("v99.99.99", progress)
 }

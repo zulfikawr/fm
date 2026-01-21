@@ -1,4 +1,4 @@
-package handlers
+package handlers_test
 
 import (
 	"os"
@@ -9,6 +9,7 @@ import (
 	"github.com/zulfikawr/fm/internal/files/core"
 	"github.com/zulfikawr/fm/internal/testutil"
 	tuictx "github.com/zulfikawr/fm/internal/tui/context"
+	"github.com/zulfikawr/fm/internal/tui/handlers"
 	"github.com/zulfikawr/fm/internal/tui/view"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -16,7 +17,7 @@ import (
 
 func TestMain(m *testing.M) {
 	// Isolate config for all tests in this package
-	tempDir, err := os.MkdirTemp("", "fm-test-*")
+	tempDir, err := os.MkdirTemp("", "fm-handler-test-*")
 	if err != nil {
 		panic(err)
 	}
@@ -36,10 +37,10 @@ type testModelWrapper struct {
 
 func NewTestModelWrapper(m *tuictx.Model) *testModelWrapper {
 	// Mock external actions to avoid hanging on tea.ExecProcess during tests
-	OpenFileAction = func(_ *tuictx.Model, _ core.Item) tea.Cmd {
+	handlers.OpenFileAction = func(_ *tuictx.Model, _ core.Item) tea.Cmd {
 		return nil
 	}
-	OpenFileAtLineAction = func(_ *tuictx.Model, _ string, _ int) tea.Cmd {
+	handlers.OpenFileAtLineAction = func(_ *tuictx.Model, _ string, _ int) tea.Cmd {
 		return nil
 	}
 
@@ -49,7 +50,7 @@ func NewTestModelWrapper(m *tuictx.Model) *testModelWrapper {
 
 func (w *testModelWrapper) Init() tea.Cmd { return nil }
 func (w *testModelWrapper) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	cmd := HandleUpdate(w.m, msg)
+	cmd := handlers.HandleUpdate(w.m, msg)
 	return w, cmd
 }
 func (w *testModelWrapper) View() string {

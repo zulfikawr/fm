@@ -36,11 +36,6 @@ func TestList_Render(t *testing.T) {
 }
 
 func TestList_CalculateLayout_Responsiveness(t *testing.T) {
-	// Default date layout "02/01/2006 15:04" is 16 chars
-	// sizeWidth is 11 chars
-	// columnGap is 2 chars
-	// markerWidth=0, gitMarkerWidth=2, permIndicatorWidth=1, safety=2 -> total overhead 5
-
 	tests := []struct {
 		name     string
 		width    int

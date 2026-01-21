@@ -1,4 +1,4 @@
-package tui
+package tui_test
 
 import (
 	"context"
@@ -9,6 +9,7 @@ import (
 	"github.com/charmbracelet/x/exp/teatest"
 
 	"github.com/zulfikawr/fm/internal/testutil"
+	"github.com/zulfikawr/fm/internal/tui"
 )
 
 func TestApp_Integration(t *testing.T) {
@@ -22,7 +23,10 @@ func TestApp_Integration(t *testing.T) {
 		}, nil
 	}
 	fs.StatFunc = func(ctx context.Context, path string) (os.FileInfo, error) {
-		return &testutil.MockFileInfo{NameStr: "hello.txt", IsDirBool: false}, nil
+		if path == "/test" {
+			return &testutil.MockFileInfo{FName: "test", FIsDir: true}, nil
+		}
+		return &testutil.MockFileInfo{FName: "hello.txt", FIsDir: false}, nil
 	}
 
 	// 2. Initialize Teatest with dimensions
@@ -32,7 +36,7 @@ func TestApp_Integration(t *testing.T) {
 	testutil.WaitAndAssertView(t, tm, "hello.txt", 2*time.Second)
 
 	// 4. Test Navigation
-	tm.Type("j")
+	tm.Send("j")
 
 	// 5. Quit
 	_ = tm.Quit()
@@ -42,7 +46,7 @@ func TestApp_Lifecycle(t *testing.T) {
 	app, _ := SetupTestApp("/test")
 
 	t.Run("InitModel", func(t *testing.T) {
-		cmd := InitModel(app.Model)
+		cmd := tui.InitModel(app.Model)
 		if cmd == nil {
 			t.Error("InitModel should return a command")
 		}
@@ -50,6 +54,6 @@ func TestApp_Lifecycle(t *testing.T) {
 
 	t.Run("Close", func(t *testing.T) {
 		// Just ensure it doesn't panic
-		Close(app.Model)
+		tui.Close(app.Model)
 	})
 }

@@ -32,10 +32,9 @@ func TestDefaultConfig(t *testing.T) {
 }
 
 func TestConfig_SaveLoad(t *testing.T) {
-	tmp := testutil.NewTempFolder(t)
-	defer tmp.Cleanup()
+	tmpDir := testutil.TempDir(t)
+	configPath := filepath.Join(tmpDir, "config.json")
 
-	configPath := tmp.Join("config.json")
 	SetConfigPath(configPath)
 	defer SetConfigPath("")
 
@@ -104,10 +103,9 @@ func TestConfig_Validate(t *testing.T) {
 }
 
 func TestConfig_LoadErrors(t *testing.T) {
-	tmp := testutil.NewTempFolder(t)
-	defer tmp.Cleanup()
+	tmpDir := testutil.TempDir(t)
+	configPath := filepath.Join(tmpDir, "config.json")
 
-	configPath := tmp.Join("config.json")
 	SetConfigPath(configPath)
 	defer SetConfigPath("")
 
@@ -119,7 +117,9 @@ func TestConfig_LoadErrors(t *testing.T) {
 	})
 
 	t.Run("Malformed JSON", func(t *testing.T) {
-		tmp.WriteFile("config.json", "{ malformed }")
+		if err := os.WriteFile(configPath, []byte("{ malformed }"), 0644); err != nil {
+			t.Fatal(err)
+		}
 		cfg := Load()
 		if cfg.ShowHidden != true {
 			t.Error("Expected default config on malformed JSON")
@@ -127,7 +127,9 @@ func TestConfig_LoadErrors(t *testing.T) {
 	})
 
 	t.Run("Invalid values in file", func(t *testing.T) {
-		tmp.WriteFile("config.json", `{"theme_index": 999}`)
+		if err := os.WriteFile(configPath, []byte(`{"theme_index": 999}`), 0644); err != nil {
+			t.Fatal(err)
+		}
 		cfg := Load()
 		if cfg.ThemeIndex != 0 {
 			t.Errorf("Expected default ThemeIndex 0 on validation error, got %d", cfg.ThemeIndex)
@@ -136,14 +138,15 @@ func TestConfig_LoadErrors(t *testing.T) {
 }
 
 func TestConfig_Migration(t *testing.T) {
-	tmp := testutil.NewTempFolder(t)
-	defer tmp.Cleanup()
-	configPath := tmp.Join("config.json")
+	tmpDir := testutil.TempDir(t)
+	configPath := filepath.Join(tmpDir, "config.json")
 	SetConfigPath(configPath)
 	defer SetConfigPath("")
 
 	t.Run("v0 migration", func(t *testing.T) {
-		tmp.WriteFile("config.json", `{"config_version": 0, "theme_index": 1}`)
+		if err := os.WriteFile(configPath, []byte(`{"config_version": 0, "theme_index": 1}`), 0644); err != nil {
+			t.Fatal(err)
+		}
 		cfg := Load()
 		if cfg.ConfigVersion != CurrentConfigVersion {
 			t.Errorf("Expected version %d, got %d", CurrentConfigVersion, cfg.ConfigVersion)
@@ -156,7 +159,9 @@ func TestConfig_Migration(t *testing.T) {
 
 	t.Run("Future version migration", func(t *testing.T) {
 		// Just ensure it doesn't crash and keeps values if version is higher or same
-		tmp.WriteFile("config.json", `{"config_version": 1, "theme_index": 1}`)
+		if err := os.WriteFile(configPath, []byte(`{"config_version": 1, "theme_index": 1}`), 0644); err != nil {
+			t.Fatal(err)
+		}
 		cfg := Load()
 		if cfg.ThemeIndex != 1 {
 			t.Errorf("Expected ThemeIndex 1, got %d", cfg.ThemeIndex)
@@ -216,9 +221,8 @@ func TestConfig_MarshalError(t *testing.T) {
 		return nil, fmt.Errorf("marshal error")
 	}
 
-	tmp := testutil.NewTempFolder(t)
-	defer tmp.Cleanup()
-	SetConfigPath(tmp.Join("config.json"))
+	tmpDir := testutil.TempDir(t)
+	SetConfigPath(filepath.Join(tmpDir, "config.json"))
 	defer SetConfigPath("")
 
 	cfg := DefaultConfig()
@@ -249,13 +253,14 @@ func TestConfig_PathsError(t *testing.T) {
 }
 
 func TestConfig_LoadValidVersion(t *testing.T) {
-	tmp := testutil.NewTempFolder(t)
-	defer tmp.Cleanup()
-	configPath := tmp.Join("config.json")
+	tmpDir := testutil.TempDir(t)
+	configPath := filepath.Join(tmpDir, "config.json")
 	SetConfigPath(configPath)
 	defer SetConfigPath("")
 
-	tmp.WriteFile("config.json", `{"config_version": 1, "theme_index": 0}`)
+	if err := os.WriteFile(configPath, []byte(`{"config_version": 1, "theme_index": 0}`), 0644); err != nil {
+		t.Fatal(err)
+	}
 	cfg := Load()
 	if cfg.ConfigVersion != 1 {
 		t.Errorf("Expected version 1, got %d", cfg.ConfigVersion)

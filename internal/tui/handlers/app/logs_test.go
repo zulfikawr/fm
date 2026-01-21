@@ -1,10 +1,11 @@
-package app
+package app_test
 
 import (
 	"testing"
 
 	"github.com/zulfikawr/fm/internal/testutil"
 	tuictx "github.com/zulfikawr/fm/internal/tui/context"
+	"github.com/zulfikawr/fm/internal/tui/handlers/app"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -18,7 +19,7 @@ func TestLogs_Keys(t *testing.T) {
 		{Message: "Log 2"},
 	}
 
-	HandleLogs(m, tea.KeyMsg{Type: tea.KeyDown})
+	app.HandleLogs(m, tea.KeyMsg{Type: tea.KeyDown})
 	if m.Logs.Cursor != 1 {
 		t.Errorf("expected cursor 1, got %d", m.Logs.Cursor)
 	}

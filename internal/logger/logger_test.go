@@ -2,6 +2,7 @@ package logger
 
 import (
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -9,8 +10,9 @@ import (
 )
 
 func TestLogger(t *testing.T) {
-	mock := testutil.NewMockLogger()
+	mock := &testutil.MockLogger{}
 	SetLogger(mock)
+	defer SetLogger(&fileLogger{}) // Reset after test
 
 	Info("test info message")
 	mock.AssertLogContains(t, LevelInfo, "test info message")
@@ -20,19 +22,19 @@ func TestLogger(t *testing.T) {
 }
 
 func TestFileLogger(t *testing.T) {
-	tmp := testutil.NewTempFolder(t)
-	defer tmp.Cleanup()
+	tmpDir := testutil.TempDir(t)
+	logPath := filepath.Join(tmpDir, "test.log")
 
-	logPath := tmp.Join("test.log")
 	SetLogPath(logPath)
 	defer SetLogPath("") // Reset after test
 
-	// Restore real logger for this test
+	// Ensure we are using the real file logger
 	realLogger := &fileLogger{}
 	SetLogger(realLogger)
+	defer SetLogger(&fileLogger{}) // Reset after test
 
 	msg := "test log entry"
-	Log(LevelDebug, msg)
+	Log(LevelInfo, msg)
 
 	content, err := os.ReadFile(logPath)
 	testutil.AssertNoError(t, err, "Log file should be readable")

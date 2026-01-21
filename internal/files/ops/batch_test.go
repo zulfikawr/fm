@@ -74,24 +74,26 @@ func TestDeleteMultiple(t *testing.T) {
 
 func TestMoveMultiple_Conflict(t *testing.T) {
 	ctx := context.Background()
-	fs := testutil.NewMockFileSystem()
 
-	// Mock destination existence
-	fs.StatFunc = func(ctx context.Context, path string) (os.FileInfo, error) {
-		if path == "/dest/a" {
-			return &testutil.MockFileInfo{NameStr: "a"}, nil
+	setup := func() *testutil.MockFileSystem {
+		fs := testutil.NewMockFileSystem()
+		fs.IsReadOnlyFunc = func(ctx context.Context, path string) (bool, error) {
+			return false, nil
 		}
-		return nil, os.ErrNotExist
-	}
-
-	fs.IsReadOnlyFunc = func(ctx context.Context, path string) (bool, error) {
-		return false, nil
+		return fs
 	}
 
 	sources := []string{"/src/a", "/src/b"}
 	destDir := "/dest"
 
 	t.Run("ConflictAsk returns error", func(t *testing.T) {
+		fs := setup()
+		fs.StatFunc = func(ctx context.Context, path string) (os.FileInfo, error) {
+			if path == "/dest/a" {
+				return &testutil.MockFileInfo{FName: "a"}, nil
+			}
+			return nil, os.ErrNotExist
+		}
 		err := MoveMultiple(ctx, fs, fs, sources, destDir, nil, conflict.Ask, false)
 		if err == nil {
 			t.Fatal("expected conflict error")
@@ -101,6 +103,16 @@ func TestMoveMultiple_Conflict(t *testing.T) {
 	})
 
 	t.Run("ConflictSkip skips the conflicting file", func(t *testing.T) {
+		fs := setup()
+		fs.StatFunc = func(ctx context.Context, path string) (os.FileInfo, error) {
+			if path == "/dest/a" {
+				return &testutil.MockFileInfo{FName: "a"}, nil
+			}
+			if strings.HasPrefix(path, "/src/") {
+				return &testutil.MockFileInfo{FName: "item"}, nil
+			}
+			return nil, os.ErrNotExist
+		}
 		// Mock MoveFunc to track calls
 		moveCalled := false
 		fs.RenameFunc = func(ctx context.Context, old, new string) error {
@@ -118,42 +130,54 @@ func TestMoveMultiple_Conflict(t *testing.T) {
 
 func TestCopyMultiple(t *testing.T) {
 	ctx := context.Background()
-	fs := testutil.NewMockFileSystem()
 
-	fs.IsReadOnlyFunc = func(ctx context.Context, path string) (bool, error) {
-		return false, nil
-	}
-	fs.StatFunc = func(ctx context.Context, path string) (os.FileInfo, error) {
-		return &testutil.MockFileInfo{NameStr: fs.Base(path), IsDirBool: false}, nil
-	}
-	fs.LstatFunc = fs.StatFunc
-	fs.OpenFunc = func(ctx context.Context, path string) (io.ReadCloser, error) {
-		return testutil.NewMockFile(fs.Base(path), nil), nil
-	}
-	fs.CreateFunc = func(ctx context.Context, path string) (io.WriteCloser, error) {
-		return testutil.NewMockFile(fs.Base(path), nil), nil
-	}
-	fs.ChmodFunc = func(ctx context.Context, path string, mode os.FileMode) error {
-		return nil
+	setup := func() *testutil.MockFileSystem {
+		fs := testutil.NewMockFileSystem()
+		fs.IsReadOnlyFunc = func(ctx context.Context, path string) (bool, error) {
+			return false, nil
+		}
+		fs.StatFunc = func(ctx context.Context, path string) (os.FileInfo, error) {
+			if strings.HasPrefix(path, "/src/") {
+				return &testutil.MockFileInfo{FName: "file", FIsDir: false}, nil
+			}
+			return nil, os.ErrNotExist
+		}
+		fs.LstatFunc = fs.StatFunc
+		fs.OpenFunc = func(ctx context.Context, path string) (io.ReadCloser, error) {
+			return testutil.NewMockFile("file", nil), nil
+		}
+		fs.CreateFunc = func(ctx context.Context, path string) (io.WriteCloser, error) {
+			return testutil.NewMockFile("file", nil), nil
+		}
+		fs.ChmodFunc = func(ctx context.Context, path string, mode os.FileMode) error {
+			return nil
+		}
+		return fs
 	}
 
 	sources := []string{"/src/a", "/src/b"}
-
 	destDir := "/dest"
 
-	err := CopyMultiple(ctx, fs, fs, sources, destDir, nil, conflict.Overwrite, true)
-
-	testutil.AssertNoError(t, err, "CopyMultiple should succeed")
+	t.Run("Basic Success", func(t *testing.T) {
+		fs := setup()
+		err := CopyMultiple(ctx, fs, fs, sources, destDir, nil, conflict.Overwrite, true)
+		testutil.AssertNoError(t, err, "CopyMultiple should succeed")
+	})
 
 	t.Run("Empty sources", func(t *testing.T) {
+		fs := setup()
 		err := CopyMultiple(ctx, fs, fs, []string{}, destDir, nil, conflict.Ask, false)
 		testutil.AssertNoError(t, err, "Should not error on empty sources")
 	})
 
 	t.Run("Conflict", func(t *testing.T) {
+		fs := setup()
 		fs.StatFunc = func(ctx context.Context, path string) (os.FileInfo, error) {
 			if path == "/dest/a" {
-				return &testutil.MockFileInfo{NameStr: "a"}, nil
+				return &testutil.MockFileInfo{FName: "a"}, nil
+			}
+			if strings.HasPrefix(path, "/src/") {
+				return &testutil.MockFileInfo{FName: "item"}, nil
 			}
 			return nil, os.ErrNotExist
 		}
@@ -164,6 +188,7 @@ func TestCopyMultiple(t *testing.T) {
 	})
 
 	t.Run("ValidateWritable error", func(t *testing.T) {
+		fs := setup()
 		fs.IsReadOnlyFunc = func(ctx context.Context, path string) (bool, error) {
 			return true, nil
 		}
@@ -171,10 +196,10 @@ func TestCopyMultiple(t *testing.T) {
 		if err == nil {
 			t.Error("Expected error when destination is read-only")
 		}
-		fs.IsReadOnlyFunc = func(ctx context.Context, path string) (bool, error) { return false, nil }
 	})
 
 	t.Run("Context cancelled", func(t *testing.T) {
+		fs := setup()
 		ctx, cancel := context.WithCancel(context.Background())
 		cancel()
 		err := CopyMultiple(ctx, fs, fs, sources, destDir, nil, conflict.Overwrite, false)
@@ -184,17 +209,17 @@ func TestCopyMultiple(t *testing.T) {
 	})
 
 	t.Run("Progress and Rename", func(t *testing.T) {
+		fs := setup()
 		progChan := make(chan core.Progress, 10)
 		fs.StatFunc = func(ctx context.Context, path string) (os.FileInfo, error) {
 			if path == "/dest/a" {
-				return &testutil.MockFileInfo{NameStr: "a"}, nil
+				return &testutil.MockFileInfo{FName: "a"}, nil
 			}
-			if path == "/src/a" || path == "/src/b" {
-				return &testutil.MockFileInfo{NameStr: fs.Base(path)}, nil
+			if strings.HasPrefix(path, "/src/") {
+				return &testutil.MockFileInfo{FName: "item"}, nil
 			}
 			return nil, os.ErrNotExist
 		}
-		// Policy Rename will cause isRenamed to be true
 		err := CopyMultiple(ctx, fs, fs, sources, destDir, progChan, conflict.Rename, false)
 		testutil.AssertNoError(t, err, "Should succeed with Rename policy")
 
@@ -204,6 +229,7 @@ func TestCopyMultiple(t *testing.T) {
 	})
 
 	t.Run("Copy error", func(t *testing.T) {
+		fs := setup()
 		fs.OpenFunc = func(ctx context.Context, path string) (io.ReadCloser, error) {
 			return nil, fmt.Errorf("read error")
 		}
@@ -214,18 +240,22 @@ func TestCopyMultiple(t *testing.T) {
 	})
 
 	t.Run("ConflictSkip skips the conflicting file", func(t *testing.T) {
+		fs := setup()
 		fs.StatFunc = func(ctx context.Context, path string) (os.FileInfo, error) {
 			if path == "/dest/a" {
-				return &testutil.MockFileInfo{NameStr: "a"}, nil
+				return &testutil.MockFileInfo{FName: "a"}, nil
 			}
-			return &testutil.MockFileInfo{NameStr: fs.Base(path)}, nil
+			if strings.HasPrefix(path, "/src/") {
+				return &testutil.MockFileInfo{FName: "item"}, nil
+			}
+			return nil, os.ErrNotExist
 		}
 		copyCalled := false
 		fs.CreateFunc = func(ctx context.Context, path string) (io.WriteCloser, error) {
 			if path == "/dest/a" {
 				copyCalled = true
 			}
-			return testutil.NewMockFile(fs.Base(path), nil), nil
+			return testutil.NewMockFile("item", nil), nil
 		}
 
 		err := CopyMultiple(ctx, fs, fs, sources, destDir, nil, conflict.Skip, true)
@@ -234,8 +264,15 @@ func TestCopyMultiple(t *testing.T) {
 	})
 
 	t.Run("Generic resolver error", func(t *testing.T) {
+		fs := setup()
 		fs.StatFunc = func(ctx context.Context, path string) (os.FileInfo, error) {
-			return nil, fmt.Errorf("stat error")
+			if path == "/dest/a" {
+				return nil, fmt.Errorf("stat error")
+			}
+			if strings.HasPrefix(path, "/src/") {
+				return &testutil.MockFileInfo{FName: "item"}, nil
+			}
+			return nil, os.ErrNotExist
 		}
 		err := CopyMultiple(ctx, fs, fs, sources, destDir, nil, conflict.Overwrite, false)
 		if err == nil || !strings.Contains(err.Error(), "stat error") {
@@ -246,35 +283,42 @@ func TestCopyMultiple(t *testing.T) {
 
 func TestMoveMultiple_Extra(t *testing.T) {
 	ctx := context.Background()
-	fs := testutil.NewMockFileSystem()
 
-	fs.IsReadOnlyFunc = func(ctx context.Context, path string) (bool, error) { return false, nil }
-	fs.StatFunc = func(ctx context.Context, path string) (os.FileInfo, error) {
-		return &testutil.MockFileInfo{NameStr: fs.Base(path)}, nil
+	setup := func() *testutil.MockFileSystem {
+		fs := testutil.NewMockFileSystem()
+		fs.IsReadOnlyFunc = func(ctx context.Context, path string) (bool, error) { return false, nil }
+		fs.StatFunc = func(ctx context.Context, path string) (os.FileInfo, error) {
+			if strings.HasPrefix(path, "/src/") {
+				return &testutil.MockFileInfo{FName: "item"}, nil
+			}
+			return nil, os.ErrNotExist
+		}
+		fs.LstatFunc = fs.StatFunc
+		fs.RenameFunc = func(ctx context.Context, old, new string) error { return nil }
+		fs.CreateFunc = func(ctx context.Context, path string) (io.WriteCloser, error) {
+			return testutil.NewMockFile("item", nil), nil
+		}
+		fs.OpenFunc = func(ctx context.Context, path string) (io.ReadCloser, error) {
+			return testutil.NewMockFile("item", nil), nil
+		}
+		fs.RemoveAllFunc = func(ctx context.Context, path string) error { return nil }
+		return fs
 	}
-	fs.LstatFunc = fs.StatFunc
-	fs.RenameFunc = func(ctx context.Context, old, new string) error { return nil }
-	fs.CreateFunc = func(ctx context.Context, path string) (io.WriteCloser, error) {
-		return testutil.NewMockFile(fs.Base(path), nil), nil
-	}
-	fs.OpenFunc = func(ctx context.Context, path string) (io.ReadCloser, error) {
-		return testutil.NewMockFile(fs.Base(path), nil), nil
-	}
-	fs.RemoveAllFunc = func(ctx context.Context, path string) error { return nil }
 
 	sources := []string{"/src/a"}
 	destDir := "/dest"
 
 	t.Run("ValidateWritable error", func(t *testing.T) {
+		fs := setup()
 		fs.IsReadOnlyFunc = func(ctx context.Context, path string) (bool, error) { return true, nil }
 		err := MoveMultiple(ctx, fs, fs, sources, destDir, nil, conflict.Overwrite, false)
 		if err == nil {
 			t.Error("Expected error when destination is read-only")
 		}
-		fs.IsReadOnlyFunc = func(ctx context.Context, path string) (bool, error) { return false, nil }
 	})
 
 	t.Run("Context cancelled", func(t *testing.T) {
+		fs := setup()
 		ctx, cancel := context.WithCancel(context.Background())
 		cancel()
 		err := MoveMultiple(ctx, fs, fs, sources, destDir, nil, conflict.Overwrite, false)
@@ -284,10 +328,14 @@ func TestMoveMultiple_Extra(t *testing.T) {
 	})
 
 	t.Run("Progress and Rename", func(t *testing.T) {
+		fs := setup()
 		progChan := make(chan core.Progress, 10)
 		fs.StatFunc = func(ctx context.Context, path string) (os.FileInfo, error) {
 			if path == "/dest/a" {
-				return &testutil.MockFileInfo{NameStr: "a"}, nil
+				return &testutil.MockFileInfo{FName: "a"}, nil
+			}
+			if strings.HasPrefix(path, "/src/") {
+				return &testutil.MockFileInfo{FName: "item"}, nil
 			}
 			return nil, os.ErrNotExist
 		}
@@ -296,6 +344,7 @@ func TestMoveMultiple_Extra(t *testing.T) {
 	})
 
 	t.Run("Move error", func(t *testing.T) {
+		fs := setup()
 		fs.RenameFunc = func(ctx context.Context, old, new string) error {
 			return fmt.Errorf("move error")
 		}
@@ -306,8 +355,15 @@ func TestMoveMultiple_Extra(t *testing.T) {
 	})
 
 	t.Run("Generic resolver error", func(t *testing.T) {
+		fs := setup()
 		fs.StatFunc = func(ctx context.Context, path string) (os.FileInfo, error) {
-			return nil, fmt.Errorf("stat error")
+			if path == "/dest/a" {
+				return nil, fmt.Errorf("stat error")
+			}
+			if strings.HasPrefix(path, "/src/") {
+				return &testutil.MockFileInfo{FName: "item"}, nil
+			}
+			return nil, os.ErrNotExist
 		}
 		err := MoveMultiple(ctx, fs, fs, sources, destDir, nil, conflict.Overwrite, false)
 		if err == nil || !strings.Contains(err.Error(), "stat error") {

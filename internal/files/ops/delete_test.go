@@ -13,7 +13,9 @@ func TestDelete(t *testing.T) {
 	fs := testutil.NewMockFileSystem()
 
 	t.Run("Successful Delete", func(t *testing.T) {
+		called := false
 		fs.RemoveAllFunc = func(ctx context.Context, path string) error {
+			called = true
 			return nil
 		}
 
@@ -21,7 +23,9 @@ func TestDelete(t *testing.T) {
 		err := Delete(ctx, fs, "/path/to/delete", progChan)
 
 		testutil.AssertNoError(t, err, "Delete should succeed")
-		fs.AssertCalled(t, "RemoveAll")
+		if !called {
+			t.Error("fs.RemoveAll was not called")
+		}
 
 		// Check progress messages
 		p1 := <-progChan

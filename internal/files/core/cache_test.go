@@ -12,7 +12,7 @@ func TestSimpleCache(t *testing.T) {
 	ttl := 100 * time.Millisecond
 	cache := NewSimpleCache[string, []os.FileInfo](10, ttl)
 
-	entries := []os.FileInfo{&testutil.MockFileInfo{NameStr: "file1"}}
+	entries := []os.FileInfo{&testutil.MockFileInfo{FName: "file1"}}
 	path := "/test/path"
 
 	t.Run("Put and Get", func(t *testing.T) {

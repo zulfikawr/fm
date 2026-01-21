@@ -4,18 +4,12 @@ import (
 	"bytes"
 	"io"
 	"os"
-	"regexp"
 	"strings"
 	"testing"
 
+	"github.com/zulfikawr/fm/internal/testutil"
 	"github.com/zulfikawr/fm/internal/tui/theme"
 )
-
-var ansiRegex = regexp.MustCompile("[\u001b\u009b][[()#;?]*(?:[0-9]{1,4}(?:;[0-9]{0,4})*)?[0-9A-ORZcf-nqry=><]")
-
-func stripANSI(str string) string {
-	return ansiRegex.ReplaceAllString(str, "")
-}
 
 func TestPrintHelp(t *testing.T) {
 	// Capture stdout
@@ -32,7 +26,7 @@ func TestPrintHelp(t *testing.T) {
 	os.Stdout = oldStdout
 
 	// Strip ANSI codes for easier comparison
-	output := stripANSI(buf.String())
+	output := testutil.StripANSI(buf.String())
 
 	expectedSubstrings := []string{
 		"FM - Terminal File Manager",

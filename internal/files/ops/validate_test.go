@@ -20,7 +20,7 @@ func TestValidateFileName(t *testing.T) {
 		{"..", false},
 		{"file/with/slash", false},
 		{"invalid*", false},
-		{strings.Repeat("A", 300), false}, // Assuming MaxFilenameLength is around 255
+		{strings.Repeat("A", 300), false},
 	}
 
 	for _, tt := range tests {

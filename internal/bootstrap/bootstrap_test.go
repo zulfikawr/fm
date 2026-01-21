@@ -9,8 +9,7 @@ import (
 )
 
 func TestInitializeApp_Local(t *testing.T) {
-	tmp := testutil.NewTempFolder(t)
-	defer tmp.Cleanup()
+	tmpDir := testutil.TempDir(t)
 
 	t.Run("Default path (cwd)", func(t *testing.T) {
 		app, err := InitializeApp("", []string{})
@@ -28,7 +27,10 @@ func TestInitializeApp_Local(t *testing.T) {
 	})
 
 	t.Run("Specific directory", func(t *testing.T) {
-		subDir := tmp.Mkdir("subdir")
+		subDir := filepath.Join(tmpDir, "subdir")
+		if err := os.MkdirAll(subDir, 0755); err != nil {
+			t.Fatal(err)
+		}
 
 		app, err := InitializeApp("", []string{subDir})
 		if err != nil {
@@ -42,14 +44,17 @@ func TestInitializeApp_Local(t *testing.T) {
 	})
 
 	t.Run("Non-existent directory", func(t *testing.T) {
-		_, err := InitializeApp("", []string{tmp.Join("ghost")})
+		_, err := InitializeApp("", []string{filepath.Join(tmpDir, "ghost")})
 		if err == nil {
 			t.Error("Expected error for non-existent directory")
 		}
 	})
 
 	t.Run("Path is a file", func(t *testing.T) {
-		filePath := tmp.WriteFile("file.txt", "hello")
+		filePath := filepath.Join(tmpDir, "file.txt")
+		if err := os.WriteFile(filePath, []byte("hello"), 0644); err != nil {
+			t.Fatal(err)
+		}
 
 		_, err := InitializeApp("", []string{filePath})
 		if err == nil {

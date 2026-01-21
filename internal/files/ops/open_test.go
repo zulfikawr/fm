@@ -21,14 +21,6 @@ func TestIsTextFile(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		fs.ExtFunc = func(p string) string {
-			for i := len(p) - 1; i >= 0; i-- {
-				if p[i] == '.' {
-					return p[i:]
-				}
-			}
-			return ""
-		}
 		result := IsTextFile(fs, tt.path)
 		if result != tt.expected {
 			t.Errorf("IsTextFile(%q) = %v, want %v", tt.path, result, tt.expected)
@@ -38,7 +30,6 @@ func TestIsTextFile(t *testing.T) {
 
 func TestGetOpenCmd(t *testing.T) {
 	fs := testutil.NewMockFileSystem()
-	fs.ExtFunc = func(p string) string { return ".txt" }
 
 	// Mock lookPath to always succeed
 	oldLookPath := lookPath
@@ -73,7 +64,6 @@ func TestGetOpenCmd(t *testing.T) {
 	})
 
 	t.Run("Non-text file", func(t *testing.T) {
-		fs.ExtFunc = func(p string) string { return ".png" }
 		_, isTerm, err := GetOpenCmd(fs, "image.png", 0)
 		testutil.AssertNoError(t, err, "Should get open cmd for image")
 		testutil.AssertEqual(t, false, isTerm, "Image should not be opened in terminal editor")

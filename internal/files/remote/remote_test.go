@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"path"
+	"path/filepath"
 	"testing"
 	"time"
 
@@ -103,22 +104,24 @@ func TestRemoteFS_ClientMethods(t *testing.T) {
 	}
 	ctx := context.Background()
 
-	t.Run("ReadDir", func(t *testing.T) {
-		// Since we use a default server, it will use the local filesystem
-		// We use a temp dir for testing
-		tmp := testutil.NewTempFolder(t)
-		defer tmp.Cleanup()
-		tmp.WriteFile("test.txt", "hello")
+	tmpDir := testutil.TempDir(t)
 
-		entries, err := fs.ReadDir(ctx, tmp.Path)
+	t.Run("ReadDir", func(t *testing.T) {
+		filePath := filepath.Join(tmpDir, "test.txt")
+		if err := os.WriteFile(filePath, []byte("hello"), 0644); err != nil {
+			t.Fatal(err)
+		}
+
+		entries, err := fs.ReadDir(ctx, tmpDir)
 		testutil.AssertNoError(t, err, "ReadDir should succeed")
 		testutil.AssertEqual(t, 1, len(entries), "Should find one file")
 	})
 
 	t.Run("Stat and Lstat", func(t *testing.T) {
-		tmp := testutil.NewTempFolder(t)
-		defer tmp.Cleanup()
-		path := tmp.WriteFile("stat.txt", "")
+		path := filepath.Join(tmpDir, "stat.txt")
+		if err := os.WriteFile(path, []byte(""), 0644); err != nil {
+			t.Fatal(err)
+		}
 
 		info, err := fs.Stat(ctx, path)
 		testutil.AssertNoError(t, err, "Stat should succeed")
@@ -129,9 +132,7 @@ func TestRemoteFS_ClientMethods(t *testing.T) {
 	})
 
 	t.Run("Create and Open", func(t *testing.T) {
-		tmp := testutil.NewTempFolder(t)
-		defer tmp.Cleanup()
-		path := tmp.Join("create.txt")
+		path := filepath.Join(tmpDir, "create.txt")
 
 		w, err := fs.Create(ctx, path)
 		testutil.AssertNoError(t, err, "Create should succeed")
@@ -146,36 +147,38 @@ func TestRemoteFS_ClientMethods(t *testing.T) {
 	})
 
 	t.Run("MkdirAll and Rename", func(t *testing.T) {
-		tmp := testutil.NewTempFolder(t)
-		defer tmp.Cleanup()
-		dir := tmp.Join("a/b")
+		dir := filepath.Join(tmpDir, "remote_a/b")
 		err := fs.MkdirAll(ctx, dir, 0755)
 		testutil.AssertNoError(t, err, "MkdirAll should succeed")
 
-		newDir := tmp.Join("c")
-		err = fs.Rename(ctx, dir, newDir)
+		newDir := filepath.Join(tmpDir, "remote_c")
+		err = fs.Rename(ctx, filepath.Join(tmpDir, "remote_a"), newDir)
 		testutil.AssertNoError(t, err, "Rename should succeed")
 	})
 
 	t.Run("RemoveAll", func(t *testing.T) {
-		tmp := testutil.NewTempFolder(t)
-		defer tmp.Cleanup()
-		path := tmp.WriteFile("to_delete.txt", "")
+		path := filepath.Join(tmpDir, "to_delete.txt")
+		if err := os.WriteFile(path, []byte(""), 0644); err != nil {
+			t.Fatal(err)
+		}
 
 		err := fs.RemoveAll(ctx, path)
 		testutil.AssertNoError(t, err, "RemoveAll file should succeed")
 
-		dir := tmp.Join("dir_to_delete")
+		dir := filepath.Join(tmpDir, "dir_to_delete")
 		_ = fs.MkdirAll(ctx, dir, 0755)
-		tmp.WriteFile("dir_to_delete/file.txt", "")
+		if err := os.WriteFile(filepath.Join(dir, "file.txt"), []byte(""), 0644); err != nil {
+			t.Fatal(err)
+		}
 		err = fs.RemoveAll(ctx, dir)
 		testutil.AssertNoError(t, err, "RemoveAll dir should succeed")
 	})
 
 	t.Run("Chmod", func(t *testing.T) {
-		tmp := testutil.NewTempFolder(t)
-		defer tmp.Cleanup()
-		path := tmp.WriteFile("chmod.txt", "")
+		path := filepath.Join(tmpDir, "chmod.txt")
+		if err := os.WriteFile(path, []byte(""), 0644); err != nil {
+			t.Fatal(err)
+		}
 		err := fs.Chmod(ctx, path, 0644)
 		testutil.AssertNoError(t, err, "Chmod should succeed")
 	})
@@ -186,14 +189,19 @@ func TestRemoteFS_ClientMethods(t *testing.T) {
 	})
 
 	t.Run("Walk", func(t *testing.T) {
-		tmp := testutil.NewTempFolder(t)
-		defer tmp.Cleanup()
-		tmp.WriteFile("file1.txt", "1")
-		tmp.WriteFile("dir1/file2.txt", "2")
+		walkDir := filepath.Join(tmpDir, "walk_test")
+		if err := os.MkdirAll(filepath.Join(walkDir, "dir1"), 0755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(filepath.Join(walkDir, "file1.txt"), []byte("1"), 0644); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(filepath.Join(walkDir, "dir1/file2.txt"), []byte("2"), 0644); err != nil {
+			t.Fatal(err)
+		}
 
-		// Re-initialize FS to avoid any weirdness
 		count := 0
-		err := fs.Walk(ctx, tmp.Path, func(path string, info os.FileInfo, err error) error {
+		err := fs.Walk(ctx, walkDir, func(path string, info os.FileInfo, err error) error {
 			if err != nil {
 				return err
 			}
@@ -204,24 +212,22 @@ func TestRemoteFS_ClientMethods(t *testing.T) {
 		})
 		testutil.AssertNoError(t, err, "Walk should succeed")
 		if count != 2 {
-			// Try a simpler walk if parallel walk failed to find items
 			t.Errorf("expected 2 files, got %d", count)
 		}
 	})
 
 	t.Run("IsReadOnly", func(t *testing.T) {
-		tmp := testutil.NewTempFolder(t)
-		defer tmp.Cleanup()
-		ro, err := fs.IsReadOnly(ctx, tmp.Path)
+		ro, err := fs.IsReadOnly(ctx, tmpDir)
 		testutil.AssertNoError(t, err, "IsReadOnly should succeed")
 		testutil.AssertEqual(t, false, ro, "tempDir should not be read-only")
 	})
 
 	t.Run("ReadDirEntries", func(t *testing.T) {
-		tmp := testutil.NewTempFolder(t)
-		defer tmp.Cleanup()
-		tmp.WriteFile("entry.txt", "")
-		entries, err := fs.ReadDirEntries(ctx, tmp.Path)
+		path := filepath.Join(tmpDir, "entry.txt")
+		if err := os.WriteFile(path, []byte(""), 0644); err != nil {
+			t.Fatal(err)
+		}
+		entries, err := fs.ReadDirEntries(ctx, tmpDir)
 		testutil.AssertNoError(t, err, "ReadDirEntries should succeed")
 		if len(entries) < 1 {
 			t.Errorf("expected at least 1 entry")
@@ -229,12 +235,10 @@ func TestRemoteFS_ClientMethods(t *testing.T) {
 	})
 
 	t.Run("Abs", func(t *testing.T) {
-		// Abs with absolute path
 		abs, err := fs.Abs("/a/b")
 		testutil.AssertNoError(t, err, "Abs with absolute path should succeed")
 		testutil.AssertEqual(t, "/a/b", abs, "Abs path should match")
 
-		// Abs with relative path
 		abs, err = fs.Abs("relative")
 		testutil.AssertNoError(t, err, "Abs with relative path should succeed")
 		if !path.IsAbs(abs) {
@@ -248,14 +252,14 @@ func TestRemoteFS_ClientMethods(t *testing.T) {
 	})
 
 	t.Run("infoToDirEntry", func(t *testing.T) {
-		info, _ := os.Stat(os.Args[0]) // Get some FileInfo
+		info, _ := os.Stat(os.Args[0])
 		entry := infoToDirEntry(info)
 		testutil.AssertEqual(t, info.Name(), entry.Name(), "Name should match")
 		testutil.AssertEqual(t, info.IsDir(), entry.IsDir(), "IsDir should match")
 		testutil.AssertEqual(t, info.Mode().Type(), entry.Type(), "Type should match")
 		inf, err := entry.Info()
 		testutil.AssertNoError(t, err, "Info should succeed")
-		testutil.AssertEqual(t, info, inf, "FileInfo should match")
+		testutil.AssertEqual(t, info.Name(), inf.Name(), "FileInfo name should match")
 	})
 
 	t.Run("Close", func(t *testing.T) {

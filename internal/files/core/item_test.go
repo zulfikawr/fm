@@ -10,11 +10,11 @@ import (
 func TestNewItem(t *testing.T) {
 	now := time.Now()
 	info := &testutil.MockFileInfo{
-		NameStr:    "test.txt",
-		SizeInt:    1234,
-		ModeBits:   0644,
-		ModTimeVal: now,
-		IsDirBool:  false,
+		FName:    "test.txt",
+		FSize:    1234,
+		FMode:    0644,
+		FModTime: now,
+		FIsDir:   false,
 	}
 
 	item := NewItem(info, "/path/test.txt", "M")

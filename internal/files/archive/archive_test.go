@@ -115,7 +115,8 @@ func createTestTar(t *testing.T) string {
 		testutil.AssertNoError(t, err, "write tar body")
 	}
 
-	err := w.Close()
+	var err error
+	err = w.Close()
 	testutil.AssertNoError(t, err, "close tar writer")
 
 	tmpFile, err := os.CreateTemp("", "test*.tar")

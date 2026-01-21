@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -181,10 +182,9 @@ func TestCreateFileSystem(t *testing.T) {
 }
 
 func TestHostKeyCallbackInner(t *testing.T) {
-	tmp := testutil.NewTempFolder(t)
-	defer tmp.Cleanup()
+	tmpDir := testutil.TempDir(t)
 	oldHome := os.Getenv("HOME")
-	os.Setenv("HOME", tmp.Path)
+	os.Setenv("HOME", tmpDir)
 	defer os.Setenv("HOME", oldHome)
 
 	keyData := "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOm6y8v0W6Wz7mHn6/W1uF1v7Q+V2b2u5u5u5u5u5u5u"
@@ -216,16 +216,14 @@ func TestHostKeyCallbackInner(t *testing.T) {
 		_, _ = w.Write([]byte("y\n"))
 		w.Close()
 
-		// This might still fail if sshx.AddToKnownHosts fails, but it hits the branch
 		_ = cb("example.com:22", addr, pk)
 	})
 }
 
 func TestCreateHostKeyCallback(t *testing.T) {
-	tmp := testutil.NewTempFolder(t)
-	defer tmp.Cleanup()
+	tmpDir := testutil.TempDir(t)
 	oldHome := os.Getenv("HOME")
-	os.Setenv("HOME", tmp.Path)
+	os.Setenv("HOME", tmpDir)
 	defer os.Setenv("HOME", oldHome)
 
 	t.Run("Create new known_hosts", func(t *testing.T) {
@@ -234,7 +232,7 @@ func TestCreateHostKeyCallback(t *testing.T) {
 		if cb == nil {
 			t.Fatal("Callback is nil")
 		}
-		if _, err := os.Stat(tmp.Join(".ssh", "known_hosts")); err != nil {
+		if _, err := os.Stat(filepath.Join(tmpDir, ".ssh", "known_hosts")); err != nil {
 			t.Errorf("known_hosts not created: %v", err)
 		}
 	})

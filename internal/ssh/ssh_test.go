@@ -39,12 +39,28 @@ func TestResolveRemote(t *testing.T) {
 			t.Skip("Failed to create .ssh dir for test")
 		}
 
-		content := "Host myalias\n  HostName realhost.com\n  User dev\n  IdentityFile ~/.ssh/id_rsa\n"
+		// Backup existing config if any
+		var backup []byte
+		if _, err := os.Stat(configPath); err == nil {
+			backup, _ = os.ReadFile(configPath)
+		}
+
+		content := `Host myalias
+  HostName realhost.com
+  User dev
+  IdentityFile ~/.ssh/id_rsa
+`
 		err = os.WriteFile(configPath, []byte(content), 0600)
 		if err != nil {
 			t.Skip("Failed to write mock config")
 		}
-		defer os.Remove(configPath)
+		defer func() {
+			if backup != nil {
+				_ = os.WriteFile(configPath, backup, 0600)
+			} else {
+				_ = os.Remove(configPath)
+			}
+		}()
 
 		details := ResolveRemote("myalias")
 		if details.User != "dev" || details.Host != "realhost.com" || details.KeyPath == "" {

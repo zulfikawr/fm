@@ -4,34 +4,32 @@ import (
 	"context"
 	"io"
 	"os"
-	"sync"
+	"path/filepath"
 )
 
-// Call represents a recorded method call to the mock
-type Call struct {
-	Method string
-	Args   []any
-}
+// Define minimal interfaces in testutil to avoid import cycles.
+// These are compatible with internal/files/core.FileSystem.
 
-// MockFileSystem is an advanced, thread-safe mock of core.FileSystem
 type MockFileSystem struct {
-	mu sync.RWMutex
-
-	// Function pointers for flexible behavior
 	ReadDirFunc        func(ctx context.Context, path string) ([]os.FileInfo, error)
 	ReadDirEntriesFunc func(ctx context.Context, path string) ([]os.DirEntry, error)
 	StatFunc           func(ctx context.Context, path string) (os.FileInfo, error)
 	LstatFunc          func(ctx context.Context, path string) (os.FileInfo, error)
+	OpenFunc           func(ctx context.Context, path string) (io.ReadCloser, error)
+	CreateFunc         func(ctx context.Context, path string) (io.WriteCloser, error)
+	MkdirAllFunc       func(ctx context.Context, path string, perm os.FileMode) error
 	RemoveAllFunc      func(ctx context.Context, path string) error
 	RenameFunc         func(ctx context.Context, oldPath, newPath string) error
-	CreateFunc         func(ctx context.Context, path string) (io.WriteCloser, error)
-	OpenFunc           func(ctx context.Context, path string) (io.ReadCloser, error)
-	MkdirAllFunc       func(ctx context.Context, path string, perm os.FileMode) error
 	ChmodFunc          func(ctx context.Context, path string, mode os.FileMode) error
 	PreallocateFunc    func(ctx context.Context, path string, size int64) error
 	GetHomeDirFunc     func() (string, error)
-	SeparatorFunc      func() string
 	IsLocalFunc        func() bool
+	IsReadOnlyFunc     func(ctx context.Context, path string) (bool, error)
+	WalkFunc           func(ctx context.Context, root string, walkFn func(path string, info os.FileInfo, err error) error) error
+	AddressFunc        func() string
+	UserFunc           func() string
+	CloseFunc          func() error
+	SeparatorFunc      func() string
 	JoinFunc           func(elem ...string) string
 	AbsFunc            func(path string) (string, error)
 	RelFunc            func(basepath, targpath string) (string, error)
@@ -39,278 +37,193 @@ type MockFileSystem struct {
 	DirFunc            func(path string) string
 	BaseFunc           func(path string) string
 	ExtFunc            func(path string) string
-	IsReadOnlyFunc     func(ctx context.Context, path string) (bool, error)
-	WalkFunc           func(ctx context.Context, root string, walkFn func(path string, info os.FileInfo, err error) error) error
-	AddressFunc        func() string
-	UserFunc           func() string
-	CloseFunc          func() error
-
-	// Call tracking
-	Calls []Call
-
-	// Default return values (if Funcs are nil)
-	DefaultError error
 }
 
-// NewMockFileSystem creates a new MockFileSystem with sensible defaults
 func NewMockFileSystem() *MockFileSystem {
-	return &MockFileSystem{}
-}
-
-func (fs *MockFileSystem) recordCall(method string, args ...any) {
-	fs.mu.Lock()
-	defer fs.mu.Unlock()
-	fs.Calls = append(fs.Calls, Call{Method: method, Args: args})
-}
-
-// AssertCalled verifies that a method was called
-func (fs *MockFileSystem) AssertCalled(t TB, method string) {
-	fs.mu.RLock()
-	defer fs.mu.RUnlock()
-	for _, c := range fs.Calls {
-		if c.Method == method {
-			return
-		}
+	return &MockFileSystem{
+		IsLocalFunc:   func() bool { return true },
+		SeparatorFunc: func() string { return "/" },
 	}
-	t.Errorf("expected method %s to be called, but it was not", method)
 }
 
-func (fs *MockFileSystem) ReadDir(ctx context.Context, path string) ([]os.FileInfo, error) {
-	fs.recordCall("ReadDir", path)
-	if fs.ReadDirFunc != nil {
-		return fs.ReadDirFunc(ctx, path)
+func (m *MockFileSystem) ReadDir(ctx context.Context, path string) ([]os.FileInfo, error) {
+	if m.ReadDirFunc != nil {
+		return m.ReadDirFunc(ctx, path)
 	}
-	return []os.FileInfo{}, fs.DefaultError
+	return nil, nil
 }
 
-func (fs *MockFileSystem) ReadDirEntries(ctx context.Context, path string) ([]os.DirEntry, error) {
-	fs.recordCall("ReadDirEntries", path)
-	if fs.ReadDirEntriesFunc != nil {
-		return fs.ReadDirEntriesFunc(ctx, path)
+func (m *MockFileSystem) ReadDirEntries(ctx context.Context, path string) ([]os.DirEntry, error) {
+	if m.ReadDirEntriesFunc != nil {
+		return m.ReadDirEntriesFunc(ctx, path)
 	}
-	return []os.DirEntry{}, fs.DefaultError
+	return nil, nil
 }
 
-func (fs *MockFileSystem) Stat(ctx context.Context, path string) (os.FileInfo, error) {
-	fs.recordCall("Stat", path)
-	if fs.StatFunc != nil {
-		return fs.StatFunc(ctx, path)
+func (m *MockFileSystem) Stat(ctx context.Context, path string) (os.FileInfo, error) {
+	if m.StatFunc != nil {
+		return m.StatFunc(ctx, path)
 	}
-	return &MockFileInfo{NameStr: "mock"}, fs.DefaultError
+	return nil, os.ErrNotExist
 }
 
-func (fs *MockFileSystem) Lstat(ctx context.Context, path string) (os.FileInfo, error) {
-	fs.recordCall("Lstat", path)
-	if fs.LstatFunc != nil {
-		return fs.LstatFunc(ctx, path)
+func (m *MockFileSystem) Lstat(ctx context.Context, path string) (os.FileInfo, error) {
+	if m.LstatFunc != nil {
+		return m.LstatFunc(ctx, path)
 	}
-	return &MockFileInfo{NameStr: "mock"}, fs.DefaultError
+	return m.Stat(ctx, path)
 }
 
-func (fs *MockFileSystem) RemoveAll(ctx context.Context, path string) error {
-	fs.recordCall("RemoveAll", path)
-	if fs.RemoveAllFunc != nil {
-		return fs.RemoveAllFunc(ctx, path)
+func (m *MockFileSystem) Open(ctx context.Context, path string) (io.ReadCloser, error) {
+	if m.OpenFunc != nil {
+		return m.OpenFunc(ctx, path)
 	}
-	return fs.DefaultError
+	return nil, nil
 }
 
-func (fs *MockFileSystem) Rename(ctx context.Context, oldPath, newPath string) error {
-	fs.recordCall("Rename", oldPath, newPath)
-	if fs.RenameFunc != nil {
-		return fs.RenameFunc(ctx, oldPath, newPath)
+func (m *MockFileSystem) Create(ctx context.Context, path string) (io.WriteCloser, error) {
+	if m.CreateFunc != nil {
+		return m.CreateFunc(ctx, path)
 	}
-	return fs.DefaultError
+	return &MockReadWriteCloser{}, nil
 }
 
-func (fs *MockFileSystem) Create(ctx context.Context, path string) (io.WriteCloser, error) {
-	fs.recordCall("Create", path)
-	if fs.CreateFunc != nil {
-		return fs.CreateFunc(ctx, path)
+func (m *MockFileSystem) MkdirAll(ctx context.Context, path string, perm os.FileMode) error {
+	if m.MkdirAllFunc != nil {
+		return m.MkdirAllFunc(ctx, path, perm)
 	}
-	return nil, fs.DefaultError
+	return nil
 }
 
-func (fs *MockFileSystem) Open(ctx context.Context, path string) (io.ReadCloser, error) {
-	fs.recordCall("Open", path)
-	if fs.OpenFunc != nil {
-		return fs.OpenFunc(ctx, path)
+func (m *MockFileSystem) RemoveAll(ctx context.Context, path string) error {
+	if m.RemoveAllFunc != nil {
+		return m.RemoveAllFunc(ctx, path)
 	}
-	return nil, fs.DefaultError
+	return nil
 }
 
-func (fs *MockFileSystem) MkdirAll(ctx context.Context, path string, perm os.FileMode) error {
-	fs.recordCall("MkdirAll", path, perm)
-	if fs.MkdirAllFunc != nil {
-		return fs.MkdirAllFunc(ctx, path, perm)
+func (m *MockFileSystem) Rename(ctx context.Context, oldPath, newPath string) error {
+	if m.RenameFunc != nil {
+		return m.RenameFunc(ctx, oldPath, newPath)
 	}
-	return fs.DefaultError
+	return nil
 }
 
-func (fs *MockFileSystem) Chmod(ctx context.Context, path string, mode os.FileMode) error {
-	fs.recordCall("Chmod", path, mode)
-	if fs.ChmodFunc != nil {
-		return fs.ChmodFunc(ctx, path, mode)
+func (m *MockFileSystem) Chmod(ctx context.Context, path string, mode os.FileMode) error {
+	if m.ChmodFunc != nil {
+		return m.ChmodFunc(ctx, path, mode)
 	}
-	return fs.DefaultError
+	return nil
 }
 
-func (fs *MockFileSystem) Preallocate(ctx context.Context, path string, size int64) error {
-	fs.recordCall("Preallocate", path, size)
-	if fs.PreallocateFunc != nil {
-		return fs.PreallocateFunc(ctx, path, size)
+func (m *MockFileSystem) Preallocate(ctx context.Context, path string, size int64) error {
+	if m.PreallocateFunc != nil {
+		return m.PreallocateFunc(ctx, path, size)
 	}
-	return fs.DefaultError
+	return nil
 }
 
-func (fs *MockFileSystem) GetHomeDir() (string, error) {
-	fs.recordCall("GetHomeDir")
-	if fs.GetHomeDirFunc != nil {
-		return fs.GetHomeDirFunc()
+func (m *MockFileSystem) GetHomeDir() (string, error) {
+	if m.GetHomeDirFunc != nil {
+		return m.GetHomeDirFunc()
 	}
-	return "/home/user", fs.DefaultError
+	return "/home/user", nil
 }
 
-func (fs *MockFileSystem) Separator() string {
-	if fs.SeparatorFunc != nil {
-		return fs.SeparatorFunc()
-	}
-	return "/"
-}
-
-func (fs *MockFileSystem) IsLocal() bool {
-	if fs.IsLocalFunc != nil {
-		return fs.IsLocalFunc()
+func (m *MockFileSystem) IsLocal() bool {
+	if m.IsLocalFunc != nil {
+		return m.IsLocalFunc()
 	}
 	return true
 }
 
-func (fs *MockFileSystem) Join(elem ...string) string {
-	if fs.JoinFunc != nil {
-		return fs.JoinFunc(elem...)
+func (m *MockFileSystem) IsReadOnly(ctx context.Context, path string) (bool, error) {
+	if m.IsReadOnlyFunc != nil {
+		return m.IsReadOnlyFunc(ctx, path)
 	}
-	res := ""
-	for i, e := range elem {
-		if i > 0 && res != "" && res[len(res)-1] != '/' {
-			res += "/"
-		}
-		res += e
-	}
-	return res
+	return false, nil
 }
 
-func (fs *MockFileSystem) Abs(path string) (string, error) {
-	if fs.AbsFunc != nil {
-		return fs.AbsFunc(path)
+func (m *MockFileSystem) Walk(ctx context.Context, root string, walkFn func(path string, info os.FileInfo, err error) error) error {
+	if m.WalkFunc != nil {
+		return m.WalkFunc(ctx, root, walkFn)
 	}
-	return path, fs.DefaultError
+	return nil
 }
 
-func (fs *MockFileSystem) Rel(basepath, targpath string) (string, error) {
-	if fs.RelFunc != nil {
-		return fs.RelFunc(basepath, targpath)
-	}
-	return targpath, fs.DefaultError
-}
-
-func (fs *MockFileSystem) Clean(path string) string {
-	if fs.CleanFunc != nil {
-		return fs.CleanFunc(path)
-	}
-	return path
-}
-
-func (fs *MockFileSystem) Dir(path string) string {
-	if fs.DirFunc != nil {
-		return fs.DirFunc(path)
-	}
-	if path == "" || path == "." {
-		return "."
-	}
-	i := len(path) - 1
-	for i >= 0 && path[i] == '/' {
-		i--
-	}
-	for i >= 0 && path[i] != '/' {
-		i--
-	}
-	if i < 0 {
-		return "."
-	}
-	res := path[:i]
-	if res == "" {
-		return "/"
-	}
-	return res
-}
-
-func (fs *MockFileSystem) Base(path string) string {
-	if fs.BaseFunc != nil {
-		return fs.BaseFunc(path)
-	}
-	if path == "" {
-		return "."
-	}
-	i := len(path) - 1
-	for i >= 0 && path[i] == '/' {
-		i--
-	}
-	if i < 0 {
-		return "/"
-	}
-	end := i + 1
-	for i >= 0 && path[i] != '/' {
-		i--
-	}
-	return path[i+1 : end]
-}
-
-func (fs *MockFileSystem) Ext(path string) string {
-	if fs.ExtFunc != nil {
-		return fs.ExtFunc(path)
-	}
-	for i := len(path) - 1; i >= 0 && path[i] != '/'; i-- {
-		if path[i] == '.' {
-			return path[i:]
-		}
+func (m *MockFileSystem) Address() string {
+	if m.AddressFunc != nil {
+		return m.AddressFunc()
 	}
 	return ""
 }
 
-func (fs *MockFileSystem) IsReadOnly(ctx context.Context, path string) (bool, error) {
-	fs.recordCall("IsReadOnly", path)
-	if fs.IsReadOnlyFunc != nil {
-		return fs.IsReadOnlyFunc(ctx, path)
-	}
-	return false, fs.DefaultError
-}
-
-func (fs *MockFileSystem) Address() string {
-	if fs.AddressFunc != nil {
-		return fs.AddressFunc()
+func (m *MockFileSystem) User() string {
+	if m.UserFunc != nil {
+		return m.UserFunc()
 	}
 	return ""
 }
 
-func (fs *MockFileSystem) User() string {
-	if fs.UserFunc != nil {
-		return fs.UserFunc()
+func (m *MockFileSystem) Close() error {
+	if m.CloseFunc != nil {
+		return m.CloseFunc()
 	}
-	return ""
+	return nil
 }
 
-func (fs *MockFileSystem) Walk(ctx context.Context, root string, walkFn func(path string, info os.FileInfo, err error) error) error {
-	fs.recordCall("Walk", root)
-	if fs.WalkFunc != nil {
-		return fs.WalkFunc(ctx, root, walkFn)
+func (m *MockFileSystem) Separator() string {
+	if m.SeparatorFunc != nil {
+		return m.SeparatorFunc()
 	}
-	return fs.DefaultError
+	return "/"
 }
 
-func (fs *MockFileSystem) Close() error {
-	fs.recordCall("Close")
-	if fs.CloseFunc != nil {
-		return fs.CloseFunc()
+func (m *MockFileSystem) Join(elem ...string) string {
+	if m.JoinFunc != nil {
+		return m.JoinFunc(elem...)
 	}
-	return fs.DefaultError
+	return filepath.Join(elem...)
+}
+
+func (m *MockFileSystem) Abs(pathStr string) (string, error) {
+	if m.AbsFunc != nil {
+		return m.AbsFunc(pathStr)
+	}
+	return pathStr, nil
+}
+
+func (m *MockFileSystem) Rel(basepath, targpath string) (string, error) {
+	if m.RelFunc != nil {
+		return m.RelFunc(basepath, targpath)
+	}
+	return filepath.Rel(basepath, targpath)
+}
+
+func (m *MockFileSystem) Clean(pathStr string) string {
+	if m.CleanFunc != nil {
+		return m.CleanFunc(pathStr)
+	}
+	return filepath.Clean(pathStr)
+}
+
+func (m *MockFileSystem) Dir(pathStr string) string {
+	if m.DirFunc != nil {
+		return m.DirFunc(pathStr)
+	}
+	return filepath.Dir(pathStr)
+}
+
+func (m *MockFileSystem) Base(pathStr string) string {
+	if m.BaseFunc != nil {
+		return m.BaseFunc(pathStr)
+	}
+	return filepath.Base(pathStr)
+}
+
+func (m *MockFileSystem) Ext(pathStr string) string {
+	if m.ExtFunc != nil {
+		return m.ExtFunc(pathStr)
+	}
+	return filepath.Ext(pathStr)
 }

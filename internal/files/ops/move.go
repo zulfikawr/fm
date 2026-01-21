@@ -111,8 +111,3 @@ func verifyCrossMove(ctx context.Context, srcFS, dstFS core.FileSystem, src, dst
 
 	return nil
 }
-
-// Deprecated: use CrossMove
-func verifyMove(ctx context.Context, fs core.FileSystem, src, dst string) error {
-	return verifyCrossMove(ctx, fs, fs, src, dst)
-}

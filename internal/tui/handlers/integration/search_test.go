@@ -1,4 +1,4 @@
-package integration
+package integration_test
 
 import (
 	"testing"
@@ -6,6 +6,7 @@ import (
 	"github.com/zulfikawr/fm/internal/files/core"
 	"github.com/zulfikawr/fm/internal/testutil"
 	tuictx "github.com/zulfikawr/fm/internal/tui/context"
+	"github.com/zulfikawr/fm/internal/tui/handlers/integration"
 	"github.com/zulfikawr/fm/internal/tui/messages"
 )
 
@@ -28,7 +29,7 @@ func TestSearch_Msg(t *testing.T) {
 		Results: results,
 	}
 
-	HandleSearch(m, msg)
+	integration.HandleSearch(m, msg)
 
 	if len(m.Search.Results) != 1 {
 		t.Errorf("expected 1 result, got %d", len(m.Search.Results))

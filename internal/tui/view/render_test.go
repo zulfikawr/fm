@@ -1,4 +1,4 @@
-package view
+package view_test
 
 import (
 	"strings"
@@ -6,6 +6,7 @@ import (
 
 	"github.com/zulfikawr/fm/internal/testutil"
 	"github.com/zulfikawr/fm/internal/tui/context"
+	"github.com/zulfikawr/fm/internal/tui/view"
 )
 
 func TestRender_Modals(t *testing.T) {
@@ -16,7 +17,7 @@ func TestRender_Modals(t *testing.T) {
 
 	t.Run("Settings", func(t *testing.T) {
 		m.UI.SettingsOpen = true
-		v := Render(m)
+		v := view.Render(m)
 		if !strings.Contains(testutil.StripANSI(v), "Settings") {
 			t.Error("expected Settings in view")
 		}
@@ -25,7 +26,7 @@ func TestRender_Modals(t *testing.T) {
 
 	t.Run("Logs", func(t *testing.T) {
 		m.UI.LogOpen = true
-		v := Render(m)
+		v := view.Render(m)
 		// Empty logs show "No operations logged yet."
 		if !strings.Contains(testutil.StripANSI(v), "logged yet") {
 			t.Error("expected empty logs message in view")
@@ -35,7 +36,7 @@ func TestRender_Modals(t *testing.T) {
 
 	t.Run("Loading", func(t *testing.T) {
 		m.UI.Loading = true
-		v := Render(m)
+		v := view.Render(m)
 		if !strings.Contains(testutil.StripANSI(v), "Loading...") {
 			t.Error("expected Loading... in view")
 		}

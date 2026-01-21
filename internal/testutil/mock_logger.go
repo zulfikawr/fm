@@ -3,46 +3,41 @@ package testutil
 import (
 	"strings"
 	"sync"
+	"testing"
 )
 
-// LogEntry represents a single log message captured by the mock
-type LogEntry struct {
-	Level   string
-	Message string
-}
-
-// MockLogger captures log messages for verification
+// MockLogger is a generic mock for a logger.
 type MockLogger struct {
-	mu      sync.RWMutex
-	Entries []LogEntry
+	mu   sync.RWMutex
+	Logs []string
 }
 
-// NewMockLogger creates a new MockLogger
-func NewMockLogger() *MockLogger {
-	return &MockLogger{}
-}
-
-func (m *MockLogger) Log(level, msg string) {
+func (m *MockLogger) Log(level string, msg string) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	m.Entries = append(m.Entries, LogEntry{Level: level, Message: msg})
+	m.Logs = append(m.Logs, level+": "+msg)
 }
 
-// AssertLogContains verifies that a log message containing the target string was recorded
-func (m *MockLogger) AssertLogContains(t TB, level, target string) {
-	m.mu.RLock()
-	defer m.mu.RUnlock()
-	for _, entry := range m.Entries {
-		if (level == "" || entry.Level == level) && strings.Contains(entry.Message, target) {
-			return
-		}
-	}
-	t.Errorf("expected log at level %q containing %q, but it was not found", level, target)
-}
-
-// Reset clears all captured log entries
 func (m *MockLogger) Reset() {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	m.Entries = nil
+	m.Logs = nil
+}
+
+func (m *MockLogger) Contains(target string) bool {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	for _, l := range m.Logs {
+		if strings.Contains(l, target) {
+			return true
+		}
+	}
+	return false
+}
+
+func (m *MockLogger) AssertLogContains(t *testing.T, level string, target string) {
+	t.Helper()
+	if !m.Contains(level + ": " + target) {
+		t.Errorf("expected logs to contain %q with level %q, but they did not", target, level)
+	}
 }

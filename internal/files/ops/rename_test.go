@@ -14,15 +14,19 @@ func TestRename(t *testing.T) {
 	fs := testutil.NewMockFileSystem()
 
 	t.Run("Successful Rename", func(t *testing.T) {
+		called := false
 		fs.StatFunc = func(ctx context.Context, path string) (os.FileInfo, error) {
 			return nil, os.ErrNotExist
 		}
 		fs.RenameFunc = func(ctx context.Context, old, new string) error {
+			called = true
 			return nil
 		}
 		err := Rename(ctx, fs, "/old", "/new", conflict.Ask)
 		testutil.AssertNoError(t, err, "Rename should succeed")
-		fs.AssertCalled(t, "Rename")
+		if !called {
+			t.Error("fs.Rename was not called")
+		}
 	})
 
 	t.Run("Empty Path", func(t *testing.T) {
@@ -43,7 +47,7 @@ func TestRename(t *testing.T) {
 		// Mock destination exists
 		fs.StatFunc = func(ctx context.Context, path string) (os.FileInfo, error) {
 			if path == "/new" {
-				return &testutil.MockFileInfo{NameStr: "new"}, nil
+				return &testutil.MockFileInfo{FName: "new"}, nil
 			}
 			return nil, os.ErrNotExist
 		}

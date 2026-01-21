@@ -1,4 +1,4 @@
-package handlers
+package handlers_test
 
 import (
 	"errors"
@@ -10,6 +10,7 @@ import (
 	"github.com/zulfikawr/fm/internal/files/core"
 	"github.com/zulfikawr/fm/internal/testutil"
 	tuictx "github.com/zulfikawr/fm/internal/tui/context"
+	"github.com/zulfikawr/fm/internal/tui/handlers"
 	"github.com/zulfikawr/fm/internal/tui/messages"
 )
 
@@ -19,7 +20,7 @@ func TestRouter_GlobalMessages(t *testing.T) {
 
 	t.Run("WindowSizeMsg", func(t *testing.T) {
 		msg := tea.WindowSizeMsg{Width: 100, Height: 50}
-		HandleUpdate(m, msg)
+		handlers.HandleUpdate(m, msg)
 		if m.Display.Width != 100 || m.Display.Height != 50 {
 			t.Errorf("expected 100x50, got %dx%d", m.Display.Width, m.Display.Height)
 		}
@@ -27,7 +28,7 @@ func TestRouter_GlobalMessages(t *testing.T) {
 
 	t.Run("WatchEventMsg", func(t *testing.T) {
 		m.Watcher.IsListening = true
-		HandleUpdate(m, messages.WatchEventMsg{})
+		handlers.HandleUpdate(m, messages.WatchEventMsg{})
 		if !m.Watcher.IsListening {
 			t.Error("expected IsListening to still be true (debouncing)")
 		}
@@ -36,7 +37,7 @@ func TestRouter_GlobalMessages(t *testing.T) {
 		}
 
 		// Simulate debounce timer expiration
-		HandleUpdate(m, messages.DebounceWatchMsg{})
+		handlers.HandleUpdate(m, messages.DebounceWatchMsg{})
 		if m.Watcher.IsListening {
 			t.Error("expected IsListening to be false after debounce")
 		}
@@ -45,7 +46,7 @@ func TestRouter_GlobalMessages(t *testing.T) {
 	t.Run("ClearMsg", func(t *testing.T) {
 		m.Message.Push("test", false)
 		m.Operations.Progress.Show("label")
-		HandleUpdate(m, messages.ClearMsg{})
+		handlers.HandleUpdate(m, messages.ClearMsg{})
 		if m.Message.Text != "" {
 			t.Error("expected message to be cleared")
 		}
@@ -54,7 +55,7 @@ func TestRouter_GlobalMessages(t *testing.T) {
 	t.Run("ErrorMsg", func(t *testing.T) {
 		m.UI.Loading = true
 		msg := messages.ErrorMsg{Err: errors.New("fail"), LogID: "123"}
-		cmd := HandleUpdate(m, msg)
+		cmd := handlers.HandleUpdate(m, msg)
 		if cmd == nil {
 			t.Fatal("expected reload command after error")
 		}

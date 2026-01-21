@@ -64,7 +64,5 @@ func TestParse(t *testing.T) {
 		if fs.Usage == nil {
 			t.Error("Expected Usage function to be set")
 		}
-		// We don't necessarily need to call it if it's complex,
-		// but we've verified it's set.
 	})
 }

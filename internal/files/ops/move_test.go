@@ -27,14 +27,14 @@ func TestMove(t *testing.T) {
 			return os.ErrInvalid // Simulate cross-device rename failure
 		}
 		fs.LstatFunc = func(ctx context.Context, path string) (os.FileInfo, error) {
-			return &testutil.MockFileInfo{NameStr: fs.Base(path), IsDirBool: false, SizeInt: 10}, nil
+			return &testutil.MockFileInfo{FName: "file", FIsDir: false, FSize: 10}, nil
 		}
 		fs.StatFunc = fs.LstatFunc
 		fs.CreateFunc = func(ctx context.Context, path string) (io.WriteCloser, error) {
-			return testutil.NewMockFile(fs.Base(path), nil), nil
+			return testutil.NewMockFile("file", nil), nil
 		}
 		fs.OpenFunc = func(ctx context.Context, path string) (io.ReadCloser, error) {
-			return testutil.NewMockFile(fs.Base(path), make([]byte, 10)), nil
+			return testutil.NewMockFile("file", make([]byte, 10)), nil
 		}
 		fs.ChmodFunc = func(ctx context.Context, path string, mode os.FileMode) error { return nil }
 		fs.RemoveAllFunc = func(ctx context.Context, path string) error { return nil }
@@ -58,7 +58,7 @@ func TestCrossMove_RenameError(t *testing.T) {
 		return os.ErrPermission
 	}
 	fs.StatFunc = func(ctx context.Context, path string) (os.FileInfo, error) {
-		return &testutil.MockFileInfo{NameStr: "file", SizeInt: 10}, nil
+		return &testutil.MockFileInfo{FName: "file", FSize: 10}, nil
 	}
 	fs.LstatFunc = fs.StatFunc
 	fs.OpenFunc = func(ctx context.Context, path string) (io.ReadCloser, error) {
@@ -81,7 +81,7 @@ func TestCrossMove_Conflict(t *testing.T) {
 	fs.IsReadOnlyFunc = func(ctx context.Context, path string) (bool, error) { return false, nil }
 	fs.StatFunc = func(ctx context.Context, path string) (os.FileInfo, error) {
 		if path == "/dst" {
-			return &testutil.MockFileInfo{NameStr: "dst"}, nil
+			return &testutil.MockFileInfo{FName: "dst"}, nil
 		}
 		return nil, os.ErrNotExist
 	}
@@ -97,9 +97,10 @@ func TestCrossMove_Conflict(t *testing.T) {
 	})
 
 	t.Run("Copy Error Cleanup", func(t *testing.T) {
+		calledRemove := false
 		fs.StatFunc = func(ctx context.Context, path string) (os.FileInfo, error) {
 			if path == "/src" {
-				return &testutil.MockFileInfo{NameStr: "src", IsDirBool: false, SizeInt: 10}, nil
+				return &testutil.MockFileInfo{FName: "src", FIsDir: false, FSize: 10}, nil
 			}
 			return nil, os.ErrNotExist
 		}
@@ -108,13 +109,18 @@ func TestCrossMove_Conflict(t *testing.T) {
 		fs.CreateFunc = func(ctx context.Context, path string) (io.WriteCloser, error) {
 			return nil, os.ErrPermission
 		}
-		fs.RemoveAllFunc = func(ctx context.Context, path string) error { return nil }
+		fs.RemoveAllFunc = func(ctx context.Context, path string) error {
+			calledRemove = true
+			return nil
+		}
 
 		err := CrossMove(ctx, fs, fs, "/src", "/dst", nil, conflict.Overwrite)
 		if err == nil {
 			t.Fatal("Expected copy error")
 		}
-		fs.AssertCalled(t, "RemoveAll")
+		if !calledRemove {
+			t.Error("fs.RemoveAll was not called for cleanup")
+		}
 	})
 }
 
@@ -124,7 +130,7 @@ func TestVerifyCrossMove(t *testing.T) {
 
 	t.Run("Size Match", func(t *testing.T) {
 		fs.LstatFunc = func(ctx context.Context, path string) (os.FileInfo, error) {
-			return &testutil.MockFileInfo{SizeInt: 100, IsDirBool: false}, nil
+			return &testutil.MockFileInfo{FSize: 100, FIsDir: false}, nil
 		}
 		err := verifyCrossMove(ctx, fs, fs, "/src", "/dst")
 		testutil.AssertNoError(t, err, "Should not error when sizes match")
@@ -133,23 +139,13 @@ func TestVerifyCrossMove(t *testing.T) {
 	t.Run("Size Mismatch", func(t *testing.T) {
 		fs.LstatFunc = func(ctx context.Context, path string) (os.FileInfo, error) {
 			if path == "/src" {
-				return &testutil.MockFileInfo{SizeInt: 100, IsDirBool: false}, nil
+				return &testutil.MockFileInfo{FSize: 100, FIsDir: false}, nil
 			}
-			return &testutil.MockFileInfo{SizeInt: 200, IsDirBool: false}, nil
+			return &testutil.MockFileInfo{FSize: 200, FIsDir: false}, nil
 		}
 		err := verifyCrossMove(ctx, fs, fs, "/src", "/dst")
 		if err == nil {
 			t.Fatal("Expected error for size mismatch")
 		}
 	})
-}
-
-func TestVerifyMove_Deprecated(t *testing.T) {
-	ctx := context.Background()
-	fs := testutil.NewMockFileSystem()
-	fs.LstatFunc = func(ctx context.Context, path string) (os.FileInfo, error) {
-		return &testutil.MockFileInfo{SizeInt: 100, IsDirBool: false}, nil
-	}
-	err := verifyMove(ctx, fs, "/src", "/dst")
-	testutil.AssertNoError(t, err, "Should succeed")
 }

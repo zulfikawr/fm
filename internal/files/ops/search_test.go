@@ -77,14 +77,11 @@ func TestSearch(t *testing.T) {
 	ctx := context.Background()
 	fs := testutil.NewMockFileSystem()
 	fs.WalkFunc = func(ctx context.Context, root string, walkFn func(string, os.FileInfo, error) error) error {
-		info := &testutil.MockFileInfo{NameStr: "test.txt", IsDirBool: false}
+		info := &testutil.MockFileInfo{FName: "test.txt", FIsDir: false}
 		return walkFn("/test.txt", info, nil)
 	}
 	fs.OpenFunc = func(ctx context.Context, path string) (io.ReadCloser, error) {
-		return testutil.NewMockFile(fs.Base(path), []byte("match this query\nsecond line")), nil
-	}
-	fs.BaseFunc = func(path string) string {
-		return "test.txt"
+		return testutil.NewMockFile("test.txt", []byte("match this query\nsecond line")), nil
 	}
 
 	t.Run("Empty Query", func(t *testing.T) {
@@ -105,7 +102,7 @@ func TestSearch(t *testing.T) {
 
 	t.Run("Skip .git directory", func(t *testing.T) {
 		fs.WalkFunc = func(ctx context.Context, root string, walkFn func(string, os.FileInfo, error) error) error {
-			info := &testutil.MockFileInfo{NameStr: ".git", IsDirBool: true}
+			info := &testutil.MockFileInfo{FName: ".git", FIsDir: true}
 			err := walkFn("/.git", info, nil)
 			if err == filepath.SkipDir {
 				return nil
@@ -121,7 +118,7 @@ func TestSearch(t *testing.T) {
 
 	t.Run("Non-seeker file", func(t *testing.T) {
 		fs.WalkFunc = func(ctx context.Context, root string, walkFn func(string, os.FileInfo, error) error) error {
-			info := &testutil.MockFileInfo{NameStr: "nonseeker.txt", IsDirBool: false}
+			info := &testutil.MockFileInfo{FName: "nonseeker.txt", FIsDir: false}
 			return walkFn("/nonseeker.txt", info, nil)
 		}
 		fs.OpenFunc = func(ctx context.Context, path string) (io.ReadCloser, error) {

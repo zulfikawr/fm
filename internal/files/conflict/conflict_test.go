@@ -24,7 +24,7 @@ func TestGenerateUniqueName(t *testing.T) {
 	t.Run("One conflict", func(t *testing.T) {
 		fs.StatFunc = func(ctx context.Context, path string) (os.FileInfo, error) {
 			if path == "/test/file.txt" {
-				return &testutil.MockFileInfo{NameStr: "file.txt"}, nil
+				return &testutil.MockFileInfo{FName: "file.txt"}, nil
 			}
 			return nil, os.ErrNotExist
 		}
@@ -36,7 +36,7 @@ func TestGenerateUniqueName(t *testing.T) {
 	t.Run("Multiple conflicts", func(t *testing.T) {
 		fs.StatFunc = func(ctx context.Context, path string) (os.FileInfo, error) {
 			if path == "/test/file.txt" || path == "/test/file (1).txt" || path == "/test/file (2).txt" {
-				return &testutil.MockFileInfo{NameStr: "file.txt"}, nil
+				return &testutil.MockFileInfo{FName: "file.txt"}, nil
 			}
 			return nil, os.ErrNotExist
 		}
@@ -63,7 +63,7 @@ func TestResolver(t *testing.T) {
 
 	t.Run("Conflict Ask returns error", func(t *testing.T) {
 		fs.StatFunc = func(ctx context.Context, path string) (os.FileInfo, error) {
-			return &testutil.MockFileInfo{NameStr: "dst"}, nil
+			return &testutil.MockFileInfo{FName: "dst"}, nil
 		}
 		_, _, err := resolver.Resolve(ctx, fs, "src", "dst", Ask)
 		if err == nil {
@@ -75,7 +75,7 @@ func TestResolver(t *testing.T) {
 
 	t.Run("Conflict Overwrite returns destination", func(t *testing.T) {
 		fs.StatFunc = func(ctx context.Context, path string) (os.FileInfo, error) {
-			return &testutil.MockFileInfo{NameStr: "dst"}, nil
+			return &testutil.MockFileInfo{FName: "dst"}, nil
 		}
 		dst, renamed, err := resolver.Resolve(ctx, fs, "src", "dst", Overwrite)
 		testutil.AssertNoError(t, err, "Resolve should not fail")
@@ -85,7 +85,7 @@ func TestResolver(t *testing.T) {
 
 	t.Run("Conflict Skip returns empty", func(t *testing.T) {
 		fs.StatFunc = func(ctx context.Context, path string) (os.FileInfo, error) {
-			return &testutil.MockFileInfo{NameStr: "dst"}, nil
+			return &testutil.MockFileInfo{FName: "dst"}, nil
 		}
 		dst, renamed, err := resolver.Resolve(ctx, fs, "src", "dst", Skip)
 		testutil.AssertNoError(t, err, "Resolve should not fail")
@@ -96,10 +96,11 @@ func TestResolver(t *testing.T) {
 	t.Run("Conflict Rename returns new name", func(t *testing.T) {
 		fs.StatFunc = func(ctx context.Context, path string) (os.FileInfo, error) {
 			if path == "dst.txt" {
-				return &testutil.MockFileInfo{NameStr: "dst.txt"}, nil
+				return &testutil.MockFileInfo{FName: "dst.txt"}, nil
 			}
 			return nil, os.ErrNotExist
 		}
+		fs.ExtFunc = func(path string) string { return ".txt" }
 		dst, renamed, err := resolver.Resolve(ctx, fs, "src.txt", "dst.txt", Rename)
 		testutil.AssertNoError(t, err, "Resolve should not fail")
 		testutil.AssertEqual(t, "dst (1).txt", dst, "Should return renamed path")

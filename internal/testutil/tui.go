@@ -1,7 +1,6 @@
 package testutil
 
 import (
-	"io"
 	"strings"
 	"testing"
 	"time"
@@ -21,17 +20,4 @@ func WaitAndAssertView(t *testing.T, tm *teatest.TestModel, target string, timeo
 	teatest.WaitFor(t, tm.Output(), func(out []byte) bool {
 		return strings.Contains(StripANSI(string(out)), target)
 	}, teatest.WithDuration(timeout))
-}
-
-// AssertViewContains verifies that the current view contains the target string
-func AssertViewContains(t *testing.T, tm *teatest.TestModel, target string) {
-	t.Helper()
-	out, err := io.ReadAll(tm.Output())
-	if err != nil {
-		t.Fatalf("failed to read output: %v", err)
-	}
-	view := StripANSI(string(out))
-	if !strings.Contains(view, target) {
-		t.Errorf("expected view to contain %q, but it did not.\nView content:\n%s", target, view)
-	}
 }

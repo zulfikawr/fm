@@ -1,14 +1,15 @@
-package context
+package context_test
 
 import (
 	"testing"
 
 	"github.com/zulfikawr/fm/internal/testutil"
+	"github.com/zulfikawr/fm/internal/tui/context"
 )
 
 func TestModel_TabManagement(t *testing.T) {
 	fs := testutil.NewMockFileSystem()
-	m := NewModel(fs, "/home")
+	m := context.NewModel(fs, "/home")
 
 	t.Run("Initial State", func(t *testing.T) {
 		testutil.AssertEqual(t, 1, len(m.Tabs), "Should have 1 tab initially")
@@ -31,7 +32,7 @@ func TestModel_TabManagement(t *testing.T) {
 	})
 
 	t.Run("CloseActiveTab", func(t *testing.T) {
-		m := NewModel(fs, "/test")
+		m := context.NewModel(fs, "/test")
 		m.AddTab("/tmp")
 		m.ActiveTab = 1
 
@@ -45,7 +46,7 @@ func TestModel_TabManagement(t *testing.T) {
 	})
 
 	t.Run("AddTab limit", func(t *testing.T) {
-		m := NewModel(fs, "/test")
+		m := context.NewModel(fs, "/test")
 		for i := 0; i < 15; i++ {
 			m.AddTab("/path")
 		}
@@ -55,7 +56,7 @@ func TestModel_TabManagement(t *testing.T) {
 
 func TestModel_ClearSelection(t *testing.T) {
 	fs := testutil.NewMockFileSystem()
-	m := NewModel(fs, "/home")
+	m := context.NewModel(fs, "/home")
 
 	m.Navigation.Select("/home/file1")
 	m.UI.SelectMode = true
