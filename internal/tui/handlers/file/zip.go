@@ -2,10 +2,11 @@ package file
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/zulfikawr/fm/internal/constants"
+	"github.com/zulfikawr/fm/internal/files/archive"
 	"github.com/zulfikawr/fm/internal/files/conflict"
+	"github.com/zulfikawr/fm/internal/files/core"
 	tui_context "github.com/zulfikawr/fm/internal/tui/context"
 	"github.com/zulfikawr/fm/internal/tui/messages"
 
@@ -65,24 +66,27 @@ func StartUnzip(m *tui_context.Model) tea.Cmd {
 	targets := GetTargets(m)
 	var zipPath string
 	if len(targets) > 0 {
-		if strings.HasSuffix(strings.ToLower(targets[0]), ".zip") {
+		tempItem := core.Item{Name: targets[0], IsDir: false}
+		if tempItem.IsArchive() {
 			zipPath = targets[0]
 		}
 	} else if len(m.Navigation.FilteredItems) > 0 {
 		selected := m.Navigation.FilteredItems[m.Navigation.Cursor]
-		if !selected.IsUp && strings.HasSuffix(strings.ToLower(selected.Name), ".zip") {
+		if !selected.IsUp && selected.IsArchive() {
 			zipPath = selected.Path
 		}
 	}
 
 	if zipPath == "" {
-		return func() tea.Msg { return messages.ErrorMsg{Err: fmt.Errorf("please select a .zip file to unzip")} }
+		return func() tea.Msg {
+			return messages.ErrorMsg{Err: fmt.Errorf("please select a supported archive file to unzip")}
+		}
 	}
 
 	m.StartInput(tui_context.InputUnzip)
 
-	baseName := m.FS.Base(zipPath)
-	folderName := strings.TrimSuffix(baseName, m.FS.Ext(baseName))
+	extractPath := archive.GetDefaultExtractionPath(m.FS, zipPath)
+	folderName := m.FS.Base(extractPath)
 	m.Inputs.ActiveInput.SetValue(folderName)
 	return m.Inputs.ActiveInput.FocusCmd()
 }

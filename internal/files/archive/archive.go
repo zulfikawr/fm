@@ -307,8 +307,21 @@ func (fs *ZipFS) Close() error {
 	return nil
 }
 
-// Helper structs
+// GetDefaultExtractionPath calculates a default folder name for extraction by stripping known archive extensions.
+func GetDefaultExtractionPath(fs core.FileSystem, archivePath string) string {
+	baseName := fs.Base(archivePath)
+	ext := fs.Ext(baseName)
+	name := strings.TrimSuffix(baseName, ext)
 
+	// Handle double extensions like .tar.gz
+	if before, ok := strings.CutSuffix(name, ".tar"); ok {
+		name = before
+	}
+
+	return fs.Join(fs.Dir(archivePath), name)
+}
+
+// Helper structs
 type archiveDirEntry struct {
 	name  string
 	isDir bool
