@@ -183,7 +183,7 @@ func fetchMetadata(m *tui_context.Model) tea.Cmd {
 				if err == nil {
 					updatedItems[idx] = core.NewItem(info, updatedItems[idx].Path, updatedItems[idx].GitStatus)
 					if updatedItems[idx].IsDir {
-						enrichDirectoryDate(ctx, fs, &updatedItems[idx])
+						listing.EnrichMetadata(ctx, fs, &updatedItems[idx])
 					}
 					updatedItems[idx].UpdateFormatting(sizeFormatIdx, dateFormatIdx)
 				} else {
@@ -211,7 +211,7 @@ func fetchMetadata(m *tui_context.Model) tea.Cmd {
 				if err == nil {
 					updatedItems[idx] = core.NewItem(info, updatedItems[idx].Path, updatedItems[idx].GitStatus)
 					if updatedItems[idx].IsDir {
-						enrichDirectoryDate(ctx, fs, &updatedItems[idx])
+						listing.EnrichMetadata(ctx, fs, &updatedItems[idx])
 					}
 					updatedItems[idx].UpdateFormatting(sizeFormatIdx, dateFormatIdx)
 				} else {
@@ -308,22 +308,4 @@ func EnterArchive(m *tui_context.Model, selected core.Item) tea.Cmd {
 			ParentPath: m.Navigation.Path,
 		}
 	}
-}
-
-func enrichDirectoryDate(ctx context.Context, fs core.FileSystem, item *core.Item) {
-	entries, err := fs.ReadDirEntries(ctx, item.Path)
-	if err != nil {
-		return
-	}
-
-	maxMTime := item.MTime
-	for _, entry := range entries {
-		info, err := entry.Info()
-		if err == nil {
-			if info.ModTime().After(maxMTime) {
-				maxMTime = info.ModTime()
-			}
-		}
-	}
-	item.MTime = maxMTime
 }

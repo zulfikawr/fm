@@ -22,7 +22,7 @@ const (
 )
 
 var (
-	githubAPI = "https://api.github.com/repos/%s/%s/releases/latest"
+	githubAPI    = "https://api.github.com/repos/%s/%s/releases/latest"
 	osExecutable = os.Executable
 )
 

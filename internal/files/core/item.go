@@ -72,6 +72,34 @@ func NewItem(info os.FileInfo, path string, gitStatus string) Item {
 	}
 }
 
+// IsArchive returns true if the item is an archive format supported for internal browsing.
+func (item *Item) IsArchive() bool {
+	if item.IsDir {
+		return false
+	}
+	ext := strings.ToLower(item.Name)
+	for _, aExt := range []string{".zip", ".tar", ".gz", ".tgz"} {
+		if strings.HasSuffix(ext, aExt) {
+			return true
+		}
+	}
+	return false
+}
+
+// IsImage returns true if the item is a known image format.
+func (item *Item) IsImage() bool {
+	if item.IsDir {
+		return false
+	}
+	ext := strings.ToLower(item.Name)
+	for _, iExt := range []string{".jpg", ".jpeg", ".png", ".gif", ".svg", ".webp", ".bmp", ".ico"} {
+		if strings.HasSuffix(ext, iExt) {
+			return true
+		}
+	}
+	return false
+}
+
 // UpdateFormatting updates the display strings for the item
 func (item *Item) UpdateFormatting(sizeFormatIdx, dateFormatIdx int) {
 	if item.IsUp {

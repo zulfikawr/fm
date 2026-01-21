@@ -16,8 +16,8 @@ import (
 func TestHighlightMatches(t *testing.T) {
 	lipgloss.SetColorProfile(termenv.TrueColor)
 	style := lipgloss.NewStyle().Bold(true)
-	
-t.Run("No indices", func(t *testing.T) {
+
+	t.Run("No indices", func(t *testing.T) {
 		content := "hello world"
 		got := highlightMatches(content, nil, style)
 		if got != content {
@@ -89,7 +89,7 @@ func TestRunSearch(t *testing.T) {
 			IsSearch:    true,
 		}
 		err := RunSearch(args)
-		
+
 		w.Close()
 		os.Stdout = old
 

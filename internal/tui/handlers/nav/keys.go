@@ -153,8 +153,7 @@ func NavigateToSelected(m *tui_context.Model) tea.Cmd {
 		return NavigateToPath(m, m.FS.Join(m.Navigation.Path, selected.Name))
 	}
 
-	ext := strings.ToLower(m.FS.Ext(selected.Name))
-	if ext == ".zip" || ext == ".tar" || ext == ".gz" || ext == ".tgz" {
+	if selected.IsArchive() {
 		return EnterArchive(m, selected)
 	}
 

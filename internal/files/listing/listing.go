@@ -24,6 +24,7 @@ func LoadSkeleton(ctx context.Context, fs core.FileSystem, path string, showHidd
 			IsDir:     true,
 			IsUp:      true,
 			SearchKey: "..",
+			Path:      fs.Dir(path),
 		})
 	}
 
@@ -86,4 +87,27 @@ func Load(ctx context.Context, fs core.FileSystem, path string, mode sorting.Sor
 	sorting.SortItems(items, mode, true)
 
 	return items, nil
+}
+
+// EnrichMetadata recursively updates directory metadata (like MTime) based on its contents.
+func EnrichMetadata(ctx context.Context, fs core.FileSystem, item *core.Item) {
+	if !item.IsDir {
+		return
+	}
+
+	entries, err := fs.ReadDirEntries(ctx, item.Path)
+	if err != nil {
+		return
+	}
+
+	maxMTime := item.MTime
+	for _, entry := range entries {
+		info, err := entry.Info()
+		if err == nil {
+			if info.ModTime().After(maxMTime) {
+				maxMTime = info.ModTime()
+			}
+		}
+	}
+	item.MTime = maxMTime
 }
