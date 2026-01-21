@@ -8,6 +8,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 
 	"github.com/zulfikawr/fm/internal/testutil"
@@ -129,5 +130,65 @@ func TestCopyFile(t *testing.T) {
 	testutil.AssertNoError(t, err, "ReadFile should succeed")
 	if string(got) != string(content) {
 		t.Errorf("Content = %s, want %s", got, content)
+	}
+}
+
+func TestDownloadAndInstall(t *testing.T) {
+	binaryName := fmt.Sprintf("fm-%s-%s", runtime.GOOS, runtime.GOARCH)
+	if runtime.GOOS == "windows" {
+		binaryName += ".exe"
+	}
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/binary" {
+			w.WriteHeader(http.StatusOK)
+			_, _ = w.Write([]byte("fake binary content"))
+			return
+		}
+		release := Release{
+			TagName: "v99.99.99",
+			Assets: []Asset{
+				{
+					Name:               binaryName,
+					BrowserDownloadURL: "http://" + r.Host + "/binary",
+					Size:               19,
+				},
+			},
+		}
+		_ = json.NewEncoder(w).Encode(release)
+	}))
+	defer server.Close()
+
+	oldAPI := githubAPI
+	githubAPI = server.URL + "/%s/%s"
+	defer func() { githubAPI = oldAPI }()
+
+	t.Run("Success", func(t *testing.T) {
+		tmpDir := testutil.TempDir(t)
+		fakeExec := filepath.Join(tmpDir, "fm")
+		if err := os.WriteFile(fakeExec, []byte("original"), 0755); err != nil {
+			t.Fatal(err)
+		}
+
+		oldExecutable := osExecutable
+		osExecutable = func() (string, error) { return fakeExec, nil }
+		defer func() { osExecutable = oldExecutable }()
+
+		progress := make(chan float64, 100)
+		err := DownloadAndInstall("v99.99.99", progress)
+		if err != nil {
+			t.Errorf("DownloadAndInstall failed: %v", err)
+		}
+	})
+}
+
+func TestRestart(t *testing.T) {
+	oldExecutable := osExecutable
+	osExecutable = func() (string, error) { return "/nonexistent/path", nil }
+	defer func() { osExecutable = oldExecutable }()
+
+	err := Restart()
+	if err == nil {
+		t.Error("Restart should have failed for nonexistent executable")
 	}
 }
