@@ -36,8 +36,7 @@ func PerformCreate(m *tui_context.Model, name string) tea.Cmd {
 	ctx, cancel := context.WithTimeout(m.Context, constants.DirectoryLoadTimeout)
 	defer cancel()
 
-	resolver := conflict.NewResolver()
-	resolvedPath, _, err := resolver.Resolve(ctx, m.FS, "", path, m.Operations.ConflictPolicy)
+	resolvedPath, err := ops.CreateAtomic(ctx, m.FS, path, isFolder, m.Operations.ConflictPolicy)
 	if err != nil {
 		if cerr, ok := err.(*conflict.ConflictError); ok {
 			m.UI.Loading = false
@@ -51,25 +50,6 @@ func PerformCreate(m *tui_context.Model, name string) tea.Cmd {
 
 	if resolvedPath == "" {
 		return nil // Skip
-	}
-
-	if resolvedPath == path && m.Operations.ConflictPolicy == conflict.Overwrite {
-		if err := m.FS.RemoveAll(ctx, path); err != nil {
-			return func() tea.Msg { return messages.ErrorMsg{Err: err} }
-		}
-	}
-	path = resolvedPath
-
-	if isFolder {
-		if err := m.FS.MkdirAll(ctx, path, 0755); err != nil {
-			return func() tea.Msg { return messages.ErrorMsg{Err: err} }
-		}
-	} else {
-		wc, err := m.FS.Create(ctx, path)
-		if err != nil {
-			return func() tea.Msg { return messages.ErrorMsg{Err: err} }
-		}
-		wc.Close()
 	}
 
 	msg := "File created"
