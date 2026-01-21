@@ -1,20 +1,31 @@
 package handlers
 
 import (
+	"context"
+	"fmt"
 	"strings"
 	"time"
 
 	"github.com/zulfikawr/fm/internal/constants"
+	"github.com/zulfikawr/fm/internal/files/conflict"
+	"github.com/zulfikawr/fm/internal/files/core"
 	"github.com/zulfikawr/fm/internal/files/ops"
-	"github.com/zulfikawr/fm/internal/ssh"
-	"github.com/zulfikawr/fm/internal/tui/components/ui"
-	"github.com/zulfikawr/fm/internal/tui/context"
+	tuictx "github.com/zulfikawr/fm/internal/tui/context"
+	"github.com/zulfikawr/fm/internal/tui/handlers/app"
+	"github.com/zulfikawr/fm/internal/tui/handlers/file"
+	"github.com/zulfikawr/fm/internal/tui/handlers/integration"
+	"github.com/zulfikawr/fm/internal/tui/handlers/nav"
+	"github.com/zulfikawr/fm/internal/tui/handlers/utils"
+	"github.com/zulfikawr/fm/internal/tui/messages"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
 
+var OpenFileAction = file.OpenFile
+var OpenFileAtLineAction = file.OpenFileAtLine
+
 // HandleUpdate is the main message dispatcher (Reducer)
-func HandleUpdate(m *context.Model, msg tea.Msg) tea.Cmd {
+func HandleUpdate(m *tuictx.Model, msg tea.Msg) tea.Cmd {
 	var cmds []tea.Cmd
 
 	// Synchronize viewport height to ensure correct scrolling calculations
@@ -29,12 +40,7 @@ func HandleUpdate(m *context.Model, msg tea.Msg) tea.Cmd {
 
 	// 1. Priority/Global Handlers
 	switch msg := msg.(type) {
-	case ui.BlinkMsg:
-		var cmd tea.Cmd
-		m.Inputs.ActiveInput, cmd = m.Inputs.ActiveInput.Update(msg)
-		return cmd
-
-	case ui.TickMsg:
+	case app.TickMsg:
 		return tea.Batch(cmds...)
 
 	case tea.WindowSizeMsg:
@@ -43,53 +49,53 @@ func HandleUpdate(m *context.Model, msg tea.Msg) tea.Cmd {
 		m.SyncViewportHeight()
 		return tea.Batch(cmds...)
 
-	case WatchEventMsg:
+	case messages.WatchEventMsg:
 		if m.Watcher.DebounceTimer != nil {
 			m.Watcher.DebounceTimer.Stop()
 		}
 		m.Watcher.DebounceTimer = time.NewTimer(150 * time.Millisecond)
 		return func() tea.Msg {
 			<-m.Watcher.DebounceTimer.C
-			return DebounceWatchMsg{}
+			return messages.DebounceWatchMsg{}
 		}
 
-	case DebounceWatchMsg:
+	case messages.DebounceWatchMsg:
 		m.Watcher.IsListening = false
-		return Reload(m, false)
+		return nav.Reload(m, false)
 
-	case WatcherErrorMsg:
+	case messages.WatcherErrorMsg:
 		m.Watcher.IsListening = false
 		cmds = append(cmds,
-			SetErrMsg(m, "Watcher error: restarting..."),
-			RestartWatcherAction(m),
+			utils.SetErrMsg(m, "Watcher error: restarting..."),
+			utils.RestartWatcherAction(m),
 		)
 		return tea.Batch(cmds...)
 
-	case WatcherClosedMsg:
+	case messages.WatcherClosedMsg:
 		m.Watcher.IsListening = false
 		cmds = append(cmds,
-			SetMsg(m, "Watcher closed: restarting..."),
-			RestartWatcherAction(m),
+			utils.SetMsg(m, "Watcher closed: restarting..."),
+			utils.RestartWatcherAction(m),
 		)
 		return tea.Batch(cmds...)
 
-	case RemotePollMsg:
+	case messages.RemotePollMsg:
 		m.Watcher.IsListening = false
-		cmds = append(cmds, Reload(m, true))
+		cmds = append(cmds, nav.Reload(m, true))
 		return tea.Batch(cmds...)
 
-	case DebounceFilterMsg:
+	case messages.DebounceFilterMsg:
 		if msg.Generation == m.Navigation.FilterGen {
-			ApplyFilter(m)
+			nav.ApplyFilter(m)
 		}
 		return nil
 
-	case ClearMsg:
+	case messages.ClearMsg:
 		m.Operations.Progress.Hide()
 		m.Message.Pop()
 		return tea.Batch(cmds...)
 
-	case ErrorMsg:
+	case messages.ErrorMsg:
 		// Update original log entry with failure message
 		for i := range m.Logs.Entries {
 			if m.Logs.Entries[i].ID == msg.LogID {
@@ -103,7 +109,7 @@ func HandleUpdate(m *context.Model, msg tea.Msg) tea.Cmd {
 				} else {
 					msgText = "Failed: " + msgText
 				}
-				LogUpdate(m, msg.LogID, context.StatusError, context.LogError, msgText, msg.Err.Error())
+				utils.LogUpdate(m, msg.LogID, tuictx.StatusError, tuictx.LogError, msgText, msg.Err.Error())
 				break
 			}
 		}
@@ -112,20 +118,153 @@ func HandleUpdate(m *context.Model, msg tea.Msg) tea.Cmd {
 		m.Operations.ProcessingItems = make(map[string]bool)
 
 		cmds = append(cmds,
-			LogError(m, msg.Err, "Operation failed"),
-			Reload(m, false),
+			utils.LogError(m, msg.Err, "Operation failed"),
+			nav.Reload(m, false),
 			tea.Tick(constants.ProgressDisplayDuration, func(time.Time) tea.Msg {
-				return ClearMsg{}
+				return messages.ClearMsg{}
 			}),
 		)
 		return tea.Batch(cmds...)
+
+	case messages.ReloadMsg:
+		return nav.Reload(m, msg.Silent)
+
+	case messages.NavigateMsg:
+		return nav.NavigateToPath(m, msg.Path)
+
+	case messages.RemoteGotoMsg:
+		return integration.HandleRemoteGoto(m, msg.Input)
+
+	case messages.StatusMsg:
+		if msg.IsError {
+			return utils.SetErrMsg(m, msg.Message)
+		}
+		return utils.SetMsg(m, msg.Message)
+
+	case messages.StartCreateMsg:
+		return file.StartCreate(m)
+
+	case messages.StartConflictRenameMsg:
+		m.StartInput(tuictx.InputConflictRename)
+		m.Inputs.ActiveInput.SetValue(m.FS.Base(m.Operations.Conflict.Destination))
+		return m.Inputs.ActiveInput.FocusCmd()
+
+	case messages.ResetSettingsMsg:
+		return app.ConfirmSettingsReset(m)
+
+	case messages.TabLimitMsg:
+		return utils.SetMsg(m, "Tab limit reached (max 9 tabs)")
+
+	case messages.OpenFileMsg:
+		return OpenFileAction(m, msg.Item)
+
+	case messages.WatchDirMsg:
+		return nav.WatchDirAction(m)
+
+	case messages.PerformPasteMsg:
+		logID := utils.LogPush(m, msg.OpName, tuictx.LogInfo, tuictx.StatusRunning, msg.Message, "")
+		ctx, cancel := context.WithCancel(m.Context)
+		m.Operations.CancelFunc = cancel
+
+		if msg.IsCut {
+			m.Operations.Clipboard.Clear()
+			return file.MoveItems(ctx, m.Operations.Clipboard.SourceFS, m.FS, msg.Paths, msg.DestDir, m.Operations.ConflictPolicy, false, logID)
+		}
+		return file.PasteItems(ctx, m.Operations.Clipboard.SourceFS, m.FS, msg.Paths, msg.DestDir, m.Operations.ConflictPolicy, false, logID)
+
+	case messages.PerformZipMsg:
+		logID := utils.LogPush(m, "Zip", tuictx.LogInfo, tuictx.StatusRunning, msg.Message, "")
+		ctx, cancel := context.WithCancel(m.Context)
+		m.Operations.CancelFunc = cancel
+		progChan := make(chan core.Progress, 100)
+		return tea.Batch(
+			file.ListenToProgress(progChan),
+			func() tea.Msg {
+				defer close(progChan)
+				err := ops.Zip(ctx, m.FS, msg.Targets, msg.Dst, progChan, m.Operations.ConflictPolicy)
+				if err != nil {
+					return messages.ErrorMsg{Err: err, LogID: logID}
+				}
+				return messages.OperationFinishedMsg{Paths: []string{}, LogID: logID}
+			},
+		)
+
+	case messages.PerformUnzipMsg:
+		logID := utils.LogPush(m, "Unzip", tuictx.LogInfo, tuictx.StatusRunning, msg.Message, "")
+		ctx, cancel := context.WithCancel(m.Context)
+		m.Operations.CancelFunc = cancel
+		progChan := make(chan core.Progress, 100)
+		return tea.Batch(
+			file.ListenToProgress(progChan),
+			func() tea.Msg {
+				defer close(progChan)
+				err := ops.Unzip(ctx, m.FS, msg.ZipPath, msg.Dst, progChan, m.Operations.ConflictPolicy)
+				if err != nil {
+					return messages.ErrorMsg{Err: err, LogID: logID}
+				}
+				return messages.OperationFinishedMsg{Paths: []string{}, LogID: logID}
+			},
+		)
+
+	case messages.LogPushMsg:
+		logID := utils.LogPush(m, msg.Type, tuictx.LogInfo, tuictx.StatusRunning, msg.Message, "")
+		ctx, cancel := context.WithCancel(m.Context)
+		m.Operations.CancelFunc = cancel
+		return file.DeleteItems(ctx, m.FS, msg.Targets, m.Config.UseTrash, logID)
+
+	case messages.PerformRenameMsg:
+		logID := utils.LogPush(m, "Rename", tuictx.LogInfo, tuictx.StatusRunning,
+			fmt.Sprintf("Renaming %s to %s", msg.Selected.Name, msg.NewName),
+			fmt.Sprintf("From: %s\nTo: %s", msg.OldPath, msg.NewPath))
+
+		ctx, cancel := context.WithTimeout(m.Context, constants.DirectoryLoadTimeout)
+		defer cancel()
+
+		if err := ops.Rename(ctx, m.FS, msg.OldPath, msg.NewPath, conflict.Ask); err != nil {
+			utils.LogUpdate(m, logID, tuictx.StatusError, tuictx.LogError,
+				fmt.Sprintf("Failed to rename %s to %s", msg.Selected.Name, msg.NewName), err.Error())
+			return utils.LogError(m, err, "Rename")
+		}
+
+		utils.LogUpdate(m, logID, tuictx.StatusSuccess, tuictx.LogSuccess,
+			fmt.Sprintf("Renamed %s to %s", msg.Selected.Name, msg.NewName), "")
+		return tea.Batch(
+			utils.SetMsg(m, fmt.Sprintf("Renamed %s to %s", msg.Selected.Name, msg.NewName)),
+			nav.Reload(m, false),
+		)
+
+	case messages.OperationFinishedEventMsg:
+		for i := range m.Logs.Entries {
+			if m.Logs.Entries[i].ID == msg.LogID {
+				msgText := m.Logs.Entries[i].Message
+				if strings.HasPrefix(msgText, "Pasting ") {
+					msgText = "Pasted " + msgText[8:]
+				} else if strings.HasPrefix(msgText, "Moving ") {
+					msgText = "Moved " + msgText[7:]
+				} else if strings.HasPrefix(msgText, "Deleting ") {
+					msgText = "Deleted " + msgText[9:]
+				} else if strings.HasPrefix(msgText, "Zipping ") {
+					msgText = "Zipped " + msgText[8:]
+				} else if strings.HasPrefix(msgText, "Extracting ") {
+					msgText = "Unzipped " + msgText[11:]
+				}
+				utils.LogUpdate(m, msg.LogID, tuictx.StatusSuccess, tuictx.LogSuccess, msgText, "")
+				return tea.Batch(
+					utils.SetMsg(m, msgText),
+					nav.Reload(m, false),
+					tea.Tick(constants.ProgressDisplayDuration, func(time.Time) tea.Msg {
+						return messages.ClearMsg{}
+					}),
+				)
+			}
+		}
 
 	case tea.KeyMsg:
 		// 1. Text Input Handling (Highest Priority)
 		if m.UI.InputActive {
 			// Special case: fuzzy search navigation
 			isFuzzyNavKey := false
-			if m.Inputs.Mode == context.InputFuzzySearch {
+			if m.Inputs.Mode == tuictx.InputFuzzySearch {
 				switch msg.String() {
 				case "up", "down", "tab", "alt+j", "alt+k", "alt+n", "alt+m":
 					isFuzzyNavKey = true
@@ -133,16 +272,16 @@ func HandleUpdate(m *context.Model, msg tea.Msg) tea.Cmd {
 			}
 
 			if isFuzzyNavKey {
-				if cmd := HandleSearch(m, msg); cmd != nil {
+				if cmd := integration.HandleSearch(m, msg); cmd != nil {
 					cmds = append(cmds, cmd)
 				}
 				return tea.Batch(cmds...)
 			}
 
-			if m.Inputs.Mode != context.InputFuzzySearch {
+			if m.Inputs.Mode != tuictx.InputFuzzySearch {
 				switch msg.String() {
 				case "tab":
-					if m.Inputs.Mode == context.InputGoto || m.Inputs.Mode == context.InputAuth || m.Inputs.Mode == context.InputCreate {
+					if m.Inputs.Mode == tuictx.InputGoto || m.Inputs.Mode == tuictx.InputAuth || m.Inputs.Mode == tuictx.InputCreate {
 						m.Inputs.AltMode = !m.Inputs.AltMode
 						return nil
 					}
@@ -155,17 +294,17 @@ func HandleUpdate(m *context.Model, msg tea.Msg) tea.Cmd {
 				cmds = append(cmds, cmd)
 			}
 
-			if m.Inputs.Mode == context.InputFuzzySearch {
+			if m.Inputs.Mode == tuictx.InputFuzzySearch {
 				// Trigger search on change
 				if msg.String() != "enter" && msg.String() != "esc" {
 					query := m.Inputs.ActiveInput.Value()
 					if query != m.Search.Query {
-						cmds = append(cmds, TriggerSearch(m, query))
+						cmds = append(cmds, integration.TriggerSearch(m, query))
 					}
 				}
 			}
 
-			if m.Inputs.Mode == context.InputSearch {
+			if m.Inputs.Mode == tuictx.InputSearch {
 				if m.Navigation.FilterTimer != nil {
 					m.Navigation.FilterTimer.Stop()
 				}
@@ -174,7 +313,7 @@ func HandleUpdate(m *context.Model, msg tea.Msg) tea.Cmd {
 				m.Navigation.FilterTimer = time.NewTimer(50 * time.Millisecond)
 				cmds = append(cmds, func() tea.Msg {
 					<-m.Navigation.FilterTimer.C
-					return DebounceFilterMsg{Generation: gen}
+					return messages.DebounceFilterMsg{Generation: gen}
 				})
 			}
 
@@ -188,12 +327,12 @@ func HandleUpdate(m *context.Model, msg tea.Msg) tea.Cmd {
 			case "esc":
 				mode := m.Inputs.Mode
 				m.StopInput(true)
-				if mode == context.InputSearch {
+				if mode == tuictx.InputSearch {
 					m.Navigation.FilterQuery = ""
-					ApplyFilter(m)
+					nav.ApplyFilter(m)
 				}
-				if mode == context.InputFuzzySearch {
-					StopSearch(m)
+				if mode == tuictx.InputFuzzySearch {
+					integration.StopSearch(m)
 				}
 				return tea.Batch(cmds...)
 			}
@@ -209,7 +348,7 @@ func HandleUpdate(m *context.Model, msg tea.Msg) tea.Cmd {
 				}
 				return tea.Quit
 			}
-			return SetMsg(m, "Press [Ctrl+C] again to close")
+			return utils.SetMsg(m, "Press [Ctrl+C] again to close")
 		case "alt+l":
 			m.UI.ToggleLogs()
 			return tea.Batch(cmds...)
@@ -251,7 +390,7 @@ func HandleUpdate(m *context.Model, msg tea.Msg) tea.Cmd {
 				!m.UI.RemoteAuth && !m.UI.HostConfirm {
 				if m.Navigation.FilterQuery != "" {
 					m.Navigation.FilterQuery = ""
-					ApplyFilter(m)
+					nav.ApplyFilter(m)
 					return tea.Batch(cmds...)
 				}
 				m.ClearSelection()
@@ -260,79 +399,72 @@ func HandleUpdate(m *context.Model, msg tea.Msg) tea.Cmd {
 		}
 	}
 
-	if cmd := HandleUpdateMessages(m, msg); cmd != nil {
+	if cmd := app.HandleUpdateMessages(m, msg); cmd != nil {
 		return cmd
 	}
 
 	// 2. Delegate to domain handlers based on message type or UI state
-	if cmd := HandleNavigation(m, msg); cmd != nil {
+	if cmd := nav.HandleNavigation(m, msg); cmd != nil {
 		cmds = append(cmds, cmd)
 	}
 
-	if cmd := HandleFileOps(m, msg); cmd != nil {
+	if cmd := file.HandleFileOps(m, msg); cmd != nil {
 		cmds = append(cmds, cmd)
 	}
 
-	if cmd := HandleGit(m, msg); cmd != nil {
+	if cmd := integration.HandleGit(m, msg); cmd != nil {
 		cmds = append(cmds, cmd)
 	}
 
-	if cmd := HandleRemote(m, msg); cmd != nil {
+	if cmd := integration.HandleRemote(m, msg); cmd != nil {
 		cmds = append(cmds, cmd)
 	}
 
-	if cmd := HandleSearch(m, msg); cmd != nil {
+	if cmd := integration.HandleSearch(m, msg); cmd != nil {
 		cmds = append(cmds, cmd)
 	}
 
-	if cmd := HandleSettings(m, msg); cmd != nil {
+	if cmd := app.HandleSettings(m, msg); cmd != nil {
 		cmds = append(cmds, cmd)
 	}
 
-	if cmd := HandleLogs(m, msg); cmd != nil {
-		cmds = append(cmds, cmd)
-	}
-
-	if cmd := HandleClipboard(m, msg); cmd != nil {
+	if cmd := app.HandleLogs(m, msg); cmd != nil {
 		cmds = append(cmds, cmd)
 	}
 
 	return tea.Batch(cmds...)
 }
 
-var openFileAtLineAction = openFileAtLine
-
-func finalizeInput(m *context.Model) tea.Cmd {
+func finalizeInput(m *tuictx.Model) tea.Cmd {
 	val := m.Inputs.ActiveInput.Value()
 	mode := m.Inputs.Mode
 
 	switch mode {
-	case context.InputSearch:
+	case tuictx.InputSearch:
 		m.StopInput(false)
 		return nil
-	case context.InputRename:
+	case tuictx.InputRename:
 		m.StopInput(true)
-		return PerformRename(m, val)
-	case context.InputConflictRename:
+		return file.PerformRename(m, val)
+	case tuictx.InputConflictRename:
 		m.StopInput(true)
-		return PerformConflictRename(m, val)
-	case context.InputCreate:
+		return file.PerformConflictRename(m, val)
+	case tuictx.InputCreate:
 		m.StopInput(true)
-		return PerformCreate(m, val)
-	case context.InputZip:
+		return file.PerformCreate(m, val)
+	case tuictx.InputZip:
 		m.StopInput(true)
-		return PerformZip(m, val)
-	case context.InputUnzip:
+		return file.PerformZip(m, val)
+	case tuictx.InputUnzip:
 		m.StopInput(true)
-		return PerformUnzip(m, val)
-	case context.InputGoto:
-		// Implement HandleGoto logic from tui_old
+		return file.PerformUnzip(m, val)
+	case tuictx.InputGoto:
 		m.StopInput(true)
-		return handleGotoFinalize(m, val)
-	case context.InputAuth:
+		return nav.HandleGotoFinalize(m, val)
+	case tuictx.InputAuth:
 		m.StopInput(true)
-		return handleAuthFinalize(m, val)
-	case context.InputFuzzySearch:
+		return integration.HandleAuthFinalize(m, val)
+	case tuictx.InputFuzzySearch:
 		if len(m.Search.Results) > 0 {
 			res := m.Search.Results[m.Search.CursorFile]
 			line := 1
@@ -341,115 +473,12 @@ func finalizeInput(m *context.Model) tea.Cmd {
 			}
 
 			m.StopInput(true)
-			StopSearch(m)
+			integration.StopSearch(m)
 
-			return openFileAtLineAction(m, res.Path, line)
+			return OpenFileAtLineAction(m, res.Path, line)
 		}
 		m.StopInput(true)
-		StopSearch(m)
+		integration.StopSearch(m)
 	}
 	return nil
-}
-
-func handleGotoFinalize(m *context.Model, input string) tea.Cmd {
-	// If we are currently on a remote filesystem
-	if !m.FS.IsLocal() {
-		if m.Inputs.AltMode { // AltMode true means Local mode when on Remote FS
-			// Switch back to local
-			return SwitchToLocal(m, input)
-		}
-
-		isPath := strings.HasPrefix(input, "/") || strings.HasPrefix(input, ".") || strings.HasPrefix(input, "~") || input == ""
-		isConnection := strings.Contains(input, "@")
-
-		if isPath && !isConnection {
-			return NavigateToPath(m, input)
-		}
-
-		return handleRemoteGoto(m, input)
-	}
-
-	// Currently on local filesystem
-	isRemote := m.Inputs.AltMode
-	if !isRemote {
-		// Auto-detect remote connection string
-		isRemote = strings.Contains(input, "@") || (!strings.HasPrefix(input, "/") && !strings.HasPrefix(input, "./") && !strings.HasPrefix(input, "../") && !strings.HasPrefix(input, "~") && strings.Contains(input, "."))
-	}
-
-	if isRemote {
-		return handleRemoteGoto(m, input)
-	}
-
-	return NavigateToPath(m, input)
-}
-
-func handleRemoteGoto(m *context.Model, input string) tea.Cmd {
-	host := input
-	user := ""
-	keyPath := ""
-
-	// 1. Resolve alias from ~/.ssh/config
-	sshConfigs, _ := ssh.ParseSSHConfig()
-	if cfg, ok := sshConfigs[input]; ok {
-		host = cfg.HostName
-		if host == "" {
-			host = input
-		}
-		user = cfg.User
-		keyPath = cfg.IdentityFile
-	} else if strings.Contains(input, "@") {
-		// 2. Parse user@host
-		parts := strings.SplitN(input, "@", 2)
-		user = parts[0]
-		host = parts[1]
-	}
-
-	m.Remote.Host = host
-	m.Remote.User = user
-	m.UI.Loading = true
-	m.UI.RemoteAuth = false
-	m.Inputs.AltMode = false // Default to password mode for auth prompt
-
-	return tea.Batch(
-		connectRemote(host, user, "", keyPath, m.Remote.HostConfirmChan),
-		listenForHostConfirmation(m.Remote.HostConfirmChan),
-	)
-}
-
-func handleAuthFinalize(m *context.Model, input string) tea.Cmd {
-	m.UI.Loading = true
-	password := ""
-	keyPath := ""
-
-	if m.Inputs.AltMode {
-		keyPath = input
-	} else {
-		password = input
-	}
-
-	return tea.Batch(
-		connectRemote(m.Remote.Host, m.Remote.User, password, keyPath, m.Remote.HostConfirmChan),
-		listenForHostConfirmation(m.Remote.HostConfirmChan),
-	)
-}
-
-func openFileAtLine(m *context.Model, path string, line int) tea.Cmd {
-	execCmd, isTerminal, err := ops.GetOpenAtLineCmd(m.FS, path, m.Config.EditorIndex, line)
-	if err != nil {
-		return SetErrMsg(m, "Error: "+err.Error())
-	}
-
-	if isTerminal {
-		return tea.ExecProcess(execCmd, func(err error) tea.Msg {
-			if err != nil {
-				return ErrorMsg{Err: err}
-			}
-			return nil
-		})
-	} else {
-		if err := execCmd.Start(); err != nil {
-			return SetErrMsg(m, "Error: "+err.Error())
-		}
-		return nil
-	}
 }

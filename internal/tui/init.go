@@ -3,7 +3,8 @@ package tui
 import (
 	"github.com/zulfikawr/fm/internal/files/core"
 	"github.com/zulfikawr/fm/internal/tui/context"
-	"github.com/zulfikawr/fm/internal/tui/handlers"
+	"github.com/zulfikawr/fm/internal/tui/handlers/app"
+	"github.com/zulfikawr/fm/internal/tui/handlers/nav"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -11,15 +12,15 @@ import (
 // Initialize sets up the initial commands for the TUI
 func (a *App) Initialize() tea.Cmd {
 	return tea.Batch(
-		handlers.Reload(a.Model, false),
-		handlers.CheckForUpdates(),
+		nav.Reload(a.Model, false),
+		app.CheckForUpdates(),
 		a.Model.Display.LoadingSpinner.Start(),
 	)
 }
 
 // InitModel returns the initial command for the model
 func InitModel(m *context.Model) tea.Cmd {
-	return handlers.Reload(m, false)
+	return nav.Reload(m, false)
 }
 
 // Close releases resources held by the model

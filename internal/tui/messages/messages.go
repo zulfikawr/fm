@@ -1,4 +1,4 @@
-package handlers
+package messages
 
 import (
 	"github.com/fsnotify/fsnotify"
@@ -100,3 +100,78 @@ type UpdateFinishedMsg struct {
 }
 
 type UpdateProgressMsg float64
+
+type ReloadMsg struct {
+	Silent bool
+}
+
+type NavigateMsg struct {
+	Path string
+}
+
+type RemoteGotoMsg struct {
+	Input string
+}
+
+type StartCreateMsg struct{}
+
+type StartConflictRenameMsg struct{}
+
+type ResetSettingsMsg struct{}
+
+type TabLimitMsg struct{}
+
+type OpenFileMsg struct {
+	Item core.Item
+}
+
+type ArchiveEnteredMsg struct {
+	FS         core.FileSystem
+	ParentFS   core.FileSystem
+	ParentPath string
+}
+
+type PerformPasteMsg struct {
+	OpName  string
+	Message string
+	Paths   []string
+	DestDir string
+	IsCut   bool
+}
+
+type PerformZipMsg struct {
+	Targets []string
+	Dst     string
+	Message string
+}
+
+type PerformUnzipMsg struct {
+	ZipPath string
+	Dst     string
+	Message string
+}
+
+type LogPushMsg struct {
+	Type    string
+	Message string
+	Targets []string
+}
+
+type PerformRenameMsg struct {
+	Selected core.Item
+	OldPath  string
+	NewPath  string
+	NewName  string
+}
+
+type OperationFinishedEventMsg struct {
+	LogID string
+	Paths []string
+}
+
+type StatusMsg struct {
+	Message string
+	IsError bool
+}
+
+type WatchDirMsg struct{}

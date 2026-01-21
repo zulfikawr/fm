@@ -1,4 +1,4 @@
-package handlers
+package integration
 
 import (
 	"fmt"
@@ -8,6 +8,8 @@ import (
 	"github.com/zulfikawr/fm/internal/ssh"
 	"github.com/zulfikawr/fm/internal/tui/components/ui"
 	tui_context "github.com/zulfikawr/fm/internal/tui/context"
+	"github.com/zulfikawr/fm/internal/tui/handlers/utils"
+	"github.com/zulfikawr/fm/internal/tui/messages"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -19,59 +21,55 @@ func HandleRemote(m *tui_context.Model, msg tea.Msg) tea.Cmd {
 		if m.UI.HostConfirm {
 			return handleHostConfirmKeys(m, msg)
 		}
-	case RemoteConnectMsg:
+	case messages.RemoteConnectMsg:
 		return finalizeRemoteConnect(m, msg)
-	case HostConfirmMsg:
+	case messages.HostConfirmMsg:
 		return handleHostConfirm(m, msg)
 	}
 	return nil
 }
 
-func connectRemote(address, user, password, keyPath string, askChan chan *ssh.HostConfirmRequest) tea.Cmd {
+func ConnectRemote(address, user, password, keyPath string, askChan chan *ssh.HostConfirmRequest) tea.Cmd {
 	return func() tea.Msg {
 		hkcb, err := ssh.GetHostKeyCallback(askChan)
 		if err != nil {
-			return RemoteConnectMsg{Err: err}
+			return messages.RemoteConnectMsg{Err: err}
 		}
 
 		fs, err := remote.NewRemoteFS(address, user, password, keyPath, hkcb)
 		if err != nil {
-			return RemoteConnectMsg{Err: err}
+			return messages.RemoteConnectMsg{Err: err}
 		}
 
 		home, _ := fs.GetHomeDir()
-		return RemoteConnectMsg{FS: fs, Path: home}
+		return messages.RemoteConnectMsg{FS: fs, Path: home}
 	}
 }
 
-func listenForHostConfirmation(askChan chan *ssh.HostConfirmRequest) tea.Cmd {
+func ListenForHostConfirmation(askChan chan *ssh.HostConfirmRequest) tea.Cmd {
 	return func() tea.Msg {
 		req, ok := <-askChan
 		if !ok {
 			return nil
 		}
-		return HostConfirmMsg{Request: req}
+		return messages.HostConfirmMsg{Request: req}
 	}
 }
 
-func finalizeRemoteConnect(m *tui_context.Model, msg RemoteConnectMsg) tea.Cmd {
+func finalizeRemoteConnect(m *tui_context.Model, msg messages.RemoteConnectMsg) tea.Cmd {
 	m.UI.Loading = false
 	if msg.Err != nil {
 		errStr := msg.Err.Error()
 
-		// Log the error for visibility in Alt+L
-		LogPush(m, "Remote", tui_context.LogError, tui_context.StatusError, "Connection failed", errStr)
+		utils.LogPush(m, "Remote", tui_context.LogError, tui_context.StatusError, "Connection failed", errStr)
 
-		// If it's a known error that doesn't require authentication (like host down), log it
 		if strings.Contains(errStr, "connection refused") || strings.Contains(errStr, "no such host") || strings.Contains(errStr, "i/o timeout") {
-			return LogError(m, msg.Err, "Remote connection failed")
+			return utils.LogError(m, msg.Err, "Remote connection failed")
 		}
 
-		// Otherwise, assume authentication is needed or was wrong
 		m.UI.RemoteAuth = true
 		m.StartInput(tui_context.InputAuth)
 
-		// Set prompt label based on AltMode and enable masking for password
 		label := "Password"
 		if m.Inputs.AltMode {
 			label = "PEM Path"
@@ -82,12 +80,11 @@ func finalizeRemoteConnect(m *tui_context.Model, msg RemoteConnectMsg) tea.Cmd {
 		m.Inputs.ActiveInput.SetPrompt(label + ": ")
 
 		return tea.Batch(
-			SetMsg(m, "Remote Authentication Required"),
+			utils.SetMsg(m, "Remote Authentication Required"),
 			m.Inputs.ActiveInput.FocusCmd(),
 		)
 	}
 
-	// Success!
 	m.UI.RemoteAuth = false
 	m.FS = msg.FS
 
@@ -98,14 +95,14 @@ func finalizeRemoteConnect(m *tui_context.Model, msg RemoteConnectMsg) tea.Cmd {
 		authMethod = "agent/default keys"
 	}
 
-	LogPush(m, "Remote", tui_context.LogSuccess, tui_context.StatusSuccess,
+	utils.LogPush(m, "Remote", tui_context.LogSuccess, tui_context.StatusSuccess,
 		fmt.Sprintf("Connection established to %s@%s", m.Remote.User, m.Remote.Host),
 		fmt.Sprintf("Authenticated via %s", authMethod))
 
-	return NavigateToPath(m, msg.Path)
+	return func() tea.Msg { return messages.NavigateMsg{Path: msg.Path} }
 }
 
-func handleHostConfirm(m *tui_context.Model, msg HostConfirmMsg) tea.Cmd {
+func handleHostConfirm(m *tui_context.Model, msg messages.HostConfirmMsg) tea.Cmd {
 	m.UI.Loading = false
 	m.UI.HostConfirm = true
 	m.Remote.HostConfirmReq = msg.Request
@@ -116,7 +113,6 @@ func handleHostConfirmKeys(m *tui_context.Model, msg tea.KeyMsg) tea.Cmd {
 	switch msg.String() {
 	case "y", "Y":
 		if m.Remote.HostConfirmReq != nil && m.Remote.HostConfirmReq.Resolve != nil {
-			// Signal background goroutine to proceed
 			resolve := m.Remote.HostConfirmReq.Resolve
 			go func() {
 				resolve <- true
@@ -128,7 +124,6 @@ func handleHostConfirmKeys(m *tui_context.Model, msg tea.KeyMsg) tea.Cmd {
 		return nil
 	case "n", "N":
 		if m.Remote.HostConfirmReq != nil && m.Remote.HostConfirmReq.Resolve != nil {
-			// Signal background goroutine to fail
 			resolve := m.Remote.HostConfirmReq.Resolve
 			go func() {
 				resolve <- false
@@ -136,7 +131,57 @@ func handleHostConfirmKeys(m *tui_context.Model, msg tea.KeyMsg) tea.Cmd {
 		}
 		m.UI.HostConfirm = false
 		m.Remote.HostConfirmReq = nil
-		return SetMsg(m, "Connection cancelled (host untrusted)")
+		return utils.SetMsg(m, "Connection cancelled (host untrusted)")
 	}
 	return nil
+}
+
+func HandleRemoteGoto(m *tui_context.Model, input string) tea.Cmd {
+	host := input
+	user := ""
+	keyPath := ""
+
+	// 1. Resolve alias from ~/.ssh/config
+	sshConfigs, _ := ssh.ParseSSHConfig()
+	if cfg, ok := sshConfigs[input]; ok {
+		host = cfg.HostName
+		if host == "" {
+			host = input
+		}
+		user = cfg.User
+		keyPath = cfg.IdentityFile
+	} else if strings.Contains(input, "@") {
+		// 2. Parse user@host
+		parts := strings.SplitN(input, "@", 2)
+		user = parts[0]
+		host = parts[1]
+	}
+
+	m.Remote.Host = host
+	m.Remote.User = user
+	m.UI.Loading = true
+	m.UI.RemoteAuth = false
+	m.Inputs.AltMode = false
+
+	return tea.Batch(
+		ConnectRemote(host, user, "", keyPath, m.Remote.HostConfirmChan),
+		ListenForHostConfirmation(m.Remote.HostConfirmChan),
+	)
+}
+
+func HandleAuthFinalize(m *tui_context.Model, input string) tea.Cmd {
+	m.UI.Loading = true
+	password := ""
+	keyPath := ""
+
+	if m.Inputs.AltMode {
+		keyPath = input
+	} else {
+		password = input
+	}
+
+	return tea.Batch(
+		ConnectRemote(m.Remote.Host, m.Remote.User, password, keyPath, m.Remote.HostConfirmChan),
+		ListenForHostConfirmation(m.Remote.HostConfirmChan),
+	)
 }

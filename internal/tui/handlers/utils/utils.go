@@ -1,4 +1,4 @@
-package handlers
+package utils
 
 import (
 	"errors"
@@ -10,6 +10,7 @@ import (
 	"github.com/zulfikawr/fm/internal/logger"
 	tui_context "github.com/zulfikawr/fm/internal/tui/context"
 	tuierrors "github.com/zulfikawr/fm/internal/tui/errors"
+	"github.com/zulfikawr/fm/internal/tui/messages"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/fsnotify/fsnotify"
@@ -19,7 +20,7 @@ import (
 func SetMsg(m *tui_context.Model, msg string) tea.Cmd {
 	m.Message.Push(msg, false)
 	return tea.Tick(constants.MessageDisplayDuration, func(time.Time) tea.Msg {
-		return ClearMsg{}
+		return messages.ClearMsg{}
 	})
 }
 
@@ -27,7 +28,7 @@ func SetMsg(m *tui_context.Model, msg string) tea.Cmd {
 func SetErrMsg(m *tui_context.Model, msg string) tea.Cmd {
 	m.Message.Push(msg, true)
 	return tea.Tick(constants.MessageDisplayDuration, func(time.Time) tea.Msg {
-		return ClearMsg{}
+		return messages.ClearMsg{}
 	})
 }
 
@@ -60,7 +61,6 @@ func LogError(m *tui_context.Model, err error, context string) tea.Cmd {
 	var tuiErr *tuierrors.Error
 	var ok bool
 	if tuiErr, ok = err.(*tuierrors.Error); !ok {
-		// If it's a FileError, treat it as a UserError so the message is shown
 		var fe *fileerrors.FileError
 		if errors.As(err, &fe) {
 			tuiErr = tuierrors.UserError(context, fe.Error())
@@ -84,14 +84,14 @@ func WatchDir(watcher *fsnotify.Watcher) tea.Cmd {
 		select {
 		case event, ok := <-watcher.Events:
 			if !ok {
-				return WatcherClosedMsg{}
+				return messages.WatcherClosedMsg{}
 			}
-			return WatchEventMsg{Event: event}
+			return messages.WatchEventMsg{Event: event}
 		case err, ok := <-watcher.Errors:
 			if !ok {
-				return WatcherClosedMsg{}
+				return messages.WatcherClosedMsg{}
 			}
-			return WatcherErrorMsg{Err: err}
+			return messages.WatcherErrorMsg{Err: err}
 		}
 	}
 }
@@ -99,7 +99,7 @@ func WatchDir(watcher *fsnotify.Watcher) tea.Cmd {
 // WatchRemoteDir returns a command that waits for a polling interval.
 func WatchRemoteDir() tea.Cmd {
 	return tea.Tick(3*time.Second, func(t time.Time) tea.Msg {
-		return RemotePollMsg{}
+		return messages.RemotePollMsg{}
 	})
 }
 
@@ -112,7 +112,7 @@ func RestartWatcherAction(m *tui_context.Model) tea.Cmd {
 
 		watcher, err := fsnotify.NewWatcher()
 		if err != nil {
-			return WatcherErrorMsg{Err: err}
+			return messages.WatcherErrorMsg{Err: err}
 		}
 
 		m.Watcher.Watcher = watcher

@@ -1,4 +1,4 @@
-package handlers
+package app
 
 import (
 	tui_context "github.com/zulfikawr/fm/internal/tui/context"

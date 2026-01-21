@@ -1,4 +1,4 @@
-package handlers
+package app
 
 import (
 	"github.com/zulfikawr/fm/internal/config"
@@ -6,6 +6,8 @@ import (
 	"github.com/zulfikawr/fm/internal/files/format"
 	"github.com/zulfikawr/fm/internal/logger"
 	tui_context "github.com/zulfikawr/fm/internal/tui/context"
+	"github.com/zulfikawr/fm/internal/tui/handlers/utils"
+	"github.com/zulfikawr/fm/internal/tui/messages"
 	"github.com/zulfikawr/fm/internal/tui/theme"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -23,8 +25,6 @@ func HandleSettings(m *tui_context.Model, msg tea.Msg) tea.Cmd {
 }
 
 func handleSettingsKeys(m *tui_context.Model, msg tea.KeyMsg) tea.Cmd {
-	// Total selectable items across all groups
-	// File Ops (6) + Display (6) + Appearance (1) + Keybindings (24) = 37
 	totalItems := 37
 	var reload bool
 
@@ -51,7 +51,7 @@ func handleSettingsKeys(m *tui_context.Model, msg tea.KeyMsg) tea.Cmd {
 	m.Settings.Offset = scrollSettings(m)
 
 	if reload {
-		return Reload(m, false)
+		return func() tea.Msg { return messages.ReloadMsg{} }
 	}
 	return nil
 }
@@ -61,21 +61,11 @@ func scrollSettings(m *tui_context.Model) int {
 	offset := m.Settings.Offset
 	height := m.Display.ViewportHeight
 
-	// Map selectable item index to actual row index (including headers)
-	// Group 1 Header (row 1)
-	//   Item 0-5 (rows 2-7)
-	// Group 2 Header (row 9)
-	//   Item 6-11 (rows 10-15)
-	// Group 3 Header (row 17)
-	//   Item 12 (row 18)
-	// Group 4 Header (row 20)
-	//   Item 13-31 (rows 21-39)
-
 	rowIdx := 0
 	if cursor <= 5 {
-		rowIdx = cursor + 2 // Group 1 header + empty line
+		rowIdx = cursor + 2
 	} else if cursor <= 11 {
-		rowIdx = cursor + 4 // + previous empty lines and headers
+		rowIdx = cursor + 4
 	} else if cursor <= 12 {
 		rowIdx = cursor + 6
 	} else {
@@ -83,10 +73,9 @@ func scrollSettings(m *tui_context.Model) int {
 	}
 
 	if rowIdx < offset {
-		// When scrolling up, we want to see the header of the group if we are at the top item
 		newOffset := rowIdx
 		if cursor == 0 || cursor == 6 || cursor == 12 || cursor == 13 {
-			newOffset -= 2 // Show header and spacing
+			newOffset -= 2
 		}
 		if newOffset < 0 {
 			newOffset = 0
@@ -145,9 +134,7 @@ func toggleSetting(idx int, m *tui_context.Model) bool {
 		}
 	case 12:
 		cfg.ThemeIndex = (cfg.ThemeIndex + 1) % len(theme.Themes)
-		// Update cached styles
 		m.Display.Styles = theme.GetStylesheet(cfg.ThemeIndex)
-		// Update spinner style for the new theme
 		m.Display.LoadingSpinner.Style = m.Display.LoadingSpinner.Style.Foreground(theme.Themes[cfg.ThemeIndex].Dir)
 	}
 	if err := cfg.Save(); err != nil {
@@ -179,9 +166,7 @@ func toggleSettingPrev(idx int, m *tui_context.Model) bool {
 		}
 	case 12:
 		cfg.ThemeIndex = (cfg.ThemeIndex - 1 + len(theme.Themes)) % len(theme.Themes)
-		// Update cached styles
 		m.Display.Styles = theme.GetStylesheet(cfg.ThemeIndex)
-		// Update spinner style for the new theme
 		m.Display.LoadingSpinner.Style = m.Display.LoadingSpinner.Style.Foreground(theme.Themes[cfg.ThemeIndex].Dir)
 	default:
 		return toggleSetting(idx, m)
@@ -193,13 +178,23 @@ func toggleSettingPrev(idx int, m *tui_context.Model) bool {
 }
 
 // ConfirmSettingsReset resets all settings to defaults
+
 func ConfirmSettingsReset(m *tui_context.Model) tea.Cmd {
+
 	m.Config = config.DefaultConfig()
+
 	if err := m.Config.Save(); err != nil {
+
 		logger.Errorf("Failed to save config: %v", err)
+
 	}
+
 	m.Display.Styles = theme.GetStylesheet(m.Config.ThemeIndex)
+
 	m.UI.StopConfirming()
+
 	m.Operations.ActionType = ""
-	return tea.Batch(SetMsg(m, "Settings reset to defaults"), Reload(m, false))
+
+	return tea.Batch(utils.SetMsg(m, "Settings reset to defaults"), func() tea.Msg { return messages.ReloadMsg{} })
+
 }

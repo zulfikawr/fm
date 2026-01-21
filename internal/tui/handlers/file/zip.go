@@ -1,0 +1,129 @@
+package file
+
+import (
+	"fmt"
+	"strings"
+
+	"github.com/zulfikawr/fm/internal/constants"
+	"github.com/zulfikawr/fm/internal/files/conflict"
+	tui_context "github.com/zulfikawr/fm/internal/tui/context"
+	"github.com/zulfikawr/fm/internal/tui/messages"
+
+	tea "github.com/charmbracelet/bubbletea"
+)
+
+func StartZip(m *tui_context.Model) tea.Cmd {
+	targets := GetTargets(m)
+	if len(targets) == 0 {
+		return nil
+	}
+
+	m.StartInput(tui_context.InputZip)
+	m.Inputs.ActiveInput.SetValue("archive.zip")
+	m.Inputs.ActiveInput.SetCursor(len("archive"))
+	return m.Inputs.ActiveInput.FocusCmd()
+}
+
+func PerformZip(m *tui_context.Model, zipName string) tea.Cmd {
+	if zipName == "" {
+		return nil
+	}
+
+	targets := GetTargets(m)
+	if len(targets) == 0 {
+		return nil
+	}
+
+	dst := m.FS.Join(m.Navigation.Path, zipName)
+
+	if m.Operations.ConflictPolicy == conflict.Ask {
+		resolver := conflict.NewResolver()
+		resolvedPath, _, err := resolver.Resolve(m.Context, m.FS, targets[0], dst, m.Operations.ConflictPolicy)
+		if err != nil {
+			if cerr, ok := err.(*conflict.ConflictError); ok {
+				m.UI.Loading = false
+				m.Operations.Conflict.Set(cerr.Source, cerr.Destination, targets, false, "zip", "")
+				m.Operations.ActionType = constants.ActionConflict
+				m.UI.StartConfirming()
+				return nil
+			}
+		}
+		if resolvedPath == "" {
+			return nil // Skip
+		}
+		dst = resolvedPath
+	}
+
+	m.ClearSelection()
+	m.UI.Loading = true
+
+	msg := fmt.Sprintf("Zipping %d items into %s", len(targets), zipName)
+	return func() tea.Msg { return messages.PerformZipMsg{Targets: targets, Dst: dst, Message: msg} }
+}
+
+func StartUnzip(m *tui_context.Model) tea.Cmd {
+	targets := GetTargets(m)
+	var zipPath string
+	if len(targets) > 0 {
+		if strings.HasSuffix(strings.ToLower(targets[0]), ".zip") {
+			zipPath = targets[0]
+		}
+	} else if len(m.Navigation.FilteredItems) > 0 {
+		selected := m.Navigation.FilteredItems[m.Navigation.Cursor]
+		if !selected.IsUp && strings.HasSuffix(strings.ToLower(selected.Name), ".zip") {
+			zipPath = selected.Path
+		}
+	}
+
+	if zipPath == "" {
+		return func() tea.Msg { return messages.ErrorMsg{Err: fmt.Errorf("please select a .zip file to unzip")} }
+	}
+
+	m.StartInput(tui_context.InputUnzip)
+
+	baseName := m.FS.Base(zipPath)
+	folderName := strings.TrimSuffix(baseName, m.FS.Ext(baseName))
+	m.Inputs.ActiveInput.SetValue(folderName)
+	return m.Inputs.ActiveInput.FocusCmd()
+}
+
+func PerformUnzip(m *tui_context.Model, destName string) tea.Cmd {
+	if destName == "" {
+		return nil
+	}
+
+	targets := GetTargets(m)
+	var zipPath string
+	if len(targets) > 0 {
+		zipPath = targets[0]
+	} else {
+		selected := m.Navigation.FilteredItems[m.Navigation.Cursor]
+		zipPath = selected.Path
+	}
+
+	dst := m.FS.Join(m.Navigation.Path, destName)
+
+	if m.Operations.ConflictPolicy == conflict.Ask {
+		resolver := conflict.NewResolver()
+		resolvedPath, _, err := resolver.Resolve(m.Context, m.FS, zipPath, dst, m.Operations.ConflictPolicy)
+		if err != nil {
+			if cerr, ok := err.(*conflict.ConflictError); ok {
+				m.UI.Loading = false
+				m.Operations.Conflict.Set(cerr.Source, cerr.Destination, []string{zipPath}, false, "unzip", "")
+				m.Operations.ActionType = constants.ActionConflict
+				m.UI.StartConfirming()
+				return nil
+			}
+		}
+		if resolvedPath == "" {
+			return nil // Skip
+		}
+		dst = resolvedPath
+	}
+
+	m.ClearSelection()
+	m.UI.Loading = true
+
+	msg := fmt.Sprintf("Extracting %s into %s", m.FS.Base(zipPath), destName)
+	return func() tea.Msg { return messages.PerformUnzipMsg{ZipPath: zipPath, Dst: dst, Message: msg} }
+}

@@ -1,4 +1,4 @@
-package handlers
+package integration
 
 import (
 	"context"
@@ -6,6 +6,8 @@ import (
 
 	"github.com/zulfikawr/fm/internal/files/ops"
 	tui_context "github.com/zulfikawr/fm/internal/tui/context"
+	"github.com/zulfikawr/fm/internal/tui/handlers/utils"
+	"github.com/zulfikawr/fm/internal/tui/messages"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -16,7 +18,7 @@ const SearchDebounceDuration = 300 * time.Millisecond
 // HandleSearch handles search-related messages
 func HandleSearch(m *tui_context.Model, msg tea.Msg) tea.Cmd {
 	switch msg := msg.(type) {
-	case SearchMsg:
+	case messages.SearchMsg:
 		return finalizeSearch(m, msg)
 	case tea.KeyMsg:
 		if m.Inputs.Mode == tui_context.InputFuzzySearch {
@@ -108,7 +110,6 @@ func scrollSearch(m *tui_context.Model) int {
 		viewportHeight = m.Display.Height - 2
 	}
 
-	// Adjust for fixed header (2 lines)
 	effectiveHeight := viewportHeight - 2
 	if effectiveHeight < 1 {
 		effectiveHeight = 1
@@ -129,13 +130,13 @@ func calculateSearchCursorLine(m *tui_context.Model) int {
 		return 0
 	}
 
-	line := 0 // Header is fixed now
+	line := 0
 	for fIdx, res := range m.Search.Results {
 		if fIdx == m.Search.CursorFile {
 			if m.Search.CursorMatch == -1 || res.Collapsed {
 				return line
 			}
-			line++ // File header line
+			line++
 			for mIdx := range res.Matches {
 				if mIdx == m.Search.CursorMatch {
 					return line
@@ -143,17 +144,16 @@ func calculateSearchCursorLine(m *tui_context.Model) int {
 				line++
 			}
 		} else {
-			line++ // File header
+			line++
 			if !res.Collapsed {
 				line += len(res.Matches)
 			}
 		}
-		line++ // Empty line between files
+		line++
 	}
 	return line
 }
 
-// TriggerSearch triggers a debounced fuzzy content search
 func TriggerSearch(m *tui_context.Model, query string) tea.Cmd {
 	if query == "" {
 		StopSearch(m)
@@ -163,15 +163,13 @@ func TriggerSearch(m *tui_context.Model, query string) tea.Cmd {
 	m.Search.Query = query
 	m.Search.IsSearching = true
 
-	// Use a timer to debounce
 	return tea.Tick(SearchDebounceDuration, func(t time.Time) tea.Msg {
-		return SearchMsg{
+		return messages.SearchMsg{
 			Query: query,
 		}
 	})
 }
 
-// StopSearch cancels any active search and clears results
 func StopSearch(m *tui_context.Model) {
 	if m.Search.CancelFunc != nil {
 		m.Search.CancelFunc()
@@ -182,14 +180,12 @@ func StopSearch(m *tui_context.Model) {
 	m.Search.Query = ""
 }
 
-func finalizeSearch(m *tui_context.Model, msg SearchMsg) tea.Cmd {
-	// If the query has changed since this search was triggered, ignore it
+func finalizeSearch(m *tui_context.Model, msg messages.SearchMsg) tea.Cmd {
 	if msg.Query != m.Search.Query {
 		return nil
 	}
 
 	if msg.Results == nil && msg.Err == nil {
-		// This was the debounce tick, now trigger the actual search
 		return performSearch(m, msg.Query)
 	}
 
@@ -199,7 +195,7 @@ func finalizeSearch(m *tui_context.Model, msg SearchMsg) tea.Cmd {
 	}
 
 	if msg.Err != nil {
-		return LogError(m, msg.Err, "Search failed")
+		return utils.LogError(m, msg.Err, "Search failed")
 	}
 
 	m.Search.Results = msg.Results
@@ -210,13 +206,11 @@ func finalizeSearch(m *tui_context.Model, msg SearchMsg) tea.Cmd {
 }
 
 func performSearch(m *tui_context.Model, query string) tea.Cmd {
-	// Minimum query length to avoid huge results
 	if len(query) < 1 {
 		m.Search.IsSearching = false
 		return nil
 	}
 
-	// Cancel previous search if running
 	if m.Search.CancelFunc != nil {
 		m.Search.CancelFunc()
 	}
@@ -230,7 +224,7 @@ func performSearch(m *tui_context.Model, query string) tea.Cmd {
 
 	return func() tea.Msg {
 		results, err := ops.Search(ctx, fs, gs, path, query)
-		return SearchMsg{
+		return messages.SearchMsg{
 			Query:   query,
 			Results: results,
 			Err:     err,

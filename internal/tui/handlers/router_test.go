@@ -10,6 +10,7 @@ import (
 	"github.com/zulfikawr/fm/internal/files/core"
 	"github.com/zulfikawr/fm/internal/testutil"
 	tuictx "github.com/zulfikawr/fm/internal/tui/context"
+	"github.com/zulfikawr/fm/internal/tui/messages"
 )
 
 func TestRouter_GlobalMessages(t *testing.T) {
@@ -26,7 +27,7 @@ func TestRouter_GlobalMessages(t *testing.T) {
 
 	t.Run("WatchEventMsg", func(t *testing.T) {
 		m.Watcher.IsListening = true
-		HandleUpdate(m, WatchEventMsg{})
+		HandleUpdate(m, messages.WatchEventMsg{})
 		if !m.Watcher.IsListening {
 			t.Error("expected IsListening to still be true (debouncing)")
 		}
@@ -35,7 +36,7 @@ func TestRouter_GlobalMessages(t *testing.T) {
 		}
 
 		// Simulate debounce timer expiration
-		HandleUpdate(m, DebounceWatchMsg{})
+		HandleUpdate(m, messages.DebounceWatchMsg{})
 		if m.Watcher.IsListening {
 			t.Error("expected IsListening to be false after debounce")
 		}
@@ -44,7 +45,7 @@ func TestRouter_GlobalMessages(t *testing.T) {
 	t.Run("ClearMsg", func(t *testing.T) {
 		m.Message.Push("test", false)
 		m.Operations.Progress.Show("label")
-		HandleUpdate(m, ClearMsg{})
+		HandleUpdate(m, messages.ClearMsg{})
 		if m.Message.Text != "" {
 			t.Error("expected message to be cleared")
 		}
@@ -52,20 +53,18 @@ func TestRouter_GlobalMessages(t *testing.T) {
 
 	t.Run("ErrorMsg", func(t *testing.T) {
 		m.UI.Loading = true
-		msg := ErrorMsg{Err: errors.New("fail"), LogID: "123"}
+		msg := messages.ErrorMsg{Err: errors.New("fail"), LogID: "123"}
 		cmd := HandleUpdate(m, msg)
 		if cmd == nil {
 			t.Fatal("expected reload command after error")
 		}
-		// m.UI.Loading is false in the reducer before returning Reload()
-		// but Reload() immediately sets it to true if called or we can just check the reducer state
 	})
 }
 
 func TestRouter_GlobalKeys(t *testing.T) {
 	fs := testutil.NewMockFileSystem()
 	m := tuictx.NewModel(fs, "/test")
-	wrapper := newTestModelWrapper(m)
+	wrapper := NewTestModelWrapper(m)
 	tm := testutil.NewTestModel(t, wrapper)
 
 	t.Run("Toggle Logs (alt+l)", func(t *testing.T) {
@@ -91,7 +90,7 @@ func TestRouter_GlobalKeys(t *testing.T) {
 func TestRouter_FinalizeInput(t *testing.T) {
 	fs := testutil.NewMockFileSystem()
 	m := tuictx.NewModel(fs, "/test")
-	wrapper := newTestModelWrapper(m)
+	wrapper := NewTestModelWrapper(m)
 	tm := testutil.NewTestModel(t, wrapper)
 
 	t.Run("Finalize Search", func(t *testing.T) {

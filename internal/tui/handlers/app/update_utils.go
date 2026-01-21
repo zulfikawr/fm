@@ -1,11 +1,12 @@
-package handlers
+package app
 
 import (
 	"os"
 	"strings"
 
 	"github.com/zulfikawr/fm/internal/constants"
-	"github.com/zulfikawr/fm/internal/tui/context"
+	tui_context "github.com/zulfikawr/fm/internal/tui/context"
+	"github.com/zulfikawr/fm/internal/tui/messages"
 	"github.com/zulfikawr/fm/internal/update"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -21,19 +22,19 @@ func CheckForUpdates() tea.Cmd {
 		if err != nil || version == "" {
 			return nil
 		}
-		return UpdateAvailableMsg{Version: version}
+		return messages.UpdateAvailableMsg{Version: version}
 	}
 }
 
 // StartUpdate starts the update process
-func StartUpdate(m *context.Model) tea.Cmd {
+func StartUpdate(m *tui_context.Model) tea.Cmd {
 	progress := make(chan float64)
 
 	return tea.Batch(
 		func() tea.Msg {
 			defer close(progress)
 			err := update.DownloadAndInstall(m.UI.LatestVersion, progress)
-			return UpdateFinishedMsg{Err: err}
+			return messages.UpdateFinishedMsg{Err: err}
 		},
 		listenForUpdateProgress(progress),
 	)
@@ -46,7 +47,7 @@ func listenForUpdateProgress(progress chan float64) tea.Cmd {
 			return nil
 		}
 		return tea.Batch(
-			func() tea.Msg { return UpdateProgressMsg(p) },
+			func() tea.Msg { return messages.UpdateProgressMsg(p) },
 			listenForUpdateProgress(progress),
 		)()
 	}
