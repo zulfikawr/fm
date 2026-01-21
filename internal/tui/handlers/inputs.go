@@ -1,0 +1,136 @@
+package handlers
+
+import (
+	tuictx "github.com/zulfikawr/fm/internal/tui/context"
+	"github.com/zulfikawr/fm/internal/tui/handlers/file"
+	"github.com/zulfikawr/fm/internal/tui/handlers/integration"
+	"github.com/zulfikawr/fm/internal/tui/handlers/nav"
+
+	tea "github.com/charmbracelet/bubbletea"
+)
+
+// handleInputs handles routing and finalization of text/fuzzy inputs
+func handleInputs(m *tuictx.Model, msg tea.Msg) (tea.Cmd, bool) {
+	if !m.UI.InputActive {
+		return nil, false
+	}
+
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		// Special case: fuzzy search navigation
+		isFuzzyNavKey := false
+		if m.Inputs.Mode == tuictx.InputFuzzySearch {
+			switch msg.String() {
+			case "up", "down", "tab", "alt+j", "alt+k", "alt+n", "alt+m":
+				isFuzzyNavKey = true
+			}
+		}
+
+		if isFuzzyNavKey {
+			return integration.HandleSearch(m, msg), true
+		}
+
+		if m.Inputs.Mode != tuictx.InputFuzzySearch {
+			switch msg.String() {
+			case "tab":
+				if m.Inputs.Mode == tuictx.InputGoto || m.Inputs.Mode == tuictx.InputAuth || m.Inputs.Mode == tuictx.InputCreate {
+					m.Inputs.AltMode = !m.Inputs.AltMode
+					return nil, true
+				}
+			}
+		}
+
+		var cmds []tea.Cmd
+		var cmd tea.Cmd
+		m.Inputs.ActiveInput, cmd = m.Inputs.ActiveInput.Update(msg)
+		if cmd != nil {
+			cmds = append(cmds, cmd)
+		}
+
+		if m.Inputs.Mode == tuictx.InputFuzzySearch {
+			// Trigger search on change
+			if msg.String() != "enter" && msg.String() != "esc" {
+				query := m.Inputs.ActiveInput.Value()
+				if query != m.Search.Query {
+					cmds = append(cmds, integration.TriggerSearch(m, query))
+				}
+			}
+		}
+
+		if m.Inputs.Mode == tuictx.InputSearch {
+			cmds = append(cmds, nav.TriggerFilter(m))
+		}
+
+		// Handle Enter/Esc for inputs
+		switch msg.String() {
+		case "enter":
+			if cmd := finalizeInput(m); cmd != nil {
+				cmds = append(cmds, cmd)
+			}
+			return tea.Batch(cmds...), true
+		case "esc":
+			mode := m.Inputs.Mode
+			m.StopInput(true)
+			if mode == tuictx.InputSearch {
+				m.Navigation.FilterQuery = ""
+				nav.ApplyFilter(m)
+			}
+			if mode == tuictx.InputFuzzySearch {
+				integration.StopSearch(m)
+			}
+			return nil, true
+		}
+
+		return tea.Batch(cmds...), true
+	}
+
+	return nil, false
+}
+
+func finalizeInput(m *tuictx.Model) tea.Cmd {
+	val := m.Inputs.ActiveInput.Value()
+	mode := m.Inputs.Mode
+
+	switch mode {
+	case tuictx.InputSearch:
+		m.StopInput(false)
+		return nil
+	case tuictx.InputRename:
+		m.StopInput(true)
+		return file.PerformRename(m, val)
+	case tuictx.InputConflictRename:
+		m.StopInput(true)
+		return file.PerformConflictRename(m, val)
+	case tuictx.InputCreate:
+		m.StopInput(true)
+		return file.PerformCreate(m, val)
+	case tuictx.InputZip:
+		m.StopInput(true)
+		return file.PerformZip(m, val)
+	case tuictx.InputUnzip:
+		m.StopInput(true)
+		return file.PerformUnzip(m, val)
+	case tuictx.InputGoto:
+		m.StopInput(true)
+		return nav.HandleGotoFinalize(m, val)
+	case tuictx.InputAuth:
+		m.StopInput(true)
+		return integration.HandleAuthFinalize(m, val)
+	case tuictx.InputFuzzySearch:
+		if len(m.Search.Results) > 0 {
+			res := m.Search.Results[m.Search.CursorFile]
+			line := 1
+			if m.Search.CursorMatch >= 0 && m.Search.CursorMatch < len(res.Matches) {
+				line = res.Matches[m.Search.CursorMatch].Line
+			}
+
+			m.StopInput(true)
+			integration.StopSearch(m)
+
+			return OpenFileAtLineAction(m, res.Path, line)
+		}
+		m.StopInput(true)
+		integration.StopSearch(m)
+	}
+	return nil
+}

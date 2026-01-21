@@ -34,3 +34,30 @@ func TestResize_Handling(t *testing.T) {
 		}
 	})
 }
+
+func TestGlobal_Quit(t *testing.T) {
+	fs := testutil.NewMockFileSystem()
+	m := tuictx.NewModel(fs, "/test")
+
+	t.Run("First ctrl+c shows warning", func(t *testing.T) {
+		msg := tea.KeyMsg{Type: tea.KeyCtrlC}
+		HandleUpdate(m, msg)
+
+		if m.Message.Text != "Press [Ctrl+C] again to close" {
+			t.Errorf("expected warning message, got %q", m.Message.Text)
+		}
+	})
+
+	t.Run("Second ctrl+c returns Quit command", func(t *testing.T) {
+		m.Message.Push("Press [Ctrl+C] again to close", false)
+		msg := tea.KeyMsg{Type: tea.KeyCtrlC}
+		cmd := HandleUpdate(m, msg)
+
+		if cmd == nil {
+			t.Fatal("expected quit command, got nil")
+		}
+		if _, ok := cmd().(tea.QuitMsg); !ok {
+			t.Errorf("expected tea.Quit command, got %T", cmd())
+		}
+	})
+}

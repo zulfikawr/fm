@@ -3,6 +3,7 @@ package nav
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/zulfikawr/fm/internal/files/local"
 	"github.com/zulfikawr/fm/internal/logger"
@@ -218,6 +219,20 @@ func HandleGotoFinalize(m *tui_context.Model, input string) tea.Cmd {
 
 	return NavigateToPath(m, input)
 
+}
+
+// TriggerFilter starts a debounce timer for filtering items
+func TriggerFilter(m *tui_context.Model) tea.Cmd {
+	if m.Navigation.FilterTimer != nil {
+		m.Navigation.FilterTimer.Stop()
+	}
+	m.Navigation.FilterGen++
+	gen := m.Navigation.FilterGen
+	m.Navigation.FilterTimer = time.NewTimer(50 * time.Millisecond)
+	return func() tea.Msg {
+		<-m.Navigation.FilterTimer.C
+		return messages.DebounceFilterMsg{Generation: gen}
+	}
 }
 
 // WatchDirAction starts watching the current directory
