@@ -232,6 +232,12 @@ func handleNavKeys(m *tui_context.Model, msg tea.KeyMsg) tea.Cmd {
 	case "alt+a":
 		selectAll(m)
 		return nil
+	case "alt+n":
+		if !m.UI.InputActive {
+			return startCreate(m)
+		}
+	case "alt+m":
+		// reserved
 	case "/":
 		m.StartInput(tui_context.InputSearch)
 		return m.Inputs.ActiveInput.FocusCmd()

@@ -162,6 +162,8 @@ func determineFooterMode(m *context.Model) footer.Mode {
 			return footer.ModeZip
 		case context.InputUnzip:
 			return footer.ModeUnzip
+		case context.InputCreate:
+			return footer.ModeCreate
 		}
 	}
 	if m.UI.HostConfirm {

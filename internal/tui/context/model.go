@@ -149,6 +149,7 @@ func (m *Model) SwitchTab(tabNum int) bool {
 
 // StartInput prepares the UI for a text input mode.
 func (m *Model) StartInput(mode InputMode) {
+	m.UI.InputActive = true
 	m.UI.StartInput()
 	m.Inputs.Mode = mode
 	m.Inputs.ActiveInput.Reset()

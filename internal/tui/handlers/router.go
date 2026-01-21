@@ -129,52 +129,53 @@ func HandleUpdate(m *context.Model, msg tea.Msg) tea.Cmd {
 				switch msg.String() {
 				case "up", "down", "tab", "alt+j", "alt+k", "alt+n", "alt+m":
 					isFuzzyNavKey = true
-				default:
-					var cmd tea.Cmd
-					m.Inputs.ActiveInput, cmd = m.Inputs.ActiveInput.Update(msg)
-					if cmd != nil {
-						cmds = append(cmds, cmd)
-					}
-
-					// Trigger search on change
-					if msg.String() != "enter" && msg.String() != "esc" {
-						query := m.Inputs.ActiveInput.Value()
-						if query != m.Search.Query {
-							cmds = append(cmds, TriggerSearch(m, query))
-						}
-					}
 				}
-			} else {
-				switch msg.String() {
-				case "tab":
-					if m.Inputs.Mode == context.InputGoto {
-						m.Inputs.AltMode = !m.Inputs.AltMode
-						return nil
-					}
-					if m.Inputs.Mode == context.InputAuth {
-						m.Inputs.AltMode = !m.Inputs.AltMode
-						return nil
-					}
-				}
+			}
 
-				var cmd tea.Cmd
-				m.Inputs.ActiveInput, cmd = m.Inputs.ActiveInput.Update(msg)
-				if cmd != nil {
+			if isFuzzyNavKey {
+				if cmd := HandleSearch(m, msg); cmd != nil {
 					cmds = append(cmds, cmd)
 				}
+				return tea.Batch(cmds...)
+			}
 
-				if m.Inputs.Mode == context.InputSearch {
-					if m.Navigation.FilterTimer != nil {
-						m.Navigation.FilterTimer.Stop()
+			if m.Inputs.Mode != context.InputFuzzySearch {
+				switch msg.String() {
+				case "tab":
+					if m.Inputs.Mode == context.InputGoto || m.Inputs.Mode == context.InputAuth || m.Inputs.Mode == context.InputCreate {
+						m.Inputs.AltMode = !m.Inputs.AltMode
+						return nil
 					}
-					m.Navigation.FilterGen++
-					gen := m.Navigation.FilterGen
-					m.Navigation.FilterTimer = time.NewTimer(50 * time.Millisecond)
-					cmds = append(cmds, func() tea.Msg {
-						<-m.Navigation.FilterTimer.C
-						return DebounceFilterMsg{Generation: gen}
-					})
 				}
+			}
+
+			var cmd tea.Cmd
+			m.Inputs.ActiveInput, cmd = m.Inputs.ActiveInput.Update(msg)
+			if cmd != nil {
+				cmds = append(cmds, cmd)
+			}
+
+			if m.Inputs.Mode == context.InputFuzzySearch {
+				// Trigger search on change
+				if msg.String() != "enter" && msg.String() != "esc" {
+					query := m.Inputs.ActiveInput.Value()
+					if query != m.Search.Query {
+						cmds = append(cmds, TriggerSearch(m, query))
+					}
+				}
+			}
+
+			if m.Inputs.Mode == context.InputSearch {
+				if m.Navigation.FilterTimer != nil {
+					m.Navigation.FilterTimer.Stop()
+				}
+				m.Navigation.FilterGen++
+				gen := m.Navigation.FilterGen
+				m.Navigation.FilterTimer = time.NewTimer(50 * time.Millisecond)
+				cmds = append(cmds, func() tea.Msg {
+					<-m.Navigation.FilterTimer.C
+					return DebounceFilterMsg{Generation: gen}
+				})
 			}
 
 			// Handle Enter/Esc for inputs
@@ -196,10 +197,7 @@ func HandleUpdate(m *context.Model, msg tea.Msg) tea.Cmd {
 				}
 				return tea.Batch(cmds...)
 			}
-
-			if !isFuzzyNavKey {
-				return tea.Batch(cmds...)
-			}
+			return tea.Batch(cmds...)
 		}
 
 		// Handle global keys (Quit, etc)
@@ -315,6 +313,9 @@ func finalizeInput(m *context.Model) tea.Cmd {
 	case context.InputRename:
 		m.StopInput(true)
 		return PerformRename(m, val)
+	case context.InputCreate:
+		m.StopInput(true)
+		return PerformCreate(m, val)
 	case context.InputZip:
 		m.StopInput(true)
 		return PerformZip(m, val)

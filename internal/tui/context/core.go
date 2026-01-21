@@ -274,6 +274,7 @@ const (
 	InputFuzzySearch
 	InputZip
 	InputUnzip
+	InputCreate
 )
 
 // InputState holds the unified text input model.

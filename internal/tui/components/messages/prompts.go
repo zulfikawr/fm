@@ -49,11 +49,17 @@ func RenderInputPrompt(props Props) string {
 		input.Prompt = baseStyle.Render("Zip name: ")
 	case ModeUnzip:
 		input.Prompt = baseStyle.Render("Unzip to: ")
+	case ModeCreate:
+		label := "File"
+		if props.AltMode {
+			label = "Folder"
+		}
+		input.Prompt = baseStyle.Render("Create ") + dimStyle.Render("("+label+")") + baseStyle.Render(": ")
 	}
 
-	// Calculate right part (Tab hint) if in Goto, Auth, or FuzzySearch mode
+	// Calculate right part (Tab hint) if in Goto, Auth, FuzzySearch, or Create mode
 	rightPart := ""
-	if props.Mode == ModeGoto || props.Mode == ModeAuth || props.Mode == ModeFuzzySearch {
+	if props.Mode == ModeGoto || props.Mode == ModeAuth || props.Mode == ModeFuzzySearch || props.Mode == ModeCreate {
 		dimStyle := props.Style.DimCol.Inherit(props.Style.Footer).UnsetPadding().UnsetWidth()
 		keyStyle := props.Style.KeyCol.Inherit(props.Style.Footer).UnsetPadding().UnsetWidth()
 
@@ -68,6 +74,12 @@ func RenderInputPrompt(props Props) string {
 			target := "Key Path"
 			if props.AltMode {
 				target = "Password"
+			}
+			rightPart = dimStyle.Render("[") + keyStyle.Render("Tab") + dimStyle.Render("] ") + dimStyle.Render(target) + baseStyle.Render(" ")
+		case ModeCreate:
+			target := "Folder"
+			if props.AltMode {
+				target = "File"
 			}
 			rightPart = dimStyle.Render("[") + keyStyle.Render("Tab") + dimStyle.Render("] ") + dimStyle.Render(target) + baseStyle.Render(" ")
 		case ModeFuzzySearch:

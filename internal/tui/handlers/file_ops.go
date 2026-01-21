@@ -122,6 +122,7 @@ func resolveConflict(m *tui_context.Model, choice string, applyToAll bool) tea.C
 	logID := m.Operations.Conflict.LogID
 	opType := m.Operations.Conflict.OpType
 	dst := m.Operations.Conflict.Destination
+
 	pending := m.Operations.Conflict.PendingItems
 	isMove := m.Operations.Conflict.IsMove
 
@@ -205,7 +206,7 @@ func getTargets(m *tui_context.Model) []string {
 	} else if len(m.Navigation.FilteredItems) > 0 {
 		cursor := m.Navigation.Cursor
 		if cursor < len(m.Navigation.FilteredItems) {
-			sel := m.Navigation.FilteredItems[cursor]
+			sel := m.Navigation.FilteredItems[m.Navigation.Cursor]
 			if !sel.IsUp {
 				targets = append(targets, sel.Path)
 			}
@@ -688,4 +689,43 @@ func PerformUnzip(m *tui_context.Model, destName string) tea.Cmd {
 			return OperationFinishedMsg{Paths: []string{}, LogID: logID}
 		},
 	)
+}
+
+func startCreate(m *tui_context.Model) tea.Cmd {
+	m.StartInput(tui_context.InputCreate)
+	m.Inputs.AltMode = false // false = File, true = Folder
+	m.Inputs.ActiveInput.SetValue("")
+	return m.Inputs.ActiveInput.FocusCmd()
+}
+
+// PerformCreate executes a file or folder creation
+func PerformCreate(m *tui_context.Model, name string) tea.Cmd {
+	if name == "" {
+		return nil
+	}
+
+	// Validate filename
+	if err := ops.ValidateFileName(name); err != nil {
+		return SetErrMsg(m, "Invalid name: "+err.Error())
+	}
+
+	isFolder := m.Inputs.AltMode
+	path := m.FS.Join(m.Navigation.Path, name)
+
+	ctx, cancel := context.WithTimeout(m.Context, constants.DirectoryLoadTimeout)
+	defer cancel()
+
+	if isFolder {
+		if err := m.FS.MkdirAll(ctx, path, 0755); err != nil {
+			return LogError(m, err, "Create Folder")
+		}
+	} else {
+		wc, err := m.FS.Create(ctx, path)
+		if err != nil {
+			return LogError(m, err, "Create File")
+		}
+		wc.Close()
+	}
+
+	return Reload(m, false)
 }

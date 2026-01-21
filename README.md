@@ -38,6 +38,7 @@ A fast, modular, and feature-rich TUI file manager written in Go.
 | `Alt+T` | New tab (max 9) |
 | `Alt+1`-`9` | Switch between tabs |
 | `Alt+W` | Close current tab |
+| `Alt+N` | Create new file or folder (toggle with Tab) |
 | `Alt+/` | Fuzzy content search (Find in Files) |
 | `Alt+C` | View clipboard contents |
 | `Alt+L` | View operation logs |

@@ -41,6 +41,7 @@ func TestSearch_Keys(t *testing.T) {
 	fs := testutil.NewMockFileSystem()
 	m := tuictx.NewModel(fs, "/test")
 	m.Inputs.Mode = tuictx.InputFuzzySearch
+	m.UI.InputActive = true
 	m.Search.Results = []core.FileResult{
 		{
 			Path: "/test/file1.txt",

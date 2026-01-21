@@ -24,6 +24,7 @@ func PrintHelp(styles theme.Stylesheet, themeName string) {
 		{"Space", "Toggle selection"},
 		{"alt+a", "Select all"},
 		{"alt+t", "Create new tab"},
+		{"alt+n", "Create new file or folder"},
 		{"alt+1-9", "Switch to tab 1-9"},
 		{"alt+w", "Close current tab"},
 		{"alt+l", "Toggle operation logs"},

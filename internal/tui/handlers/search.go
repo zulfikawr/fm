@@ -27,7 +27,8 @@ func HandleSearch(m *tui_context.Model, msg tea.Msg) tea.Cmd {
 }
 
 func handleSearchKeys(m *tui_context.Model, msg tea.KeyMsg) tea.Cmd {
-	switch msg.String() {
+	key := msg.String()
+	switch key {
 	case "up", "alt+k":
 		moveSearchCursor(m, -1)
 		m.Search.Offset = scrollSearch(m)

@@ -19,6 +19,7 @@ const (
 	ModeFuzzySearch
 	ModeZip
 	ModeUnzip
+	ModeCreate
 	ModeConfirming
 	ModeHostConfirm
 	ModeAlert
@@ -52,7 +53,7 @@ type Props struct {
 // Render renders the appropriate message or prompt based on mode
 func Render(props Props) string {
 	switch props.Mode {
-	case ModeSearching, ModeRenaming, ModeGoto, ModeAuth, ModeFuzzySearch, ModeZip, ModeUnzip:
+	case ModeSearching, ModeRenaming, ModeGoto, ModeAuth, ModeFuzzySearch, ModeZip, ModeUnzip, ModeCreate:
 		return RenderInputPrompt(props)
 	case ModeConfirming:
 		return RenderConfirmationPrompt(props)

@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [v1.0.1] - 2026-01-21
 
 ### Added
+- **File/Folder Creation:**
+  - New interactive creation flow triggered by `alt+n`.
+  - Supports toggling between File and Folder creation using `Tab`.
+  - Unified footer prompt with validation and security checks.
 - **CLI Fuzzy Search:**
   - New `search` subcommand and `-s`/`--search` flags for finding files and content directly from the terminal.
   - Theme-aware CLI output with prioritized filename highlighting.
