@@ -18,13 +18,13 @@ func LoadSkeleton(ctx context.Context, fs core.FileSystem, path string, showHidd
 	}
 	var items []core.Item
 
-	if path != "/" && path != fs.Separator() {
+	if !core.IsRoot(fs, path) {
 		items = append(items, core.Item{
 			Name:      "↑ ..",
 			IsDir:     true,
 			IsUp:      true,
 			SearchKey: "..",
-			Path:      fs.Dir(path),
+			Path:      core.GetParent(fs, path),
 		})
 	}
 

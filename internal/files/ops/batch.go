@@ -11,7 +11,7 @@ import (
 // DeleteMultiple removes multiple files or directories recursively.
 func DeleteMultiple(ctx context.Context, fs core.FileSystem, paths []string, useTrash bool, progChan chan<- core.Progress) error {
 	if len(paths) > 0 {
-		if err := ValidateWritable(ctx, fs, fs.Dir(paths[0])); err != nil {
+		if err := ValidateWritable(ctx, fs, core.GetParent(fs, paths[0])); err != nil {
 			return err
 		}
 	}

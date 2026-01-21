@@ -5,6 +5,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/zulfikawr/fm/internal/files/core"
 	"github.com/zulfikawr/fm/internal/files/local"
 	"github.com/zulfikawr/fm/internal/logger"
 	"github.com/zulfikawr/fm/internal/tui/components/file"
@@ -67,13 +68,13 @@ func NavigateToPathInternal(m *tui_context.Model, path string) tea.Cmd {
 	m.Cache.CursorMemory.Put(m.Navigation.Path, m.Navigation.Cursor)
 	m.Cache.OffsetMemory.Put(m.Navigation.Path, m.Navigation.Offset)
 
-	oldParent := m.FS.Dir(m.Navigation.Path)
+	oldParent := core.GetParent(m.FS, m.Navigation.Path)
 	m.Cache.ItemCache.Unprotect(oldParent)
 
 	m.Navigation.Path = path
 	m.Navigation.PathGen++
 
-	newParent := m.FS.Dir(path)
+	newParent := core.GetParent(m.FS, path)
 	m.Cache.ItemCache.Protect(newParent)
 
 	m.ClearSelection()
@@ -114,13 +115,13 @@ func SwitchToLocal(m *tui_context.Model, path string) tea.Cmd {
 		}
 	}
 
-	oldParent := m.FS.Dir(m.Navigation.Path)
+	oldParent := core.GetParent(m.FS, m.Navigation.Path)
 	m.Cache.ItemCache.Unprotect(oldParent)
 
 	m.Navigation.Path = targetPath
 	m.Navigation.PathGen++
 
-	newParent := m.FS.Dir(targetPath)
+	newParent := core.GetParent(m.FS, targetPath)
 	m.Cache.ItemCache.Protect(newParent)
 
 	m.Navigation.Offset = 0

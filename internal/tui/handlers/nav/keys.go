@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/zulfikawr/fm/internal/files/core"
 	"github.com/zulfikawr/fm/internal/files/ops"
 	"github.com/zulfikawr/fm/internal/files/sorting"
 	tui_context "github.com/zulfikawr/fm/internal/tui/context"
@@ -161,13 +162,13 @@ func NavigateToSelected(m *tui_context.Model) tea.Cmd {
 }
 
 func NavigateToParent(m *tui_context.Model) tea.Cmd {
-	if m.Navigation.ParentFS != nil && (m.Navigation.Path == "/" || m.Navigation.Path == "") {
+	if m.Navigation.ParentFS != nil && core.IsRoot(m.FS, m.Navigation.Path) {
 		return ExitArchive(m)
 	}
 
-	parent := m.FS.Dir(m.Navigation.Path)
-	if parent == m.Navigation.Path {
+	if core.IsRoot(m.FS, m.Navigation.Path) {
 		return nil
 	}
-	return NavigateToPath(m, parent)
+
+	return NavigateToPath(m, core.GetParent(m.FS, m.Navigation.Path))
 }

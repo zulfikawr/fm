@@ -56,13 +56,13 @@ func Reload(m *tui_context.Model, silent bool) tea.Cmd {
 		m.UI.Loading = true
 	}
 
-	if len(m.Navigation.Items) == 0 && path != "/" && path != fs.Separator() {
+	if len(m.Navigation.Items) == 0 && !core.IsRoot(fs, path) {
 		m.Navigation.Items = []core.Item{{
 			Name:      "↑ ..",
 			IsDir:     true,
 			IsUp:      true,
 			SearchKey: "..",
-			Path:      fs.Dir(path),
+			Path:      core.GetParent(fs, path),
 		}}
 		ApplyFilter(m)
 	}
@@ -250,9 +250,8 @@ func FinalizeDirectoryLoad(m *tui_context.Model, msg messages.LoadedItemsMsg) te
 		m.Navigation.FilteredItems = []core.Item{}
 
 		if m.Navigation.Path == msg.Path {
-			parent := m.FS.Dir(m.Navigation.Path)
-			if parent != m.Navigation.Path {
-				m.Navigation.Path = parent
+			if !core.IsRoot(m.FS, m.Navigation.Path) {
+				m.Navigation.Path = core.GetParent(m.FS, m.Navigation.Path)
 				m.Navigation.PathGen++
 				return Reload(m, false)
 			}
