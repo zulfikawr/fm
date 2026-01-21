@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/zulfikawr/fm/internal/config"
 	"github.com/zulfikawr/fm/internal/files/core"
 	"github.com/zulfikawr/fm/internal/testutil"
 	tuictx "github.com/zulfikawr/fm/internal/tui/context"
@@ -14,6 +15,11 @@ import (
 )
 
 func TestNavigation_Basic(t *testing.T) {
+	tmp := testutil.NewTempFolder(t)
+	defer tmp.Cleanup()
+	config.SetConfigPath(tmp.Join("config.json"))
+	defer config.SetConfigPath("")
+
 	fs := testutil.NewMockFileSystem()
 	fs.ReadDirFunc = func(ctx context.Context, path string) ([]os.FileInfo, error) {
 		return []os.FileInfo{

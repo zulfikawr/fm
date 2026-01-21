@@ -9,6 +9,21 @@ import (
 	"github.com/zulfikawr/fm/internal/testutil"
 )
 
+func TestMain(m *testing.M) {
+	// Isolate config for all tests in this package by default
+	tempDir, err := os.MkdirTemp("", "fm-config-test-*")
+	if err != nil {
+		panic(err)
+	}
+
+	SetConfigPath(filepath.Join(tempDir, "config.json"))
+
+	code := m.Run()
+
+	_ = os.RemoveAll(tempDir)
+	os.Exit(code)
+}
+
 func TestDefaultConfig(t *testing.T) {
 	cfg := DefaultConfig()
 	if cfg.ConfigVersion != CurrentConfigVersion {

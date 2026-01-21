@@ -5,11 +5,17 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 
+	"github.com/zulfikawr/fm/internal/config"
 	"github.com/zulfikawr/fm/internal/testutil"
 	tuictx "github.com/zulfikawr/fm/internal/tui/context"
 )
 
 func TestSettings_ToggleLogic(t *testing.T) {
+	tmp := testutil.NewTempFolder(t)
+	defer tmp.Cleanup()
+	config.SetConfigPath(tmp.Join("config.json"))
+	defer config.SetConfigPath("")
+
 	fs := testutil.NewMockFileSystem()
 	m := tuictx.NewModel(fs, "/test")
 	m.UI.SettingsOpen = true
@@ -23,6 +29,11 @@ func TestSettings_ToggleLogic(t *testing.T) {
 }
 
 func TestSettings_Keys(t *testing.T) {
+	tmp := testutil.NewTempFolder(t)
+	defer tmp.Cleanup()
+	config.SetConfigPath(tmp.Join("config.json"))
+	defer config.SetConfigPath("")
+
 	fs := testutil.NewMockFileSystem()
 	m := tuictx.NewModel(fs, "/test")
 	m.Config.ShowHidden = false

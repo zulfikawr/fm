@@ -3,10 +3,29 @@ package tui
 import (
 	"context"
 	"os"
+	"path/filepath"
+	"testing"
 
+	"github.com/zulfikawr/fm/internal/config"
 	"github.com/zulfikawr/fm/internal/testutil"
 	tuictx "github.com/zulfikawr/fm/internal/tui/context"
 )
+
+func TestMain(m *testing.M) {
+	// Isolate config for all tests in this package
+	tempDir, err := os.MkdirTemp("", "fm-tui-test-*")
+	if err != nil {
+		panic(err)
+	}
+
+	config.SetConfigPath(filepath.Join(tempDir, "config.json"))
+
+	code := m.Run()
+
+	// Clean up
+	_ = os.RemoveAll(tempDir)
+	os.Exit(code)
+}
 
 // SetupTestApp creates a new App with a MockFileSystem and MockGitService for testing
 func SetupTestApp(startPath string) (*App, *testutil.MockFileSystem) {
