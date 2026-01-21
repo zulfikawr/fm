@@ -156,3 +156,60 @@ func TestRouter_FinalizeInput(t *testing.T) {
 
 	_ = tm.Quit()
 }
+
+func TestRouter_BatchOperations(t *testing.T) {
+	fs := testutil.NewMockFileSystem()
+	m := tuictx.NewModel(fs, "/test")
+
+	t.Run("PerformPasteMsg", func(t *testing.T) {
+		msg := messages.PerformPasteMsg{OpName: "Copy", Paths: []string{"/src"}, DestDir: "/dest"}
+		cmd := handlers.HandleUpdate(m, msg)
+		if cmd == nil {
+			t.Error("expected non-nil command for Paste")
+		}
+	})
+
+	t.Run("PerformZipMsg", func(t *testing.T) {
+		msg := messages.PerformZipMsg{Targets: []string{"/src"}, Dst: "/out.zip"}
+		cmd := handlers.HandleUpdate(m, msg)
+		if cmd == nil {
+			t.Error("expected non-nil command for Zip")
+		}
+	})
+
+	t.Run("PerformRenameMsg", func(t *testing.T) {
+		msg := messages.PerformRenameMsg{Selected: core.Item{Name: "old"}, OldPath: "/old", NewPath: "/new", NewName: "new"}
+		handlers.HandleUpdate(m, msg)
+	})
+
+	t.Run("PerformUnzipMsg", func(t *testing.T) {
+		msg := messages.PerformUnzipMsg{ZipPath: "/test.zip", Dst: "/dest"}
+		cmd := handlers.HandleUpdate(m, msg)
+		if cmd == nil {
+			t.Error("expected non-nil command for Unzip")
+		}
+	})
+}
+
+func TestRouter_Events(t *testing.T) {
+	fs := testutil.NewMockFileSystem()
+	m := tuictx.NewModel(fs, "/test")
+
+	t.Run("RemotePollMsg", func(t *testing.T) {
+		handlers.HandleUpdate(m, messages.RemotePollMsg{})
+	})
+
+	t.Run("Watcher messages", func(t *testing.T) {
+		handlers.HandleUpdate(m, messages.WatcherErrorMsg{Err: errors.New("err")})
+		handlers.HandleUpdate(m, messages.WatcherClosedMsg{})
+	})
+
+	t.Run("OperationFinishedEventMsg", func(t *testing.T) {
+		m.Logs.AddEntry(tuictx.LogEntry{ID: "log1", Message: "Pasting file"})
+		msg := messages.OperationFinishedEventMsg{LogID: "log1"}
+		handlers.HandleUpdate(m, msg)
+		if len(m.Logs.Entries) > 0 && m.Logs.Entries[0].Status != tuictx.StatusSuccess {
+			t.Errorf("expected StatusSuccess, got %v", m.Logs.Entries[0].Status)
+		}
+	})
+}

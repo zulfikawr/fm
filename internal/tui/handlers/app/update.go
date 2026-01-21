@@ -20,8 +20,8 @@ func HandleUpdateMessages(m *tui_context.Model, msg tea.Msg) tea.Cmd {
 		return nil
 
 	case messages.UpdateProgressMsg:
-		m.Operations.Progress.Percent = float64(msg)
 		m.Operations.Progress.Show("Updating...")
+		m.Operations.Progress.Percent = float64(msg)
 		return nil
 
 	case messages.UpdateFinishedMsg:

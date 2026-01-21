@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/zulfikawr/fm/internal/config"
+	"github.com/zulfikawr/fm/internal/constants"
 	"github.com/zulfikawr/fm/internal/testutil"
 	tuictx "github.com/zulfikawr/fm/internal/tui/context"
 	"github.com/zulfikawr/fm/internal/tui/handlers/app"
@@ -26,5 +27,63 @@ func TestSettings_ToggleLogic(t *testing.T) {
 
 	if !m.Config.ShowHidden {
 		t.Error("Toggle failed in direct call")
+	}
+
+	t.Run("Navigation Keys", func(t *testing.T) {
+		m.Settings.Cursor = 1
+		app.HandleSettings(m, tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'k'}})
+		if m.Settings.Cursor != 0 {
+			t.Error("expected cursor up")
+		}
+
+		app.HandleSettings(m, tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'j'}})
+		if m.Settings.Cursor != 1 {
+			t.Error("expected cursor down")
+		}
+	})
+
+	t.Run("Toggle Prev", func(t *testing.T) {
+		m.Settings.Cursor = 4 // Editor
+		initial := m.Config.EditorIndex
+		app.HandleSettings(m, tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'h'}})
+		if m.Config.EditorIndex == initial && len(constants.Editors) > 1 {
+			t.Error("expected editor index change")
+		}
+	})
+
+	t.Run("Toggle All Cases", func(t *testing.T) {
+		for i := 0; i <= 12; i++ {
+			m.Settings.Cursor = i
+			app.HandleSettings(m, tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{' '}})
+		}
+	})
+
+	t.Run("Toggle Prev All Cases", func(t *testing.T) {
+		for _, i := range []int{4, 9, 11, 12} {
+			m.Settings.Cursor = i
+			app.HandleSettings(m, tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'h'}})
+		}
+	})
+
+	t.Run("Reset Action", func(t *testing.T) {
+		app.HandleSettings(m, tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'r'}})
+		if m.Operations.ActionType != constants.ActionResetSettings {
+			t.Error("expected reset-settings action type")
+		}
+		if !m.UI.Confirming {
+			t.Error("expected confirming state")
+		}
+	})
+}
+
+func TestConfirmSettingsReset(t *testing.T) {
+	fs := testutil.NewMockFileSystem()
+	m := tuictx.NewModel(fs, "/test")
+	m.Config.ShowHidden = false
+
+	app.ConfirmSettingsReset(m)
+	// Default is true in DefaultConfig()
+	if !m.Config.ShowHidden {
+		t.Error("expected ShowHidden to be reset to default (true)")
 	}
 }
