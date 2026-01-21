@@ -1,12 +1,9 @@
 package context
 
 import (
-	"time"
-
 	"github.com/zulfikawr/fm/internal/files/core"
 	"github.com/zulfikawr/fm/internal/files/sorting"
-	"github.com/zulfikawr/fm/internal/tui/components/ui"
-	"github.com/zulfikawr/fm/internal/tui/theme"
+	"time"
 )
 
 // --- Navigation State ---
@@ -96,120 +93,6 @@ func (n *NavigationState) IsSelected(path string) bool {
 	return n.SelectedPaths[path]
 }
 
-// --- UI State ---
-
-// UIState holds UI mode flags
-type UIState struct {
-	Confirming      bool
-	SettingsOpen    bool
-	LogOpen         bool
-	ClipboardOpen   bool
-	Loading         bool
-	SelectMode      bool
-	InputActive     bool              // Consolidated flag for any text input (search, rename, etc)
-	RemoteAuth      bool              // Specific flag for remote auth (uses input)
-	HostConfirm     bool              // Waiting for known_hosts confirmation (uses y/n keys)
-	UpdateAvailable bool              // New version is available
-	LatestVersion   string            // Latest version string
-	PromptCache     map[string]string // Pre-calculated styled prompts
-}
-
-// Reset resets all UI flags to false
-func (ui *UIState) Reset() {
-	ui.Confirming = false
-	ui.SettingsOpen = false
-	ui.LogOpen = false
-	ui.ClipboardOpen = false
-	ui.Loading = false
-	ui.SelectMode = false
-	ui.InputActive = false
-	ui.RemoteAuth = false
-	ui.HostConfirm = false
-	ui.PromptCache = make(map[string]string)
-}
-
-// StartInput enters an input mode
-func (ui *UIState) StartInput() {
-	ui.InputActive = true
-	ui.LogOpen = false
-	ui.ClipboardOpen = false
-	ui.Confirming = false
-}
-
-// StopInput exits input mode
-func (ui *UIState) StopInput() {
-	ui.InputActive = false
-}
-
-// StartConfirming enters confirmation mode
-func (ui *UIState) StartConfirming() {
-	ui.Confirming = true
-	ui.InputActive = false
-	ui.LogOpen = false
-	ui.ClipboardOpen = false
-}
-
-// StopConfirming exits confirmation mode
-func (ui *UIState) StopConfirming() {
-	ui.Confirming = false
-}
-
-// ToggleSettings toggles the settings view
-func (ui *UIState) ToggleSettings() {
-	ui.SettingsOpen = !ui.SettingsOpen
-	if ui.SettingsOpen {
-		ui.InputActive = false
-		ui.Confirming = false
-		ui.LogOpen = false
-		ui.ClipboardOpen = false
-	}
-}
-
-// ToggleLogs toggles the log view
-func (ui *UIState) ToggleLogs() {
-	ui.LogOpen = !ui.LogOpen
-	if ui.LogOpen {
-		ui.InputActive = false
-		ui.Confirming = false
-		ui.SettingsOpen = false
-		ui.ClipboardOpen = false
-	}
-}
-
-// ToggleClipboard toggles the clipboard view
-func (ui *UIState) ToggleClipboard() {
-	ui.ClipboardOpen = !ui.ClipboardOpen
-	if ui.ClipboardOpen {
-		ui.InputActive = false
-		ui.Confirming = false
-		ui.SettingsOpen = false
-		ui.LogOpen = false
-	}
-}
-
-// --- Display State ---
-
-// Layout holds the calculated dimensions for UI areas
-type Layout struct {
-	Width        int
-	Height       int
-	HeaderHeight int
-	FooterHeight int
-	BodyHeight   int
-}
-
-// DisplayState holds display and UI configuration state
-type DisplayState struct {
-	Width          int              // Terminal width
-	Height         int              // Terminal height
-	ViewportHeight int              // Available height for file list
-	SortMode       sorting.SortMode // Current sort mode
-	LoadingSpinner ui.Spinner       // Theme-aware loading spinner
-	ReadOnly       bool             // True if current directory is on a read-only filesystem
-	Styles         theme.Stylesheet // Cached stylesheet
-	Layout         Layout           // Cached layout dimensions
-}
-
 // --- Tab Management ---
 
 // Tab represents a navigation context
@@ -258,29 +141,4 @@ func (t *Tab) IsSelected(path string) bool {
 		return false
 	}
 	return t.SelectedPaths[path]
-}
-
-// --- Input State ---
-
-// InputMode represents what the current active input is for.
-type InputMode int
-
-const (
-	InputNone InputMode = iota
-	InputSearch
-	InputRename
-	InputGoto
-	InputAuth
-	InputFuzzySearch
-	InputZip
-	InputUnzip
-	InputCreate
-	InputConflictRename
-)
-
-// InputState holds the unified text input model.
-type InputState struct {
-	ActiveInput ui.Input  // The single shared text input
-	Mode        InputMode // What we are currently inputting
-	AltMode     bool      // Toggled alternative mode (e.g., Remote for Goto, KeyPath for Auth)
 }

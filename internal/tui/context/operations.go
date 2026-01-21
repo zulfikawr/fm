@@ -2,11 +2,10 @@ package context
 
 import (
 	"context"
-	"time"
-
 	"github.com/zulfikawr/fm/internal/constants"
 	"github.com/zulfikawr/fm/internal/files/conflict"
 	"github.com/zulfikawr/fm/internal/files/core"
+	"time"
 )
 
 // --- Operations State ---
@@ -91,117 +90,6 @@ func (ps *ProgressState) Hide() {
 // Update updates the progress percentage
 func (ps *ProgressState) Update(percent float64) {
 	ps.Percent = percent
-}
-
-// --- Log State ---
-
-// LogLevel defines the severity of a log entry
-type LogLevel int
-
-const (
-	LogInfo LogLevel = iota
-	LogSuccess
-	LogWarn
-	LogError
-)
-
-// LogStatus defines the current state of an operation
-type LogStatus int
-
-const (
-	StatusPending LogStatus = iota
-	StatusRunning
-	StatusSuccess
-	StatusError
-)
-
-// LogEntry represents a single entry in the operation log
-type LogEntry struct {
-	ID        string
-	Timestamp time.Time
-	Type      string    // "Copy", "Move", "Delete", "Search", "System"
-	Level     LogLevel  // Info, Success, Warn, Error
-	Status    LogStatus // Pending, Running, Success, Error
-	Message   string
-	Details   string // Full path, error stack, or extra info
-}
-
-// LogState holds the history of operations
-type LogState struct {
-	Entries []LogEntry
-	Cursor  int // Current scroll position in the log view
-	Offset  int // Viewport offset
-}
-
-// AddEntry adds a new entry to the log state
-func (ls *LogState) AddEntry(entry LogEntry) {
-	if entry.Timestamp.IsZero() {
-		entry.Timestamp = time.Now()
-	}
-	// Limit history to last 200 entries
-	if len(ls.Entries) >= 200 {
-		ls.Entries = ls.Entries[1:]
-	}
-	ls.Entries = append(ls.Entries, entry)
-}
-
-// UpdateStatus updates the status and level of an existing entry by ID
-func (ls *LogState) UpdateStatus(id string, status LogStatus, level LogLevel, message string, details string) {
-	for i := range ls.Entries {
-		if ls.Entries[i].ID == id {
-			ls.Entries[i].Status = status
-			ls.Entries[i].Level = level
-			if message != "" {
-				ls.Entries[i].Message = message
-			}
-			if details != "" {
-				ls.Entries[i].Details = details
-			}
-			break
-		}
-	}
-}
-
-// --- Message State ---
-
-// Message represents a single status message
-type Message struct {
-	Text  string
-	Time  time.Time
-	IsErr bool
-}
-
-// MessageState holds status message state
-type MessageState struct {
-	Text  string    // Current status message (for backward compatibility)
-	Time  time.Time // Time when message was set
-	Error error     // Last error (if any)
-	Stack []Message // Queue of messages to show
-}
-
-// Push adds a new message to the stack
-func (ms *MessageState) Push(text string, isErr bool) {
-	msg := Message{
-		Text:  text,
-		Time:  time.Now(),
-		IsErr: isErr,
-	}
-	ms.Stack = append(ms.Stack, msg)
-	ms.Text = text // Maintain compatibility
-	ms.Time = msg.Time
-}
-
-// Pop removes the oldest message
-func (ms *MessageState) Pop() {
-	if len(ms.Stack) > 0 {
-		ms.Stack = ms.Stack[1:]
-		if len(ms.Stack) > 0 {
-			ms.Text = ms.Stack[0].Text
-			ms.Time = ms.Stack[0].Time
-		} else {
-			ms.Text = ""
-		}
-	}
 }
 
 // --- Conflict State ---
