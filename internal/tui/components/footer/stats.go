@@ -8,10 +8,22 @@ import (
 func renderStatsFooter(props Props) string {
 	baseFooterStyle := props.Styles.Footer.UnsetPadding().UnsetWidth()
 
+	// Adjust for "↑ .."
+	total := props.TotalItems
+	current := props.Cursor
+	if len(props.FilteredItems) > 0 && props.FilteredItems[0].IsUp {
+		total--
+		if current == 0 {
+			current = -1
+		} else {
+			current--
+		}
+	}
+
 	var parts []string
 	pagination := renderPaginationInfo(PaginationInfo{
-		Current: props.Cursor,
-		Total:   props.TotalItems,
+		Current: current,
+		Total:   total,
 		Width:   props.Width,
 	}, props.Styles)
 	if pagination != "" {

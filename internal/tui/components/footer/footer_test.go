@@ -4,6 +4,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/zulfikawr/fm/internal/files/core"
 	"github.com/zulfikawr/fm/internal/testutil"
 	"github.com/zulfikawr/fm/internal/tui/components/ui"
 	"github.com/zulfikawr/fm/internal/tui/theme"
@@ -107,4 +108,36 @@ func TestFooter_Responsive(t *testing.T) {
 			t.Error("expected shortcuts to be hidden")
 		}
 	})
+}
+
+func TestFooter_UpDirStats(t *testing.T) {
+	styles := theme.GetStylesheet(0)
+
+	// Case 1: Cursor on "↑ .."
+	props := Props{
+		Mode:       ModeNormal,
+		Width:      80,
+		Cursor:     0,
+		TotalItems: 3, // ↑ .., file1, file2
+		FilteredItems: []core.Item{
+			{Name: "↑ ..", IsUp: true},
+			{Name: "file1"},
+			{Name: "file2"},
+		},
+		Styles: styles,
+	}
+
+	v := Render(props)
+	stripped := testutil.StripANSI(v)
+	if !strings.Contains(stripped, "-/2") {
+		t.Errorf("expected stats -/2 for up directory, got %q", stripped)
+	}
+
+	// Case 2: Cursor on "file1"
+	props.Cursor = 1
+	v = Render(props)
+	stripped = testutil.StripANSI(v)
+	if !strings.Contains(stripped, "1/2") {
+		t.Errorf("expected stats 1/2 for first file, got %q", stripped)
+	}
 }
