@@ -67,3 +67,18 @@ func TestUpdateFormattingDeleted(t *testing.T) {
 		testutil.AssertEqual(t, "14/01/2026 12:00", item.FormattedDate, "Formatted date should match")
 	})
 }
+
+func TestItemHelpers(t *testing.T) {
+	t.Run("IsArchive", func(t *testing.T) {
+		testutil.AssertEqual(t, true, (&Item{Name: "test.zip"}).IsArchive(), "zip")
+		testutil.AssertEqual(t, true, (&Item{Name: "test.tar.gz"}).IsArchive(), "tar.gz")
+		testutil.AssertEqual(t, false, (&Item{Name: "test.txt"}).IsArchive(), "txt")
+		testutil.AssertEqual(t, false, (&Item{Name: "dir.zip", IsDir: true}).IsArchive(), "dir with zip ext")
+	})
+
+	t.Run("IsImage", func(t *testing.T) {
+		testutil.AssertEqual(t, true, (&Item{Name: "test.jpg"}).IsImage(), "jpg")
+		testutil.AssertEqual(t, true, (&Item{Name: "test.PNG"}).IsImage(), "PNG")
+		testutil.AssertEqual(t, false, (&Item{Name: "test.zip"}).IsImage(), "zip is not image")
+	})
+}

@@ -167,3 +167,93 @@ func TestTarFS(t *testing.T) {
 		}
 	})
 }
+
+func TestArchiveHelpers(t *testing.T) {
+	fs := &ZipFS{baseArchiveFS: baseArchiveFS{archivePath: "test.zip"}}
+
+	t.Run("Path Helpers", func(t *testing.T) {
+		testutil.AssertEqual(t, "/", fs.Separator(), "Separator")
+		testutil.AssertEqual(t, "a/b", fs.Join("a", "b"), "Join")
+		abs, _ := fs.Abs("rel")
+		testutil.AssertEqual(t, "/rel", abs, "Abs")
+		testutil.AssertEqual(t, "file.txt", fs.Base("/a/file.txt"), "Base")
+		testutil.AssertEqual(t, "/a", fs.Dir("/a/file.txt"), "Dir")
+		testutil.AssertEqual(t, ".txt", fs.Ext("file.txt"), "Ext")
+		testutil.AssertEqual(t, "/a/b", fs.Clean("//a/b/"), "Clean")
+		home, _ := fs.GetHomeDir()
+		testutil.AssertEqual(t, "/", home, "HomeDir")
+		testutil.AssertEqual(t, false, fs.IsLocal(), "IsLocal")
+		testutil.AssertEqual(t, "test.zip", fs.Address(), "Address")
+		testutil.AssertEqual(t, "", fs.User(), "User")
+		ro, _ := fs.IsReadOnly(context.Background(), "/")
+		testutil.AssertEqual(t, true, ro, "IsReadOnly")
+	})
+
+	t.Run("GetDefaultExtractionPath", func(t *testing.T) {
+		testutil.AssertEqual(t, "/path/archive", GetDefaultExtractionPath(fs, "/path/archive.zip"), "zip")
+		testutil.AssertEqual(t, "/path/archive", GetDefaultExtractionPath(fs, "/path/archive.tar.gz"), "tar.gz")
+	})
+
+	t.Run("Unsupported Operations", func(t *testing.T) {
+		ctx := context.Background()
+		if fs.MkdirAll(ctx, "/dir", 0755) == nil {
+			t.Error("MkdirAll should fail")
+		}
+		if _, err := fs.Create(ctx, "/file"); err == nil {
+			t.Error("Create should fail")
+		}
+		if fs.RemoveAll(ctx, "/dir") == nil {
+			t.Error("RemoveAll should fail")
+		}
+		if fs.Rename(ctx, "/a", "/b") == nil {
+			t.Error("Rename should fail")
+		}
+		if fs.Chmod(ctx, "/a", 0644) == nil {
+			t.Error("Chmod should fail")
+		}
+		if fs.Preallocate(ctx, "/a", 100) == nil {
+			t.Error("Preallocate should fail")
+		}
+	})
+}
+
+func TestArchiveFS_Extra(t *testing.T) {
+	zipPath := createTestZip(t)
+	defer os.Remove(zipPath)
+	fs, _ := NewArchiveFS(zipPath)
+	defer fs.Close()
+	ctx := context.Background()
+
+	t.Run("Stat", func(t *testing.T) {
+		info, err := fs.Stat(ctx, "readme.txt")
+		testutil.AssertNoError(t, err, "Stat readme.txt")
+		testutil.AssertEqual(t, "readme.txt", info.Name(), "Name")
+		testutil.AssertEqual(t, false, info.IsDir(), "IsDir")
+
+		info, err = fs.Stat(ctx, "folder")
+		testutil.AssertNoError(t, err, "Stat folder")
+		testutil.AssertEqual(t, true, info.IsDir(), "IsDir folder")
+
+		if _, err = fs.Stat(ctx, "nonexistent"); err == nil {
+			t.Error("Stat nonexistent should fail")
+		}
+	})
+
+	t.Run("Walk", func(t *testing.T) {
+		count := 0
+		err := fs.Walk(ctx, "/", func(path string, info os.FileInfo, err error) error {
+			count++
+			return nil
+		})
+		testutil.AssertNoError(t, err, "Walk")
+		if count < 3 {
+			t.Errorf("Expected at least 3 items in walk, got %d", count)
+		}
+	})
+
+	t.Run("Unsupported Format", func(t *testing.T) {
+		if _, err := NewArchiveFS("test.txt"); err == nil {
+			t.Error("Unsupported format should fail")
+		}
+	})
+}

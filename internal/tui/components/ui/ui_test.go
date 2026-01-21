@@ -90,5 +90,49 @@ func TestRender_UI(t *testing.T) {
 		if Error(styles, "x") == "" {
 			t.Error("Error failed")
 		}
+		if Highlight(styles, "x") == "" {
+			t.Error("Highlight failed")
+		}
+	})
+
+	t.Run("Marker", func(t *testing.T) {
+		if Marker(false, true, false, styles) != "    " {
+			t.Error("Marker for isUp should be empty space")
+		}
+		if !strings.Contains(Marker(false, false, false, styles), "[ ]") {
+			t.Error("Marker for unselected should contain [ ]")
+		}
+		if !strings.Contains(Marker(true, false, false, styles), "[x]") {
+			t.Error("Marker for selected should contain [x]")
+		}
+		Marker(true, false, true, styles) // test cursor
+	})
+
+	t.Run("ItemRow", func(t *testing.T) {
+		v := ItemRow("content", 20, false, styles)
+		if !strings.Contains(v, "content") {
+			t.Error("ItemRow should contain content")
+		}
+		ItemRow("content", 20, true, styles) // test cursor
+	})
+
+	t.Run("Toggle", func(t *testing.T) {
+		v := Toggle(true, styles)
+		if !strings.Contains(testutil.StripANSI(v), "[ON]") {
+			t.Error("Toggle ON failed")
+		}
+		v = Toggle(false, styles)
+		if !strings.Contains(testutil.StripANSI(v), "[OFF]") {
+			t.Error("Toggle OFF failed")
+		}
+		ToggleLabeled("Label", true, 20, styles)
+	})
+
+	t.Run("Menu/Selectable Rows", func(t *testing.T) {
+		v := SelectableRow("content", 20, false, styles)
+		if !strings.Contains(v, "content") {
+			t.Error("SelectableRow failed")
+		}
+		MenuRow("Label", "Value", 20, false, styles)
 	})
 }
