@@ -55,6 +55,8 @@ func RenderInputPrompt(props Props) string {
 			label = "Folder"
 		}
 		input.Prompt = baseStyle.Render("Create ") + dimStyle.Render("("+label+")") + baseStyle.Render(": ")
+	case ModeConflictRename:
+		input.Prompt = baseStyle.Render("New name: ")
 	}
 
 	// Calculate right part (Tab hint) if in Goto, Auth, FuzzySearch, or Create mode

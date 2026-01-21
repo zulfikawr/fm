@@ -12,6 +12,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - New interactive creation flow triggered by `alt+n`.
   - Supports toggling between File and Folder creation using `Tab`.
   - Unified footer prompt with validation and security checks.
+  - **Interactive Conflict Resolution:** Added support for resolving collisions when creating new items (Overwrite, Skip, or Rename).
+- **Manual Conflict Renaming:**
+  - Added support for manual renaming during conflicts by pressing `r`.
+  - Preserved automatic bulk-renaming with `R` for batch operations.
 - **CLI Fuzzy Search:**
   - New `search` subcommand and `-s`/`--search` flags for finding files and content directly from the terminal.
   - Theme-aware CLI output with prioritized filename highlighting.
@@ -19,6 +23,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Improved Search Engine:**
   - Standardized case-insensitive substring matching for reliable word finding.
   - Simultaneous filename and content search results.
+
+### Fixed
+- **Stats Footer Accuracy:** Fixed the item counter to correctly exclude the "up directory" (`↑ ..`) entry from pagination and total counts (now shows `- / n`).
+- **Smart Batch Operations:** Improved conflict policy handling in multi-file operations to correctly reset the policy for subsequent items unless "Apply to All" is explicitly selected.
+- **Test Infrastructure Stability:** Implemented global configuration isolation for all test packages, preventing tests from inadvertently overwriting the user's real `config.json`.
 
 ## [v1.0.0] - 2026-01-20
 

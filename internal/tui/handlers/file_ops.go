@@ -80,7 +80,10 @@ func handleConfirmKeys(m *tui_context.Model, msg tea.KeyMsg) tea.Cmd {
 		case "N":
 			return resolveConflict(m, "skip", true)
 		case "r":
-			return resolveConflict(m, "rename", false)
+			m.UI.StopConfirming()
+			m.StartInput(tui_context.InputConflictRename)
+			m.Inputs.ActiveInput.SetValue(m.FS.Base(m.Operations.Conflict.Destination))
+			return m.Inputs.ActiveInput.FocusCmd()
 		case "R":
 			return resolveConflict(m, "rename", true)
 		case "esc":
@@ -692,6 +695,26 @@ func PerformUnzip(m *tui_context.Model, destName string) tea.Cmd {
 			return OperationFinishedMsg{Paths: []string{}, LogID: logID}
 		},
 	)
+}
+
+// PerformConflictRename resumes an operation with a manually provided name
+func PerformConflictRename(m *tui_context.Model, newName string) tea.Cmd {
+	if newName == "" {
+		return nil
+	}
+
+	// Validate filename
+	if err := ops.ValidateFileName(newName); err != nil {
+		return SetErrMsg(m, "Invalid name: "+err.Error())
+	}
+
+	// Update the conflict destination with the new name
+	oldDst := m.Operations.Conflict.Destination
+	newDst := m.FS.Join(m.FS.Dir(oldDst), newName)
+	m.Operations.Conflict.Destination = newDst
+
+	// Resume the operation with the manual rename
+	return resolveConflict(m, "rename", false)
 }
 
 func startCreate(m *tui_context.Model) tea.Cmd {

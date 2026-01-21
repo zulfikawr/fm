@@ -313,6 +313,9 @@ func finalizeInput(m *context.Model) tea.Cmd {
 	case context.InputRename:
 		m.StopInput(true)
 		return PerformRename(m, val)
+	case context.InputConflictRename:
+		m.StopInput(true)
+		return PerformConflictRename(m, val)
 	case context.InputCreate:
 		m.StopInput(true)
 		return PerformCreate(m, val)

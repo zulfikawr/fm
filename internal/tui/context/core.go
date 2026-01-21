@@ -275,6 +275,7 @@ const (
 	InputZip
 	InputUnzip
 	InputCreate
+	InputConflictRename
 )
 
 // InputState holds the unified text input model.

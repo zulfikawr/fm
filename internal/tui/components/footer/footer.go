@@ -31,6 +31,7 @@ const (
 	ModeZip
 	ModeUnzip
 	ModeCreate
+	ModeConflictRename
 )
 
 // Props contains all data needed to render the footer
@@ -76,7 +77,7 @@ func Render(props Props) string {
 	switch props.Mode {
 	case ModeProgress:
 		return renderProgressFooter(props)
-	case ModeSearching, ModeRenaming, ModeGoto, ModeAuth, ModeFuzzySearch, ModeZip, ModeUnzip, ModeCreate, ModeConfirming, ModeHostConfirm:
+	case ModeSearching, ModeRenaming, ModeGoto, ModeAuth, ModeFuzzySearch, ModeZip, ModeUnzip, ModeCreate, ModeConflictRename, ModeConfirming, ModeHostConfirm:
 		return renderPromptsFooter(props)
 	case ModeMessage:
 		return renderAlertFooter(props)
@@ -110,6 +111,8 @@ func renderPromptsFooter(props Props) string {
 		msgMode = messages.ModeUnzip
 	case ModeCreate:
 		msgMode = messages.ModeCreate
+	case ModeConflictRename:
+		msgMode = messages.ModeConflictRename
 	case ModeConfirming:
 		msgMode = messages.ModeConfirming
 	case ModeHostConfirm:
