@@ -166,6 +166,9 @@ func resolveConflict(m *tui_context.Model, choice string, applyToAll bool) tea.C
 
 	// Trigger the operation again with the new policy
 	switch opType {
+	case "create":
+		name := m.FS.Base(dst)
+		cmds = append(cmds, PerformCreate(m, name))
 	case "zip":
 		zipName := m.FS.Base(dst)
 		cmds = append(cmds, PerformZip(m, zipName))
@@ -174,16 +177,16 @@ func resolveConflict(m *tui_context.Model, choice string, applyToAll bool) tea.C
 		cmds = append(cmds, PerformUnzip(m, destName))
 	case "move":
 		m.UI.Loading = true
-		cmds = append(cmds, moveItems(ctx, srcFS, dstFS, pending, m.Navigation.Path, m.Operations.ConflictPolicy, logID))
+		cmds = append(cmds, moveItems(ctx, srcFS, dstFS, pending, m.Navigation.Path, m.Operations.ConflictPolicy, applyToAll, logID))
 	case "copy":
 		m.UI.Loading = true
-		cmds = append(cmds, pasteItems(ctx, srcFS, dstFS, pending, m.Navigation.Path, m.Operations.ConflictPolicy, logID))
+		cmds = append(cmds, pasteItems(ctx, srcFS, dstFS, pending, m.Navigation.Path, m.Operations.ConflictPolicy, applyToAll, logID))
 	default:
 		// Fallback for older code that might not set opType correctly
 		if isMove {
-			cmds = append(cmds, moveItems(ctx, srcFS, dstFS, pending, m.Navigation.Path, m.Operations.ConflictPolicy, logID))
+			cmds = append(cmds, moveItems(ctx, srcFS, dstFS, pending, m.Navigation.Path, m.Operations.ConflictPolicy, applyToAll, logID))
 		} else {
-			cmds = append(cmds, pasteItems(ctx, srcFS, dstFS, pending, m.Navigation.Path, m.Operations.ConflictPolicy, logID))
+			cmds = append(cmds, pasteItems(ctx, srcFS, dstFS, pending, m.Navigation.Path, m.Operations.ConflictPolicy, applyToAll, logID))
 		}
 	}
 
@@ -301,9 +304,9 @@ func performPaste(m *tui_context.Model) tea.Cmd {
 
 	if isCut {
 		m.Operations.Clipboard.Clear()
-		return moveItems(ctx, srcFS, dstFS, paths, destDir, m.Operations.ConflictPolicy, logID)
+		return moveItems(ctx, srcFS, dstFS, paths, destDir, m.Operations.ConflictPolicy, false, logID)
 	}
-	return pasteItems(ctx, srcFS, dstFS, paths, destDir, m.Operations.ConflictPolicy, logID)
+	return pasteItems(ctx, srcFS, dstFS, paths, destDir, m.Operations.ConflictPolicy, false, logID)
 }
 
 func performDelete(m *tui_context.Model) tea.Cmd {
@@ -551,13 +554,13 @@ func deleteItems(ctx context.Context, fs core.FileSystem, targets []string, useT
 	)
 }
 
-func pasteItems(ctx context.Context, srcFS, dstFS core.FileSystem, sources []string, destDir string, policy conflict.Policy, logID string) tea.Cmd {
+func pasteItems(ctx context.Context, srcFS, dstFS core.FileSystem, sources []string, destDir string, policy conflict.Policy, applyToAll bool, logID string) tea.Cmd {
 	progChan := make(chan core.Progress, 100)
 	return tea.Batch(
 		listenToProgress(progChan),
 		func() tea.Msg {
 			defer close(progChan)
-			err := ops.CopyMultiple(ctx, srcFS, dstFS, sources, destDir, progChan, policy)
+			err := ops.CopyMultiple(ctx, srcFS, dstFS, sources, destDir, progChan, policy, applyToAll)
 			if err != nil {
 				var conflict *conflict.ConflictError
 				if errors.As(err, &conflict) {
@@ -577,13 +580,13 @@ func pasteItems(ctx context.Context, srcFS, dstFS core.FileSystem, sources []str
 	)
 }
 
-func moveItems(ctx context.Context, srcFS, dstFS core.FileSystem, sources []string, destDir string, policy conflict.Policy, logID string) tea.Cmd {
+func moveItems(ctx context.Context, srcFS, dstFS core.FileSystem, sources []string, destDir string, policy conflict.Policy, applyToAll bool, logID string) tea.Cmd {
 	progChan := make(chan core.Progress, 100)
 	return tea.Batch(
 		listenToProgress(progChan),
 		func() tea.Msg {
 			defer close(progChan)
-			err := ops.MoveMultiple(ctx, srcFS, dstFS, sources, destDir, progChan, policy)
+			err := ops.MoveMultiple(ctx, srcFS, dstFS, sources, destDir, progChan, policy, applyToAll)
 			if err != nil {
 				var conflict *conflict.ConflictError
 				if errors.As(err, &conflict) {
@@ -714,6 +717,31 @@ func PerformCreate(m *tui_context.Model, name string) tea.Cmd {
 
 	ctx, cancel := context.WithTimeout(m.Context, constants.DirectoryLoadTimeout)
 	defer cancel()
+
+	// Resolve conflict if any
+	resolver := conflict.NewResolver()
+	resolvedPath, _, err := resolver.Resolve(ctx, m.FS, "", path, m.Operations.ConflictPolicy)
+	if err != nil {
+		if cerr, ok := err.(*conflict.ConflictError); ok {
+			m.UI.Loading = false
+			m.Operations.Conflict.Set("", cerr.Destination, []string{cerr.Destination}, false, "create", "")
+			m.Operations.ActionType = constants.ActionConflict
+			m.UI.StartConfirming()
+			return nil
+		}
+		return LogError(m, err, "Create")
+	}
+
+	if resolvedPath == "" {
+		return nil // Skip
+	}
+
+	if resolvedPath == path && m.Operations.ConflictPolicy == conflict.Overwrite {
+		if err := m.FS.RemoveAll(ctx, path); err != nil {
+			return LogError(m, err, "Create (Overwrite)")
+		}
+	}
+	path = resolvedPath
 
 	if isFolder {
 		if err := m.FS.MkdirAll(ctx, path, 0755); err != nil {

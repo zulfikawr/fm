@@ -63,7 +63,7 @@ func DeleteMultiple(ctx context.Context, fs core.FileSystem, paths []string, use
 }
 
 // CopyMultiple copies multiple items from sources to destDir between different filesystems.
-func CopyMultiple(ctx context.Context, srcFS, dstFS core.FileSystem, sources []string, destDir string, progChan chan<- core.Progress, policy conflict.Policy) error {
+func CopyMultiple(ctx context.Context, srcFS, dstFS core.FileSystem, sources []string, destDir string, progChan chan<- core.Progress, policy conflict.Policy, applyToAll bool) error {
 	if err := ValidateWritable(ctx, dstFS, destDir); err != nil {
 		return err
 	}
@@ -88,6 +88,10 @@ func CopyMultiple(ctx context.Context, srcFS, dstFS core.FileSystem, sources []s
 		}
 
 		if resolvedDst == "" {
+			// If we skipped and not applying to all, reset policy for next items
+			if !applyToAll {
+				policy = conflict.Ask
+			}
 			continue // Skip
 		}
 		dst = resolvedDst
@@ -109,12 +113,17 @@ func CopyMultiple(ctx context.Context, srcFS, dstFS core.FileSystem, sources []s
 		if err := CrossCopy(ctx, srcFS, dstFS, src, dst, progChan, conflict.Overwrite); err != nil {
 			return err
 		}
+
+		// If we are not applying to all, reset policy to Ask after the first successful resolution
+		if !applyToAll {
+			policy = conflict.Ask
+		}
 	}
 	return nil
 }
 
 // MoveMultiple moves multiple items from sources to destDir between different filesystems.
-func MoveMultiple(ctx context.Context, srcFS, dstFS core.FileSystem, sources []string, destDir string, progChan chan<- core.Progress, policy conflict.Policy) error {
+func MoveMultiple(ctx context.Context, srcFS, dstFS core.FileSystem, sources []string, destDir string, progChan chan<- core.Progress, policy conflict.Policy, applyToAll bool) error {
 	if err := ValidateWritable(ctx, dstFS, destDir); err != nil {
 		return err
 	}
@@ -140,6 +149,9 @@ func MoveMultiple(ctx context.Context, srcFS, dstFS core.FileSystem, sources []s
 		}
 
 		if resolvedDst == "" {
+			if !applyToAll {
+				policy = conflict.Ask
+			}
 			continue // Skip
 		}
 		dst = resolvedDst
@@ -160,6 +172,10 @@ func MoveMultiple(ctx context.Context, srcFS, dstFS core.FileSystem, sources []s
 
 		if err := CrossMove(ctx, srcFS, dstFS, src, dst, progChan, conflict.Overwrite); err != nil {
 			return err
+		}
+
+		if !applyToAll {
+			policy = conflict.Ask
 		}
 	}
 	return nil

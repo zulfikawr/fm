@@ -15,14 +15,16 @@ func NewResolver() Resolver {
 }
 
 func (r *defaultResolver) Resolve(ctx context.Context, fs core.FileSystem, src, dst string, policy Policy) (string, bool, error) {
-	// Check for same file
-	sAbs, _ := fs.Abs(src)
-	dAbs, _ := fs.Abs(dst)
-	if sAbs == dAbs && sAbs != "" {
-		return "", false, &errors.ValidationError{
-			Field:   "destination",
-			Value:   dst,
-			Message: "source and destination are the same",
+	// Check for same file (only if src is provided)
+	if src != "" {
+		sAbs, _ := fs.Abs(src)
+		dAbs, _ := fs.Abs(dst)
+		if sAbs == dAbs && sAbs != "" {
+			return "", false, &errors.ValidationError{
+				Field:   "destination",
+				Value:   dst,
+				Message: "source and destination are the same",
+			}
 		}
 	}
 
@@ -36,11 +38,13 @@ func (r *defaultResolver) Resolve(ctx context.Context, fs core.FileSystem, src, 
 	switch policy {
 	case Overwrite:
 		// Check if we are trying to overwrite a directory with a file or vice-versa
-		sInfo, sErr := fs.Stat(ctx, src)
-		if sErr == nil {
-			if sInfo.IsDir() != dInfo.IsDir() {
-				// Type mismatch: must remove the destination first
-				return dst, false, nil
+		if src != "" {
+			sInfo, sErr := fs.Stat(ctx, src)
+			if sErr == nil {
+				if sInfo.IsDir() != dInfo.IsDir() {
+					// Type mismatch: must remove the destination first
+					return dst, false, nil
+				}
 			}
 		}
 		return dst, false, nil
