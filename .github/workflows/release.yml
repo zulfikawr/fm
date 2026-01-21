@@ -30,7 +30,7 @@ jobs:
           GOARCH: ${{ matrix.goarch }}
         run: |
           VERSION=${{ github.ref_name }}
-          LDFLAGS="-X 'github.com/zulfikawr/fm/internal/constants.AppVersion=$VERSION'"
+          LDFLAGS="-s -w -X 'github.com/zulfikawr/fm/internal/constants.AppVersion=$VERSION'"
           if [ "${{ matrix.goos }}" = "windows" ]; then
             go build -ldflags="$LDFLAGS" -o fm-${{ matrix.goos }}-${{ matrix.goarch }}.exe ./cmd/fm
           else
