@@ -1,7 +1,6 @@
 package ssh
 
 import (
-	"bufio"
 	"errors"
 	"fmt"
 	"net"
@@ -14,149 +13,6 @@ import (
 	sshx "golang.org/x/crypto/ssh"
 	"golang.org/x/crypto/ssh/knownhosts"
 )
-
-// SSHConfig represents settings for an SSH connection.
-type SSHConfig struct {
-	HostName     string
-	User         string
-	Port         string
-	IdentityFile string
-}
-
-// RemoteConnectionDetails holds information needed to establish an SSH connection.
-type RemoteConnectionDetails struct {
-	Host      string
-	User      string
-	KeyPath   string
-	StartPath string
-}
-
-// ResolveRemote parses a remote string and returns connection details.
-// It checks SSH config first, then falls back to user@host:path format.
-func ResolveRemote(remoteStr string) *RemoteConnectionDetails {
-	details := &RemoteConnectionDetails{
-		Host: remoteStr,
-	}
-
-	// Check SSH config first
-	sshConfigs, _ := ParseSSHConfig()
-	if cfg, ok := sshConfigs[remoteStr]; ok {
-		if cfg.HostName != "" {
-			details.Host = cfg.HostName
-		}
-		details.User = cfg.User
-		details.KeyPath = cfg.IdentityFile
-	} else if strings.Contains(remoteStr, "@") {
-		parts := strings.SplitN(remoteStr, "@", 2)
-		details.User = parts[0]
-		rest := parts[1]
-
-		if strings.Contains(rest, ":") {
-			parts2 := strings.SplitN(rest, ":", 2)
-			details.Host = parts2[0]
-			details.StartPath = parts2[1]
-		} else {
-			details.Host = rest
-		}
-	}
-
-	return details
-}
-
-// HostNotFoundError is returned when a host is not in known_hosts.
-type HostNotFoundError struct {
-	Hostname string
-	Remote   net.Addr
-	Key      sshx.PublicKey
-}
-
-func (e *HostNotFoundError) Error() string {
-	return fmt.Sprintf("host not found in known_hosts: %s", e.Hostname)
-}
-
-// ParseSSHConfig parses the ~/.ssh/config file.
-func ParseSSHConfig() (map[string]*SSHConfig, error) {
-	home, err := os.UserHomeDir()
-	if err != nil {
-		return nil, err
-	}
-
-	configPath := filepath.Join(home, ".ssh", "config")
-	file, err := os.Open(configPath)
-	if err != nil {
-		if os.IsNotExist(err) {
-			return make(map[string]*SSHConfig), nil
-		}
-		return nil, err
-	}
-	defer file.Close()
-
-	configs := make(map[string]*SSHConfig)
-	var currentHost []string
-	var currentCfg *SSHConfig
-
-	scanner := bufio.NewScanner(file)
-	for scanner.Scan() {
-		line := strings.TrimSpace(scanner.Text())
-		if line == "" || strings.HasPrefix(line, "#") {
-			continue
-		}
-
-		parts := strings.Fields(line)
-		if len(parts) < 2 {
-			continue
-		}
-
-		key := strings.ToLower(parts[0])
-		value := parts[1]
-
-		switch key {
-		case "host":
-			// Save previous config if any
-			if currentCfg != nil {
-				for _, h := range currentHost {
-					// We don't handle wildcards well here, but it's a start
-					if h != "*" {
-						configs[h] = currentCfg
-					}
-				}
-			}
-			currentHost = parts[1:]
-			currentCfg = &SSHConfig{}
-		case "hostname":
-			if currentCfg != nil {
-				currentCfg.HostName = value
-			}
-		case "user":
-			if currentCfg != nil {
-				currentCfg.User = value
-			}
-		case "port":
-			if currentCfg != nil {
-				currentCfg.Port = value
-			}
-		case "identityfile":
-			if currentCfg != nil {
-				// Expand ~ if present
-				if strings.HasPrefix(value, "~") {
-					value = filepath.Join(home, value[1:])
-				}
-				currentCfg.IdentityFile = value
-			}
-		}
-	}
-
-	// Save last config
-	if currentCfg != nil {
-		for _, h := range currentHost {
-			if h != "*" {
-				configs[h] = currentCfg
-			}
-		}
-	}
-
-	return configs, nil
-}
 
 // GetHostKeyCallback returns an sshx.HostKeyCallback that handles known_hosts.
 func GetHostKeyCallback(askChan chan<- *HostConfirmRequest) (sshx.HostKeyCallback, error) {
@@ -207,14 +63,6 @@ func GetHostKeyCallback(askChan chan<- *HostConfirmRequest) (sshx.HostKeyCallbac
 		}
 		return err
 	}, nil
-}
-
-// HostConfirmRequest represents a request to the user to confirm a host key.
-type HostConfirmRequest struct {
-	Hostname string
-	Remote   net.Addr
-	Key      sshx.PublicKey
-	Resolve  chan bool
 }
 
 // AddToKnownHosts adds a host key to the known_hosts file.
