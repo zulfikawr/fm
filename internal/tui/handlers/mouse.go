@@ -5,11 +5,14 @@ import (
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
+	footer_comp "github.com/zulfikawr/fm/internal/tui/components/footer"
+	msg_comp "github.com/zulfikawr/fm/internal/tui/components/messages"
 	"github.com/zulfikawr/fm/internal/tui/context"
 	"github.com/zulfikawr/fm/internal/tui/handlers/app"
 	"github.com/zulfikawr/fm/internal/tui/handlers/file"
 	"github.com/zulfikawr/fm/internal/tui/handlers/integration"
 	"github.com/zulfikawr/fm/internal/tui/handlers/nav"
+	"github.com/zulfikawr/fm/internal/tui/handlers/utils"
 	"github.com/zulfikawr/fm/internal/tui/messages"
 )
 
@@ -129,6 +132,11 @@ func handleScrollDown(m *context.Model) tea.Cmd {
 }
 
 func handleMouseClick(m *context.Model, msg tea.MouseMsg) tea.Cmd {
+	// 1. Check for footer clicks (Bottom line)
+	if msg.Y == m.Display.Height-1 {
+		return handleFooterClick(m, msg)
+	}
+
 	// App Header is 1 line (y=0)
 	if msg.Y == 0 {
 		// 1. Check for breadcrumb clicks (Left side)
@@ -173,9 +181,12 @@ func handleMouseClick(m *context.Model, msg tea.MouseMsg) tea.Cmd {
 		return handleSettingsClick(m, bodyY)
 	}
 
-	if m.UI.LogOpen || m.UI.ClipboardOpen {
-		// Handle clicks in these views if needed
-		return nil
+	if m.UI.LogOpen {
+		return handleLogClick(m, bodyY)
+	}
+
+	if m.UI.ClipboardOpen {
+		return handleClipboardClick(m, bodyY)
 	}
 
 	if m.Inputs.Mode == context.InputFuzzySearch || len(m.Search.Results) > 0 {
@@ -210,6 +221,109 @@ func handleMouseClick(m *context.Model, msg tea.MouseMsg) tea.Cmd {
 	// Single click -> Just select it
 	m.Navigation.Cursor = itemIdx
 	return nil
+}
+
+func handleLogClick(m *context.Model, bodyY int) tea.Cmd {
+	// Header at Y=1 (bodyY=0)
+	if bodyY == 0 {
+		return nil
+	}
+
+	idx := bodyY - 1
+	if idx < 0 || idx >= len(m.Logs.Entries) {
+		return nil
+	}
+
+	m.Logs.Cursor = idx
+	m.Logs.Offset = app.ScrollLogs(m.Logs.Cursor, m.Logs.Offset, m.Display.ViewportHeight)
+	return nil
+}
+
+func handleClipboardClick(m *context.Model, bodyY int) tea.Cmd {
+	itemIdx := bodyY + m.Operations.Clipboard.Offset
+	if itemIdx < 0 || itemIdx >= len(m.Operations.Clipboard.Paths) {
+		return nil
+	}
+
+	m.Operations.Clipboard.Cursor = itemIdx
+	m.Operations.Clipboard.Offset = app.ScrollLogs(m.Operations.Clipboard.Cursor, m.Operations.Clipboard.Offset, m.Display.ViewportHeight)
+	return nil
+}
+
+func handleFooterClick(m *context.Model, msg tea.MouseMsg) tea.Cmd {
+	mode := utils.DetermineFooterMode(m)
+
+	switch mode {
+	case footer_comp.ModeConfirming:
+		props := msg_comp.Props{
+			ActionType:           m.Operations.ActionType,
+			ClipboardCount:       len(m.Operations.Clipboard.Paths),
+			ConflictDst:          m.Operations.Conflict.Destination,
+			ConflictPendingCount: len(m.Operations.Conflict.PendingItems),
+			LatestVersion:        m.UI.LatestVersion,
+		}
+		prompt := msg_comp.BuildConfirmationPrompt(props)
+		action := findActionInPrompt(msg.X, prompt)
+		if action != "" {
+			return HandleUpdate(m, tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune(action)})
+		}
+
+	case footer_comp.ModeHostConfirm:
+		hostname := ""
+		if m.Remote.HostConfirmReq != nil {
+			hostname = m.Remote.HostConfirmReq.Hostname
+		}
+		prompt := "Add host '" + hostname + "' to known_hosts? [y] Yes | [n] No"
+		action := findActionInPrompt(msg.X, prompt)
+		if action != "" {
+			return HandleUpdate(m, tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune(action)})
+		}
+
+	case footer_comp.ModeNormal:
+		action := footer_comp.GetActionAt(msg.X, footer_comp.Props{
+			Width:          m.Display.Width,
+			SortMode:       m.Display.SortMode,
+			Cursor:         m.Navigation.Cursor,
+			TotalItems:     len(m.Navigation.FilteredItems),
+			SelectedCount:  m.Navigation.SelectedCount,
+			Items:          m.Navigation.Items,
+			FilteredItems:  m.Navigation.FilteredItems,
+			ClipboardCount: len(m.Operations.Clipboard.Paths),
+			Styles:         m.Display.Styles,
+		})
+
+		if action != "" {
+			return HandleUpdate(m, tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune(action)})
+		}
+
+	case footer_comp.ModeSettings, footer_comp.ModeLog, footer_comp.ModeClipboard:
+		// Simple check for [Esc] or [.] or [Alt+L/C]
+		if msg.X > 1 && msg.X < 20 { // Typical position for [Esc/...] Back
+			return HandleUpdate(m, tea.KeyMsg{Type: tea.KeyEsc})
+		}
+	}
+
+	return nil
+}
+
+func findActionInPrompt(x int, prompt string) string {
+	// Prompt example: "Delete selected items? [y] Yes | [n] No"
+	// Indices are 0-based, and we have a leading space in footer rendering.
+	targetX := x - 1
+	if targetX < 0 {
+		return ""
+	}
+
+	// Look for [k] pattern in prompt
+	for i := 0; i < len(prompt)-2; i++ {
+		if prompt[i] == '[' && prompt[i+2] == ']' {
+			// Found a key indicator
+			if targetX >= i && targetX <= i+2 {
+				return string(prompt[i+1])
+			}
+		}
+	}
+	return ""
 }
 
 func handleSettingsClick(m *context.Model, bodyY int) tea.Cmd {

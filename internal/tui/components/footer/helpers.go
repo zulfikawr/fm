@@ -176,3 +176,126 @@ func buildActionShortcuts(props Props) string {
 
 	return strings.Join(hints, dimStyle.Render(" | "))
 }
+
+// GetActionAt returns the action shortcut key at the given x-coordinate
+func GetActionAt(x int, props Props) string {
+	// Re-calculate exactly like renderStatsFooter
+	baseFooterStyle := props.Styles.Footer.UnsetPadding().UnsetWidth()
+
+	total := props.TotalItems
+	current := props.Cursor
+	if len(props.FilteredItems) > 0 && props.FilteredItems[0].IsUp {
+		total--
+		if current == 0 {
+			current = -1
+		} else {
+			current--
+		}
+	}
+
+	var parts []string
+	pagination := renderPaginationInfo(PaginationInfo{
+		Current: current,
+		Total:   total,
+		Width:   props.Width,
+	}, props.Styles)
+	if pagination != "" {
+		parts = append(parts, pagination)
+	}
+
+	permission := renderPermissionInfo(props.FilteredItems, props.Cursor, props.Styles)
+	if permission != "" {
+		parts = append(parts, permission)
+	}
+
+	rightContent := renderSortMode(props.SortMode, props.Styles)
+	rightWidth := calculateWidth(rightContent)
+	availableWidth := props.Width - rightWidth - 2
+
+	partsWidthLimit := availableWidth
+	indicator := ""
+	if props.SelectedCount > 0 {
+		indicator = buildSelectedIndicator(props)
+		indicatorWidth := calculateWidth(indicator)
+		partsWidthLimit -= (indicatorWidth + 2)
+	}
+
+	leftContent := assembleFooterContent(parts, partsWidthLimit, props.Styles)
+	leftWidth := calculateWidth(leftContent)
+
+	// Check if shortcuts are rendered
+	if props.SelectedCount > 0 {
+		shortcuts := buildActionShortcuts(props)
+		spacer := baseFooterStyle.Render("  ")
+		indicatorWidth := calculateWidth(indicator)
+		shortcutsWidth := calculateWidth(shortcuts)
+		spacerWidth := calculateWidth(spacer)
+
+		totalLeftWidthWithShortcuts := leftWidth
+		if leftWidth > 0 {
+			totalLeftWidthWithShortcuts += spacerWidth
+		}
+		totalLeftWidthWithShortcuts += indicatorWidth + spacerWidth + shortcutsWidth
+
+		if totalLeftWidthWithShortcuts <= availableWidth {
+			// Shortcuts ARE rendered. Map them.
+			startX := 1 + leftWidth
+			if leftWidth > 0 {
+				startX += 2 // spacer
+			}
+			startX += indicatorWidth + 2 // spacer
+
+			// Now startX is where shortcuts start
+			// Parse buildActionShortcuts to get exact labels and keys
+			type actionInfo struct {
+				key   string
+				label string
+			}
+			var actions []actionInfo
+			actions = append(actions, actionInfo{"c", "Copy"}, actionInfo{"x", "Cut"}, actionInfo{"z", "Zip"})
+
+			showUnzip := false
+			if props.SelectedCount > 0 {
+				for _, item := range props.Items {
+					if item.Selected && strings.HasSuffix(strings.ToLower(item.Name), ".zip") {
+						showUnzip = true
+						break
+					}
+				}
+			} else if props.Cursor >= 0 && props.Cursor < len(props.FilteredItems) {
+				item := props.FilteredItems[props.Cursor]
+				if !item.IsUp && strings.HasSuffix(strings.ToLower(item.Name), ".zip") {
+					showUnzip = true
+				}
+			}
+
+			if showUnzip {
+				actions = append(actions, actionInfo{"u", "Unzip"})
+			}
+			actions = append(actions, actionInfo{"r", "Rename"}, actionInfo{"d", "Delete"})
+
+			if props.ClipboardCount > 0 {
+				actions = append(actions, actionInfo{"v", "Paste"})
+			}
+
+			currentX := startX
+			for i, a := range actions {
+				fullLen := 3 + 1 + len(a.label) // "[k] Label"
+				if x >= currentX && x < currentX+fullLen {
+					return a.key
+				}
+				currentX += fullLen
+				if i < len(actions)-1 {
+					currentX += 3 // " | "
+				}
+			}
+		}
+	}
+
+	// Check if click is on sort mode (Right side)
+	if x >= props.Width-rightWidth-1 && x < props.Width-1 {
+		return "s"
+	}
+
+	return ""
+}

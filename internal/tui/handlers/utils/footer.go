@@ -1,0 +1,54 @@
+package utils
+
+import (
+	"github.com/zulfikawr/fm/internal/tui/components/footer"
+	"github.com/zulfikawr/fm/internal/tui/context"
+)
+
+// DetermineFooterMode calculates the current footer display mode
+func DetermineFooterMode(m *context.Model) footer.Mode {
+	if m.UI.InputActive {
+		switch m.Inputs.Mode {
+		case context.InputSearch:
+			return footer.ModeSearching
+		case context.InputRename:
+			return footer.ModeRenaming
+		case context.InputGoto:
+			return footer.ModeGoto
+		case context.InputAuth:
+			return footer.ModeAuth
+		case context.InputFuzzySearch:
+			return footer.ModeFuzzySearch
+		case context.InputZip:
+			return footer.ModeZip
+		case context.InputUnzip:
+			return footer.ModeUnzip
+		case context.InputCreate:
+			return footer.ModeCreate
+		case context.InputConflictRename:
+			return footer.ModeConflictRename
+		}
+	}
+	if m.UI.HostConfirm {
+		return footer.ModeHostConfirm
+	}
+	if m.UI.Confirming {
+		return footer.ModeConfirming
+	}
+	if m.Operations.Progress.Visible {
+		return footer.ModeProgress
+	}
+	if m.Message.Text != "" {
+		return footer.ModeMessage
+	}
+	if m.UI.SettingsOpen {
+		return footer.ModeSettings
+	}
+	if m.UI.LogOpen {
+		return footer.ModeLog
+	}
+	if m.UI.ClipboardOpen {
+		return footer.ModeClipboard
+	}
+	return footer.ModeNormal
+}
