@@ -90,7 +90,12 @@ func Reload(m *tui_context.Model, silent bool) tea.Cmd {
 			gitStatuses, _ = gs.GetStatus(ctx, path)
 		}
 
-		items, err := listing.LoadSkeleton(ctx, fs, path, showHidden, gitStatuses)
+		items, err := listing.LoadSkeleton(ctx, listing.LoadOptions{
+			FS:          fs,
+			Path:        path,
+			ShowHidden:  showHidden,
+			GitStatuses: gitStatuses,
+		})
 		if err != nil {
 			return messages.LoadedItemsMsg{Generation: gen, Path: path, Err: err, GitRoot: gitRoot}
 		}

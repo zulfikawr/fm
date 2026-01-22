@@ -44,7 +44,7 @@ func (fs *RemoteFS) reconnect() error {
 	}
 
 	// Dial again
-	conn, err := sshx.Dial("tcp", fs.address, fs.config)
+	conn, err := sshx.Dial("tcp", fs.opts.Address, fs.config)
 	if err != nil {
 		return fmt.Errorf("reconnect dial failed: %w", err)
 	}

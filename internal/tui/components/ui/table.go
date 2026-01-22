@@ -16,10 +16,18 @@ type Column struct {
 	Align string // "left", "right"
 }
 
+// HeaderProps encapsulates data for rendering table headers
+type HeaderProps struct {
+	Width   int
+	Columns []Column
+	Gap     int
+	Styles  theme.Stylesheet
+}
+
 // RenderHeader renders a standardized table header with separators
-func RenderHeader(width int, columns []Column, gap int, styles theme.Stylesheet) string {
+func RenderHeader(props HeaderProps) string {
 	var parts []string
-	for _, col := range columns {
+	for _, col := range props.Columns {
 		title := col.Title
 		if len(title) > col.Width {
 			title = Truncate(title, col.Width)
@@ -34,16 +42,16 @@ func RenderHeader(width int, columns []Column, gap int, styles theme.Stylesheet)
 		parts = append(parts, part)
 	}
 
-	headerContent := strings.Join(parts, strings.Repeat(" ", gap))
+	headerContent := strings.Join(parts, strings.Repeat(" ", props.Gap))
 
 	// Ensure it starts with a space if there's room
-	if width > lipgloss.Width(headerContent) {
+	if props.Width > lipgloss.Width(headerContent) {
 		headerContent = " " + headerContent
 	}
 
 	// Top and bottom separators
-	sep := styles.Separator.Width(width).Render(strings.Repeat("-", width))
-	headerText := styles.ListHeader.Width(width).Render(headerContent)
+	sep := props.Styles.Separator.Width(props.Width).Render(strings.Repeat("-", props.Width))
+	headerText := props.Styles.ListHeader.Width(props.Width).Render(headerContent)
 
 	return lipgloss.JoinVertical(lipgloss.Left, sep, headerText, sep)
 }

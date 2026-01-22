@@ -6,6 +6,7 @@ import (
 	"context"
 	"io"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/zulfikawr/fm/internal/files/errors"
@@ -229,7 +230,7 @@ func (fs *TarFS) Open(ctx context.Context, path string) (io.ReadCloser, error) {
 	return nil, errors.WrapErrorWithPath(os.ErrNotExist, "Open", path)
 }
 
-func (fs *TarFS) Walk(ctx context.Context, root string, walkFn func(path string, info os.FileInfo, err error) error) error {
+func (fs *TarFS) Walk(ctx context.Context, root string, walkFn filepath.WalkFunc) error {
 	root = strings.TrimPrefix(fs.Clean(root), "/")
 	if root == "." {
 		root = ""

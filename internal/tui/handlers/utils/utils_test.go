@@ -24,11 +24,22 @@ func TestUtils(t *testing.T) {
 	})
 
 	t.Run("Log Operations", func(t *testing.T) {
-		id := LogPush(m, "test", tui_context.LogInfo, tui_context.StatusSuccess, "msg", "details")
+		id := LogPush(m, tui_context.LogEntry{
+			Type:    "test",
+			Level:   tui_context.LogInfo,
+			Status:  tui_context.StatusSuccess,
+			Message: "msg",
+			Details: "details",
+		})
 		if id == "" {
 			t.Error("LogPush failed")
 		}
-		LogUpdate(m, id, tui_context.StatusError, tui_context.LogError, "new msg", "new details")
+		LogUpdate(m, id, tui_context.LogEntry{
+			Status:  tui_context.StatusError,
+			Level:   tui_context.LogError,
+			Message: "new msg",
+			Details: "new details",
+		})
 	})
 
 	t.Run("LogError", func(t *testing.T) {

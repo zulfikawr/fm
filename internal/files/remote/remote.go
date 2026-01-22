@@ -13,6 +13,7 @@ import (
 	"github.com/zulfikawr/fm/internal/constants"
 	"github.com/zulfikawr/fm/internal/files/core"
 	"github.com/zulfikawr/fm/internal/files/errors"
+	"github.com/zulfikawr/fm/internal/ssh"
 
 	"github.com/pkg/sftp"
 	sshx "golang.org/x/crypto/ssh"
@@ -28,9 +29,8 @@ type RemoteFS struct {
 	cache  *core.SimpleCache[string, []os.FileInfo]
 
 	// Connection details for reconnection
-	address string
-	user    string
-	config  *sshx.ClientConfig
+	opts   ssh.SSHConfig
+	config *sshx.ClientConfig
 
 	// Lifecycle
 	ctx    context.Context
@@ -38,7 +38,7 @@ type RemoteFS struct {
 }
 
 // NewRemoteFS creates a new SFTP file system.
-func NewRemoteFS(address, user, password, keyPath string, hostKeyCallback sshx.HostKeyCallback) (*RemoteFS, error) {
+func NewRemoteFS(opts ssh.SSHConfig) (*RemoteFS, error) {
 	auths := []sshx.AuthMethod{}
 
 	// 1. Try SSH Agent
@@ -48,25 +48,25 @@ func NewRemoteFS(address, user, password, keyPath string, hostKeyCallback sshx.H
 	}
 
 	// 2. Try Identity File (Key)
-	if keyPath != "" {
-		key, err := os.ReadFile(keyPath)
+	if opts.KeyPath != "" {
+		key, err := os.ReadFile(opts.KeyPath)
 		if err != nil {
-			return nil, fmt.Errorf("failed to read key file %s: %w", keyPath, err)
+			return nil, fmt.Errorf("failed to read key file %s: %w", opts.KeyPath, err)
 		}
 		signer, err := sshx.ParsePrivateKey(key)
 		if err != nil {
-			return nil, fmt.Errorf("failed to parse key file %s: %w", keyPath, err)
+			return nil, fmt.Errorf("failed to parse key file %s: %w", opts.KeyPath, err)
 		}
 		auths = append(auths, sshx.PublicKeys(signer))
 	}
 
 	// 3. Try Password
-	if password != "" {
-		auths = append(auths, sshx.Password(password))
+	if opts.Password != "" {
+		auths = append(auths, sshx.Password(opts.Password))
 	}
 
 	// Setup HostKeyCallback - REQUIRE known_hosts for security by default
-	if hostKeyCallback == nil {
+	if opts.HostKeyCallback == nil {
 		home, err := os.UserHomeDir()
 		if err != nil {
 			return nil, errors.WrapError(err, "NewRemoteFS")
@@ -89,20 +89,21 @@ func NewRemoteFS(address, user, password, keyPath string, hostKeyCallback sshx.H
 			}
 		}
 
-		hostKeyCallback, err = knownhosts.New(knownHostsPath)
+		opts.HostKeyCallback, err = knownhosts.New(knownHostsPath)
 		if err != nil {
-			return nil, fmt.Errorf("load known_hosts failed: %s: %w\nRun 'ssh-keyscan %s >> ~/.ssh/known_hosts' first", knownHostsPath, err, address)
+			return nil, fmt.Errorf("load known_hosts failed: %s: %w\nRun 'ssh-keyscan %s >> ~/.ssh/known_hosts' first", knownHostsPath, err, opts.Address)
 		}
 	}
 
 	config := &sshx.ClientConfig{
-		User:            user,
+		User:            opts.User,
 		Auth:            auths,
-		HostKeyCallback: hostKeyCallback,
+		HostKeyCallback: opts.HostKeyCallback,
 		Timeout:         constants.SSHConnectionTimeout,
 	}
 
 	// Ensure port is present
+	address := opts.Address
 	if _, _, err := net.SplitHostPort(address); err != nil {
 		address = address + ":22"
 	}
@@ -122,14 +123,13 @@ func NewRemoteFS(address, user, password, keyPath string, hostKeyCallback sshx.H
 
 	ctx, cancel := context.WithCancel(context.Background())
 	fs := &RemoteFS{
-		client:  client,
-		conn:    conn,
-		cache:   core.NewSimpleCache[string, []os.FileInfo](100, 2*time.Second),
-		address: address,
-		user:    user,
-		config:  config,
-		ctx:     ctx,
-		cancel:  cancel,
+		client: client,
+		conn:   conn,
+		cache:  core.NewSimpleCache[string, []os.FileInfo](100, 2*time.Second),
+		opts:   opts,
+		config: config,
+		ctx:    ctx,
+		cancel: cancel,
 	}
 
 	// Start background keep-alive
@@ -178,9 +178,9 @@ func (fs *RemoteFS) IsLocal() bool {
 }
 
 func (fs *RemoteFS) Address() string {
-	return fs.address
+	return fs.opts.Address
 }
 
 func (fs *RemoteFS) User() string {
-	return fs.user
+	return fs.opts.User
 }

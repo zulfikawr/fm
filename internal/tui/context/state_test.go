@@ -107,7 +107,14 @@ func TestOperationsState(t *testing.T) {
 	})
 
 	t.Run("Conflict", func(t *testing.T) {
-		ops.Conflict.Set("/src", "/dst", []string{"/src"}, false, "copy", "log1")
+		ops.Conflict.Set(context.ConflictParams{
+			Source:       "/src",
+			Destination:  "/dst",
+			PendingItems: []string{"/src"},
+			IsMove:       false,
+			OpType:       "copy",
+			LogID:        "log1",
+		})
 		testutil.AssertEqual(t, true, ops.Conflict.HasConflict(), "Should have conflict")
 		testutil.AssertEqual(t, "/src", ops.Conflict.Source, "Source should match")
 
@@ -125,7 +132,12 @@ func TestLogState(t *testing.T) {
 	})
 
 	t.Run("UpdateStatus", func(t *testing.T) {
-		ls.UpdateStatus("1", context.StatusSuccess, context.LogSuccess, "updated", "details")
+		ls.UpdateStatus("1", context.LogEntry{
+			Status:  context.StatusSuccess,
+			Level:   context.LogSuccess,
+			Message: "updated",
+			Details: "details",
+		})
 		testutil.AssertEqual(t, context.StatusSuccess, ls.Entries[0].Status, "Status should be updated")
 		testutil.AssertEqual(t, "updated", ls.Entries[0].Message, "Message should be updated")
 	})

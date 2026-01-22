@@ -58,6 +58,27 @@ func (gs *gitService) GetStatus(ctx context.Context, path string) (map[string]st
 	return statuses, branch
 }
 
+func (gs *gitService) GetIgnoredFiles(ctx context.Context, repoRoot string) ([]string, error) {
+	if !gs.IsEnabled() {
+		return nil, nil
+	}
+
+	cmd := exec.CommandContext(ctx, "git", "-C", repoRoot, "ls-files", "--others", "--ignored", "--exclude-standard")
+	out, err := cmd.Output()
+	if err != nil {
+		return nil, err
+	}
+
+	files := strings.Split(strings.TrimSpace(string(out)), "\n")
+	var result []string
+	for _, f := range files {
+		if f != "" {
+			result = append(result, filepath.Join(repoRoot, f))
+		}
+	}
+	return result, nil
+}
+
 // ParseGitStatusPorcelain is a shared helper to parse git status --porcelain output.
 func ParseGitStatusPorcelain(output, repoRoot, dirPath string) map[string]string {
 	statuses := make(map[string]string)

@@ -43,7 +43,12 @@ func CreateFileSystemWithConnector(remoteStr string, args []string, conn FileSys
 	}
 
 	// Try connecting with provided key or agent first
-	fs, err := conn.NewRemoteFS(host, user, "", keyPath, hkcb)
+	fs, err := conn.NewRemoteFS(ssh.SSHConfig{
+		Address:         host,
+		User:            user,
+		KeyPath:         keyPath,
+		HostKeyCallback: hkcb,
+	})
 	if err != nil {
 		// Check if it's a host key verification failure (user said no or mismatch)
 		var keyErr *knownhosts.KeyError
@@ -58,7 +63,13 @@ func CreateFileSystemWithConnector(remoteStr string, args []string, conn FileSys
 			return nil, nil, fileerrors.WrapError(err, "reading password")
 		}
 
-		fs, err = conn.NewRemoteFS(host, user, password, keyPath, hkcb)
+		fs, err = conn.NewRemoteFS(ssh.SSHConfig{
+			Address:         host,
+			User:            user,
+			Password:        password,
+			KeyPath:         keyPath,
+			HostKeyCallback: hkcb,
+		})
 		if err != nil {
 			return nil, nil, fileerrors.WrapError(err, "connection failed")
 		}

@@ -119,15 +119,24 @@ type Tab struct {
 	ParentPath     string          // Previous path before entering archive
 }
 
+// TabOptions encapsulates data for creating a new tab
+type TabOptions struct {
+	FS         core.FileSystem
+	Path       string
+	SortMode   sorting.SortMode
+	RemoteUser string
+	RemoteHost string
+}
+
 // NewTab creates a new tab for the given path
-func NewTab(fs core.FileSystem, path string, sortMode sorting.SortMode, remoteUser, remoteHost string) Tab {
+func NewTab(opts TabOptions) Tab {
 	return Tab{
-		FS:            fs,
-		Path:          path,
-		SortMode:      sortMode,
+		FS:            opts.FS,
+		Path:          opts.Path,
+		SortMode:      opts.SortMode,
 		SelectedPaths: make(map[string]bool),
-		RemoteUser:    remoteUser,
-		RemoteHost:    remoteHost,
+		RemoteUser:    opts.RemoteUser,
+		RemoteHost:    opts.RemoteHost,
 	}
 }
 

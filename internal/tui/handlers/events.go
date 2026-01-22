@@ -73,7 +73,11 @@ func handleEvents(m *tuictx.Model, msg tea.Msg) (tea.Cmd, bool) {
 				} else if strings.HasPrefix(msgText, "Extracting ") {
 					msgText = "Unzipped " + msgText[11:]
 				}
-				utils.LogUpdate(m, msg.LogID, tuictx.StatusSuccess, tuictx.LogSuccess, msgText, "")
+				utils.LogUpdate(m, msg.LogID, tuictx.LogEntry{
+					Status:  tuictx.StatusSuccess,
+					Level:   tuictx.LogSuccess,
+					Message: msgText,
+				})
 				return tea.Batch(
 					utils.SetMsg(m, msgText),
 					nav.Reload(m, false),
@@ -98,7 +102,12 @@ func handleEvents(m *tuictx.Model, msg tea.Msg) (tea.Cmd, bool) {
 				} else {
 					msgText = "Failed: " + msgText
 				}
-				utils.LogUpdate(m, msg.LogID, tuictx.StatusError, tuictx.LogError, msgText, msg.Err.Error())
+				utils.LogUpdate(m, msg.LogID, tuictx.LogEntry{
+					Status:  tuictx.StatusError,
+					Level:   tuictx.LogError,
+					Message: msgText,
+					Details: msg.Err.Error(),
+				})
 				break
 			}
 		}

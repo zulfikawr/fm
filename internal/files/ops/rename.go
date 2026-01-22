@@ -1,38 +1,34 @@
 package ops
 
 import (
-	"context"
 	"fmt"
 
 	"github.com/zulfikawr/fm/internal/files/conflict"
-	"github.com/zulfikawr/fm/internal/files/core"
 	"github.com/zulfikawr/fm/internal/files/errors"
 )
 
 // Rename renames a file or directory.
-func Rename(ctx context.Context, fs core.FileSystem, oldPath, newPath string, policy conflict.Policy) error {
-	if oldPath == "" {
-		return errors.WrapErrorWithPath(fmt.Errorf("no files selected"), "Rename", "")
+func Rename(opts RenameOptions) error {
+	if opts.OldPath == "" {
+		return errors.WrapErrorWithPath(fmt.Errorf("source path is empty"), "Rename", "")
 	}
-	// Validate new filename component
-	if err := ValidateFileName(fs.Base(newPath)); err != nil {
-		return errors.WrapErrorWithPath(err, "Rename", newPath)
+	if err := ValidateFileName(opts.OpCtx.FS.Base(opts.NewPath)); err != nil {
+		return errors.WrapErrorWithPath(err, "Rename", opts.NewPath)
 	}
 
 	resolver := conflict.NewResolver()
-	resolvedPath, _, err := resolver.Resolve(ctx, fs, oldPath, newPath, policy)
+	resolvedPath, _, err := resolver.Resolve(opts.OpCtx.Context, opts.OpCtx.FS, conflict.ResolveOptions{
+		Src:    opts.OldPath,
+		Dst:    opts.NewPath,
+		Policy: opts.Conflict.Policy,
+	})
 	if err != nil {
-		if cerr, ok := err.(*conflict.ConflictError); ok {
-			cerr.OpType = "rename"
-			return cerr
-		}
 		return err
 	}
 
 	if resolvedPath == "" {
-		return nil // Skip
+		return nil // Cancelled
 	}
-	newPath = resolvedPath
 
-	return errors.WrapErrorWithPath(fs.Rename(ctx, oldPath, newPath), "Rename", fmt.Sprintf("%s -> %s", oldPath, newPath))
+	return opts.OpCtx.FS.Rename(opts.OpCtx.Context, opts.OldPath, resolvedPath)
 }

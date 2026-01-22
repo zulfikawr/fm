@@ -15,6 +15,12 @@ import (
 	"github.com/zulfikawr/fm/internal/tui/theme"
 )
 
+// HighlightStyles defines styles for search result highlighting
+type HighlightStyles struct {
+	Match lipgloss.Style
+	Base  lipgloss.Style
+}
+
 // RunSearch performs the fuzzy search from the CLI
 func RunSearch(args *Args) error {
 	cfg := config.Load()
@@ -50,7 +56,12 @@ func RunSearch(args *Args) error {
 		styles.FileCol.Render(searchPath),
 	)
 
-	results, err := ops.Search(ctx, fs, gs, searchPath, args.SearchQuery)
+	results, err := ops.Search(ops.SearchOptions{
+		OpCtx: ops.OpContext{Context: ctx, FS: fs},
+		Git:   gs,
+		Root:  searchPath,
+		Query: args.SearchQuery,
+	})
 	if err != nil {
 		return fmt.Errorf("search failed: %w", err)
 	}
@@ -90,7 +101,10 @@ func RunSearch(args *Args) error {
 		}
 
 		if fileNameMatch != nil {
-			header += highlightMatchesWithBase(baseName, fileNameMatch.MatchedIdx, highlightStyle, styles.DirCol)
+			header += highlightMatchesWithBase(baseName, fileNameMatch.MatchedIdx, HighlightStyles{
+				Match: highlightStyle,
+				Base:  styles.DirCol,
+			})
 		} else {
 			header += styles.DirCol.Render(baseName)
 		}
@@ -124,9 +138,9 @@ func RunSearch(args *Args) error {
 }
 
 // highlightMatchesWithBase highlights specific characters in a string while applying a base style to the rest.
-func highlightMatchesWithBase(content string, indices []int, matchStyle, baseStyle lipgloss.Style) string {
+func highlightMatchesWithBase(content string, indices []int, styles HighlightStyles) string {
 	if len(indices) == 0 {
-		return baseStyle.Render(content)
+		return styles.Base.Render(content)
 	}
 
 	isMatched := make(map[int]bool)
@@ -139,9 +153,9 @@ func highlightMatchesWithBase(content string, indices []int, matchStyle, baseSty
 	for i, r := range runes {
 		char := string(r)
 		if isMatched[i] {
-			sb.WriteString(matchStyle.Render(char))
+			sb.WriteString(styles.Match.Render(char))
 		} else {
-			sb.WriteString(baseStyle.Render(char))
+			sb.WriteString(styles.Base.Render(char))
 		}
 	}
 	return sb.String()

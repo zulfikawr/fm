@@ -9,9 +9,17 @@ import (
 	"github.com/zulfikawr/fm/internal/tui/theme"
 )
 
+// ProgressProps encapsulates data for rendering a progress bar
+type ProgressProps struct {
+	Label   string
+	Percent float64
+	Width   int
+	Styles  theme.Stylesheet
+}
+
 // ProgressBar renders a standardized progress bar.
-func ProgressBar(label string, percent float64, width int, styles theme.Stylesheet) string {
-	percentInt := int(percent * 100)
+func ProgressBar(props ProgressProps) string {
+	percentInt := int(props.Percent * 100)
 	if percentInt > 100 {
 		percentInt = 100
 	}
@@ -21,22 +29,22 @@ func ProgressBar(label string, percent float64, width int, styles theme.Styleshe
 	percStr := fmt.Sprintf(" %3d%%", percentInt)
 
 	// Available width for label and bar (account for percStr and leading space)
-	availableWidth := width - len(percStr) - 2
+	availableWidth := props.Width - len(percStr) - 2
 	if availableWidth < 10 {
 		// Just show label and percent if too narrow
-		content := Truncate(label, availableWidth) + percStr
-		return styles.Footer.Width(width).Render(" " + content)
+		content := Truncate(props.Label, availableWidth) + percStr
+		return props.Styles.Footer.Width(props.Width).Render(" " + content)
 	}
 
 	maxLabelWidth := int(float64(availableWidth) * 0.4)
-	displayLabel := Truncate(label, maxLabelWidth)
+	displayLabel := Truncate(props.Label, maxLabelWidth)
 
 	barWidth := availableWidth - lipgloss.Width(displayLabel) - 3
 	if barWidth < 5 {
 		barWidth = 5
 	}
 
-	filled := int(float64(barWidth) * percent)
+	filled := int(float64(barWidth) * props.Percent)
 	if filled > barWidth {
 		filled = barWidth
 	}
@@ -44,9 +52,9 @@ func ProgressBar(label string, percent float64, width int, styles theme.Styleshe
 		filled = 0
 	}
 
-	progressStyle := styles.KeyCol.Inherit(styles.Footer).UnsetPadding().UnsetWidth()
-	dimStyle := styles.DimCol.Inherit(styles.Footer).UnsetPadding().UnsetWidth()
-	baseStyle := styles.Footer.UnsetPadding().UnsetWidth()
+	progressStyle := props.Styles.KeyCol.Inherit(props.Styles.Footer).UnsetPadding().UnsetWidth()
+	dimStyle := props.Styles.DimCol.Inherit(props.Styles.Footer).UnsetPadding().UnsetWidth()
+	baseStyle := props.Styles.Footer.UnsetPadding().UnsetWidth()
 
 	colorizedBar := dimStyle.Render("[") +
 		progressStyle.Render(strings.Repeat("#", filled)) +
@@ -54,5 +62,5 @@ func ProgressBar(label string, percent float64, width int, styles theme.Styleshe
 		dimStyle.Render("]")
 
 	content := baseStyle.Render(" "+displayLabel+" ") + colorizedBar + baseStyle.Render(percStr)
-	return styles.Footer.Width(width).Render(content)
+	return props.Styles.Footer.Width(props.Width).Render(content)
 }

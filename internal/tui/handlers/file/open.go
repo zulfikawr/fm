@@ -15,7 +15,11 @@ func OpenFile(m *tui_context.Model, selected core.Item) tea.Cmd {
 		return utils.SetErrMsg(m, "Opening remote files not supported yet")
 	}
 
-	execCmd, isTerminal, err := ops.GetOpenCmd(m.FS, selected.Path, m.Config.EditorIndex)
+	execCmd, isTerminal, err := ops.GetOpenCmd(ops.OpenOptions{
+		FS:        m.FS,
+		Path:      selected.Path,
+		EditorIdx: m.Config.EditorIndex,
+	})
 	if err != nil {
 		return utils.LogError(m, err, "Open")
 	}
@@ -36,7 +40,12 @@ func OpenFile(m *tui_context.Model, selected core.Item) tea.Cmd {
 }
 
 func OpenFileAtLine(m *tui_context.Model, path string, line int) tea.Cmd {
-	execCmd, isTerminal, err := ops.GetOpenAtLineCmd(m.FS, path, m.Config.EditorIndex, line)
+	execCmd, isTerminal, err := ops.GetOpenAtLineCmd(ops.OpenOptions{
+		FS:        m.FS,
+		Path:      path,
+		EditorIdx: m.Config.EditorIndex,
+		Line:      line,
+	})
 	if err != nil {
 		return utils.SetErrMsg(m, "Error: "+err.Error())
 	}

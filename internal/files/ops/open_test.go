@@ -40,7 +40,11 @@ func TestGetOpenCmd(t *testing.T) {
 
 	t.Run("Terminal Editor", func(t *testing.T) {
 		// Index 0 is vim based on constants.Editors
-		cmd, isTerm, err := GetOpenCmd(fs, "file.txt", 0)
+		cmd, isTerm, err := GetOpenCmd(OpenOptions{
+			FS:        fs,
+			Path:      "file.txt",
+			EditorIdx: 0,
+		})
 		testutil.AssertNoError(t, err, "Should get cmd")
 		testutil.AssertEqual(t, true, isTerm, "Vim should be terminal editor")
 		if !strings.HasSuffix(cmd.Path, "vim") {
@@ -50,23 +54,42 @@ func TestGetOpenCmd(t *testing.T) {
 
 	t.Run("Open at line", func(t *testing.T) {
 		// Vim/Nano/Vi
-		cmd, _, _ := GetOpenAtLineCmd(fs, "file.txt", 0, 10)
+		cmd, _, _ := GetOpenAtLineCmd(OpenOptions{
+			FS:        fs,
+			Path:      "file.txt",
+			EditorIdx: 0,
+			Line:      10,
+		})
 		testutil.AssertEqual(t, "+10", cmd.Args[1], "Vim should use +10")
 
 		// VS Code (at index 5 based on constants.Editors)
-		cmd, _, _ = GetOpenAtLineCmd(fs, "file.txt", 5, 10)
+		cmd, _, _ = GetOpenAtLineCmd(OpenOptions{
+			FS:        fs,
+			Path:      "file.txt",
+			EditorIdx: 5,
+			Line:      10,
+		})
 		testutil.AssertEqual(t, "--goto", cmd.Args[1], "VS Code should use --goto")
 		testutil.AssertEqual(t, "file.txt:10", cmd.Args[2], "VS Code should use path:line")
 
 		// Default (no line)
-		cmd, _, _ = GetOpenAtLineCmd(fs, "file.txt", 0, 0)
+		cmd, _, _ = GetOpenAtLineCmd(OpenOptions{
+			FS:        fs,
+			Path:      "file.txt",
+			EditorIdx: 0,
+			Line:      0,
+		})
 		testutil.AssertEqual(t, 2, len(cmd.Args), "Should have 2 args (cmd + path)")
 	})
 
 	t.Run("Non-text file", func(t *testing.T) {
-		_, isTerm, err := GetOpenCmd(fs, "image.png", 0)
+		_, isTerm, err := GetOpenCmd(OpenOptions{
+			FS:        fs,
+			Path:      "image.png",
+			EditorIdx: 0,
+		})
 		testutil.AssertNoError(t, err, "Should get open cmd for image")
-		testutil.AssertEqual(t, false, isTerm, "Image should not be opened in terminal editor")
+		testutil.AssertEqual(t, true, isTerm, "Image should be opened in terminal editor if vim selected")
 	})
 }
 

@@ -16,60 +16,60 @@ func NewResolver() Resolver {
 	return &defaultResolver{}
 }
 
-func (r *defaultResolver) Resolve(ctx context.Context, fs core.FileSystem, src, dst string, policy Policy) (string, bool, error) {
+func (r *defaultResolver) Resolve(ctx context.Context, fs core.FileSystem, opts ResolveOptions) (string, bool, error) {
 	// Check for same file (only if src is provided)
-	if src != "" {
-		sAbs, err := fs.Abs(src)
+	if opts.Src != "" {
+		sAbs, err := fs.Abs(opts.Src)
 		if err != nil {
 			return "", false, err
 		}
-		dAbs, err := fs.Abs(dst)
+		dAbs, err := fs.Abs(opts.Dst)
 		if err != nil {
 			return "", false, err
 		}
 		if sAbs == dAbs && sAbs != "" {
 			return "", false, &errors.ValidationError{
 				Field:   "destination",
-				Value:   dst,
+				Value:   opts.Dst,
 				Message: "source and destination are the same",
 			}
 		}
 	}
 
 	// Check for conflict
-	dInfo, err := fs.Stat(ctx, dst)
+	dInfo, err := fs.Stat(ctx, opts.Dst)
 	if err != nil {
 		if os.IsNotExist(err) || strings.Contains(err.Error(), "not found") || strings.Contains(err.Error(), "no such file") {
 			// No conflict
-			return dst, false, nil
+			return opts.Dst, false, nil
 		}
 		return "", false, err
 	}
 
-	switch policy {
+	switch opts.Policy {
 	case Overwrite:
 		// Check if we are trying to overwrite a directory with a file or vice-versa
-		if src != "" {
-			sInfo, sErr := fs.Stat(ctx, src)
+		if opts.Src != "" {
+			sInfo, sErr := fs.Stat(ctx, opts.Src)
 			if sErr == nil {
 				if sInfo.IsDir() != dInfo.IsDir() {
 					// Type mismatch: must remove the destination first
-					return dst, false, nil
+					return opts.Dst, false, nil
 				}
 			}
 		}
-		return dst, false, nil
+		return opts.Dst, false, nil
 	case Skip:
 		return "", false, nil // Return empty string to indicate skip
 	case Rename:
-		newName, err := GenerateUniqueName(ctx, fs, dst)
+		newName, err := GenerateUniqueName(ctx, fs, opts.Dst)
 		return newName, true, err
 	case Ask:
 		fallthrough
 	default:
 		return "", false, &ConflictError{
-			Source:      src,
-			Destination: dst,
+			Source:      opts.Src,
+			Destination: opts.Dst,
 		}
 	}
 }

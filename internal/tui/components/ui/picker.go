@@ -12,10 +12,18 @@ func Picker(value string, styles theme.Stylesheet) string {
 	return styles.KeyCol.Render(content)
 }
 
-// PickerLabeled renders a label followed by an option picker.
-func PickerLabeled(label string, value string, width int, styles theme.Stylesheet) string {
-	labelPart := label + ":"
-	pickerPart := Picker(value, styles)
+// PickerProps encapsulates data for rendering a labeled picker
+type PickerProps struct {
+	Label  string
+	Value  string
+	Width  int
+	Styles theme.Stylesheet
+}
 
-	return FlexRow(width, labelPart, " ", pickerPart)
+// PickerLabeled renders a label followed by an option picker.
+func PickerLabeled(props PickerProps) string {
+	labelPart := props.Label + ":"
+	pickerPart := Picker(props.Value, props.Styles)
+
+	return FlexRow(props.Width, labelPart, " ", pickerPart)
 }

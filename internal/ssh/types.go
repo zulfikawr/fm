@@ -7,10 +7,16 @@ import (
 	sshx "golang.org/x/crypto/ssh"
 )
 
-// SSHConfig represents settings for an SSH connection.
+// SSHConfig encapsulates SSH connection parameters.
 type SSHConfig struct {
+	Address         string
+	User            string
+	Password        string
+	KeyPath         string
+	HostKeyCallback sshx.HostKeyCallback
+
+	// Internal use for SSH config file parsing if needed
 	HostName     string
-	User         string
 	Port         string
 	IdentityFile string
 }

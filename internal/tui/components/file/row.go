@@ -8,102 +8,119 @@ import (
 	"github.com/zulfikawr/fm/internal/tui/components/ui"
 )
 
+// RowContext encapsulates all data needed to render a single row
+type RowContext struct {
+	Props    Props
+	Item     core.Item
+	IsCursor bool
+	Layout   Layout
+}
+
 // renderRow renders a single row in the file list
-func renderRow(props Props, item core.Item, isCursor bool, layout Layout) string {
-	marker := renderMarker(props, item, isCursor)
-	gitMarker := renderGitMarker(props, item, isCursor)
-	permIndicator := renderPermIndicator(props, item, isCursor)
-	namePart := renderNamePart(props, item, isCursor, layout)
-	metaPart := renderMetaPart(props, item, isCursor, layout)
+func renderRow(ctx RowContext) string {
+	marker := renderMarker(ctx)
+	gitMarker := renderGitMarker(ctx)
+	permIndicator := renderPermIndicator(ctx)
+	namePart := renderNamePart(ctx)
+	metaPart := renderMetaPart(ctx)
 
 	content := marker + gitMarker + permIndicator + namePart + metaPart
 
-	if isCursor {
-		return ui.ItemRow(content, props.Width, true, props.Styles)
+	if ctx.IsCursor {
+		return ui.ItemRow(content, ui.ListProps{
+			Width:    ctx.Props.Width,
+			IsCursor: true,
+			Styles:   ctx.Props.Styles,
+		})
 	}
 
-	return props.Styles.Item.Width(props.Width).Render(content)
+	return ctx.Props.Styles.Item.Width(ctx.Props.Width).Render(content)
 }
 
-func renderMarker(props Props, item core.Item, isCursor bool) string {
-	if !props.SelectMode {
+func renderMarker(ctx RowContext) string {
+	if !ctx.Props.SelectMode {
 		return ""
 	}
-	return ui.Marker(item.Selected, item.IsUp, isCursor, props.Styles)
+	return ui.Marker(ui.ListProps{
+		Selected: ctx.Item.Selected,
+		IsUp:     ctx.Item.IsUp,
+		IsCursor: ctx.IsCursor,
+		Styles:   ctx.Props.Styles,
+	})
 }
 
-func renderGitMarker(props Props, item core.Item, isCursor bool) string {
+func renderGitMarker(ctx RowContext) string {
 	gitMarker := " "
-	if item.GitStatus != "" {
-		gitMarker = item.GitStatus
+	if ctx.Item.GitStatus != "" {
+		gitMarker = ctx.Item.GitStatus
 	}
 
-	if isCursor {
-		sStyle := props.Styles.SelectedItem.UnsetPadding().UnsetWidth()
-		if style, ok := props.Styles.GitStyles[item.GitStatus]; ok {
+	if ctx.IsCursor {
+		sStyle := ctx.Props.Styles.SelectedItem.UnsetPadding().UnsetWidth()
+		if style, ok := ctx.Props.Styles.GitStyles[ctx.Item.GitStatus]; ok {
 			return style.Inherit(sStyle).Render(gitMarker)
 		}
 		return sStyle.Render(gitMarker)
 	}
 
-	if style, ok := props.Styles.GitStyles[item.GitStatus]; ok {
+	if style, ok := ctx.Props.Styles.GitStyles[ctx.Item.GitStatus]; ok {
 		return style.Render(gitMarker)
 	}
 	return gitMarker
 }
 
-func renderPermIndicator(props Props, item core.Item, isCursor bool) string {
+func renderPermIndicator(ctx RowContext) string {
 	indicator := " "
-	if !item.CanWrite && !item.IsUp && !item.IsGhost {
+	if !ctx.Item.CanWrite && !ctx.Item.IsUp && !ctx.Item.IsGhost {
 		indicator = "!"
 	}
 
-	if isCursor {
-		return props.Styles.SelectedItem.UnsetPadding().UnsetWidth().Render(indicator)
+	if ctx.IsCursor {
+		return ctx.Props.Styles.SelectedItem.UnsetPadding().UnsetWidth().Render(indicator)
 	}
 
 	if indicator == "!" {
-		return props.Styles.DimCol.Render("!")
+		return ctx.Props.Styles.DimCol.Render("!")
 	}
 	return indicator
 }
 
-func renderNamePart(props Props, item core.Item, isCursor bool, layout Layout) string {
+func renderNamePart(ctx RowContext) string {
 	var nameStr string
-	if item.IsUp {
-		nameStr = item.Name
-	} else if item.IsDir {
-		nameStr = item.Name + "/"
+	if ctx.Item.IsUp {
+		nameStr = ctx.Item.Name
+	} else if ctx.Item.IsDir {
+		nameStr = ctx.Item.Name + "/"
 	} else {
-		nameStr = item.Name
+		nameStr = ctx.Item.Name
 	}
 
-	nameStr = ui.Truncate(nameStr, layout.NameWidth)
+	nameStr = ui.Truncate(nameStr, ctx.Layout.NameWidth)
 
 	// Git Status Coloring for Name
-	nameStyle := props.Styles.FileCol
-	if item.IsUp {
-		nameStyle = props.Styles.DimCol
-	} else if item.IsDir {
-		nameStyle = props.Styles.DirCol
-	} else if item.HasMetadata && item.Mode&0o111 != 0 {
-		nameStyle = props.Styles.ExecCol
+	nameStyle := ctx.Props.Styles.FileCol
+	if ctx.Item.IsUp {
+		nameStyle = ctx.Props.Styles.DimCol
+	} else if ctx.Item.IsDir {
+		nameStyle = ctx.Props.Styles.DirCol
+	} else if ctx.Item.HasMetadata && ctx.Item.Mode&0o111 != 0 {
+		nameStyle = ctx.Props.Styles.ExecCol
 	}
 
-	if item.IsGhost {
-		nameStyle = props.Styles.GitGhost
-	} else if style, ok := props.Styles.GitStyles[item.GitStatus]; ok {
+	if ctx.Item.IsGhost {
+		nameStyle = ctx.Props.Styles.GitGhost
+	} else if style, ok := ctx.Props.Styles.GitStyles[ctx.Item.GitStatus]; ok {
 		nameStyle = style
 	}
 
-	if !item.CanRead && !item.IsUp {
-		nameStyle = props.Styles.DimCol
+	if !ctx.Item.CanRead && !ctx.Item.IsUp {
+		nameStyle = ctx.Props.Styles.DimCol
 	}
 
-	if isCursor {
-		sStyle := props.Styles.SelectedItem.UnsetPadding().UnsetWidth()
+	if ctx.IsCursor {
+		sStyle := ctx.Props.Styles.SelectedItem.UnsetPadding().UnsetWidth()
 		styledName := nameStyle.Inherit(sStyle).Render(nameStr)
-		gap := layout.NameWidth - len(nameStr)
+		gap := ctx.Layout.NameWidth - len(nameStr)
 		if gap < 0 {
 			gap = 0
 		}
@@ -111,23 +128,23 @@ func renderNamePart(props Props, item core.Item, isCursor bool, layout Layout) s
 	}
 
 	styledName := nameStyle.Render(nameStr)
-	gap := layout.NameWidth - len(nameStr)
+	gap := ctx.Layout.NameWidth - len(nameStr)
 	if gap < 0 {
 		gap = 0
 	}
 	return styledName + strings.Repeat(" ", gap)
 }
 
-func renderMetaPart(props Props, item core.Item, isCursor bool, layout Layout) string {
-	sStyle := props.Styles.SelectedItem.UnsetPadding().UnsetWidth()
+func renderMetaPart(ctx RowContext) string {
+	sStyle := ctx.Props.Styles.SelectedItem.UnsetPadding().UnsetWidth()
 
-	if !item.HasMetadata && !item.IsUp && !item.IsGhost {
+	if !ctx.Item.HasMetadata && !ctx.Item.IsUp && !ctx.Item.IsGhost {
 		metaWidth := 0
-		if layout.ShowDate {
-			metaWidth += layout.DateWidth + layout.ColumnGap
+		if ctx.Layout.ShowDate {
+			metaWidth += ctx.Layout.DateWidth + ctx.Layout.ColumnGap
 		}
-		if layout.ShowSize {
-			metaWidth += layout.SizeWidth + layout.ColumnGap
+		if ctx.Layout.ShowSize {
+			metaWidth += ctx.Layout.SizeWidth + ctx.Layout.ColumnGap
 		}
 
 		if metaWidth == 0 {
@@ -135,31 +152,31 @@ func renderMetaPart(props Props, item core.Item, isCursor bool, layout Layout) s
 		}
 
 		content := fmt.Sprintf("%*s", metaWidth, "...")
-		if isCursor {
-			return props.Styles.DimCol.Inherit(sStyle).Render(content)
+		if ctx.IsCursor {
+			return ctx.Props.Styles.DimCol.Inherit(sStyle).Render(content)
 		}
-		return props.Styles.DimCol.Render(content)
+		return ctx.Props.Styles.DimCol.Render(content)
 	}
 
 	datePart := ""
-	if layout.ShowDate {
-		dateStr := item.FormattedDate
-		content := fmt.Sprintf("%*s%*s", layout.ColumnGap, "", layout.DateWidth, dateStr)
-		if isCursor {
-			datePart = props.Styles.DimCol.Inherit(sStyle).Render(content)
+	if ctx.Layout.ShowDate {
+		dateStr := ctx.Item.FormattedDate
+		content := fmt.Sprintf("%*s%*s", ctx.Layout.ColumnGap, "", ctx.Layout.DateWidth, dateStr)
+		if ctx.IsCursor {
+			datePart = ctx.Props.Styles.DimCol.Inherit(sStyle).Render(content)
 		} else {
-			datePart = props.Styles.DimCol.Render(content)
+			datePart = ctx.Props.Styles.DimCol.Render(content)
 		}
 	}
 
 	sizePart := ""
-	if layout.ShowSize {
-		sizeStr := item.FormattedSize
-		content := fmt.Sprintf("%*s%*s", layout.ColumnGap, "", layout.SizeWidth, sizeStr)
-		if isCursor {
-			sizePart = props.Styles.DimCol.Inherit(sStyle).Render(content)
+	if ctx.Layout.ShowSize {
+		sizeStr := ctx.Item.FormattedSize
+		content := fmt.Sprintf("%*s%*s", ctx.Layout.ColumnGap, "", ctx.Layout.SizeWidth, sizeStr)
+		if ctx.IsCursor {
+			sizePart = ctx.Props.Styles.DimCol.Inherit(sStyle).Render(content)
 		} else {
-			sizePart = props.Styles.DimCol.Render(content)
+			sizePart = ctx.Props.Styles.DimCol.Render(content)
 		}
 	}
 

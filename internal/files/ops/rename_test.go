@@ -22,7 +22,12 @@ func TestRename(t *testing.T) {
 			called = true
 			return nil
 		}
-		err := Rename(ctx, fs, "/old", "/new", conflict.Ask)
+		err := Rename(RenameOptions{
+			OpCtx:    OpContext{Context: ctx, FS: fs},
+			OldPath:  "/old",
+			NewPath:  "/new",
+			Conflict: ConflictOptions{Policy: conflict.Ask},
+		})
 		testutil.AssertNoError(t, err, "Rename should succeed")
 		if !called {
 			t.Error("fs.Rename was not called")
@@ -30,14 +35,22 @@ func TestRename(t *testing.T) {
 	})
 
 	t.Run("Empty Path", func(t *testing.T) {
-		err := Rename(ctx, fs, "", "/new", conflict.Ask)
+		err := Rename(RenameOptions{
+			OpCtx:   OpContext{Context: ctx, FS: fs},
+			OldPath: "",
+			NewPath: "/new",
+		})
 		if err == nil {
 			t.Error("Expected error for empty oldPath")
 		}
 	})
 
 	t.Run("Invalid New Name", func(t *testing.T) {
-		err := Rename(ctx, fs, "/old", "/path/invalid*name", conflict.Ask)
+		err := Rename(RenameOptions{
+			OpCtx:   OpContext{Context: ctx, FS: fs},
+			OldPath: "/old",
+			NewPath: "/path/invalid*name",
+		})
 		if err == nil {
 			t.Error("Expected error for invalid characters in new name")
 		}
@@ -51,7 +64,12 @@ func TestRename(t *testing.T) {
 			}
 			return nil, os.ErrNotExist
 		}
-		err := Rename(ctx, fs, "/old", "/new", conflict.Skip)
+		err := Rename(RenameOptions{
+			OpCtx:    OpContext{Context: ctx, FS: fs},
+			OldPath:  "/old",
+			NewPath:  "/new",
+			Conflict: ConflictOptions{Policy: conflict.Skip},
+		})
 		testutil.AssertNoError(t, err, "Should not error on skip")
 	})
 }

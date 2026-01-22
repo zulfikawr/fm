@@ -199,7 +199,14 @@ func TestPerformZipUnzip(t *testing.T) {
 func TestResolveConflict(t *testing.T) {
 	fs := testutil.NewMockFileSystem()
 	m := tuictx.NewModel(fs, "/test")
-	m.Operations.Conflict.Set("/src/a", "/dest/a", []string{"/src/a"}, false, "copy", "log1")
+	m.Operations.Conflict.Set(tuictx.ConflictParams{
+		Source:       "/src/a",
+		Destination:  "/dest/a",
+		PendingItems: []string{"/src/a"},
+		IsMove:       false,
+		OpType:       "copy",
+		LogID:        "log1",
+	})
 
 	t.Run("Overwrite", func(t *testing.T) {
 		cmd := file.ResolveConflict(m, "overwrite", false)
@@ -209,7 +216,14 @@ func TestResolveConflict(t *testing.T) {
 	})
 
 	t.Run("Skip", func(t *testing.T) {
-		m.Operations.Conflict.Set("/src/a", "/dest/a", []string{"/src/a"}, false, "copy", "log1")
+		m.Operations.Conflict.Set(tuictx.ConflictParams{
+			Source:       "/src/a",
+			Destination:  "/dest/a",
+			PendingItems: []string{"/src/a"},
+			IsMove:       false,
+			OpType:       "copy",
+			LogID:        "log1",
+		})
 		cmd := file.ResolveConflict(m, "skip", false)
 		if cmd == nil {
 			t.Error("expected non-nil command")

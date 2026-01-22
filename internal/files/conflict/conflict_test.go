@@ -55,7 +55,7 @@ func TestResolver(t *testing.T) {
 		fs.StatFunc = func(ctx context.Context, path string) (os.FileInfo, error) {
 			return nil, os.ErrNotExist
 		}
-		dst, renamed, err := resolver.Resolve(ctx, fs, "src", "dst", Ask)
+		dst, renamed, err := resolver.Resolve(ctx, fs, ResolveOptions{Src: "src", Dst: "dst", Policy: Ask})
 		testutil.AssertNoError(t, err, "Resolve should not fail")
 		testutil.AssertEqual(t, "dst", dst, "Should return dst")
 		testutil.AssertEqual(t, false, renamed, "Should not be renamed")
@@ -65,7 +65,7 @@ func TestResolver(t *testing.T) {
 		fs.StatFunc = func(ctx context.Context, path string) (os.FileInfo, error) {
 			return &testutil.MockFileInfo{FName: "dst"}, nil
 		}
-		_, _, err := resolver.Resolve(ctx, fs, "src", "dst", Ask)
+		_, _, err := resolver.Resolve(ctx, fs, ResolveOptions{Src: "src", Dst: "dst", Policy: Ask})
 		if err == nil {
 			t.Fatal("expected conflict error")
 		}
@@ -77,7 +77,7 @@ func TestResolver(t *testing.T) {
 		fs.StatFunc = func(ctx context.Context, path string) (os.FileInfo, error) {
 			return &testutil.MockFileInfo{FName: "dst"}, nil
 		}
-		dst, renamed, err := resolver.Resolve(ctx, fs, "src", "dst", Overwrite)
+		dst, renamed, err := resolver.Resolve(ctx, fs, ResolveOptions{Src: "src", Dst: "dst", Policy: Overwrite})
 		testutil.AssertNoError(t, err, "Resolve should not fail")
 		testutil.AssertEqual(t, "dst", dst, "Should return dst")
 		testutil.AssertEqual(t, false, renamed, "Should not be renamed")
@@ -87,7 +87,7 @@ func TestResolver(t *testing.T) {
 		fs.StatFunc = func(ctx context.Context, path string) (os.FileInfo, error) {
 			return &testutil.MockFileInfo{FName: "dst"}, nil
 		}
-		dst, renamed, err := resolver.Resolve(ctx, fs, "src", "dst", Skip)
+		dst, renamed, err := resolver.Resolve(ctx, fs, ResolveOptions{Src: "src", Dst: "dst", Policy: Skip})
 		testutil.AssertNoError(t, err, "Resolve should not fail")
 		testutil.AssertEqual(t, "", dst, "Should return empty string")
 		testutil.AssertEqual(t, false, renamed, "Should not be renamed")
@@ -101,7 +101,7 @@ func TestResolver(t *testing.T) {
 			return nil, os.ErrNotExist
 		}
 		fs.ExtFunc = func(path string) string { return ".txt" }
-		dst, renamed, err := resolver.Resolve(ctx, fs, "src.txt", "dst.txt", Rename)
+		dst, renamed, err := resolver.Resolve(ctx, fs, ResolveOptions{Src: "src.txt", Dst: "dst.txt", Policy: Rename})
 		testutil.AssertNoError(t, err, "Resolve should not fail")
 		testutil.AssertEqual(t, "dst (1).txt", dst, "Should return renamed path")
 		testutil.AssertEqual(t, true, renamed, "Should be renamed")

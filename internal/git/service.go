@@ -13,6 +13,9 @@ type GitService interface {
 	// GetRoot returns the git repository root for a path, cached
 	GetRoot(ctx context.Context, path string) string
 
+	// GetIgnoredFiles returns a list of ignored files in the repository
+	GetIgnoredFiles(ctx context.Context, repoRoot string) ([]string, error)
+
 	// IsEnabled returns whether git integration is enabled
 	IsEnabled() bool
 

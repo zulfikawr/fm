@@ -32,7 +32,12 @@ func TestRender_UI(t *testing.T) {
 	styles := theme.GetStylesheet(0)
 
 	t.Run("ProgressBar", func(t *testing.T) {
-		v := ProgressBar("Copying", 0.5, 80, styles)
+		v := ProgressBar(ProgressProps{
+			Label:   "Copying",
+			Percent: 0.5,
+			Width:   80,
+			Styles:  styles,
+		})
 		stripped := testutil.StripANSI(v)
 		if !strings.Contains(stripped, "Copying") || !strings.Contains(stripped, "50%") {
 			t.Errorf("ProgressBar failed, got: %q", stripped)
@@ -71,7 +76,7 @@ func TestRender_UI(t *testing.T) {
 
 	t.Run("Table Header", func(t *testing.T) {
 		cols := []Column{{Title: "Col1", Width: 10}}
-		v := RenderHeader(80, cols, 2, styles)
+		v := RenderHeader(HeaderProps{Width: 80, Columns: cols, Gap: 2, Styles: styles})
 		if !strings.Contains(testutil.StripANSI(v), "Col1") {
 			t.Error("Table header should contain title")
 		}
@@ -96,24 +101,24 @@ func TestRender_UI(t *testing.T) {
 	})
 
 	t.Run("Marker", func(t *testing.T) {
-		if Marker(false, true, false, styles) != "    " {
+		if Marker(ListProps{Selected: false, IsUp: true, IsCursor: false, Styles: styles}) != "    " {
 			t.Error("Marker for isUp should be empty space")
 		}
-		if !strings.Contains(Marker(false, false, false, styles), "[ ]") {
+		if !strings.Contains(Marker(ListProps{Selected: false, IsUp: false, IsCursor: false, Styles: styles}), "[ ]") {
 			t.Error("Marker for unselected should contain [ ]")
 		}
-		if !strings.Contains(Marker(true, false, false, styles), "[x]") {
+		if !strings.Contains(Marker(ListProps{Selected: true, IsUp: false, IsCursor: false, Styles: styles}), "[x]") {
 			t.Error("Marker for selected should contain [x]")
 		}
-		Marker(true, false, true, styles) // test cursor
+		Marker(ListProps{Selected: true, IsUp: false, IsCursor: true, Styles: styles}) // test cursor
 	})
 
 	t.Run("ItemRow", func(t *testing.T) {
-		v := ItemRow("content", 20, false, styles)
+		v := ItemRow("content", ListProps{Width: 20, IsCursor: false, Styles: styles})
 		if !strings.Contains(v, "content") {
 			t.Error("ItemRow should contain content")
 		}
-		ItemRow("content", 20, true, styles) // test cursor
+		ItemRow("content", ListProps{Width: 20, IsCursor: true, Styles: styles}) // test cursor
 	})
 
 	t.Run("Toggle", func(t *testing.T) {
@@ -125,14 +130,14 @@ func TestRender_UI(t *testing.T) {
 		if !strings.Contains(testutil.StripANSI(v), "[OFF]") {
 			t.Error("Toggle OFF failed")
 		}
-		ToggleLabeled("Label", true, 20, styles)
+		ToggleLabeled(ToggleProps{Label: "Label", Value: true, Width: 20, Styles: styles})
 	})
 
 	t.Run("Menu/Selectable Rows", func(t *testing.T) {
-		v := SelectableRow("content", 20, false, styles)
+		v := SelectableRow("content", MenuProps{Width: 20, IsCursor: false, Styles: styles})
 		if !strings.Contains(v, "content") {
 			t.Error("SelectableRow failed")
 		}
-		MenuRow("Label", "Value", 20, false, styles)
+		MenuRow(MenuProps{Label: "Label", Value: "Value", Width: 20, IsCursor: false, Styles: styles})
 	})
 }

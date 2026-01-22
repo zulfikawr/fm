@@ -33,23 +33,17 @@ func SetErrMsg(m *tui_context.Model, msg string) tea.Cmd {
 }
 
 // LogPush adds a new log entry
-func LogPush(m *tui_context.Model, opType string, level tui_context.LogLevel, status tui_context.LogStatus, message, details string) string {
-	id := fmt.Sprintf("%d", time.Now().UnixNano())
-	m.Logs.AddEntry(tui_context.LogEntry{
-		ID:        id,
-		Timestamp: time.Now(),
-		Type:      opType,
-		Level:     level,
-		Status:    status,
-		Message:   message,
-		Details:   details,
-	})
-	return id
+func LogPush(m *tui_context.Model, entry tui_context.LogEntry) string {
+	if entry.ID == "" {
+		entry.ID = fmt.Sprintf("%d", time.Now().UnixNano())
+	}
+	m.Logs.AddEntry(entry)
+	return entry.ID
 }
 
 // LogUpdate updates an existing log entry
-func LogUpdate(m *tui_context.Model, id string, status tui_context.LogStatus, level tui_context.LogLevel, message, details string) {
-	m.Logs.UpdateStatus(id, status, level, message, details)
+func LogUpdate(m *tui_context.Model, id string, entry tui_context.LogEntry) {
+	m.Logs.UpdateStatus(id, entry)
 }
 
 // LogError logs a TUI error and sets it as the current error in the model

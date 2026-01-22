@@ -13,12 +13,20 @@ import (
 func TestCrossCopy_EdgeCases(t *testing.T) {
 	ctx := context.Background()
 	fs := testutil.NewMockFileSystem()
+	fs.AbsFunc = func(path string) (string, error) { return path, nil }
+	fs.BaseFunc = func(path string) string { return path }
 
 	t.Run("Same source and destination", func(t *testing.T) {
 		fs.AbsFunc = func(path string) (string, error) {
 			return "/same/path", nil
 		}
-		err := CrossCopy(ctx, fs, fs, "/same/path", "/same/path", nil, conflict.Ask)
+		err := CrossCopy(CopyOptions{
+			OpCtx:    OpContext{Context: ctx, FS: fs},
+			SrcFS:    fs,
+			Src:      "/same/path",
+			Dst:      "/same/path",
+			Conflict: ConflictOptions{Policy: conflict.Ask},
+		})
 		if err == nil {
 			t.Fatal("expected error when src == dst")
 		}
@@ -35,7 +43,13 @@ func TestCrossCopy_EdgeCases(t *testing.T) {
 		fs.CreateFunc = func(ctx context.Context, path string) (io.WriteCloser, error) {
 			return nil, os.ErrPermission
 		}
-		err := CrossCopy(ctx, fs, fs, "/src", "/dst", nil, conflict.Ask)
+		err := CrossCopy(CopyOptions{
+			OpCtx:    OpContext{Context: ctx, FS: fs},
+			SrcFS:    fs,
+			Src:      "/src",
+			Dst:      "/dst",
+			Conflict: ConflictOptions{Policy: conflict.Ask},
+		})
 		if err == nil {
 			t.Fatal("expected permission error")
 		}
@@ -45,6 +59,8 @@ func TestCrossCopy_EdgeCases(t *testing.T) {
 func TestCrossCopy_Full(t *testing.T) {
 	ctx := context.Background()
 	fs := testutil.NewMockFileSystem()
+	fs.AbsFunc = func(path string) (string, error) { return path, nil }
+	fs.BaseFunc = func(path string) string { return path }
 
 	fs.LstatFunc = func(ctx context.Context, path string) (os.FileInfo, error) {
 		if path == "/src" {
@@ -76,13 +92,21 @@ func TestCrossCopy_Full(t *testing.T) {
 	}
 	fs.ChmodFunc = func(ctx context.Context, path string, mode os.FileMode) error { return nil }
 
-	err := CrossCopy(ctx, fs, fs, "/src", "/dst", nil, conflict.Ask)
+	err := CrossCopy(CopyOptions{
+		OpCtx:    OpContext{Context: ctx, FS: fs},
+		SrcFS:    fs,
+		Src:      "/src",
+		Dst:      "/dst",
+		Conflict: ConflictOptions{Policy: conflict.Ask},
+	})
 	testutil.AssertNoError(t, err, "CrossCopy should succeed")
 }
 
 func TestCopy(t *testing.T) {
 	ctx := context.Background()
 	fs := testutil.NewMockFileSystem()
+	fs.AbsFunc = func(path string) (string, error) { return path, nil }
+	fs.BaseFunc = func(path string) string { return path }
 
 	fs.LstatFunc = func(ctx context.Context, path string) (os.FileInfo, error) {
 		if path == "/src" {
@@ -99,13 +123,19 @@ func TestCopy(t *testing.T) {
 	}
 	fs.ChmodFunc = func(ctx context.Context, path string, mode os.FileMode) error { return nil }
 
-	err := Copy(ctx, fs, "/src", "/dst", nil, conflict.Overwrite)
+	err := Copy(CopyOptions{
+		OpCtx:    OpContext{Context: ctx, FS: fs},
+		Src:      "/src",
+		Dst:      "/dst",
+		Conflict: ConflictOptions{Policy: conflict.Overwrite},
+	})
 	testutil.AssertNoError(t, err, "Copy should succeed")
 }
 
 func TestCopyFile(t *testing.T) {
 	ctx := context.Background()
 	fs := testutil.NewMockFileSystem()
+	fs.BaseFunc = func(path string) string { return path }
 
 	fs.StatFunc = func(ctx context.Context, path string) (os.FileInfo, error) {
 		if path == "/src" {
@@ -121,13 +151,20 @@ func TestCopyFile(t *testing.T) {
 	}
 	fs.ChmodFunc = func(ctx context.Context, path string, mode os.FileMode) error { return nil }
 
-	err := copyFile(ctx, fs, "/src", "/dst", nil)
-	testutil.AssertNoError(t, err, "copyFile should succeed")
+	err := crossCopyFile(CopyOptions{
+		OpCtx: OpContext{Context: ctx, FS: fs},
+		SrcFS: fs,
+		Src:   "/src",
+		Dst:   "/dst",
+	})
+	testutil.AssertNoError(t, err, "crossCopyFile should succeed")
 }
 
 func TestCopyDir(t *testing.T) {
 	ctx := context.Background()
 	fs := testutil.NewMockFileSystem()
+	fs.AbsFunc = func(path string) (string, error) { return path, nil }
+	fs.BaseFunc = func(path string) string { return path }
 
 	fs.StatFunc = func(ctx context.Context, path string) (os.FileInfo, error) {
 		if path == "/src" {
@@ -153,13 +190,20 @@ func TestCopyDir(t *testing.T) {
 	}
 	fs.ChmodFunc = func(ctx context.Context, path string, mode os.FileMode) error { return nil }
 
-	err := copyDir(ctx, fs, "/src", "/dst", nil)
-	testutil.AssertNoError(t, err, "copyDir should succeed")
+	err := crossCopyDir(CopyOptions{
+		OpCtx: OpContext{Context: ctx, FS: fs},
+		SrcFS: fs,
+		Src:   "/src",
+		Dst:   "/dst",
+	})
+	testutil.AssertNoError(t, err, "crossCopyDir should succeed")
 }
 
 func TestCrossCopy_Rename(t *testing.T) {
 	ctx := context.Background()
 	fs := testutil.NewMockFileSystem()
+	fs.AbsFunc = func(path string) (string, error) { return path, nil }
+	fs.BaseFunc = func(path string) string { return path }
 
 	fs.StatFunc = func(ctx context.Context, path string) (os.FileInfo, error) {
 		if path == "/dst" {
@@ -182,13 +226,21 @@ func TestCrossCopy_Rename(t *testing.T) {
 	}
 	fs.ChmodFunc = func(ctx context.Context, path string, mode os.FileMode) error { return nil }
 
-	err := CrossCopy(ctx, fs, fs, "/src", "/dst", nil, conflict.Rename)
+	err := CrossCopy(CopyOptions{
+		OpCtx:    OpContext{Context: ctx, FS: fs},
+		SrcFS:    fs,
+		Src:      "/src",
+		Dst:      "/dst",
+		Conflict: ConflictOptions{Policy: conflict.Rename},
+	})
 	testutil.AssertNoError(t, err, "CrossCopy should succeed with Rename")
 }
 
 func TestCrossCopy_Overwrite(t *testing.T) {
 	ctx := context.Background()
 	fs := testutil.NewMockFileSystem()
+	fs.AbsFunc = func(path string) (string, error) { return path, nil }
+	fs.BaseFunc = func(path string) string { return path }
 
 	fs.StatFunc = func(ctx context.Context, path string) (os.FileInfo, error) {
 		if path == "/dst" {
@@ -209,6 +261,12 @@ func TestCrossCopy_Overwrite(t *testing.T) {
 	}
 	fs.ChmodFunc = func(ctx context.Context, path string, mode os.FileMode) error { return nil }
 
-	err := CrossCopy(ctx, fs, fs, "/src", "/dst", nil, conflict.Overwrite)
+	err := CrossCopy(CopyOptions{
+		OpCtx:    OpContext{Context: ctx, FS: fs},
+		SrcFS:    fs,
+		Src:      "/src",
+		Dst:      "/dst",
+		Conflict: ConflictOptions{Policy: conflict.Overwrite},
+	})
 	testutil.AssertNoError(t, err, "CrossCopy should succeed with Overwrite")
 }

@@ -6,10 +6,11 @@ import (
 
 // MockGitService implements a git service interface for testing.
 type MockGitService struct {
-	GetStatusFunc  func(ctx context.Context, path string) (map[string]string, string)
-	GetRootFunc    func(ctx context.Context, path string) string
-	IsEnabledFunc  func() bool
-	SetEnabledFunc func(enabled bool)
+	GetStatusFunc       func(ctx context.Context, path string) (map[string]string, string)
+	GetRootFunc         func(ctx context.Context, path string) string
+	GetIgnoredFilesFunc func(ctx context.Context, repoRoot string) ([]string, error)
+	IsEnabledFunc       func() bool
+	SetEnabledFunc      func(enabled bool)
 }
 
 func NewMockGitService() *MockGitService {
@@ -30,6 +31,13 @@ func (m *MockGitService) GetRoot(ctx context.Context, path string) string {
 		return m.GetRootFunc(ctx, path)
 	}
 	return ""
+}
+
+func (m *MockGitService) GetIgnoredFiles(ctx context.Context, repoRoot string) ([]string, error) {
+	if m.GetIgnoredFilesFunc != nil {
+		return m.GetIgnoredFilesFunc(ctx, repoRoot)
+	}
+	return nil, nil
 }
 
 func (m *MockGitService) IsEnabled() bool {

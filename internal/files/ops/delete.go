@@ -6,32 +6,49 @@ import (
 	"os"
 	"os/exec"
 	"runtime"
-	"time"
 
 	"github.com/zulfikawr/fm/internal/files/core"
 	"github.com/zulfikawr/fm/internal/files/errors"
 )
 
 // Delete removes a file or directory recursively.
-func Delete(ctx context.Context, fs core.FileSystem, path string, progChan chan<- core.Progress) error {
-	if path == "" {
+func Delete(opts DeleteOptions) error {
+	if len(opts.Paths) == 0 || opts.Paths[0] == "" {
 		return errors.WrapErrorWithPath(fmt.Errorf("no files selected"), "Delete", "")
 	}
-	if progChan != nil {
+	path := opts.Paths[0]
+	select {
+	case <-opts.OpCtx.Context.Done():
+		return opts.OpCtx.Context.Err()
+	default:
+	}
+
+	if opts.OpCtx.Progress != nil {
 		select {
-		case progChan <- core.Progress{Percent: 0, Label: "Deleting " + fs.Base(path) + "..."}:
+		case opts.OpCtx.Progress <- core.Progress{
+			Percent: 0,
+			Label:   "Deleting " + opts.OpCtx.FS.Base(path) + "...",
+		}:
 		default:
 		}
 	}
-	err := fs.RemoveAll(ctx, path)
-	if progChan != nil {
+
+	err := opts.OpCtx.FS.RemoveAll(opts.OpCtx.Context, path)
+	if err != nil {
+		return errors.WrapErrorWithPath(err, "Delete", path)
+	}
+
+	if opts.OpCtx.Progress != nil {
 		select {
-		case progChan <- core.Progress{Percent: 1.0, Label: "Deleted " + fs.Base(path)}:
+		case opts.OpCtx.Progress <- core.Progress{
+			Percent: 1.0,
+			Label:   "Deleted " + opts.OpCtx.FS.Base(path),
+		}:
 		default:
 		}
-		time.Sleep(100 * time.Millisecond) // Give UI time to show 100%
 	}
-	return errors.WrapErrorWithPath(err, "Delete", path)
+
+	return nil
 }
 
 // Trash moves a file or directory to the system trash.

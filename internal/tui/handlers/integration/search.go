@@ -223,7 +223,12 @@ func performSearch(m *tui_context.Model, query string) tea.Cmd {
 	m.Search.CancelFunc = cancel
 
 	return func() tea.Msg {
-		results, err := ops.Search(ctx, fs, gs, path, query)
+		results, err := ops.Search(ops.SearchOptions{
+			OpCtx: ops.OpContext{Context: ctx, FS: fs},
+			Git:   gs,
+			Root:  path,
+			Query: query,
+		})
 		return messages.SearchMsg{
 			Query:   query,
 			Results: results,

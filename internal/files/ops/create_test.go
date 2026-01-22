@@ -22,7 +22,12 @@ func TestCreateAtomic(t *testing.T) {
 			return &testutil.MockReadWriteCloser{}, nil
 		}
 
-		path, err := CreateAtomic(ctx, fs, "/test.txt", false, conflict.Ask)
+		path, err := CreateAtomic(CreateOptions{
+			OpCtx:    OpContext{Context: ctx, FS: fs},
+			Path:     "/test.txt",
+			IsDir:    false,
+			Conflict: ConflictOptions{Policy: conflict.Ask},
+		})
 		testutil.AssertNoError(t, err, "CreateAtomic should succeed")
 		testutil.AssertEqual(t, "/test.txt", path, "Path should match")
 	})
@@ -35,7 +40,12 @@ func TestCreateAtomic(t *testing.T) {
 			return nil
 		}
 
-		path, err := CreateAtomic(ctx, fs, "/test_dir", true, conflict.Ask)
+		path, err := CreateAtomic(CreateOptions{
+			OpCtx:    OpContext{Context: ctx, FS: fs},
+			Path:     "/test_dir",
+			IsDir:    true,
+			Conflict: ConflictOptions{Policy: conflict.Ask},
+		})
 		testutil.AssertNoError(t, err, "CreateAtomic should succeed")
 		testutil.AssertEqual(t, "/test_dir", path, "Path should match")
 	})
@@ -51,7 +61,12 @@ func TestCreateAtomic(t *testing.T) {
 			return &testutil.MockReadWriteCloser{}, nil
 		}
 
-		path, err := CreateAtomic(ctx, fs, "/test.txt", false, conflict.Overwrite)
+		path, err := CreateAtomic(CreateOptions{
+			OpCtx:    OpContext{Context: ctx, FS: fs},
+			Path:     "/test.txt",
+			IsDir:    false,
+			Conflict: ConflictOptions{Policy: conflict.Overwrite},
+		})
 		testutil.AssertNoError(t, err, "CreateAtomic should succeed")
 		testutil.AssertEqual(t, "/test.txt", path, "Path should match")
 	})

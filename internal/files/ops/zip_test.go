@@ -45,7 +45,12 @@ func TestZipUnzip(t *testing.T) {
 	// 2. Test Zip
 	t.Run("Zip", func(t *testing.T) {
 		sources := []string{file1, file2, subdir}
-		err := Zip(ctx, fs, sources, zipFile, nil, conflict.Ask)
+		err := Zip(ZipOptions{
+			OpCtx:    OpContext{Context: ctx, FS: fs},
+			Srcs:     sources,
+			Dst:      zipFile,
+			Conflict: ConflictOptions{Policy: conflict.Ask},
+		})
 		testutil.AssertNoError(t, err, "Zip operation")
 
 		_, err = os.Stat(zipFile)
@@ -69,7 +74,12 @@ func TestZipUnzip(t *testing.T) {
 
 	// 3. Test Unzip
 	t.Run("Unzip", func(t *testing.T) {
-		err := Unzip(ctx, fs, zipFile, extractDir, nil, conflict.Ask)
+		err := Unzip(ZipOptions{
+			OpCtx:    OpContext{Context: ctx, FS: fs},
+			Src:      zipFile,
+			Dst:      extractDir,
+			Conflict: ConflictOptions{Policy: conflict.Ask},
+		})
 		testutil.AssertNoError(t, err, "Unzip operation")
 
 		// Verify extracted content
@@ -114,7 +124,12 @@ func TestUnzip_ZipSlip(t *testing.T) {
 	zw.Close()
 	f.Close()
 
-	err := Unzip(ctx, fs, zipFile, extractDir, nil, conflict.Overwrite)
+	err := Unzip(ZipOptions{
+		OpCtx:    OpContext{Context: ctx, FS: fs},
+		Src:      zipFile,
+		Dst:      extractDir,
+		Conflict: ConflictOptions{Policy: conflict.Overwrite},
+	})
 	testutil.AssertNoError(t, err, "Unzip should not fail but skip malicious paths")
 
 	outsidePath := filepath.Join(tmpDir, "outside.txt")
@@ -127,7 +142,11 @@ func TestUnzip_ZipSlip(t *testing.T) {
 func TestZip_NoSources(t *testing.T) {
 	ctx := context.Background()
 	fs := local.NewLocalFS()
-	err := Zip(ctx, fs, []string{}, "test.zip", nil, conflict.Ask)
+	err := Zip(ZipOptions{
+		OpCtx: OpContext{Context: ctx, FS: fs},
+		Srcs:  []string{},
+		Dst:   "test.zip",
+	})
 	if err == nil {
 		t.Error("Expected error for no sources")
 	}
@@ -164,7 +183,12 @@ func TestUnzip_Remote(t *testing.T) {
 	}
 	fs.ChmodFunc = func(ctx context.Context, path string, mode os.FileMode) error { return nil }
 
-	err := Unzip(ctx, fs, "remote.zip", tmpDir, nil, conflict.Overwrite)
+	err := Unzip(ZipOptions{
+		OpCtx:    OpContext{Context: ctx, FS: fs},
+		Src:      "remote.zip",
+		Dst:      tmpDir,
+		Conflict: ConflictOptions{Policy: conflict.Overwrite},
+	})
 	testutil.AssertNoError(t, err, "Unzip remote")
 }
 
@@ -195,7 +219,12 @@ func TestZip_Recursive(t *testing.T) {
 	fs.RelFunc = func(base, target string) (string, error) { return filepath.Rel(base, target) }
 	fs.JoinFunc = func(elem ...string) string { return filepath.Join(elem...) }
 
-	err := Zip(ctx, fs, []string{"/src"}, "/out.zip", nil, conflict.Overwrite)
+	err := Zip(ZipOptions{
+		OpCtx:    OpContext{Context: ctx, FS: fs},
+		Srcs:     []string{"/src"},
+		Dst:      "/out.zip",
+		Conflict: ConflictOptions{Policy: conflict.Overwrite},
+	})
 	testutil.AssertNoError(t, err, "Recursive zip")
 }
 
@@ -223,14 +252,24 @@ func TestUnzip_ConflictPolicies(t *testing.T) {
 	}
 
 	t.Run("Skip", func(t *testing.T) {
-		err := Unzip(ctx, fs, zipFile, extractDir, nil, conflict.Skip)
+		err := Unzip(ZipOptions{
+			OpCtx:    OpContext{Context: ctx, FS: fs},
+			Src:      zipFile,
+			Dst:      extractDir,
+			Conflict: ConflictOptions{Policy: conflict.Skip},
+		})
 		testutil.AssertNoError(t, err, "Unzip Skip")
 		content, _ := os.ReadFile(filepath.Join(extractDir, "file1.txt"))
 		testutil.AssertEqual(t, "old content", string(content), "Should not overwrite")
 	})
 
 	t.Run("Overwrite", func(t *testing.T) {
-		err := Unzip(ctx, fs, zipFile, extractDir, nil, conflict.Overwrite)
+		err := Unzip(ZipOptions{
+			OpCtx:    OpContext{Context: ctx, FS: fs},
+			Src:      zipFile,
+			Dst:      extractDir,
+			Conflict: ConflictOptions{Policy: conflict.Overwrite},
+		})
 		testutil.AssertNoError(t, err, "Unzip Overwrite")
 		content, _ := os.ReadFile(filepath.Join(extractDir, "file1.txt"))
 		testutil.AssertEqual(t, "new content", string(content), "Should overwrite")
@@ -248,7 +287,12 @@ func TestZip_WalkError(t *testing.T) {
 	}
 	fs.DirFunc = func(path string) string { return filepath.Dir(path) }
 
-	err := Zip(ctx, fs, []string{"/src"}, "/out.zip", nil, conflict.Overwrite)
+	err := Zip(ZipOptions{
+		OpCtx:    OpContext{Context: ctx, FS: fs},
+		Srcs:     []string{"/src"},
+		Dst:      "/out.zip",
+		Conflict: ConflictOptions{Policy: conflict.Overwrite},
+	})
 	if err == nil {
 		t.Error("Expected error from walkAndZip due to permission error")
 	}
@@ -267,7 +311,12 @@ func TestZip_Conflict(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	err := Zip(ctx, fs, []string{srcFile}, zipFile, nil, conflict.Ask)
+	err := Zip(ZipOptions{
+		OpCtx:    OpContext{Context: ctx, FS: fs},
+		Srcs:     []string{srcFile},
+		Dst:      zipFile,
+		Conflict: ConflictOptions{Policy: conflict.Ask},
+	})
 	if err == nil {
 		t.Fatal("Expected conflict error")
 	}
@@ -300,7 +349,12 @@ func TestUnzip_ConflictError(t *testing.T) {
 	}
 
 	// Unzip with Ask policy should return ConflictError
-	err := Unzip(ctx, fs, zipFile, extractDir, nil, conflict.Ask)
+	err := Unzip(ZipOptions{
+		OpCtx:    OpContext{Context: ctx, FS: fs},
+		Src:      zipFile,
+		Dst:      extractDir,
+		Conflict: ConflictOptions{Policy: conflict.Ask},
+	})
 	if err == nil {
 		t.Fatal("Expected conflict error")
 	}
@@ -330,7 +384,16 @@ func TestUnzip_MultipleFiles(t *testing.T) {
 	f.Close()
 
 	progChan := make(chan core.Progress, 10)
-	err := Unzip(ctx, fs, zipFile, extractDir, progChan, conflict.Overwrite)
+	err := Unzip(ZipOptions{
+		OpCtx: OpContext{
+			Context:  ctx,
+			FS:       fs,
+			Progress: progChan,
+		},
+		Src:      zipFile,
+		Dst:      extractDir,
+		Conflict: ConflictOptions{Policy: conflict.Overwrite},
+	})
 	testutil.AssertNoError(t, err, "Unzip multi")
 
 	// Verify progress was sent

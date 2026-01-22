@@ -7,9 +7,19 @@ import (
 	"github.com/zulfikawr/fm/internal/tui/theme"
 )
 
-func renderBreadcrumbPath(path, separator string, remoteStr string, rootOverride string, styles theme.Stylesheet, maxWidth int) string {
-	sep := separator
-	parts := strings.Split(path, sep)
+// BreadcrumbProps encapsulates data for rendering breadcrumbs
+type BreadcrumbProps struct {
+	Path         string
+	Separator    string
+	RemoteStr    string
+	RootOverride string
+	Styles       theme.Stylesheet
+	MaxWidth     int
+}
+
+func renderBreadcrumbPath(props BreadcrumbProps) string {
+	sep := props.Separator
+	parts := strings.Split(props.Path, sep)
 	var cleanParts []string
 
 	for _, p := range parts {
@@ -18,16 +28,16 @@ func renderBreadcrumbPath(path, separator string, remoteStr string, rootOverride
 		}
 	}
 
-	dimHeaderStyle := styles.DimCol.Inherit(styles.Header)
-	baseStyle := styles.Header.UnsetPadding().UnsetWidth()
+	dimHeaderStyle := props.Styles.DimCol.Inherit(props.Styles.Header)
+	baseStyle := props.Styles.Header.UnsetPadding().UnsetWidth()
 
 	// Determine the root indicator (local sep or remote string)
 	var rootIndicator string
 	rootIndicatorRaw := sep
 
-	if rootOverride != "" {
+	if props.RootOverride != "" {
 		// Use rootOverride for breadcrumbs (e.g. for archives)
-		rootIndicatorRaw = rootOverride
+		rootIndicatorRaw = props.RootOverride
 	} else {
 		// Handle Windows drive letters (e.g., C:)
 		if len(cleanParts) > 0 && strings.Contains(cleanParts[0], ":") && sep == "\\" {
@@ -35,8 +45,8 @@ func renderBreadcrumbPath(path, separator string, remoteStr string, rootOverride
 			cleanParts = cleanParts[1:]
 		}
 
-		if remoteStr != "" {
-			rootIndicatorRaw = strings.TrimSuffix(remoteStr, "/")
+		if props.RemoteStr != "" {
+			rootIndicatorRaw = strings.TrimSuffix(props.RemoteStr, "/")
 		}
 	}
 
@@ -56,7 +66,7 @@ func renderBreadcrumbPath(path, separator string, remoteStr string, rootOverride
 		fullBreadcrumb += separatorStr + strings.Join(styledParts, separatorStr)
 	}
 
-	if maxWidth <= 0 || lipgloss.Width(fullBreadcrumb) <= maxWidth {
+	if props.MaxWidth <= 0 || lipgloss.Width(fullBreadcrumb) <= props.MaxWidth {
 		return fullBreadcrumb
 	}
 
@@ -69,7 +79,7 @@ func renderBreadcrumbPath(path, separator string, remoteStr string, rootOverride
 			baseStyle.Render(cleanParts[len(cleanParts)-1]),
 		}
 		collapsed := rootIndicator + separatorStr + strings.Join(collapsedParts, separatorStr)
-		if lipgloss.Width(collapsed) <= maxWidth {
+		if lipgloss.Width(collapsed) <= props.MaxWidth {
 			return collapsed
 		}
 	}
@@ -81,7 +91,7 @@ func renderBreadcrumbPath(path, separator string, remoteStr string, rootOverride
 			baseStyle.Render(cleanParts[len(cleanParts)-1]),
 		}
 		collapsed := rootIndicator + separatorStr + strings.Join(collapsedParts, separatorStr)
-		if lipgloss.Width(collapsed) <= maxWidth {
+		if lipgloss.Width(collapsed) <= props.MaxWidth {
 			return collapsed
 		}
 	}
@@ -89,12 +99,12 @@ func renderBreadcrumbPath(path, separator string, remoteStr string, rootOverride
 	// If still too long, just the last part or root
 	if len(cleanParts) > 0 {
 		lastPart := baseStyle.Render(cleanParts[len(cleanParts)-1])
-		if lipgloss.Width(lastPart) <= maxWidth {
+		if lipgloss.Width(lastPart) <= props.MaxWidth {
 			return lastPart
 		}
 	}
 
-	return lipgloss.NewStyle().MaxWidth(maxWidth).Render(fullBreadcrumb)
+	return lipgloss.NewStyle().MaxWidth(props.MaxWidth).Render(fullBreadcrumb)
 }
 
 func addGitBranch(breadcrumb, gitBranch string, styles theme.Stylesheet) string {

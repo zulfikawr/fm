@@ -59,7 +59,11 @@ func renderClipboardRow(props ClipboardProps, path string, selected bool) string
 	}
 
 	content := prefix + path
-	return ui.FlexRow(props.Width, ui.SelectableRow(content, props.Width, selected, props.Style))
+	return ui.FlexRow(props.Width, ui.SelectableRow(content, ui.MenuProps{
+		Width:    props.Width,
+		IsCursor: selected,
+		Styles:   props.Style,
+	}))
 }
 
 func renderEmptyClipboard(width, height int) string {

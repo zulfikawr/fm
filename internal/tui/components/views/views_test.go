@@ -177,13 +177,23 @@ func TestRenderMatchContent(t *testing.T) {
 	matchedIdx := []int{0, 1, 2, 3, 4} // "hello"
 
 	t.Run("Selected", func(t *testing.T) {
-		output := renderMatchContent(content, matchedIdx, true, styles)
+		output := renderMatchContent(MatchProps{
+			Content:    content,
+			MatchedIdx: matchedIdx,
+			IsSelected: true,
+			Style:      styles,
+		})
 		plain := testutil.StripANSI(output)
 		testutil.AssertEqual(t, "hello world", plain, "Content should match")
 	})
 
 	t.Run("Not Selected", func(t *testing.T) {
-		output := renderMatchContent(content, matchedIdx, false, styles)
+		output := renderMatchContent(MatchProps{
+			Content:    content,
+			MatchedIdx: matchedIdx,
+			IsSelected: false,
+			Style:      styles,
+		})
 		plain := testutil.StripANSI(output)
 		testutil.AssertEqual(t, "hello world", plain, "Content should match")
 	})

@@ -146,5 +146,10 @@ func renderAlertFooter(props Props) string {
 }
 
 func renderProgressFooter(props Props) string {
-	return ui.ProgressBar(props.ProgressLabel, props.ProgressPercent, props.Width, props.Styles)
+	return ui.ProgressBar(ui.ProgressProps{
+		Label:   props.ProgressLabel,
+		Percent: props.ProgressPercent,
+		Width:   props.Width,
+		Styles:  props.Styles,
+	})
 }

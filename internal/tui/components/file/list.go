@@ -71,7 +71,12 @@ func Render(props Props) string {
 		if props.SelectedPaths != nil {
 			item.Selected = props.SelectedPaths[item.Path]
 		}
-		rows = append(rows, renderRow(props, item, i == props.Cursor, layout))
+		rows = append(rows, renderRow(RowContext{
+			Props:    props,
+			Item:     item,
+			IsCursor: i == props.Cursor,
+			Layout:   layout,
+		}))
 	}
 
 	// Fill remaining space
@@ -100,7 +105,12 @@ func renderHeaderRows(props Props, layout Layout) []string {
 		columns = append(columns, ui.Column{Title: "Size", Width: layout.SizeWidth})
 	}
 
-	header := ui.RenderHeader(props.Width, columns, layout.ColumnGap, props.Styles)
+	header := ui.RenderHeader(ui.HeaderProps{
+		Width:   props.Width,
+		Columns: columns,
+		Gap:     layout.ColumnGap,
+		Styles:  props.Styles,
+	})
 	return strings.Split(header, "\n")
 }
 

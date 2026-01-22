@@ -4,31 +4,40 @@ import (
 	"github.com/zulfikawr/fm/internal/tui/theme"
 )
 
+// ListProps encapsulates common rendering data for list items
+type ListProps struct {
+	Selected bool
+	IsUp     bool
+	IsCursor bool
+	Width    int
+	Styles   theme.Stylesheet
+}
+
 // Marker renders a selection checkbox marker.
-func Marker(selected bool, isUp bool, isCursor bool, styles theme.Stylesheet) string {
-	if isUp {
+func Marker(props ListProps) string {
+	if props.IsUp {
 		return "    "
 	}
 
-	style := styles.DimCol.UnsetPadding().UnsetWidth()
+	style := props.Styles.DimCol.UnsetPadding().UnsetWidth()
 	content := "[ ] "
-	if selected {
-		style = styles.KeyCol.UnsetPadding().UnsetWidth()
+	if props.Selected {
+		style = props.Styles.KeyCol.UnsetPadding().UnsetWidth()
 		content = "[x] "
 	}
 
-	if isCursor {
-		style = style.Inherit(styles.SelectedItem.UnsetPadding().UnsetWidth())
+	if props.IsCursor {
+		style = style.Inherit(props.Styles.SelectedItem.UnsetPadding().UnsetWidth())
 	}
 
 	return style.Render(content)
 }
 
 // ItemRow returns a styled selectable item row.
-func ItemRow(content string, width int, isCursor bool, styles theme.Stylesheet) string {
-	style := styles.Item
-	if isCursor {
-		style = styles.SelectedItem
+func ItemRow(content string, props ListProps) string {
+	style := props.Styles.Item
+	if props.IsCursor {
+		style = props.Styles.SelectedItem
 	}
-	return style.Width(width).Render(content)
+	return style.Width(props.Width).Render(content)
 }

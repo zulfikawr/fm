@@ -44,7 +44,7 @@ func TestHighlightMatchesWithBase(t *testing.T) {
 
 	t.Run("No indices", func(t *testing.T) {
 		content := "test"
-		got := highlightMatchesWithBase(content, nil, matchStyle, baseStyle)
+		got := highlightMatchesWithBase(content, nil, HighlightStyles{Match: matchStyle, Base: baseStyle})
 		stripped := testutil.StripANSI(got)
 		if stripped != content {
 			t.Errorf("expected %q, got %q", content, stripped)
@@ -53,7 +53,7 @@ func TestHighlightMatchesWithBase(t *testing.T) {
 
 	t.Run("With indices", func(t *testing.T) {
 		content := "test"
-		got := highlightMatchesWithBase(content, []int{1}, matchStyle, baseStyle)
+		got := highlightMatchesWithBase(content, []int{1}, HighlightStyles{Match: matchStyle, Base: baseStyle})
 		stripped := testutil.StripANSI(got)
 		if stripped != content {
 			t.Errorf("expected %q, got %q", content, stripped)

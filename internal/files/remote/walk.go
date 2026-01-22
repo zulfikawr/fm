@@ -3,14 +3,13 @@ package remote
 import (
 	"context"
 	"fmt"
-	"os"
 	"path"
 	"path/filepath"
 
 	"golang.org/x/sync/errgroup"
 )
 
-func (fs *RemoteFS) Walk(ctx context.Context, root string, walkFn func(path string, info os.FileInfo, err error) error) error {
+func (fs *RemoteFS) Walk(ctx context.Context, root string, walkFn filepath.WalkFunc) error {
 	g, ctx := errgroup.WithContext(ctx)
 	g.SetLimit(16) // Concurrency limit for parallel walking
 
@@ -27,18 +26,30 @@ func (fs *RemoteFS) Walk(ctx context.Context, root string, walkFn func(path stri
 		return nil
 	}
 
-	if err := fs.parallelWalk(ctx, g, root, walkFn); err != nil {
+	state := &walkState{
+		ctx:    ctx,
+		g:      g,
+		walkFn: walkFn,
+	}
+
+	if err := fs.parallelWalk(state, root); err != nil {
 		return err
 	}
 
 	return g.Wait()
 }
 
-func (fs *RemoteFS) parallelWalk(ctx context.Context, g *errgroup.Group, root string, walkFn func(path string, info os.FileInfo, err error) error) error {
+type walkState struct {
+	ctx    context.Context
+	g      *errgroup.Group
+	walkFn filepath.WalkFunc
+}
+
+func (fs *RemoteFS) parallelWalk(state *walkState, root string) error {
 	// Read current directory entries
-	entries, err := fs.ReadDir(ctx, root)
+	entries, err := fs.ReadDir(state.ctx, root)
 	if err != nil {
-		return walkFn(root, nil, err)
+		return state.walkFn(root, nil, err)
 	}
 
 	for _, entry := range entries {
@@ -46,7 +57,7 @@ func (fs *RemoteFS) parallelWalk(ctx context.Context, g *errgroup.Group, root st
 		p := path.Join(root, entry.Name())
 
 		// Report the entry
-		if err := walkFn(p, entry, nil); err != nil {
+		if err := state.walkFn(p, entry, nil); err != nil {
 			if err == filepath.SkipDir {
 				continue
 			}
@@ -55,14 +66,14 @@ func (fs *RemoteFS) parallelWalk(ctx context.Context, g *errgroup.Group, root st
 
 		// Recursively walk subdirectories in parallel
 		if entry.IsDir() {
-			g.Go(func() error {
+			state.g.Go(func() error {
 				select {
-				case <-ctx.Done():
-					return ctx.Err()
+				case <-state.ctx.Done():
+					return state.ctx.Err()
 				case <-fs.ctx.Done():
 					return fmt.Errorf("filesystem closed")
 				default:
-					return fs.parallelWalk(ctx, g, p, walkFn)
+					return fs.parallelWalk(state, p)
 				}
 			})
 		}

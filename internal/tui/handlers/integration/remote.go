@@ -29,14 +29,15 @@ func HandleRemote(m *tui_context.Model, msg tea.Msg) tea.Cmd {
 	return nil
 }
 
-func ConnectRemote(address, user, password, keyPath string, askChan chan *ssh.HostConfirmRequest) tea.Cmd {
+func ConnectRemote(opts ssh.SSHConfig, askChan chan *ssh.HostConfirmRequest) tea.Cmd {
 	return func() tea.Msg {
 		hkcb, err := ssh.GetHostKeyCallback(askChan)
 		if err != nil {
 			return messages.RemoteConnectMsg{Err: err}
 		}
 
-		fs, err := remote.NewRemoteFS(address, user, password, keyPath, hkcb)
+		opts.HostKeyCallback = hkcb
+		fs, err := remote.NewRemoteFS(opts)
 		if err != nil {
 			return messages.RemoteConnectMsg{Err: err}
 		}
@@ -61,7 +62,13 @@ func finalizeRemoteConnect(m *tui_context.Model, msg messages.RemoteConnectMsg) 
 	if msg.Err != nil {
 		errStr := msg.Err.Error()
 
-		utils.LogPush(m, "Remote", tui_context.LogError, tui_context.StatusError, "Connection failed", errStr)
+		utils.LogPush(m, tui_context.LogEntry{
+			Type:    "Remote",
+			Level:   tui_context.LogError,
+			Status:  tui_context.StatusError,
+			Message: "Connection failed",
+			Details: errStr,
+		})
 
 		if strings.Contains(errStr, "connection refused") || strings.Contains(errStr, "no such host") || strings.Contains(errStr, "i/o timeout") {
 			return utils.LogError(m, msg.Err, "Remote connection failed")
@@ -95,9 +102,13 @@ func finalizeRemoteConnect(m *tui_context.Model, msg messages.RemoteConnectMsg) 
 		authMethod = "agent/default keys"
 	}
 
-	utils.LogPush(m, "Remote", tui_context.LogSuccess, tui_context.StatusSuccess,
-		fmt.Sprintf("Connection established to %s@%s", m.Remote.User, m.Remote.Host),
-		fmt.Sprintf("Authenticated via %s", authMethod))
+	utils.LogPush(m, tui_context.LogEntry{
+		Type:    "Remote",
+		Level:   tui_context.LogSuccess,
+		Status:  tui_context.StatusSuccess,
+		Message: fmt.Sprintf("Connection established to %s@%s", m.Remote.User, m.Remote.Host),
+		Details: fmt.Sprintf("Authenticated via %s", authMethod),
+	})
 
 	return func() tea.Msg { return messages.NavigateMsg{Path: msg.Path} }
 }
@@ -164,7 +175,11 @@ func HandleRemoteGoto(m *tui_context.Model, input string) tea.Cmd {
 	m.Inputs.AltMode = false
 
 	return tea.Batch(
-		ConnectRemote(host, user, "", keyPath, m.Remote.HostConfirmChan),
+		ConnectRemote(ssh.SSHConfig{
+			Address: host,
+			User:    user,
+			KeyPath: keyPath,
+		}, m.Remote.HostConfirmChan),
 		ListenForHostConfirmation(m.Remote.HostConfirmChan),
 	)
 }
@@ -181,7 +196,12 @@ func HandleAuthFinalize(m *tui_context.Model, input string) tea.Cmd {
 	}
 
 	return tea.Batch(
-		ConnectRemote(m.Remote.Host, m.Remote.User, password, keyPath, m.Remote.HostConfirmChan),
+		ConnectRemote(ssh.SSHConfig{
+			Address:  m.Remote.Host,
+			User:     m.Remote.User,
+			Password: password,
+			KeyPath:  keyPath,
+		}, m.Remote.HostConfirmChan),
 		ListenForHostConfirmation(m.Remote.HostConfirmChan),
 	)
 }

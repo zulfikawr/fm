@@ -13,39 +13,51 @@ import (
 
 var lookPath = exec.LookPath
 
-// GetOpenCmd returns the command to open a file and a boolean indicating if it's a terminal-based editor.
-func GetOpenCmd(fs core.FileSystem, path string, editorIdx int) (*exec.Cmd, bool, error) {
-	return GetOpenAtLineCmd(fs, path, editorIdx, 0)
+// GetOpenCmd returns the command to open a file based on the environment and configuration.
+func GetOpenCmd(opts OpenOptions) (*exec.Cmd, bool, error) {
+	if !opts.FS.IsLocal() {
+		return nil, false, fmt.Errorf("remote open not supported")
+	}
+	return GetOpenAtLineCmd(opts)
 }
 
-// GetOpenAtLineCmd returns a command to open a file at a specific line number.
-func GetOpenAtLineCmd(fs core.FileSystem, path string, editorIdx int, line int) (*exec.Cmd, bool, error) {
-	if IsTextFile(fs, path) {
-		editor := constants.Editors[editorIdx]
-		isTerminalEditor := isTerminalEditor(editor)
+// GetOpenAtLineCmd returns the command to open a file at a specific line.
+func GetOpenAtLineCmd(opts OpenOptions) (*exec.Cmd, bool, error) {
+	if !opts.FS.IsLocal() {
+		return nil, false, fmt.Errorf("remote open not supported")
+	}
 
-		// Check if editor exists
-		if _, err := lookPath(editor); err != nil {
-			return nil, false, errors.WrapError(err, "OpenWithEditor")
+	editor := constants.Editors[opts.EditorIdx]
+	isTermEditor := isTerminalEditor(editor)
+
+	// Check if editor exists
+	if _, err := lookPath(editor); err != nil {
+		return nil, false, errors.WrapError(err, "OpenWithEditor")
+	}
+
+	var args []string
+	if opts.Line > 0 {
+		switch editor {
+		case "vim", "vi", "nano":
+			args = []string{fmt.Sprintf("+%d", opts.Line), opts.Path}
+		case "code", "cursor", "subl":
+			args = []string{"--goto", fmt.Sprintf("%s:%d", opts.Path, opts.Line)}
+		case "emacs":
+			args = []string{fmt.Sprintf("+%d", opts.Line), opts.Path}
+		default:
+			args = []string{opts.Path}
 		}
+	} else {
+		args = []string{opts.Path}
+	}
 
-		var args []string
-		if line > 0 {
-			switch editor {
-			case "vim", "vi", "nano":
-				args = []string{fmt.Sprintf("+%d", line), path}
-			case "code", "cursor", "subl":
-				args = []string{"--goto", fmt.Sprintf("%s:%d", path, line)}
-			case "emacs":
-				args = []string{fmt.Sprintf("+%d", line), path}
-			default:
-				args = []string{path}
-			}
-		} else {
-			args = []string{path}
-		}
+	return exec.Command(editor, args...), isTermEditor, nil
+}
 
-		return exec.Command(editor, args...), isTerminalEditor, nil
+// GetSystemOpenCmd returns a command to open a file using the system's default opener.
+func GetSystemOpenCmd(fs core.FileSystem, path string) (*exec.Cmd, error) {
+	if !fs.IsLocal() {
+		return nil, fmt.Errorf("remote open not supported")
 	}
 
 	var cmd *exec.Cmd
@@ -53,21 +65,21 @@ func GetOpenAtLineCmd(fs core.FileSystem, path string, editorIdx int, line int) 
 	case "linux":
 		opener := "xdg-open"
 		if _, err := lookPath(opener); err != nil {
-			return nil, false, errors.WrapError(err, "OpenWithXdgOpen")
+			return nil, errors.WrapError(err, "OpenWithXdgOpen")
 		}
 		cmd = exec.Command(opener, path)
 	case "darwin":
 		opener := "open"
 		if _, err := lookPath(opener); err != nil {
-			return nil, false, errors.WrapError(err, "OpenWithMacOSOpen")
+			return nil, errors.WrapError(err, "OpenWithMacOSOpen")
 		}
 		cmd = exec.Command(opener, path)
 	case "windows":
 		cmd = exec.Command("rundll32", "url.dll,FileProtocolHandler", path)
 	default:
-		return nil, false, exec.ErrNotFound
+		return nil, exec.ErrNotFound
 	}
-	return cmd, false, nil
+	return cmd, nil
 }
 
 func isTerminalEditor(editor string) bool {

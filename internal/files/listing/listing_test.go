@@ -21,7 +21,12 @@ func TestLoad(t *testing.T) {
 		fs.ReadDirEntriesFunc = func(ctx context.Context, path string) ([]os.DirEntry, error) {
 			return []os.DirEntry{}, nil
 		}
-		items, err := Load(ctx, fs, "/some/path", sorting.SortDefault, true, nil)
+		items, err := Load(ctx, LoadOptions{
+			FS:         fs,
+			Path:       "/some/path",
+			SortMode:   sorting.SortDefault,
+			ShowHidden: true,
+		})
 		testutil.AssertNoError(t, err, "Load should not fail")
 
 		foundUp := false
@@ -41,7 +46,12 @@ func TestLoad(t *testing.T) {
 				&testutil.MockDirEntry{NameStr: ".hidden.txt"},
 			}, nil
 		}
-		items, err := Load(ctx, fs, "/", sorting.SortDefault, false, nil)
+		items, err := Load(ctx, LoadOptions{
+			FS:         fs,
+			Path:       "/",
+			SortMode:   sorting.SortDefault,
+			ShowHidden: false,
+		})
 		testutil.AssertNoError(t, err, "Load should not fail")
 
 		for _, item := range items {
@@ -61,7 +71,13 @@ func TestLoad(t *testing.T) {
 			"deleted.txt": "D",
 			"exists.txt":  "M",
 		}
-		items, err := Load(ctx, fs, "/", sorting.SortDefault, true, gitStatuses)
+		items, err := Load(ctx, LoadOptions{
+			FS:          fs,
+			Path:        "/",
+			SortMode:    sorting.SortDefault,
+			ShowHidden:  true,
+			GitStatuses: gitStatuses,
+		})
 		testutil.AssertNoError(t, err, "Load should not fail")
 
 		foundGhost := false
@@ -94,7 +110,12 @@ func TestLoad_LargeDirectory(t *testing.T) {
 	}
 
 	start := time.Now()
-	items, err := Load(ctx, fs, "/large", sorting.SortDefault, true, nil)
+	items, err := Load(ctx, LoadOptions{
+		FS:         fs,
+		Path:       "/large",
+		SortMode:   sorting.SortDefault,
+		ShowHidden: true,
+	})
 	duration := time.Since(start)
 
 	testutil.AssertNoError(t, err, "Load should succeed")

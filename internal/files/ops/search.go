@@ -3,98 +3,91 @@ package ops
 import (
 	"bufio"
 	"bytes"
-	"context"
 	"io"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 	"sync"
 
 	"github.com/zulfikawr/fm/internal/constants"
 	"github.com/zulfikawr/fm/internal/files/core"
-	"github.com/zulfikawr/fm/internal/files/errors"
-	"github.com/zulfikawr/fm/internal/git"
 
 	"golang.org/x/sync/errgroup"
 )
 
 // Search performs a fuzzy content search within the specified directory.
-func Search(ctx context.Context, fs core.FileSystem, gs git.GitService, rootPath, query string) ([]core.FileResult, error) {
-	if query == "" {
+func Search(opts SearchOptions) ([]core.FileResult, error) {
+	if opts.Query == "" {
 		return nil, nil
 	}
 
 	// Get ignored files if git is enabled
 	ignored := make(map[string]bool)
-	if gs != nil && gs.IsEnabled() {
-		repoRoot := gs.GetRoot(ctx, rootPath)
-		if repoRoot != "" {
-			cmd := exec.CommandContext(ctx, "git", "-C", repoRoot, "status", "--porcelain", "--ignored", "-uall")
-			if out, err := cmd.Output(); err == nil {
-				lines := strings.Split(string(out), "\n")
-				for _, line := range lines {
-					if strings.HasPrefix(line, "!! ") {
-						path := strings.Trim(line[3:], "\" ")
-						ignored[fs.Join(repoRoot, path)] = true
-					}
-				}
+	if opts.Git != nil && opts.Git.IsEnabled() {
+		gitIgnored, err := opts.Git.GetIgnoredFiles(opts.OpCtx.Context, opts.Root)
+		if err == nil {
+			for _, p := range gitIgnored {
+				ignored[p] = true
 			}
 		}
 	}
 
-	results := make([]core.FileResult, 0)
-	var resultsMu sync.Mutex
+	var results []core.FileResult
+	var mu sync.Mutex
 
-	g, ctx := errgroup.WithContext(ctx)
-	g.SetLimit(constants.MaxReadDirWorkers)
+	g, ctx := errgroup.WithContext(opts.OpCtx.Context)
+	g.SetLimit(constants.MaxSearchWorkers)
 
-	err := fs.Walk(ctx, rootPath, func(path string, info os.FileInfo, err error) error {
+	err := opts.OpCtx.FS.Walk(ctx, opts.Root, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
-			return nil
+			return nil // Skip errors
 		}
 
-		// Skip .git directory
-		if info.IsDir() && info.Name() == ".git" {
-			return filepath.SkipDir
-		}
-
-		// Check if this specific path is ignored
-		if ignored[path] {
-			if info.IsDir() {
+		if info.IsDir() {
+			if ignored[path] {
 				return filepath.SkipDir
 			}
 			return nil
 		}
 
-		if info.IsDir() {
+		if ignored[path] {
 			return nil
 		}
 
+		// Parallel search within files
+		fpath := path // Capture for closure
 		g.Go(func() error {
-			fileResult, found := searchInFile(ctx, fs, path, query)
+			opts := opts
+			opts.Root = fpath
+			res, found := searchInFile(opts)
 			if found {
-				resultsMu.Lock()
-				results = append(results, fileResult)
-				resultsMu.Unlock()
+				mu.Lock()
+				results = append(results, res)
+				mu.Unlock()
 			}
 			return nil
 		})
 
 		return nil
 	})
+
 	if err != nil {
-		return nil, errors.WrapErrorWithPath(err, "Search", rootPath)
+		return nil, err
 	}
 
 	if err := g.Wait(); err != nil {
-		return nil, errors.WrapErrorWithPath(err, "Search", rootPath)
+		return nil, err
 	}
 
 	return results, nil
 }
 
-func searchInFile(ctx context.Context, fs core.FileSystem, path, query string) (core.FileResult, bool) {
+func searchInFile(opts SearchOptions) (core.FileResult, bool) {
+	path := opts.Root
+	query := opts.Query
+	fs := opts.OpCtx.FS
+	ctx := opts.OpCtx.Context
+
 	fileName := fs.Base(path)
 	var matches []core.Match
 

@@ -18,7 +18,12 @@ func TestMove(t *testing.T) {
 		fs.RenameFunc = func(ctx context.Context, old, new string) error {
 			return nil
 		}
-		err := Move(ctx, fs, "/src", "/dst", nil, conflict.Overwrite)
+		err := Move(CopyOptions{
+			OpCtx:    OpContext{Context: ctx, FS: fs},
+			Src:      "/src",
+			Dst:      "/dst",
+			Conflict: ConflictOptions{Policy: conflict.Overwrite},
+		})
 		testutil.AssertNoError(t, err, "Move should succeed with Rename")
 	})
 
@@ -39,12 +44,22 @@ func TestMove(t *testing.T) {
 		fs.ChmodFunc = func(ctx context.Context, path string, mode os.FileMode) error { return nil }
 		fs.RemoveAllFunc = func(ctx context.Context, path string) error { return nil }
 
-		err := Move(ctx, fs, "/src", "/dst", nil, conflict.Overwrite)
+		err := Move(CopyOptions{
+			OpCtx:    OpContext{Context: ctx, FS: fs},
+			Src:      "/src",
+			Dst:      "/dst",
+			Conflict: ConflictOptions{Policy: conflict.Overwrite},
+		})
 		testutil.AssertNoError(t, err, "Move should succeed with Copy+Delete fallback")
 	})
 
 	t.Run("Empty Path", func(t *testing.T) {
-		err := Move(ctx, fs, "", "/dst", nil, conflict.Ask)
+		err := Move(CopyOptions{
+			OpCtx:    OpContext{Context: ctx, FS: fs},
+			Src:      "",
+			Dst:      "/dst",
+			Conflict: ConflictOptions{Policy: conflict.Ask},
+		})
 		if err == nil {
 			t.Error("Expected error for empty source")
 		}
@@ -71,7 +86,13 @@ func TestCrossMove_RenameError(t *testing.T) {
 	fs.RemoveAllFunc = func(ctx context.Context, path string) error { return nil }
 	fs.IsReadOnlyFunc = func(ctx context.Context, path string) (bool, error) { return false, nil }
 
-	err := CrossMove(ctx, fs, fs, "/src", "/dst", nil, conflict.Overwrite)
+	err := CrossMove(CopyOptions{
+		OpCtx:    OpContext{Context: ctx, FS: fs},
+		SrcFS:    fs,
+		Src:      "/src",
+		Dst:      "/dst",
+		Conflict: ConflictOptions{Policy: conflict.Overwrite},
+	})
 	testutil.AssertNoError(t, err, "Should succeed with fallback")
 }
 
@@ -86,13 +107,25 @@ func TestCrossMove_Conflict(t *testing.T) {
 		return nil, os.ErrNotExist
 	}
 
-	err := CrossMove(ctx, fs, fs, "/src", "/dst", nil, conflict.Ask)
+	err := CrossMove(CopyOptions{
+		OpCtx:    OpContext{Context: ctx, FS: fs},
+		SrcFS:    fs,
+		Src:      "/src",
+		Dst:      "/dst",
+		Conflict: ConflictOptions{Policy: conflict.Ask},
+	})
 	if err == nil {
 		t.Fatal("Expected conflict error")
 	}
 
 	t.Run("ConflictSkip", func(t *testing.T) {
-		err := CrossMove(ctx, fs, fs, "/src", "/dst", nil, conflict.Skip)
+		err := CrossMove(CopyOptions{
+			OpCtx:    OpContext{Context: ctx, FS: fs},
+			SrcFS:    fs,
+			Src:      "/src",
+			Dst:      "/dst",
+			Conflict: ConflictOptions{Policy: conflict.Skip},
+		})
 		testutil.AssertNoError(t, err, "Should succeed with skip")
 	})
 
@@ -114,7 +147,13 @@ func TestCrossMove_Conflict(t *testing.T) {
 			return nil
 		}
 
-		err := CrossMove(ctx, fs, fs, "/src", "/dst", nil, conflict.Overwrite)
+		err := CrossMove(CopyOptions{
+			OpCtx:    OpContext{Context: ctx, FS: fs},
+			SrcFS:    fs,
+			Src:      "/src",
+			Dst:      "/dst",
+			Conflict: ConflictOptions{Policy: conflict.Overwrite},
+		})
 		if err == nil {
 			t.Fatal("Expected copy error")
 		}
@@ -132,7 +171,12 @@ func TestVerifyCrossMove(t *testing.T) {
 		fs.LstatFunc = func(ctx context.Context, path string) (os.FileInfo, error) {
 			return &testutil.MockFileInfo{FSize: 100, FIsDir: false}, nil
 		}
-		err := verifyCrossMove(ctx, fs, fs, "/src", "/dst")
+		err := verifyCrossMove(CopyOptions{
+			OpCtx: OpContext{Context: ctx, FS: fs},
+			SrcFS: fs,
+			Src:   "/src",
+			Dst:   "/dst",
+		})
 		testutil.AssertNoError(t, err, "Should not error when sizes match")
 	})
 
@@ -143,7 +187,12 @@ func TestVerifyCrossMove(t *testing.T) {
 			}
 			return &testutil.MockFileInfo{FSize: 200, FIsDir: false}, nil
 		}
-		err := verifyCrossMove(ctx, fs, fs, "/src", "/dst")
+		err := verifyCrossMove(CopyOptions{
+			OpCtx: OpContext{Context: ctx, FS: fs},
+			SrcFS: fs,
+			Src:   "/src",
+			Dst:   "/dst",
+		})
 		if err == nil {
 			t.Fatal("Expected error for size mismatch")
 		}

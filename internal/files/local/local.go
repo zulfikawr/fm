@@ -236,7 +236,7 @@ func (fs *LocalFS) IsReadOnly(ctx context.Context, path string) (bool, error) {
 	return isRO, errors.WrapErrorWithPath(err, "IsReadOnly", path)
 }
 
-func (fs *LocalFS) Walk(ctx context.Context, root string, walkFn func(path string, info os.FileInfo, err error) error) error {
+func (fs *LocalFS) Walk(ctx context.Context, root string, walkFn filepath.WalkFunc) error {
 	err := filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
 		select {
 		case <-ctx.Done():

@@ -26,6 +26,14 @@ type SearchProps struct {
 	Style       theme.Stylesheet
 }
 
+// MatchProps contains properties for rendering matched content
+type MatchProps struct {
+	Content    string
+	MatchedIdx []int
+	IsSelected bool
+	Style      theme.Stylesheet
+}
+
 // RenderSearch renders the fuzzy search results view
 func RenderSearch(props SearchProps) string {
 	if props.Height <= 0 {
@@ -33,7 +41,7 @@ func RenderSearch(props SearchProps) string {
 	}
 
 	if props.Query == "" && !props.IsSearching && len(props.Results) == 0 {
-		return renderSearchEmpty(props.Width, props.Height, "Type to search for content in files...", props.Style)
+		return renderSearchEmpty(props, "Type to search for content in files...")
 	}
 
 	if props.IsSearching && len(props.Results) == 0 {
@@ -47,10 +55,10 @@ func RenderSearch(props SearchProps) string {
 	}
 
 	if len(props.Results) == 0 && props.Query != "" {
-		return renderSearchEmpty(props.Width, props.Height, "No matches found.", props.Style)
+		return renderSearchEmpty(props, "No matches found.")
 	}
 
-	// Stats header (Fixed)
+	// Stats header
 	totalMatches := 0
 	for _, res := range props.Results {
 		totalMatches += len(res.Matches)
@@ -83,7 +91,12 @@ func RenderSearch(props SearchProps) string {
 
 		var fileNameView string
 		if fileNameMatch != nil {
-			fileNameView = renderMatchContent(fileNameStr, fileNameMatch.MatchedIdx, isHeaderSelected, props.Style)
+			fileNameView = renderMatchContent(MatchProps{
+				Content:    fileNameStr,
+				MatchedIdx: fileNameMatch.MatchedIdx,
+				IsSelected: isHeaderSelected,
+				Style:      props.Style,
+			})
 			// Apply DirCol if not selected
 			if !isHeaderSelected {
 				fileNameView = props.Style.DirCol.Render(fileNameView)
@@ -108,7 +121,12 @@ func RenderSearch(props SearchProps) string {
 				isSelected := fIdx == props.CursorFile && mIdx == props.CursorMatch
 
 				lineNum := props.Style.DimCol.Render(fmt.Sprintf("%5d: ", match.Line))
-				content := renderMatchContent(match.Content, match.MatchedIdx, isSelected, props.Style)
+				content := renderMatchContent(MatchProps{
+					Content:    match.Content,
+					MatchedIdx: match.MatchedIdx,
+					IsSelected: isSelected,
+					Style:      props.Style,
+				})
 
 				matchLine := "  " + lineNum + content
 				allLines = append(allLines, matchLine)
@@ -150,41 +168,41 @@ func RenderSearch(props SearchProps) string {
 	return result
 }
 
-func renderSearchEmpty(width, height int, message string, styles theme.Stylesheet) string {
+func renderSearchEmpty(props SearchProps, message string) string {
 	return lipgloss.NewStyle().
-		Width(width).
-		Height(height).
+		Width(props.Width).
+		Height(props.Height).
 		Align(lipgloss.Center, lipgloss.Center).
-		Render(styles.DimCol.Render(message))
+		Render(props.Style.DimCol.Render(message))
 }
 
-func renderMatchContent(content string, matchedIdx []int, isSelected bool, styles theme.Stylesheet) string {
-	if len(matchedIdx) == 0 {
-		return content
+func renderMatchContent(props MatchProps) string {
+	if len(props.MatchedIdx) == 0 {
+		return props.Content
 	}
 
 	var sb strings.Builder
 	idxMap := make(map[int]bool)
-	for _, idx := range matchedIdx {
+	for _, idx := range props.MatchedIdx {
 		idxMap[idx] = true
 	}
 
 	// Highlight style: use theme's selected colors for the match background
 	highlightStyle := lipgloss.NewStyle().
-		Background(styles.SelectedItem.GetBackground()).
-		Foreground(styles.Success.GetForeground()).
+		Background(props.Style.SelectedItem.GetBackground()).
+		Foreground(props.Style.Success.GetForeground()).
 		Bold(true)
 
 	// Simple match style: just the success color, no background
 	matchStyle := lipgloss.NewStyle().
-		Foreground(styles.Success.GetForeground()).
+		Foreground(props.Style.Success.GetForeground()).
 		Bold(true)
 
-	runes := []rune(content)
+	runes := []rune(props.Content)
 	for i, r := range runes {
 		char := string(r)
 		if idxMap[i] {
-			if isSelected {
+			if props.IsSelected {
 				sb.WriteString(highlightStyle.Render(char))
 			} else {
 				sb.WriteString(matchStyle.Render(char))

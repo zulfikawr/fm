@@ -32,9 +32,16 @@ func (e *ConflictError) Error() string {
 	return fmt.Sprintf("destination already exists: %s", e.Destination)
 }
 
+// ResolveOptions encapsulates data for conflict resolution
+type ResolveOptions struct {
+	Src    string
+	Dst    string
+	Policy Policy
+}
+
 // Resolver handles conflict resolution logic
 type Resolver interface {
-	Resolve(ctx context.Context, fs core.FileSystem, src, dst string, policy Policy) (string, bool, error)
+	Resolve(ctx context.Context, fs core.FileSystem, opts ResolveOptions) (string, bool, error)
 }
 
 // ValidateSecurePath ensures that a target path is securely contained within a base directory.

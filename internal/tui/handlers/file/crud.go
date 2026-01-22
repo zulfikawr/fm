@@ -36,11 +36,22 @@ func PerformCreate(m *tui_context.Model, name string) tea.Cmd {
 	ctx, cancel := context.WithTimeout(m.Context, constants.DirectoryLoadTimeout)
 	defer cancel()
 
-	resolvedPath, err := ops.CreateAtomic(ctx, m.FS, path, isFolder, m.Operations.ConflictPolicy)
+	resolvedPath, err := ops.CreateAtomic(ops.CreateOptions{
+		OpCtx:    ops.OpContext{Context: ctx, FS: m.FS},
+		Path:     path,
+		IsDir:    isFolder,
+		Conflict: ops.ConflictOptions{Policy: m.Operations.ConflictPolicy},
+	})
 	if err != nil {
 		if cerr, ok := err.(*conflict.ConflictError); ok {
 			m.UI.Loading = false
-			m.Operations.Conflict.Set("", cerr.Destination, []string{cerr.Destination}, false, "create", "")
+			m.Operations.Conflict.Set(tui_context.ConflictParams{
+				Source:       "",
+				Destination:  cerr.Destination,
+				PendingItems: []string{cerr.Destination},
+				IsMove:       false,
+				OpType:       "create",
+			})
 			m.Operations.ActionType = constants.ActionConflict
 			m.UI.StartConfirming()
 			return nil
@@ -128,17 +139,18 @@ func PerformRename(m *tui_context.Model, newName string) tea.Cmd {
 	}
 }
 
-func DeleteItems(ctx context.Context, fs core.FileSystem, targets []string, useTrash bool, logID string) tea.Cmd {
+func DeleteItems(opts ops.DeleteOptions, logID string) tea.Cmd {
 	progChan := make(chan core.Progress, 100)
+	opts.OpCtx.Progress = progChan
 	return tea.Batch(
 		ListenToProgress(progChan),
 		func() tea.Msg {
 			defer close(progChan)
-			err := ops.DeleteMultiple(ctx, fs, targets, useTrash, progChan)
+			err := ops.DeleteMultiple(opts)
 			if err != nil {
 				return messages.ErrorMsg{Err: err, LogID: logID}
 			}
-			return messages.OperationFinishedMsg{Paths: targets, LogID: logID}
+			return messages.OperationFinishedMsg{Paths: opts.Paths, LogID: logID}
 		},
 	)
 }

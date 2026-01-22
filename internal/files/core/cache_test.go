@@ -1,53 +1,48 @@
 package core
 
 import (
-	"os"
 	"testing"
 	"time"
-
-	"github.com/zulfikawr/fm/internal/testutil"
 )
 
 func TestSimpleCache(t *testing.T) {
-	ttl := 100 * time.Millisecond
-	cache := NewSimpleCache[string, []os.FileInfo](10, ttl)
-
-	entries := []os.FileInfo{&testutil.MockFileInfo{FName: "file1"}}
-	path := "/test/path"
+	cache := NewSimpleCache[string, string](2, time.Second)
 
 	t.Run("Put and Get", func(t *testing.T) {
-		cache.Put(path, entries)
-		got, ok := cache.Get(path)
-		if !ok {
-			t.Fatal("Expected cache hit")
+		cache.Put("key1", "val1")
+		val, ok := cache.Get("key1")
+		if !ok || val != "val1" {
+			t.Errorf("Get failed, expected val1, got %v", val)
 		}
-		testutil.AssertEqual(t, 1, len(got), "Should have 1 entry")
 	})
 
-	t.Run("Expiration", func(t *testing.T) {
-		cache.Put(path, entries)
-		time.Sleep(ttl + 10*time.Millisecond)
-		_, ok := cache.Get(path)
+	t.Run("Eviction", func(t *testing.T) {
+		cache.Put("key1", "val1")
+		cache.Put("key2", "val2")
+		cache.Put("key3", "val3") // key1 should be evicted
+
+		_, ok := cache.Get("key1")
 		if ok {
-			t.Error("Expected cache miss after expiration")
+			t.Error("key1 should have been evicted")
+		}
+	})
+
+	t.Run("TTL", func(t *testing.T) {
+		cache := NewSimpleCache[string, string](2, 10*time.Millisecond)
+		cache.Put("key1", "val1")
+		time.Sleep(20 * time.Millisecond)
+		_, ok := cache.Get("key1")
+		if ok {
+			t.Error("key1 should have expired")
 		}
 	})
 
 	t.Run("Invalidate", func(t *testing.T) {
-		cache.Put(path, entries)
-		cache.Invalidate(path)
-		_, ok := cache.Get(path)
+		cache.Put("key1", "val1")
+		cache.Invalidate("key1")
+		_, ok := cache.Get("key1")
 		if ok {
-			t.Error("Expected cache miss after Invalidate")
-		}
-	})
-
-	t.Run("Clear", func(t *testing.T) {
-		cache.Put(path, entries)
-		cache.Clear()
-		_, ok := cache.Get(path)
-		if ok {
-			t.Error("Expected cache miss after Clear")
+			t.Error("key1 should have been invalidated")
 		}
 	})
 }

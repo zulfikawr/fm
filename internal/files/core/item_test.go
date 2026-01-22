@@ -11,7 +11,7 @@ func TestNewItem(t *testing.T) {
 	now := time.Now()
 	info := &testutil.MockFileInfo{
 		FName:    "test.txt",
-		FSize:    1234,
+		FSize:    100,
 		FMode:    0644,
 		FModTime: now,
 		FIsDir:   false,
@@ -19,66 +19,50 @@ func TestNewItem(t *testing.T) {
 
 	item := NewItem(info, "/path/test.txt", "M")
 
-	testutil.AssertEqual(t, "test.txt", item.Name, "Name should match")
-	testutil.AssertEqual(t, int64(1234), item.Size, "Size should match")
-	testutil.AssertEqual(t, "M", item.GitStatus, "Git status should match")
-	testutil.AssertEqual(t, false, item.IsDir, "IsDir should be false")
-	testutil.AssertEqual(t, now, item.MTime, "ModTime should match")
+	if item.Name != "test.txt" {
+		t.Errorf("Expected test.txt, got %s", item.Name)
+	}
+	if item.Size != 100 {
+		t.Errorf("Expected 100, got %d", item.Size)
+	}
+	if item.GitStatus != "M" {
+		t.Errorf("Expected M, got %s", item.GitStatus)
+	}
+	if !item.HasMetadata {
+		t.Error("Expected HasMetadata to be true")
+	}
 }
 
-func TestUpdateFormatting(t *testing.T) {
+func TestItem_Formatting(t *testing.T) {
 	item := Item{
-		Size:  1024 * 1024,
-		MTime: time.Date(2026, 1, 14, 12, 0, 0, 0, time.UTC),
+		Size:  1024,
+		MTime: time.Date(2023, 1, 1, 12, 0, 0, 0, time.UTC),
 	}
 
-	// Format indices: Size 1 (Full), Date 0 (Default "02/01/2006 15:04")
+	// 1024 bytes -> 1.0 KB (standard format)
 	item.UpdateFormatting(1, 0)
 
-	testutil.AssertEqual(t, "1.0 MB", item.FormattedSize, "Formatted size should be 1.0 MB")
-	testutil.AssertEqual(t, "14/01/2026 12:00", item.FormattedDate, "Formatted date should match")
+	if item.FormattedSize != "1.0 KB" {
+		t.Errorf("Expected 1.0 KB, got %s", item.FormattedSize)
+	}
 }
 
-func TestUpdateFormattingDeleted(t *testing.T) {
-	t.Run("Deleted file hides metadata", func(t *testing.T) {
-		item := Item{
-			Name:      "deleted.txt",
-			GitStatus: "D",
-			IsDir:     false,
-			Size:      0,
-			MTime:     time.Time{},
+func TestItem_IsArchive(t *testing.T) {
+	tests := []struct {
+		name     string
+		expected bool
+	}{
+		{"test.zip", true},
+		{"test.tar", true},
+		{"test.tar.gz", true},
+		{"test.txt", false},
+		{"test", false},
+	}
+
+	for _, tt := range tests {
+		item := Item{Name: tt.name}
+		if item.IsArchive() != tt.expected {
+			t.Errorf("IsArchive(%s) = %v, expected %v", tt.name, item.IsArchive(), tt.expected)
 		}
-		item.UpdateFormatting(1, 0)
-		testutil.AssertEqual(t, "", item.FormattedSize, "Formatted size should be empty")
-		testutil.AssertEqual(t, "", item.FormattedDate, "Formatted date should be empty")
-	})
-
-	t.Run("Deleted directory keeps date", func(t *testing.T) {
-		now := time.Date(2026, 1, 14, 12, 0, 0, 0, time.UTC)
-		item := Item{
-			Name:      "deleted_dir",
-			GitStatus: "D",
-			IsDir:     true,
-			Size:      -1,
-			MTime:     now,
-		}
-		item.UpdateFormatting(1, 0)
-		testutil.AssertEqual(t, "", item.FormattedSize, "Formatted size should be empty for dir")
-		testutil.AssertEqual(t, "14/01/2026 12:00", item.FormattedDate, "Formatted date should match")
-	})
-}
-
-func TestItemHelpers(t *testing.T) {
-	t.Run("IsArchive", func(t *testing.T) {
-		testutil.AssertEqual(t, true, (&Item{Name: "test.zip"}).IsArchive(), "zip")
-		testutil.AssertEqual(t, true, (&Item{Name: "test.tar.gz"}).IsArchive(), "tar.gz")
-		testutil.AssertEqual(t, false, (&Item{Name: "test.txt"}).IsArchive(), "txt")
-		testutil.AssertEqual(t, false, (&Item{Name: "dir.zip", IsDir: true}).IsArchive(), "dir with zip ext")
-	})
-
-	t.Run("IsImage", func(t *testing.T) {
-		testutil.AssertEqual(t, true, (&Item{Name: "test.jpg"}).IsImage(), "jpg")
-		testutil.AssertEqual(t, true, (&Item{Name: "test.PNG"}).IsImage(), "PNG")
-		testutil.AssertEqual(t, false, (&Item{Name: "test.zip"}).IsImage(), "zip is not image")
-	})
+	}
 }

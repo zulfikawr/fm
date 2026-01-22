@@ -35,16 +35,16 @@ func (ls *LogState) AddEntry(entry LogEntry) {
 }
 
 // UpdateStatus updates the status and level of an existing entry by ID
-func (ls *LogState) UpdateStatus(id string, status LogStatus, level LogLevel, message string, details string) {
+func (ls *LogState) UpdateStatus(id string, entry LogEntry) {
 	for i := range ls.Entries {
 		if ls.Entries[i].ID == id {
-			ls.Entries[i].Status = status
-			ls.Entries[i].Level = level
-			if message != "" {
-				ls.Entries[i].Message = message
+			ls.Entries[i].Status = entry.Status
+			ls.Entries[i].Level = entry.Level
+			if entry.Message != "" {
+				ls.Entries[i].Message = entry.Message
 			}
-			if details != "" {
-				ls.Entries[i].Details = details
+			if entry.Details != "" {
+				ls.Entries[i].Details = entry.Details
 			}
 			break
 		}

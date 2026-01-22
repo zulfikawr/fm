@@ -2,7 +2,6 @@ package ops
 
 import (
 	"archive/zip"
-	"context"
 	"fmt"
 	"io"
 	"os"
@@ -16,16 +15,20 @@ import (
 )
 
 // Zip compresses multiple files or directories into a single zip archive.
-func Zip(ctx context.Context, fs core.FileSystem, sources []string, dst string, progChan chan<- core.Progress, policy conflict.Policy) error {
-	if len(sources) == 0 {
+func Zip(opts ZipOptions) error {
+	if len(opts.Srcs) == 0 {
 		return errors.WrapError(fmt.Errorf("no source files specified"), "Zip")
 	}
 
 	resolver := conflict.NewResolver()
-	resolvedDst, _, err := resolver.Resolve(ctx, fs, sources[0], dst, policy)
+	resolvedDst, _, err := resolver.Resolve(opts.OpCtx.Context, opts.OpCtx.FS, conflict.ResolveOptions{
+		Src:    opts.Srcs[0],
+		Dst:    opts.Dst,
+		Policy: opts.Conflict.Policy,
+	})
 	if err != nil {
 		if cerr, ok := err.(*conflict.ConflictError); ok {
-			cerr.PendingItems = sources
+			cerr.PendingItems = opts.Srcs
 			cerr.OpType = "zip"
 			return cerr
 		}
@@ -35,12 +38,12 @@ func Zip(ctx context.Context, fs core.FileSystem, sources []string, dst string, 
 	if resolvedDst == "" {
 		return nil // Skip
 	}
-	dst = resolvedDst
+	opts.Dst = resolvedDst
 
 	// Create destination file
-	out, err := fs.Create(ctx, dst)
+	out, err := opts.OpCtx.FS.Create(opts.OpCtx.Context, opts.Dst)
 	if err != nil {
-		return errors.WrapErrorWithPath(err, "Create", dst)
+		return errors.WrapErrorWithPath(err, "Create", opts.Dst)
 	}
 	defer out.Close()
 
@@ -50,24 +53,30 @@ func Zip(ctx context.Context, fs core.FileSystem, sources []string, dst string, 
 	// For simplicity, we'll increment progress per file processed
 	processedFiles := 0
 
-	for _, src := range sources {
+	state := &zipState{
+		opts: opts,
+		zw:   zw,
+		onFile: func() {
+			processedFiles++
+			if opts.OpCtx.Progress != nil {
+				opts.OpCtx.Progress <- core.Progress{
+					Label:   fmt.Sprintf("Zipping %d items into %s", len(opts.Srcs), opts.OpCtx.FS.Base(opts.Dst)),
+					Percent: float64(processedFiles) / float64(len(opts.Srcs)), // Simplified progress
+				}
+			}
+		},
+	}
+
+	for _, src := range opts.Srcs {
 		select {
-		case <-ctx.Done():
-			return ctx.Err()
+		case <-opts.OpCtx.Context.Done():
+			return opts.OpCtx.Context.Err()
 		default:
 		}
 
-		baseDir := fs.Dir(src)
+		baseDir := opts.OpCtx.FS.Dir(src)
 
-		err = walkAndZip(ctx, fs, src, baseDir, zw, func() {
-			processedFiles++
-			if progChan != nil {
-				progChan <- core.Progress{
-					Label:   fmt.Sprintf("Zipping %d items into %s", len(sources), fs.Base(dst)),
-					Percent: float64(processedFiles) / float64(len(sources)), // Simplified progress
-				}
-			}
-		})
+		err = walkAndZip(state, src, baseDir)
 		if err != nil {
 			return err
 		}
@@ -76,20 +85,26 @@ func Zip(ctx context.Context, fs core.FileSystem, sources []string, dst string, 
 	return nil
 }
 
-func walkAndZip(ctx context.Context, fs core.FileSystem, currentPath, baseDir string, zw *zip.Writer, onFile func()) error {
+type zipState struct {
+	opts   ZipOptions
+	zw     *zip.Writer
+	onFile func()
+}
+
+func walkAndZip(state *zipState, currentPath, baseDir string) error {
 	select {
-	case <-ctx.Done():
-		return ctx.Err()
+	case <-state.opts.OpCtx.Context.Done():
+		return state.opts.OpCtx.Context.Err()
 	default:
 	}
 
-	info, err := fs.Lstat(ctx, currentPath)
+	info, err := state.opts.OpCtx.FS.Lstat(state.opts.OpCtx.Context, currentPath)
 	if err != nil {
 		return errors.WrapErrorWithPath(err, "Stat", currentPath)
 	}
 
 	// Calculate relative path for the zip header
-	relPath, err := fs.Rel(baseDir, currentPath)
+	relPath, err := state.opts.OpCtx.FS.Rel(baseDir, currentPath)
 	if err != nil {
 		return errors.WrapErrorWithPath(err, "Rel", currentPath)
 	}
@@ -101,19 +116,19 @@ func walkAndZip(ctx context.Context, fs core.FileSystem, currentPath, baseDir st
 		if !strings.HasSuffix(relPath, "/") {
 			relPath += "/"
 		}
-		_, err = zw.Create(relPath)
+		_, err = state.zw.Create(relPath)
 		if err != nil {
 			return errors.WrapErrorWithPath(err, "ZipCreateDir", relPath)
 		}
 
-		entries, err := fs.ReadDir(ctx, currentPath)
+		entries, err := state.opts.OpCtx.FS.ReadDir(state.opts.OpCtx.Context, currentPath)
 		if err != nil {
 			return errors.WrapErrorWithPath(err, "ReadDir", currentPath)
 		}
 
 		for _, entry := range entries {
-			childPath := fs.Join(currentPath, entry.Name())
-			if err := walkAndZip(ctx, fs, childPath, baseDir, zw, onFile); err != nil {
+			childPath := state.opts.OpCtx.FS.Join(currentPath, entry.Name())
+			if err := walkAndZip(state, childPath, baseDir); err != nil {
 				return err
 			}
 		}
@@ -128,12 +143,12 @@ func walkAndZip(ctx context.Context, fs core.FileSystem, currentPath, baseDir st
 	header.Name = relPath
 	header.Method = zip.Deflate
 
-	writer, err := zw.CreateHeader(header)
+	writer, err := state.zw.CreateHeader(header)
 	if err != nil {
 		return errors.WrapErrorWithPath(err, "ZipCreate", currentPath)
 	}
 
-	in, err := fs.Open(ctx, currentPath)
+	in, err := state.opts.OpCtx.FS.Open(state.opts.OpCtx.Context, currentPath)
 	if err != nil {
 		return errors.WrapErrorWithPath(err, "Open", currentPath)
 	}
@@ -148,17 +163,21 @@ func walkAndZip(ctx context.Context, fs core.FileSystem, currentPath, baseDir st
 		return errors.WrapErrorWithPath(err, "Copy", currentPath)
 	}
 
-	onFile()
+	state.onFile()
 	return nil
 }
 
 // Unzip extracts a zip archive to the specified destination directory.
-func Unzip(ctx context.Context, fs core.FileSystem, src, dst string, progChan chan<- core.Progress, policy conflict.Policy) error {
+func Unzip(opts ZipOptions) error {
 	resolver := conflict.NewResolver()
-	resolvedDst, _, err := resolver.Resolve(ctx, fs, src, dst, policy)
+	resolvedDst, _, err := resolver.Resolve(opts.OpCtx.Context, opts.OpCtx.FS, conflict.ResolveOptions{
+		Src:    opts.Src,
+		Dst:    opts.Dst,
+		Policy: opts.Conflict.Policy,
+	})
 	if err != nil {
 		if cerr, ok := err.(*conflict.ConflictError); ok {
-			cerr.PendingItems = []string{src}
+			cerr.PendingItems = []string{opts.Src}
 			cerr.OpType = "unzip"
 			return cerr
 		}
@@ -168,29 +187,29 @@ func Unzip(ctx context.Context, fs core.FileSystem, src, dst string, progChan ch
 	if resolvedDst == "" {
 		return nil // Skip
 	}
-	dst = resolvedDst
+	opts.Dst = resolvedDst
 
 	// Open the source file
-	in, err := fs.Open(ctx, src)
+	in, err := opts.OpCtx.FS.Open(opts.OpCtx.Context, opts.Src)
 	if err != nil {
-		return errors.WrapErrorWithPath(err, "Open", src)
+		return errors.WrapErrorWithPath(err, "Open", opts.Src)
 	}
 	defer in.Close()
 
 	// zip.NewReader needs a ReaderAt and the size.
 	// We'll get the size first.
-	info, err := fs.Stat(ctx, src)
+	info, err := opts.OpCtx.FS.Stat(opts.OpCtx.Context, opts.Src)
 	if err != nil {
-		return errors.WrapErrorWithPath(err, "Stat", src)
+		return errors.WrapErrorWithPath(err, "Stat", opts.Src)
 	}
 	size := info.Size()
 
 	// If it's a local file, we can use os.Open directly for ReaderAt
 	var readerAt io.ReaderAt
-	if fs.IsLocal() {
-		f, err := os.Open(src)
+	if opts.OpCtx.FS.IsLocal() {
+		f, err := os.Open(opts.Src)
 		if err != nil {
-			return errors.WrapErrorWithPath(err, "OpenLocal", src)
+			return errors.WrapErrorWithPath(err, "OpenLocal", opts.Src)
 		}
 		defer f.Close()
 		readerAt = f
@@ -217,58 +236,38 @@ func Unzip(ctx context.Context, fs core.FileSystem, src, dst string, progChan ch
 	}
 
 	totalFiles := len(zr.File)
-
 	processedFiles := 0
-
 	var isRenamed bool
 
 	for _, f := range zr.File {
-
 		select {
-
-		case <-ctx.Done():
-
-			return ctx.Err()
-
+		case <-opts.OpCtx.Context.Done():
+			return opts.OpCtx.Context.Err()
 		default:
-
 		}
 
-		fpath, err := conflict.ValidateSecurePath(fs, dst, f.Name)
-
+		fpath, err := conflict.ValidateSecurePath(opts.OpCtx.FS, opts.Dst, f.Name)
 		if err != nil {
-
 			continue // Skip dangerous paths
-
 		}
 
 		if f.FileInfo().IsDir() {
-
-			err = fs.MkdirAll(ctx, fpath, f.Mode()|0111) // Ensure execute permission for directory access
-
+			err = opts.OpCtx.FS.MkdirAll(opts.OpCtx.Context, fpath, f.Mode()|0111) // Ensure execute permission for directory access
 			if err != nil {
-
 				return errors.WrapErrorWithPath(err, "MkdirAll", fpath)
-
 			}
-
 		} else {
-
 			// Check for conflict
-
 			var resolvedPath string
-
-			resolvedPath, isRenamed, err = resolver.Resolve(ctx, fs, f.Name, fpath, policy)
-
+			resolvedPath, isRenamed, err = resolver.Resolve(opts.OpCtx.Context, opts.OpCtx.FS, conflict.ResolveOptions{
+				Src:    f.Name,
+				Dst:    fpath,
+				Policy: opts.Conflict.Policy,
+			})
 			if err != nil {
-
 				if cerr, ok := err.(*conflict.ConflictError); ok {
-					// For Unzip, we might want to return the error to the UI
-					// but it's tricky because we are inside a zip archive.
-					// We'll mark the source as the entry name.
 					cerr.Source = f.Name
 					cerr.OpType = "unzip"
-					// We can't easily provide remaining items here without complex state
 					return cerr
 				}
 				return err
@@ -278,8 +277,8 @@ func Unzip(ctx context.Context, fs core.FileSystem, src, dst string, progChan ch
 				processedFiles++
 				continue // Skip
 			}
-			if resolvedPath == fpath && policy == conflict.Overwrite {
-				if err := fs.RemoveAll(ctx, fpath); err != nil {
+			if resolvedPath == fpath && opts.Conflict.Policy == conflict.Overwrite {
+				if err := opts.OpCtx.FS.RemoveAll(opts.OpCtx.Context, fpath); err != nil {
 					logger.Warnf("Failed to remove existing file for unzip overwrite: %v", err)
 				}
 			}
@@ -287,7 +286,7 @@ func Unzip(ctx context.Context, fs core.FileSystem, src, dst string, progChan ch
 
 			// Ensure parent directory exists
 			parent := filepath.Dir(fpath)
-			if err := fs.MkdirAll(ctx, parent, 0755); err != nil {
+			if err := opts.OpCtx.FS.MkdirAll(opts.OpCtx.Context, parent, 0755); err != nil {
 				return errors.WrapErrorWithPath(err, "MkdirAllParent", parent)
 			}
 
@@ -297,7 +296,7 @@ func Unzip(ctx context.Context, fs core.FileSystem, src, dst string, progChan ch
 				return errors.WrapErrorWithPath(err, "OpenZipEntry", f.Name)
 			}
 
-			out, err := fs.Create(ctx, fpath)
+			out, err := opts.OpCtx.FS.Create(opts.OpCtx.Context, fpath)
 			if err != nil {
 				rc.Close()
 				return errors.WrapErrorWithPath(err, "CreateExtract", fpath)
@@ -311,18 +310,18 @@ func Unzip(ctx context.Context, fs core.FileSystem, src, dst string, progChan ch
 				return errors.WrapErrorWithPath(err, "CopyExtract", fpath)
 			}
 
-			if err := fs.Chmod(ctx, fpath, f.Mode()); err != nil {
+			if err := opts.OpCtx.FS.Chmod(opts.OpCtx.Context, fpath, f.Mode()); err != nil {
 				logger.Warnf("Failed to set permissions on extracted file %s: %v", fpath, err)
 			}
 		}
 
 		processedFiles++
-		if progChan != nil {
+		if opts.OpCtx.Progress != nil {
 			label := fmt.Sprintf("Extracting %d/%d: %s", processedFiles, totalFiles, f.Name)
 			if isRenamed {
-				label = fmt.Sprintf("Extracting %d/%d: %s as %s", processedFiles, totalFiles, f.Name, fs.Base(fpath))
+				label = fmt.Sprintf("Extracting %d/%d: %s as %s", processedFiles, totalFiles, f.Name, opts.OpCtx.FS.Base(fpath))
 			}
-			progChan <- core.Progress{
+			opts.OpCtx.Progress <- core.Progress{
 				Label:   label,
 				Percent: float64(processedFiles) / float64(totalFiles),
 			}

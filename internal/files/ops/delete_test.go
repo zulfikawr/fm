@@ -20,7 +20,14 @@ func TestDelete(t *testing.T) {
 		}
 
 		progChan := make(chan core.Progress, 2)
-		err := Delete(ctx, fs, "/path/to/delete", progChan)
+		err := Delete(DeleteOptions{
+			OpCtx: OpContext{
+				Context:  ctx,
+				FS:       fs,
+				Progress: progChan,
+			},
+			Paths: []string{"/path/to/delete"},
+		})
 
 		testutil.AssertNoError(t, err, "Delete should succeed")
 		if !called {
@@ -39,7 +46,10 @@ func TestDelete(t *testing.T) {
 	})
 
 	t.Run("Empty Path", func(t *testing.T) {
-		err := Delete(ctx, fs, "", nil)
+		err := Delete(DeleteOptions{
+			OpCtx: OpContext{Context: ctx, FS: fs},
+			Paths: []string{""},
+		})
 		if err == nil {
 			t.Error("Expected error for empty path")
 		}

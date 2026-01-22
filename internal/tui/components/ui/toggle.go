@@ -12,11 +12,19 @@ func Toggle(value bool, styles theme.Stylesheet) string {
 	return styles.DimCol.Render("[OFF]")
 }
 
+// ToggleProps encapsulates data for rendering a labeled toggle
+type ToggleProps struct {
+	Label  string
+	Value  bool
+	Width  int
+	Styles theme.Stylesheet
+}
+
 // ToggleLabeled renders a label followed by a toggle switch.
-func ToggleLabeled(label string, value bool, width int, styles theme.Stylesheet) string {
-	labelPart := label + ":"
-	togglePart := Toggle(value, styles)
+func ToggleLabeled(props ToggleProps) string {
+	labelPart := props.Label + ":"
+	togglePart := Toggle(props.Value, props.Styles)
 
 	// Use FlexRow to handle the layout and padding
-	return FlexRow(width, labelPart, " ", togglePart)
+	return FlexRow(props.Width, labelPart, " ", togglePart)
 }

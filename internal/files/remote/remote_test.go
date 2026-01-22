@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/zulfikawr/fm/internal/files/core"
+	"github.com/zulfikawr/fm/internal/ssh"
 	"github.com/zulfikawr/fm/internal/testutil"
 
 	"github.com/pkg/sftp"
@@ -18,8 +19,10 @@ import (
 
 func TestRemoteFS_Helpers(t *testing.T) {
 	fs := &RemoteFS{
-		address: "example.com:22",
-		user:    "user",
+		opts: ssh.SSHConfig{
+			Address: "example.com:22",
+			User:    "user",
+		},
 	}
 
 	t.Run("Basic Helpers", func(t *testing.T) {

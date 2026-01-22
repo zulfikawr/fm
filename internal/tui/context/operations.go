@@ -117,15 +117,25 @@ func (cf *ConflictState) Clear() {
 	cf.LogID = ""
 }
 
+// ConflictParams encapsulates data for setting conflict state
+type ConflictParams struct {
+	Source       string
+	Destination  string
+	PendingItems []string
+	IsMove       bool
+	OpType       string
+	LogID        string
+}
+
 // Set initializes the conflict state
-func (cf *ConflictState) Set(src, dst string, pending []string, isMove bool, opType string, logID string) {
-	cf.Source = src
-	cf.Destination = dst
-	cf.PendingItems = pending
-	cf.IsMove = isMove
-	cf.OpType = opType
+func (cf *ConflictState) Set(params ConflictParams) {
+	cf.Source = params.Source
+	cf.Destination = params.Destination
+	cf.PendingItems = params.PendingItems
+	cf.IsMove = params.IsMove
+	cf.OpType = params.OpType
 	cf.ApplyToAll = false
-	cf.LogID = logID
+	cf.LogID = params.LogID
 }
 
 // HasConflict returns true if there is an active conflict

@@ -10,7 +10,7 @@ import (
 )
 
 // LoadSkeleton reads only the directory entries without full stats.
-func LoadSkeleton(ctx context.Context, fs core.FileSystem, path string, showHidden bool, gitStatuses map[string]string) ([]core.Item, error) {
+func LoadSkeleton(ctx context.Context, opts LoadOptions) ([]core.Item, error) {
 	select {
 	case <-ctx.Done():
 		return nil, ctx.Err()
@@ -18,40 +18,40 @@ func LoadSkeleton(ctx context.Context, fs core.FileSystem, path string, showHidd
 	}
 	var items []core.Item
 
-	if !core.IsRoot(fs, path) {
+	if !core.IsRoot(opts.FS, opts.Path) {
 		items = append(items, core.Item{
 			Name:      "↑ ..",
 			IsDir:     true,
 			IsUp:      true,
 			SearchKey: "..",
-			Path:      core.GetParent(fs, path),
+			Path:      core.GetParent(opts.FS, opts.Path),
 		})
 	}
 
-	entries, err := fs.ReadDirEntries(ctx, path)
+	entries, err := opts.FS.ReadDirEntries(ctx, opts.Path)
 	if err != nil {
-		return items, errors.WrapErrorWithPath(err, "LoadSkeleton", path)
+		return items, errors.WrapErrorWithPath(err, "LoadSkeleton", opts.Path)
 	}
 
 	// Track seen files to identify ghosts later
 	seenOnDisk := make(map[string]bool)
 
 	for _, d := range entries {
-		if !showHidden && strings.HasPrefix(d.Name(), ".") {
+		if !opts.ShowHidden && strings.HasPrefix(d.Name(), ".") {
 			continue
 		}
 		seenOnDisk[d.Name()] = true
 
-		fPath := fs.Join(path, d.Name())
-		items = append(items, core.NewItemFromDirEntry(d, fPath, gitStatuses[d.Name()]))
+		fPath := opts.FS.Join(opts.Path, d.Name())
+		items = append(items, core.NewItemFromDirEntry(d, fPath, opts.GitStatuses[d.Name()]))
 	}
 
 	// Add Ghost Entries (Deleted files in Git that are NOT on disk)
-	for name, status := range gitStatuses {
+	for name, status := range opts.GitStatuses {
 		if !seenOnDisk[name] && status == "D" {
 			items = append(items, core.Item{
 				Name:        name,
-				Path:        fs.Join(path, name),
+				Path:        opts.FS.Join(opts.Path, name),
 				IsDir:       false,
 				GitStatus:   "D",
 				IsGhost:     true,
@@ -66,8 +66,8 @@ func LoadSkeleton(ctx context.Context, fs core.FileSystem, path string, showHidd
 }
 
 // Load reads the contents of the specified directory path with full stats.
-func Load(ctx context.Context, fs core.FileSystem, path string, mode sorting.SortMode, showHidden bool, gitStatuses map[string]string) ([]core.Item, error) {
-	items, err := LoadSkeleton(ctx, fs, path, showHidden, gitStatuses)
+func Load(ctx context.Context, opts LoadOptions) ([]core.Item, error) {
+	items, err := LoadSkeleton(ctx, opts)
 	if err != nil {
 		return items, err // LoadSkeleton already wraps
 	}
@@ -77,14 +77,14 @@ func Load(ctx context.Context, fs core.FileSystem, path string, mode sorting.Sor
 		if items[i].IsUp || items[i].IsGhost || items[i].HasMetadata {
 			continue
 		}
-		info, statErr := fs.Stat(ctx, items[i].Path)
+		info, statErr := opts.FS.Stat(ctx, items[i].Path)
 		if statErr == nil {
 			items[i] = core.NewItem(info, items[i].Path, items[i].GitStatus)
 		}
 	}
 
 	// Sort items using unified sorting.SortItems, skipping ".." entry if present
-	sorting.SortItems(items, mode, true)
+	sorting.SortItems(items, opts.SortMode, true)
 
 	return items, nil
 }

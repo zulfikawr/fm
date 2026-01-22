@@ -28,13 +28,21 @@ func TestDeleteMultiple(t *testing.T) {
 	}
 
 	paths := []string{"/test/a", "/test/b"}
-	err := DeleteMultiple(ctx, fs, paths, false, nil)
+	err := DeleteMultiple(DeleteOptions{
+		OpCtx:    OpContext{Context: ctx, FS: fs},
+		Paths:    paths,
+		UseTrash: false,
+	})
 	testutil.AssertNoError(t, err, "DeleteMultiple should succeed")
 
 	t.Run("Progress and multiple items", func(t *testing.T) {
 		progChan := make(chan core.Progress, 10)
 		paths := []string{"/a", "/b", "/c"}
-		err := DeleteMultiple(ctx, fs, paths, false, progChan)
+		err := DeleteMultiple(DeleteOptions{
+			OpCtx:    OpContext{Context: ctx, FS: fs, Progress: progChan},
+			Paths:    paths,
+			UseTrash: false,
+		})
 		testutil.AssertNoError(t, err, "Should succeed")
 
 		// Drain progress
@@ -48,7 +56,11 @@ func TestDeleteMultiple(t *testing.T) {
 	})
 
 	t.Run("Empty paths", func(t *testing.T) {
-		err := DeleteMultiple(ctx, fs, []string{}, false, nil)
+		err := DeleteMultiple(DeleteOptions{
+			OpCtx:    OpContext{Context: ctx, FS: fs},
+			Paths:    []string{},
+			UseTrash: false,
+		})
 		testutil.AssertNoError(t, err, "Should not error on empty paths")
 	})
 
@@ -56,7 +68,11 @@ func TestDeleteMultiple(t *testing.T) {
 		fs.IsReadOnlyFunc = func(ctx context.Context, path string) (bool, error) {
 			return true, nil
 		}
-		err := DeleteMultiple(ctx, fs, []string{"/test/a"}, false, nil)
+		err := DeleteMultiple(DeleteOptions{
+			OpCtx:    OpContext{Context: ctx, FS: fs},
+			Paths:    []string{"/test/a"},
+			UseTrash: false,
+		})
 		if err == nil {
 			t.Error("Expected error when filesystem is read-only")
 		}
@@ -65,7 +81,11 @@ func TestDeleteMultiple(t *testing.T) {
 	t.Run("Trash on remote", func(t *testing.T) {
 		fs.IsReadOnlyFunc = func(ctx context.Context, path string) (bool, error) { return false, nil }
 		fs.IsLocalFunc = func() bool { return false }
-		err := DeleteMultiple(ctx, fs, []string{"/test/a"}, true, nil)
+		err := DeleteMultiple(DeleteOptions{
+			OpCtx:    OpContext{Context: ctx, FS: fs},
+			Paths:    []string{"/test/a"},
+			UseTrash: true,
+		})
 		if err == nil {
 			t.Fatal("Expected error when trashing on remote")
 		}
@@ -94,7 +114,13 @@ func TestMoveMultiple_Conflict(t *testing.T) {
 			}
 			return nil, os.ErrNotExist
 		}
-		err := MoveMultiple(ctx, fs, fs, sources, destDir, nil, conflict.Ask, false)
+		err := MoveMultiple(BatchOptions{
+			OpCtx:    OpContext{Context: ctx, FS: fs},
+			SrcFS:    fs,
+			Sources:  sources,
+			DestDir:  destDir,
+			Conflict: ConflictOptions{Policy: conflict.Ask, ApplyToAll: false},
+		})
 		if err == nil {
 			t.Fatal("expected conflict error")
 		}
@@ -122,7 +148,13 @@ func TestMoveMultiple_Conflict(t *testing.T) {
 			return nil
 		}
 
-		err := MoveMultiple(ctx, fs, fs, sources, destDir, nil, conflict.Skip, true)
+		err := MoveMultiple(BatchOptions{
+			OpCtx:    OpContext{Context: ctx, FS: fs},
+			SrcFS:    fs,
+			Sources:  sources,
+			DestDir:  destDir,
+			Conflict: ConflictOptions{Policy: conflict.Skip, ApplyToAll: true},
+		})
 		testutil.AssertNoError(t, err, "Should succeed with skip")
 		testutil.AssertEqual(t, false, moveCalled, "Conflicting file should NOT be moved")
 	})
@@ -160,13 +192,25 @@ func TestCopyMultiple(t *testing.T) {
 
 	t.Run("Basic Success", func(t *testing.T) {
 		fs := setup()
-		err := CopyMultiple(ctx, fs, fs, sources, destDir, nil, conflict.Overwrite, true)
+		err := CopyMultiple(BatchOptions{
+			OpCtx:    OpContext{Context: ctx, FS: fs},
+			SrcFS:    fs,
+			Sources:  sources,
+			DestDir:  destDir,
+			Conflict: ConflictOptions{Policy: conflict.Overwrite, ApplyToAll: true},
+		})
 		testutil.AssertNoError(t, err, "CopyMultiple should succeed")
 	})
 
 	t.Run("Empty sources", func(t *testing.T) {
 		fs := setup()
-		err := CopyMultiple(ctx, fs, fs, []string{}, destDir, nil, conflict.Ask, false)
+		err := CopyMultiple(BatchOptions{
+			OpCtx:    OpContext{Context: ctx, FS: fs},
+			SrcFS:    fs,
+			Sources:  []string{},
+			DestDir:  destDir,
+			Conflict: ConflictOptions{Policy: conflict.Ask, ApplyToAll: false},
+		})
 		testutil.AssertNoError(t, err, "Should not error on empty sources")
 	})
 
@@ -181,7 +225,13 @@ func TestCopyMultiple(t *testing.T) {
 			}
 			return nil, os.ErrNotExist
 		}
-		err := CopyMultiple(ctx, fs, fs, sources, destDir, nil, conflict.Ask, false)
+		err := CopyMultiple(BatchOptions{
+			OpCtx:    OpContext{Context: ctx, FS: fs},
+			SrcFS:    fs,
+			Sources:  sources,
+			DestDir:  destDir,
+			Conflict: ConflictOptions{Policy: conflict.Ask, ApplyToAll: false},
+		})
 		if err == nil {
 			t.Fatal("Expected conflict error")
 		}
@@ -192,7 +242,13 @@ func TestCopyMultiple(t *testing.T) {
 		fs.IsReadOnlyFunc = func(ctx context.Context, path string) (bool, error) {
 			return true, nil
 		}
-		err := CopyMultiple(ctx, fs, fs, sources, destDir, nil, conflict.Overwrite, false)
+		err := CopyMultiple(BatchOptions{
+			OpCtx:    OpContext{Context: ctx, FS: fs},
+			SrcFS:    fs,
+			Sources:  sources,
+			DestDir:  destDir,
+			Conflict: ConflictOptions{Policy: conflict.Overwrite, ApplyToAll: false},
+		})
 		if err == nil {
 			t.Error("Expected error when destination is read-only")
 		}
@@ -202,7 +258,13 @@ func TestCopyMultiple(t *testing.T) {
 		fs := setup()
 		ctx, cancel := context.WithCancel(context.Background())
 		cancel()
-		err := CopyMultiple(ctx, fs, fs, sources, destDir, nil, conflict.Overwrite, false)
+		err := CopyMultiple(BatchOptions{
+			OpCtx:    OpContext{Context: ctx, FS: fs},
+			SrcFS:    fs,
+			Sources:  sources,
+			DestDir:  destDir,
+			Conflict: ConflictOptions{Policy: conflict.Overwrite, ApplyToAll: false},
+		})
 		if err != context.Canceled {
 			t.Errorf("Expected context.Canceled, got %v", err)
 		}
@@ -220,7 +282,13 @@ func TestCopyMultiple(t *testing.T) {
 			}
 			return nil, os.ErrNotExist
 		}
-		err := CopyMultiple(ctx, fs, fs, sources, destDir, progChan, conflict.Rename, false)
+		err := CopyMultiple(BatchOptions{
+			OpCtx:    OpContext{Context: ctx, FS: fs, Progress: progChan},
+			SrcFS:    fs,
+			Sources:  sources,
+			DestDir:  destDir,
+			Conflict: ConflictOptions{Policy: conflict.Rename, ApplyToAll: false},
+		})
 		testutil.AssertNoError(t, err, "Should succeed with Rename policy")
 
 		close(progChan)
@@ -233,7 +301,13 @@ func TestCopyMultiple(t *testing.T) {
 		fs.OpenFunc = func(ctx context.Context, path string) (io.ReadCloser, error) {
 			return nil, fmt.Errorf("read error")
 		}
-		err := CopyMultiple(ctx, fs, fs, sources, destDir, nil, conflict.Overwrite, false)
+		err := CopyMultiple(BatchOptions{
+			OpCtx:    OpContext{Context: ctx, FS: fs},
+			SrcFS:    fs,
+			Sources:  sources,
+			DestDir:  destDir,
+			Conflict: ConflictOptions{Policy: conflict.Overwrite, ApplyToAll: false},
+		})
 		if err == nil {
 			t.Error("Expected error from Copy")
 		}
@@ -258,7 +332,13 @@ func TestCopyMultiple(t *testing.T) {
 			return testutil.NewMockFile("item", nil), nil
 		}
 
-		err := CopyMultiple(ctx, fs, fs, sources, destDir, nil, conflict.Skip, true)
+		err := CopyMultiple(BatchOptions{
+			OpCtx:    OpContext{Context: ctx, FS: fs},
+			SrcFS:    fs,
+			Sources:  sources,
+			DestDir:  destDir,
+			Conflict: ConflictOptions{Policy: conflict.Skip, ApplyToAll: true},
+		})
 		testutil.AssertNoError(t, err, "Should succeed with skip")
 		testutil.AssertEqual(t, false, copyCalled, "Conflicting file should NOT be copied")
 	})
@@ -274,7 +354,13 @@ func TestCopyMultiple(t *testing.T) {
 			}
 			return nil, os.ErrNotExist
 		}
-		err := CopyMultiple(ctx, fs, fs, sources, destDir, nil, conflict.Overwrite, false)
+		err := CopyMultiple(BatchOptions{
+			OpCtx:    OpContext{Context: ctx, FS: fs},
+			SrcFS:    fs,
+			Sources:  sources,
+			DestDir:  destDir,
+			Conflict: ConflictOptions{Policy: conflict.Overwrite, ApplyToAll: false},
+		})
 		if err == nil || !strings.Contains(err.Error(), "stat error") {
 			t.Errorf("Expected stat error, got %v", err)
 		}
@@ -311,7 +397,13 @@ func TestMoveMultiple_Extra(t *testing.T) {
 	t.Run("ValidateWritable error", func(t *testing.T) {
 		fs := setup()
 		fs.IsReadOnlyFunc = func(ctx context.Context, path string) (bool, error) { return true, nil }
-		err := MoveMultiple(ctx, fs, fs, sources, destDir, nil, conflict.Overwrite, false)
+		err := MoveMultiple(BatchOptions{
+			OpCtx:    OpContext{Context: ctx, FS: fs},
+			SrcFS:    fs,
+			Sources:  sources,
+			DestDir:  destDir,
+			Conflict: ConflictOptions{Policy: conflict.Overwrite, ApplyToAll: false},
+		})
 		if err == nil {
 			t.Error("Expected error when destination is read-only")
 		}
@@ -321,7 +413,13 @@ func TestMoveMultiple_Extra(t *testing.T) {
 		fs := setup()
 		ctx, cancel := context.WithCancel(context.Background())
 		cancel()
-		err := MoveMultiple(ctx, fs, fs, sources, destDir, nil, conflict.Overwrite, false)
+		err := MoveMultiple(BatchOptions{
+			OpCtx:    OpContext{Context: ctx, FS: fs},
+			SrcFS:    fs,
+			Sources:  sources,
+			DestDir:  destDir,
+			Conflict: ConflictOptions{Policy: conflict.Overwrite, ApplyToAll: false},
+		})
 		if err != context.Canceled {
 			t.Errorf("Expected context.Canceled, got %v", err)
 		}
@@ -339,7 +437,13 @@ func TestMoveMultiple_Extra(t *testing.T) {
 			}
 			return nil, os.ErrNotExist
 		}
-		err := MoveMultiple(ctx, fs, fs, sources, destDir, progChan, conflict.Rename, false)
+		err := MoveMultiple(BatchOptions{
+			OpCtx:    OpContext{Context: ctx, FS: fs, Progress: progChan},
+			SrcFS:    fs,
+			Sources:  sources,
+			DestDir:  destDir,
+			Conflict: ConflictOptions{Policy: conflict.Rename, ApplyToAll: false},
+		})
 		testutil.AssertNoError(t, err, "Should succeed with Rename policy")
 	})
 
@@ -348,7 +452,13 @@ func TestMoveMultiple_Extra(t *testing.T) {
 		fs.RenameFunc = func(ctx context.Context, old, new string) error {
 			return fmt.Errorf("move error")
 		}
-		err := MoveMultiple(ctx, fs, fs, sources, destDir, nil, conflict.Overwrite, false)
+		err := MoveMultiple(BatchOptions{
+			OpCtx:    OpContext{Context: ctx, FS: fs},
+			SrcFS:    fs,
+			Sources:  sources,
+			DestDir:  destDir,
+			Conflict: ConflictOptions{Policy: conflict.Overwrite, ApplyToAll: false},
+		})
 		if err == nil {
 			t.Error("Expected error from Move")
 		}
@@ -365,7 +475,13 @@ func TestMoveMultiple_Extra(t *testing.T) {
 			}
 			return nil, os.ErrNotExist
 		}
-		err := MoveMultiple(ctx, fs, fs, sources, destDir, nil, conflict.Overwrite, false)
+		err := MoveMultiple(BatchOptions{
+			OpCtx:    OpContext{Context: ctx, FS: fs},
+			SrcFS:    fs,
+			Sources:  sources,
+			DestDir:  destDir,
+			Conflict: ConflictOptions{Policy: conflict.Overwrite, ApplyToAll: false},
+		})
 		if err == nil || !strings.Contains(err.Error(), "stat error") {
 			t.Errorf("Expected stat error, got %v", err)
 		}

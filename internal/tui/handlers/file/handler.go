@@ -135,7 +135,11 @@ func ResolveConflict(m *tui_context.Model, choice string, applyToAll bool) tea.C
 
 	resolver := conflict.NewResolver()
 	src := m.Operations.Conflict.Source
-	resolvedPath, _, err := resolver.Resolve(m.Context, m.FS, src, dst, policy)
+	resolvedPath, _, err := resolver.Resolve(m.Context, m.FS, conflict.ResolveOptions{
+		Src:    src,
+		Dst:    dst,
+		Policy: policy,
+	})
 	if err == nil {
 		if resolvedPath == "" && choice == "skip" {
 			if len(pending) <= 1 && !applyToAll {
@@ -165,10 +169,22 @@ func ResolveConflict(m *tui_context.Model, choice string, applyToAll bool) tea.C
 		cmds = append(cmds, PerformUnzip(m, destName))
 	case "move":
 		m.UI.Loading = true
-		cmds = append(cmds, MoveItems(ctx, srcFS, dstFS, pending, m.Navigation.Path, m.Operations.ConflictPolicy, applyToAll, logID))
+		cmds = append(cmds, MoveItems(ops.BatchOptions{
+			OpCtx:    ops.OpContext{Context: ctx, FS: dstFS},
+			SrcFS:    srcFS,
+			Sources:  pending,
+			DestDir:  m.Navigation.Path,
+			Conflict: ops.ConflictOptions{Policy: m.Operations.ConflictPolicy, ApplyToAll: applyToAll},
+		}, logID))
 	case "copy":
 		m.UI.Loading = true
-		cmds = append(cmds, PasteItems(ctx, srcFS, dstFS, pending, m.Navigation.Path, m.Operations.ConflictPolicy, applyToAll, logID))
+		cmds = append(cmds, PasteItems(ops.BatchOptions{
+			OpCtx:    ops.OpContext{Context: ctx, FS: dstFS},
+			SrcFS:    srcFS,
+			Sources:  pending,
+			DestDir:  m.Navigation.Path,
+			Conflict: ops.ConflictOptions{Policy: m.Operations.ConflictPolicy, ApplyToAll: applyToAll},
+		}, logID))
 	}
 
 	if !applyToAll {
@@ -206,7 +222,14 @@ func FinalizeOperation(m *tui_context.Model, msg messages.OperationFinishedMsg) 
 
 func HandleConflict(m *tui_context.Model, msg messages.ConflictMsg) tea.Cmd {
 	m.UI.Loading = false
-	m.Operations.Conflict.Set(msg.Src, msg.Dst, msg.PendingItems, msg.IsMove, msg.OpType, msg.LogID)
+	m.Operations.Conflict.Set(tui_context.ConflictParams{
+		Source:       msg.Src,
+		Destination:  msg.Dst,
+		PendingItems: msg.PendingItems,
+		IsMove:       msg.IsMove,
+		OpType:       msg.OpType,
+		LogID:        msg.LogID,
+	})
 	m.Operations.ActionType = constants.ActionConflict
 	m.UI.StartConfirming()
 	return nil
@@ -226,13 +249,14 @@ func ListenToProgress(progChan chan core.Progress) tea.Cmd {
 	}
 }
 
-func PasteItems(ctx context.Context, srcFS, dstFS core.FileSystem, sources []string, destDir string, policy conflict.Policy, applyToAll bool, logID string) tea.Cmd {
+func PasteItems(opts ops.BatchOptions, logID string) tea.Cmd {
 	progChan := make(chan core.Progress, 100)
+	opts.OpCtx.Progress = progChan
 	return tea.Batch(
 		ListenToProgress(progChan),
 		func() tea.Msg {
 			defer close(progChan)
-			err := ops.CopyMultiple(ctx, srcFS, dstFS, sources, destDir, progChan, policy, applyToAll)
+			err := ops.CopyMultiple(opts)
 			if err != nil {
 				var conflict *conflict.ConflictError
 				if errors.As(err, &conflict) {
@@ -247,18 +271,19 @@ func PasteItems(ctx context.Context, srcFS, dstFS core.FileSystem, sources []str
 				}
 				return messages.ErrorMsg{Err: err, LogID: logID}
 			}
-			return messages.OperationFinishedMsg{Paths: sources, LogID: logID}
+			return messages.OperationFinishedMsg{Paths: opts.Sources, LogID: logID}
 		},
 	)
 }
 
-func MoveItems(ctx context.Context, srcFS, dstFS core.FileSystem, sources []string, destDir string, policy conflict.Policy, applyToAll bool, logID string) tea.Cmd {
+func MoveItems(opts ops.BatchOptions, logID string) tea.Cmd {
 	progChan := make(chan core.Progress, 100)
+	opts.OpCtx.Progress = progChan
 	return tea.Batch(
 		ListenToProgress(progChan),
 		func() tea.Msg {
 			defer close(progChan)
-			err := ops.MoveMultiple(ctx, srcFS, dstFS, sources, destDir, progChan, policy, applyToAll)
+			err := ops.MoveMultiple(opts)
 			if err != nil {
 				var conflict *conflict.ConflictError
 				if errors.As(err, &conflict) {
@@ -273,7 +298,7 @@ func MoveItems(ctx context.Context, srcFS, dstFS core.FileSystem, sources []stri
 				}
 				return messages.ErrorMsg{Err: err, LogID: logID}
 			}
-			return messages.OperationFinishedMsg{Paths: sources, LogID: logID}
+			return messages.OperationFinishedMsg{Paths: opts.Sources, LogID: logID}
 		},
 	)
 }

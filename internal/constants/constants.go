@@ -24,6 +24,7 @@ const (
 	MaxSearchLength   = 64
 	MaxCopyWorkers    = 16
 	MaxReadDirWorkers = 32
+	MaxSearchWorkers  = 8
 	CopyBufferSize    = 1024 * 1024 // 1MB
 )
 

@@ -60,7 +60,11 @@ func TestSearch_MatchLimit(t *testing.T) {
 	fs.OpenFunc = func(ctx context.Context, path string) (io.ReadCloser, error) {
 		return testutil.NewMockFile("large.txt", []byte(content)), nil
 	}
-	result, found := searchInFile(ctx, fs, "/large.txt", "match")
+	result, found := searchInFile(SearchOptions{
+		OpCtx: OpContext{Context: ctx, FS: fs},
+		Root:  "/large.txt",
+		Query: "match",
+	})
 	if !found {
 		t.Fatal("Should have found matches")
 	}
@@ -76,7 +80,7 @@ func (m *mockReadCloser) Close() error { return nil }
 func TestSearch(t *testing.T) {
 	ctx := context.Background()
 	fs := testutil.NewMockFileSystem()
-	fs.WalkFunc = func(ctx context.Context, root string, walkFn func(string, os.FileInfo, error) error) error {
+	fs.WalkFunc = func(ctx context.Context, root string, walkFn filepath.WalkFunc) error {
 		info := &testutil.MockFileInfo{FName: "test.txt", FIsDir: false}
 		return walkFn("/test.txt", info, nil)
 	}
@@ -85,7 +89,11 @@ func TestSearch(t *testing.T) {
 	}
 
 	t.Run("Empty Query", func(t *testing.T) {
-		results, err := Search(ctx, fs, nil, "/", "")
+		results, err := Search(SearchOptions{
+			OpCtx: OpContext{Context: ctx, FS: fs},
+			Root:  "/",
+			Query: "",
+		})
 		testutil.AssertNoError(t, err, "Search should not error on empty query")
 		if len(results) != 0 {
 			t.Errorf("Expected 0 results for empty query, got %d", len(results))
@@ -93,7 +101,11 @@ func TestSearch(t *testing.T) {
 	})
 
 	t.Run("Successful Match", func(t *testing.T) {
-		results, err := Search(ctx, fs, nil, "/", "match")
+		results, err := Search(SearchOptions{
+			OpCtx: OpContext{Context: ctx, FS: fs},
+			Root:  "/",
+			Query: "match",
+		})
 		testutil.AssertNoError(t, err, "Search should succeed")
 		if len(results) != 1 {
 			t.Errorf("Expected 1 result, got %d", len(results))
@@ -101,7 +113,7 @@ func TestSearch(t *testing.T) {
 	})
 
 	t.Run("Skip .git directory", func(t *testing.T) {
-		fs.WalkFunc = func(ctx context.Context, root string, walkFn func(string, os.FileInfo, error) error) error {
+		fs.WalkFunc = func(ctx context.Context, root string, walkFn filepath.WalkFunc) error {
 			info := &testutil.MockFileInfo{FName: ".git", FIsDir: true}
 			err := walkFn("/.git", info, nil)
 			if err == filepath.SkipDir {
@@ -109,7 +121,11 @@ func TestSearch(t *testing.T) {
 			}
 			return err
 		}
-		results, err := Search(ctx, fs, nil, "/", "any")
+		results, err := Search(SearchOptions{
+			OpCtx: OpContext{Context: ctx, FS: fs},
+			Root:  "/",
+			Query: "any",
+		})
 		testutil.AssertNoError(t, err, "Search should succeed")
 		if len(results) != 0 {
 			t.Errorf("Expected 0 results from .git directory, got %d", len(results))
@@ -117,14 +133,18 @@ func TestSearch(t *testing.T) {
 	})
 
 	t.Run("Non-seeker file", func(t *testing.T) {
-		fs.WalkFunc = func(ctx context.Context, root string, walkFn func(string, os.FileInfo, error) error) error {
+		fs.WalkFunc = func(ctx context.Context, root string, walkFn filepath.WalkFunc) error {
 			info := &testutil.MockFileInfo{FName: "nonseeker.txt", FIsDir: false}
 			return walkFn("/nonseeker.txt", info, nil)
 		}
 		fs.OpenFunc = func(ctx context.Context, path string) (io.ReadCloser, error) {
 			return &mockReadCloser{Reader: strings.NewReader("match")}, nil
 		}
-		results, err := Search(ctx, fs, nil, "/", "match")
+		results, err := Search(SearchOptions{
+			OpCtx: OpContext{Context: ctx, FS: fs},
+			Root:  "/",
+			Query: "match",
+		})
 		testutil.AssertNoError(t, err, "Search should succeed even if file is not seeker")
 		if len(results) == 0 {
 			t.Error("Expected results even if file is not seeker")
@@ -132,10 +152,14 @@ func TestSearch(t *testing.T) {
 	})
 
 	t.Run("Walk error", func(t *testing.T) {
-		fs.WalkFunc = func(ctx context.Context, root string, walkFn func(string, os.FileInfo, error) error) error {
+		fs.WalkFunc = func(ctx context.Context, root string, walkFn filepath.WalkFunc) error {
 			return os.ErrPermission
 		}
-		_, err := Search(ctx, fs, nil, "/", "match")
+		_, err := Search(SearchOptions{
+			OpCtx: OpContext{Context: ctx, FS: fs},
+			Root:  "/",
+			Query: "match",
+		})
 		if err == nil {
 			t.Error("Expected error when Walk fails")
 		}

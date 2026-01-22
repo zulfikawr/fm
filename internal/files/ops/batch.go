@@ -1,7 +1,6 @@
 package ops
 
 import (
-	"context"
 	"fmt"
 
 	"github.com/zulfikawr/fm/internal/files/conflict"
@@ -9,49 +8,52 @@ import (
 )
 
 // DeleteMultiple removes multiple files or directories recursively.
-func DeleteMultiple(ctx context.Context, fs core.FileSystem, paths []string, useTrash bool, progChan chan<- core.Progress) error {
-	if len(paths) > 0 {
-		if err := ValidateWritable(ctx, fs, core.GetParent(fs, paths[0])); err != nil {
+func DeleteMultiple(opts DeleteOptions) error {
+	if len(opts.Paths) > 0 {
+		if err := ValidateWritable(opts.OpCtx.Context, opts.OpCtx.FS, core.GetParent(opts.OpCtx.FS, opts.Paths[0])); err != nil {
 			return err
 		}
 	}
-	for i, path := range paths {
+	for i, path := range opts.Paths {
 		select {
-		case <-ctx.Done():
-			return ctx.Err()
+		case <-opts.OpCtx.Context.Done():
+			return opts.OpCtx.Context.Err()
 		default:
 		}
 
-		if progChan != nil && !useTrash {
+		if opts.OpCtx.Progress != nil && !opts.UseTrash {
 			select {
-			case progChan <- core.Progress{
-				Percent: float64(i) / float64(len(paths)),
-				Label:   "Deleting " + fs.Base(path) + "...",
+			case opts.OpCtx.Progress <- core.Progress{
+				Percent: float64(i) / float64(len(opts.Paths)),
+				Label:   "Deleting " + opts.OpCtx.FS.Base(path) + "...",
 			}:
 			default:
 			}
 		}
 
 		var err error
-		if useTrash {
-			err = Trash(ctx, fs, path)
+		if opts.UseTrash {
+			err = Trash(opts.OpCtx.Context, opts.OpCtx.FS, path)
 		} else {
-			err = Delete(ctx, fs, path, nil)
+			err = Delete(DeleteOptions{
+				OpCtx: opts.OpCtx,
+				Paths: []string{path},
+			})
 		}
 		if err != nil {
 			return err
 		}
 	}
 
-	if progChan != nil && len(paths) > 0 {
+	if opts.OpCtx.Progress != nil && len(opts.Paths) > 0 {
 		label := ""
-		if len(paths) == 1 {
-			label = fmt.Sprintf("Deleted %s", fs.Base(paths[0]))
+		if len(opts.Paths) == 1 {
+			label = fmt.Sprintf("Deleted %s", opts.OpCtx.FS.Base(opts.Paths[0]))
 		} else {
-			label = fmt.Sprintf("Deleted %d items", len(paths))
+			label = fmt.Sprintf("Deleted %d items", len(opts.Paths))
 		}
 		select {
-		case progChan <- core.Progress{
+		case opts.OpCtx.Progress <- core.Progress{
 			Percent: 1.0,
 			Label:   label,
 		}:
@@ -63,24 +65,28 @@ func DeleteMultiple(ctx context.Context, fs core.FileSystem, paths []string, use
 }
 
 // CopyMultiple copies multiple items from sources to destDir between different filesystems.
-func CopyMultiple(ctx context.Context, srcFS, dstFS core.FileSystem, sources []string, destDir string, progChan chan<- core.Progress, policy conflict.Policy, applyToAll bool) error {
-	if err := ValidateWritable(ctx, dstFS, destDir); err != nil {
+func CopyMultiple(opts BatchOptions) error {
+	if err := ValidateWritable(opts.OpCtx.Context, opts.OpCtx.FS, opts.DestDir); err != nil {
 		return err
 	}
 	resolver := conflict.NewResolver()
-	for i, src := range sources {
+	for i, src := range opts.Sources {
 		select {
-		case <-ctx.Done():
-			return ctx.Err()
+		case <-opts.OpCtx.Context.Done():
+			return opts.OpCtx.Context.Err()
 		default:
 		}
 
-		dst := dstFS.Join(destDir, srcFS.Base(src))
+		dst := opts.OpCtx.FS.Join(opts.DestDir, opts.SrcFS.Base(src))
 
-		resolvedDst, isRenamed, err := resolver.Resolve(ctx, dstFS, src, dst, policy)
+		resolvedDst, isRenamed, err := resolver.Resolve(opts.OpCtx.Context, opts.OpCtx.FS, conflict.ResolveOptions{
+			Src:    src,
+			Dst:    dst,
+			Policy: opts.Conflict.Policy,
+		})
 		if err != nil {
 			if cerr, ok := err.(*conflict.ConflictError); ok {
-				cerr.PendingItems = sources[i:]
+				cerr.PendingItems = opts.Sources[i:]
 				cerr.OpType = "copy"
 				return cerr
 			}
@@ -89,58 +95,71 @@ func CopyMultiple(ctx context.Context, srcFS, dstFS core.FileSystem, sources []s
 
 		if resolvedDst == "" {
 			// If we skipped and not applying to all, reset policy for next items
-			if !applyToAll {
-				policy = conflict.Ask
+			if !opts.Conflict.ApplyToAll {
+				opts.Conflict.Policy = conflict.Ask
 			}
 			continue // Skip
 		}
 		dst = resolvedDst
 
-		if progChan != nil {
-			label := "Copying " + srcFS.Base(src) + "..."
+		if opts.OpCtx.Progress != nil {
+			label := "Copying " + opts.SrcFS.Base(src) + "..."
 			if isRenamed {
-				label = fmt.Sprintf("Copying %s as %s...", srcFS.Base(src), dstFS.Base(dst))
+				label = fmt.Sprintf("Copying %s as %s...", opts.SrcFS.Base(src), opts.OpCtx.FS.Base(dst))
 			}
 			select {
-			case progChan <- core.Progress{
-				Percent: float64(i) / float64(len(sources)),
+			case opts.OpCtx.Progress <- core.Progress{
+				Percent: float64(i) / float64(len(opts.Sources)),
 				Label:   label,
 			}:
 			default:
 			}
 		}
 
-		if err := CrossCopy(ctx, srcFS, dstFS, src, dst, progChan, conflict.Overwrite); err != nil {
+		copyOpts := CopyOptions{
+			OpCtx: opts.OpCtx,
+			SrcFS: opts.SrcFS,
+			Src:   src,
+			Dst:   dst,
+			Conflict: ConflictOptions{
+				Policy: conflict.Overwrite,
+			},
+		}
+		if err := CrossCopy(copyOpts); err != nil {
 			return err
 		}
 
 		// If we are not applying to all, reset policy to Ask after the first successful resolution
-		if !applyToAll {
-			policy = conflict.Ask
+		if !opts.Conflict.ApplyToAll {
+			opts.Conflict.Policy = conflict.Ask
 		}
 	}
 	return nil
 }
 
 // MoveMultiple moves multiple items from sources to destDir between different filesystems.
-func MoveMultiple(ctx context.Context, srcFS, dstFS core.FileSystem, sources []string, destDir string, progChan chan<- core.Progress, policy conflict.Policy, applyToAll bool) error {
-	if err := ValidateWritable(ctx, dstFS, destDir); err != nil {
+func MoveMultiple(opts BatchOptions) error {
+	if err := ValidateWritable(opts.OpCtx.Context, opts.OpCtx.FS, opts.DestDir); err != nil {
 		return err
 	}
 	resolver := conflict.NewResolver()
-	for i, src := range sources {
+	for i, src := range opts.Sources {
 		select {
-		case <-ctx.Done():
-			return ctx.Err()
+		case <-opts.OpCtx.Context.Done():
+			return opts.OpCtx.Context.Err()
 		default:
 		}
 
-		dst := dstFS.Join(destDir, srcFS.Base(src))
+		dst := opts.OpCtx.FS.Join(opts.DestDir, opts.SrcFS.Base(src))
 
-		resolvedDst, isRenamed, err := resolver.Resolve(ctx, dstFS, src, dst, policy)
+		resolvedDst, isRenamed, err := resolver.Resolve(opts.OpCtx.Context, opts.OpCtx.FS, conflict.ResolveOptions{
+			Src:    src,
+			Dst:    dst,
+			Policy: opts.Conflict.Policy,
+		})
 		if err != nil {
 			if cerr, ok := err.(*conflict.ConflictError); ok {
-				cerr.PendingItems = sources[i:]
+				cerr.PendingItems = opts.Sources[i:]
 				cerr.IsMove = true
 				cerr.OpType = "move"
 				return cerr
@@ -149,33 +168,42 @@ func MoveMultiple(ctx context.Context, srcFS, dstFS core.FileSystem, sources []s
 		}
 
 		if resolvedDst == "" {
-			if !applyToAll {
-				policy = conflict.Ask
+			if !opts.Conflict.ApplyToAll {
+				opts.Conflict.Policy = conflict.Ask
 			}
 			continue // Skip
 		}
 		dst = resolvedDst
 
-		if progChan != nil {
-			label := "Moving " + srcFS.Base(src) + "..."
+		if opts.OpCtx.Progress != nil {
+			label := "Moving " + opts.SrcFS.Base(src) + "..."
 			if isRenamed {
-				label = fmt.Sprintf("Moving %s as %s...", srcFS.Base(src), dstFS.Base(dst))
+				label = fmt.Sprintf("Moving %s as %s...", opts.SrcFS.Base(src), opts.OpCtx.FS.Base(dst))
 			}
 			select {
-			case progChan <- core.Progress{
-				Percent: float64(i) / float64(len(sources)),
+			case opts.OpCtx.Progress <- core.Progress{
+				Percent: float64(i) / float64(len(opts.Sources)),
 				Label:   label,
 			}:
 			default:
 			}
 		}
 
-		if err := CrossMove(ctx, srcFS, dstFS, src, dst, progChan, conflict.Overwrite); err != nil {
+		moveOpts := CopyOptions{
+			OpCtx: opts.OpCtx,
+			SrcFS: opts.SrcFS,
+			Src:   src,
+			Dst:   dst,
+			Conflict: ConflictOptions{
+				Policy: conflict.Overwrite,
+			},
+		}
+		if err := CrossMove(moveOpts); err != nil {
 			return err
 		}
 
-		if !applyToAll {
-			policy = conflict.Ask
+		if !opts.Conflict.ApplyToAll {
+			opts.Conflict.Policy = conflict.Ask
 		}
 	}
 	return nil

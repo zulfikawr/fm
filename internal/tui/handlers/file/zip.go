@@ -39,11 +39,21 @@ func PerformZip(m *tui_context.Model, zipName string) tea.Cmd {
 
 	if m.Operations.ConflictPolicy == conflict.Ask {
 		resolver := conflict.NewResolver()
-		resolvedPath, _, err := resolver.Resolve(m.Context, m.FS, targets[0], dst, m.Operations.ConflictPolicy)
+		resolvedPath, _, err := resolver.Resolve(m.Context, m.FS, conflict.ResolveOptions{
+			Src:    targets[0],
+			Dst:    dst,
+			Policy: m.Operations.ConflictPolicy,
+		})
 		if err != nil {
 			if cerr, ok := err.(*conflict.ConflictError); ok {
 				m.UI.Loading = false
-				m.Operations.Conflict.Set(cerr.Source, cerr.Destination, targets, false, "zip", "")
+				m.Operations.Conflict.Set(tui_context.ConflictParams{
+					Source:       cerr.Source,
+					Destination:  cerr.Destination,
+					PendingItems: targets,
+					IsMove:       false,
+					OpType:       "zip",
+				})
 				m.Operations.ActionType = constants.ActionConflict
 				m.UI.StartConfirming()
 				return nil
@@ -109,11 +119,21 @@ func PerformUnzip(m *tui_context.Model, destName string) tea.Cmd {
 
 	if m.Operations.ConflictPolicy == conflict.Ask {
 		resolver := conflict.NewResolver()
-		resolvedPath, _, err := resolver.Resolve(m.Context, m.FS, zipPath, dst, m.Operations.ConflictPolicy)
+		resolvedPath, _, err := resolver.Resolve(m.Context, m.FS, conflict.ResolveOptions{
+			Src:    zipPath,
+			Dst:    dst,
+			Policy: m.Operations.ConflictPolicy,
+		})
 		if err != nil {
 			if cerr, ok := err.(*conflict.ConflictError); ok {
 				m.UI.Loading = false
-				m.Operations.Conflict.Set(cerr.Source, cerr.Destination, []string{zipPath}, false, "unzip", "")
+				m.Operations.Conflict.Set(tui_context.ConflictParams{
+					Source:       cerr.Source,
+					Destination:  cerr.Destination,
+					PendingItems: []string{zipPath},
+					IsMove:       false,
+					OpType:       "unzip",
+				})
 				m.Operations.ActionType = constants.ActionConflict
 				m.UI.StartConfirming()
 				return nil

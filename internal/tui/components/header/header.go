@@ -71,7 +71,14 @@ func Render(props Props) string {
 			breadcrumb = lipgloss.NewStyle().MaxWidth(maxBreadcrumbWidth).Render(breadcrumb)
 		}
 	} else {
-		breadcrumb = renderBreadcrumbPath(title, props.Separator, props.RemoteStr, props.RootOverride, props.Style, maxBreadcrumbWidth)
+		breadcrumb = renderBreadcrumbPath(BreadcrumbProps{
+			Path:         title,
+			Separator:    props.Separator,
+			RemoteStr:    props.RemoteStr,
+			RootOverride: props.RootOverride,
+			Styles:       props.Style,
+			MaxWidth:     maxBreadcrumbWidth,
+		})
 		breadcrumb = addGitBranch(breadcrumb, props.GitBranch, props.Style)
 		breadcrumb = addReadOnlyIndicator(breadcrumb, props.ReadOnly, props.Style)
 	}

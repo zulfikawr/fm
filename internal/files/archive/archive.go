@@ -275,12 +275,18 @@ func (fs *ZipFS) Preallocate(ctx context.Context, path string, size int64) error
 	return &errors.UnsupportedOperationError{Op: "Preallocate", Filesystem: "Zip"}
 }
 
-func (fs *ZipFS) Walk(ctx context.Context, root string, walkFn func(path string, info os.FileInfo, err error) error) error {
-	// Simple implementation: iterate over all files in reader
-	root = strings.TrimPrefix(fs.Clean(root), "/")
-	if root == "." {
-		root = ""
+func (fs *ZipFS) Walk(ctx context.Context, root string, walkFn filepath.WalkFunc) error {
+	// 1. Resolve root entry
+	_, err := fs.Stat(ctx, root)
+	if err != nil {
+		return err
 	}
+
+	searchRoot := root
+	if searchRoot == "/" {
+		searchRoot = ""
+	}
+	searchRoot = strings.TrimPrefix(searchRoot, "/")
 
 	for _, file := range fs.reader.File {
 		select {
@@ -289,7 +295,7 @@ func (fs *ZipFS) Walk(ctx context.Context, root string, walkFn func(path string,
 		default:
 		}
 
-		if root != "" && !strings.HasPrefix(file.Name, root) {
+		if searchRoot != "" && !strings.HasPrefix(file.Name, searchRoot) {
 			continue
 		}
 		if err := walkFn(file.Name, file.FileInfo(), nil); err != nil {
