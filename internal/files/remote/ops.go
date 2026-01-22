@@ -2,12 +2,9 @@ package remote
 
 import (
 	"context"
-	"fmt"
 	"io"
 	"os"
 	"path"
-
-	"github.com/zulfikawr/fm/internal/files/errors"
 )
 
 func (fs *RemoteFS) ReadDirEntries(ctx context.Context, p string) ([]os.DirEntry, error) {
@@ -23,30 +20,17 @@ func (fs *RemoteFS) ReadDirEntries(ctx context.Context, p string) ([]os.DirEntry
 		}
 		return nil
 	})
-	if err != nil {
-		return nil, errors.WrapErrorWithPath(err, "ReadDirEntries", p)
-	}
-	return entries, nil
+	return entries, err
 }
 
 func (fs *RemoteFS) ReadDir(ctx context.Context, p string) ([]os.FileInfo, error) {
-	if entries, ok := fs.cache.Get(p); ok {
-		return entries, nil
-	}
-
 	var entries []os.FileInfo
 	err := fs.runWithRetry(func() error {
 		var err error
 		entries, err = fs.client.ReadDir(p)
 		return err
 	})
-
-	if err != nil {
-		return nil, errors.WrapErrorWithPath(err, "ReadDir", p)
-	}
-
-	fs.cache.Put(p, entries)
-	return entries, nil
+	return entries, err
 }
 
 func (fs *RemoteFS) Stat(ctx context.Context, p string) (os.FileInfo, error) {
@@ -56,7 +40,7 @@ func (fs *RemoteFS) Stat(ctx context.Context, p string) (os.FileInfo, error) {
 		info, err = fs.client.Stat(p)
 		return err
 	})
-	return info, errors.WrapErrorWithPath(err, "Stat", p)
+	return info, err
 }
 
 func (fs *RemoteFS) Lstat(ctx context.Context, p string) (os.FileInfo, error) {
@@ -66,11 +50,10 @@ func (fs *RemoteFS) Lstat(ctx context.Context, p string) (os.FileInfo, error) {
 		info, err = fs.client.Lstat(p)
 		return err
 	})
-	return info, errors.WrapErrorWithPath(err, "Lstat", p)
+	return info, err
 }
 
 func (fs *RemoteFS) RemoveAll(ctx context.Context, p string) error {
-	fs.cache.Invalidate(path.Dir(p))
 	return fs.runWithRetry(func() error {
 		info, err := fs.client.Stat(p)
 		if err != nil {
@@ -96,23 +79,19 @@ func (fs *RemoteFS) RemoveAll(ctx context.Context, p string) error {
 }
 
 func (fs *RemoteFS) Rename(ctx context.Context, oldPath, newPath string) error {
-	fs.cache.Invalidate(path.Dir(oldPath))
-	fs.cache.Invalidate(path.Dir(newPath))
-	err := fs.runWithRetry(func() error {
+	return fs.runWithRetry(func() error {
 		return fs.client.Rename(oldPath, newPath)
 	})
-	return errors.WrapErrorWithPath(err, "Rename", fmt.Sprintf("%s -> %s", oldPath, newPath))
 }
 
 func (fs *RemoteFS) Create(ctx context.Context, p string) (io.WriteCloser, error) {
-	fs.cache.Invalidate(path.Dir(p))
 	var f io.WriteCloser
 	err := fs.runWithRetry(func() error {
 		var err error
 		f, err = fs.client.Create(p)
 		return err
 	})
-	return f, errors.WrapErrorWithPath(err, "Create", p)
+	return f, err
 }
 
 func (fs *RemoteFS) Open(ctx context.Context, p string) (io.ReadCloser, error) {
@@ -122,11 +101,10 @@ func (fs *RemoteFS) Open(ctx context.Context, p string) (io.ReadCloser, error) {
 		f, err = fs.client.Open(p)
 		return err
 	})
-	return f, errors.WrapErrorWithPath(err, "Open", p)
+	return f, err
 }
 
 func (fs *RemoteFS) MkdirAll(ctx context.Context, p string, perm os.FileMode) error {
-	fs.cache.Invalidate(path.Dir(p))
 	return fs.runWithRetry(func() error {
 		return fs.client.MkdirAll(p)
 	})
@@ -167,8 +145,5 @@ func (fs *RemoteFS) IsReadOnly(ctx context.Context, p string) (bool, error) {
 		return nil
 	})
 
-	if err != nil {
-		return false, errors.WrapErrorWithPath(err, "IsReadOnly", p)
-	}
-	return isReadOnly, nil
+	return isReadOnly, err
 }

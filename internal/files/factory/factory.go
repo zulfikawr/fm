@@ -3,6 +3,7 @@ package factory
 import (
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/zulfikawr/fm/internal/files/core"
 	fileerrors "github.com/zulfikawr/fm/internal/files/errors"
@@ -14,7 +15,21 @@ import (
 
 // CreateFileSystem instantiates a LocalFS or RemoteFS based on the remote string.
 func CreateFileSystem(remoteStr string, args []string) (core.FileSystem, *RemoteInfo, error) {
-	return CreateFileSystemWithConnector(remoteStr, args, &DefaultConnector{})
+	fs, info, err := CreateFileSystemWithConnector(remoteStr, args, &DefaultConnector{})
+	if err != nil {
+		return nil, nil, err
+	}
+
+	// Wrap with decorators
+	// Order: ContextFS (outer) -> CachedFS -> ErrorWrappedFS (inner)
+	// ErrorWrappedFS should be inner so it wraps the raw errors from implementation.
+	// CachedFS should be in middle to cache results.
+	// ContextFS should be outer to check cancellation before anything else.
+	fs = core.NewErrorWrappedFS(fs)
+	fs = core.NewCachedFS(fs, 100, 2*time.Second)
+	fs = core.NewContextFS(fs)
+
+	return fs, info, nil
 }
 
 // CreateFileSystemWithConnector allows injecting a custom connector for testing.

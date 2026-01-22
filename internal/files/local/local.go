@@ -2,28 +2,20 @@ package local
 
 import (
 	"context"
-	"fmt"
 	"io"
 	"os"
 	"path/filepath"
-	"time"
 
 	"github.com/zulfikawr/fm/internal/constants"
-	"github.com/zulfikawr/fm/internal/files/core"
-	"github.com/zulfikawr/fm/internal/files/errors"
 
 	"golang.org/x/sync/errgroup"
 )
 
 // LocalFS implements FileSystem for the local disk.
-type LocalFS struct {
-	cache *core.SimpleCache[string, []os.FileInfo]
-}
+type LocalFS struct{}
 
 func NewLocalFS() *LocalFS {
-	return &LocalFS{
-		cache: core.NewSimpleCache[string, []os.FileInfo](100, 2*time.Second),
-	}
+	return &LocalFS{}
 }
 
 func (fs *LocalFS) Close() error {
@@ -31,44 +23,26 @@ func (fs *LocalFS) Close() error {
 }
 
 func (fs *LocalFS) ReadDirEntries(ctx context.Context, path string) ([]os.DirEntry, error) {
-	select {
-	case <-ctx.Done():
-		return nil, ctx.Err()
-	default:
-	}
-	entries, err := os.ReadDir(path)
-	return entries, errors.WrapErrorWithPath(err, "ReadDirEntries", path)
+	return os.ReadDir(path)
 }
 
 func (fs *LocalFS) ReadDir(ctx context.Context, path string) ([]os.FileInfo, error) {
-	// Check cache
-	if entries, ok := fs.cache.Get(path); ok {
-		return entries, nil
-	}
-
-	select {
-	case <-ctx.Done():
-		return nil, ctx.Err()
-	default:
-	}
-
 	entries, err := os.ReadDir(path)
 	if err != nil {
-		return nil, errors.WrapErrorWithPath(err, "ReadDir", path)
+		return nil, err
 	}
 
 	infos := make([]os.FileInfo, len(entries))
-	g, ctx := errgroup.WithContext(ctx)
+	g, gctx := errgroup.WithContext(ctx)
 	g.SetLimit(constants.MaxReadDirWorkers)
 
 	for i, entry := range entries {
 		g.Go(func() error {
 			select {
-			case <-ctx.Done():
-				return ctx.Err()
+			case <-gctx.Done():
+				return gctx.Err()
 			default:
 			}
-
 			info, err := entry.Info()
 			if err == nil {
 				infos[i] = info
@@ -78,7 +52,7 @@ func (fs *LocalFS) ReadDir(ctx context.Context, path string) ([]os.FileInfo, err
 	}
 
 	if err := g.Wait(); err != nil {
-		return nil, errors.WrapErrorWithPath(err, "ReadDir", path)
+		return nil, err
 	}
 
 	// Filter out nil entries (where Info() failed)
@@ -89,100 +63,47 @@ func (fs *LocalFS) ReadDir(ctx context.Context, path string) ([]os.FileInfo, err
 		}
 	}
 
-	// Store in cache
-	fs.cache.Put(path, result)
-
 	return result, nil
 }
 
 func (fs *LocalFS) Stat(ctx context.Context, path string) (os.FileInfo, error) {
-	select {
-	case <-ctx.Done():
-		return nil, ctx.Err()
-	default:
-	}
-	info, err := os.Stat(path)
-	return info, errors.WrapErrorWithPath(err, "Stat", path)
+	return os.Stat(path)
 }
 
 func (fs *LocalFS) Lstat(ctx context.Context, path string) (os.FileInfo, error) {
-	select {
-	case <-ctx.Done():
-		return nil, ctx.Err()
-	default:
-	}
-	info, err := os.Lstat(path)
-	return info, errors.WrapErrorWithPath(err, "Lstat", path)
+	return os.Lstat(path)
 }
 
 func (fs *LocalFS) RemoveAll(ctx context.Context, path string) error {
-	select {
-	case <-ctx.Done():
-		return ctx.Err()
-	default:
-	}
-	fs.cache.Invalidate(filepath.Dir(path))
-	return errors.WrapErrorWithPath(os.RemoveAll(path), "RemoveAll", path)
+	return os.RemoveAll(path)
 }
 
 func (fs *LocalFS) Rename(ctx context.Context, oldPath, newPath string) error {
-	select {
-	case <-ctx.Done():
-		return ctx.Err()
-	default:
-	}
-	fs.cache.Invalidate(filepath.Dir(oldPath))
-	fs.cache.Invalidate(filepath.Dir(newPath))
-	return errors.WrapErrorWithPath(os.Rename(oldPath, newPath), "Rename", fmt.Sprintf("%s -> %s", oldPath, newPath))
+	return os.Rename(oldPath, newPath)
 }
 
 func (fs *LocalFS) Create(ctx context.Context, path string) (io.WriteCloser, error) {
-	select {
-	case <-ctx.Done():
-		return nil, ctx.Err()
-	default:
-	}
-	fs.cache.Invalidate(filepath.Dir(path))
-	f, err := os.Create(path)
-	return f, errors.WrapErrorWithPath(err, "Create", path)
+	return os.Create(path)
 }
 
 func (fs *LocalFS) Open(ctx context.Context, path string) (io.ReadCloser, error) {
-	select {
-	case <-ctx.Done():
-		return nil, ctx.Err()
-	default:
-	}
-	f, err := os.Open(path)
-	return f, errors.WrapErrorWithPath(err, "Open", path)
+	return os.Open(path)
 }
 
 func (fs *LocalFS) MkdirAll(ctx context.Context, path string, perm os.FileMode) error {
-	select {
-	case <-ctx.Done():
-		return ctx.Err()
-	default:
-	}
-	fs.cache.Invalidate(filepath.Dir(path))
-	return errors.WrapErrorWithPath(os.MkdirAll(path, perm), "MkdirAll", path)
+	return os.MkdirAll(path, perm)
 }
 
 func (fs *LocalFS) Chmod(ctx context.Context, path string, mode os.FileMode) error {
-	select {
-	case <-ctx.Done():
-		return ctx.Err()
-	default:
-	}
-	return errors.WrapErrorWithPath(os.Chmod(path, mode), "Chmod", path)
+	return os.Chmod(path, mode)
 }
 
 func (fs *LocalFS) Preallocate(ctx context.Context, path string, size int64) error {
-	return errors.WrapErrorWithPath(preallocate(path, size), "Preallocate", path)
+	return preallocate(path, size)
 }
 
 func (fs *LocalFS) GetHomeDir() (string, error) {
-	dir, err := os.UserHomeDir()
-	return dir, errors.WrapError(err, "GetHomeDir")
+	return os.UserHomeDir()
 }
 
 func (fs *LocalFS) Separator() string {
@@ -206,13 +127,11 @@ func (fs *LocalFS) Join(elem ...string) string {
 }
 
 func (fs *LocalFS) Abs(path string) (string, error) {
-	abs, err := filepath.Abs(path)
-	return abs, errors.WrapErrorWithPath(err, "Abs", path)
+	return filepath.Abs(path)
 }
 
 func (fs *LocalFS) Rel(basepath, targpath string) (string, error) {
-	rel, err := filepath.Rel(basepath, targpath)
-	return rel, errors.WrapError(err, "Rel")
+	return filepath.Rel(basepath, targpath)
 }
 
 func (fs *LocalFS) Clean(path string) string {
@@ -232,18 +151,9 @@ func (fs *LocalFS) Ext(path string) string {
 }
 
 func (fs *LocalFS) IsReadOnly(ctx context.Context, path string) (bool, error) {
-	isRO, err := isReadOnly(path)
-	return isRO, errors.WrapErrorWithPath(err, "IsReadOnly", path)
+	return isReadOnly(path)
 }
 
 func (fs *LocalFS) Walk(ctx context.Context, root string, walkFn filepath.WalkFunc) error {
-	err := filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		default:
-		}
-		return walkFn(path, info, err)
-	})
-	return errors.WrapErrorWithPath(err, "Walk", root)
+	return filepath.Walk(root, walkFn)
 }

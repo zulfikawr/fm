@@ -8,9 +8,7 @@ import (
 	"path"
 	"path/filepath"
 	"testing"
-	"time"
 
-	"github.com/zulfikawr/fm/internal/files/core"
 	"github.com/zulfikawr/fm/internal/ssh"
 	"github.com/zulfikawr/fm/internal/testutil"
 
@@ -101,7 +99,6 @@ func TestRemoteFS_ClientMethods(t *testing.T) {
 	ictx, cancel := context.WithCancel(context.Background())
 	fs := &RemoteFS{
 		client: client,
-		cache:  core.NewSimpleCache[string, []os.FileInfo](100, time.Second),
 		ctx:    ictx,
 		cancel: cancel,
 	}

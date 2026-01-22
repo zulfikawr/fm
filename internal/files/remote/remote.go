@@ -8,10 +8,8 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
-	"time"
 
 	"github.com/zulfikawr/fm/internal/constants"
-	"github.com/zulfikawr/fm/internal/files/core"
 	"github.com/zulfikawr/fm/internal/files/errors"
 	"github.com/zulfikawr/fm/internal/ssh"
 
@@ -26,7 +24,6 @@ type RemoteFS struct {
 	mu     sync.RWMutex
 	client *sftp.Client
 	conn   *sshx.Client
-	cache  *core.SimpleCache[string, []os.FileInfo]
 
 	// Connection details for reconnection
 	opts   ssh.SSHConfig
@@ -125,7 +122,6 @@ func NewRemoteFS(opts ssh.SSHConfig) (*RemoteFS, error) {
 	fs := &RemoteFS{
 		client: client,
 		conn:   conn,
-		cache:  core.NewSimpleCache[string, []os.FileInfo](100, 2*time.Second),
 		opts:   opts,
 		config: config,
 		ctx:    ctx,

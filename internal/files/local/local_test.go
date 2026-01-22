@@ -8,6 +8,7 @@ import (
 	"runtime"
 	"testing"
 
+	"github.com/zulfikawr/fm/internal/files/core"
 	"github.com/zulfikawr/fm/internal/testutil"
 )
 
@@ -15,7 +16,10 @@ func TestLocalFS(t *testing.T) {
 	ctx := context.Background()
 	tmpDir := testutil.TempDir(t)
 
-	fs := NewLocalFS()
+	var fs core.FileSystem = NewLocalFS()
+	fs = core.NewErrorWrappedFS(fs)
+	fs = core.NewCachedFS(fs, 100, 0)
+	fs = core.NewContextFS(fs)
 
 	t.Run("Stat and ReadDir", func(t *testing.T) {
 		filePath := filepath.Join(tmpDir, "test.txt")
