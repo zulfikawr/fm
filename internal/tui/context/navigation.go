@@ -36,6 +36,18 @@ func (n *NavigationState) Select(path string) {
 	if !n.SelectedPaths[path] {
 		n.SelectedPaths[path] = true
 		n.SelectedCount++
+
+		// Update visual state
+		for i := range n.Items {
+			if n.Items[i].Path == path {
+				n.Items[i].Selected = true
+			}
+		}
+		for i := range n.FilteredItems {
+			if n.FilteredItems[i].Path == path {
+				n.FilteredItems[i].Selected = true
+			}
+		}
 	}
 }
 
@@ -44,6 +56,18 @@ func (n *NavigationState) Deselect(path string) {
 	if n.SelectedPaths != nil && n.SelectedPaths[path] {
 		delete(n.SelectedPaths, path)
 		n.SelectedCount--
+
+		// Update visual state
+		for i := range n.Items {
+			if n.Items[i].Path == path {
+				n.Items[i].Selected = false
+			}
+		}
+		for i := range n.FilteredItems {
+			if n.FilteredItems[i].Path == path {
+				n.FilteredItems[i].Selected = false
+			}
+		}
 	}
 }
 

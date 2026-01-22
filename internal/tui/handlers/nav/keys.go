@@ -50,6 +50,9 @@ func HandleNavKeys(m *tui_context.Model, msg tea.KeyMsg) tea.Cmd {
 		return NavigateToSelected(m)
 	case "backspace", "left", "h":
 		return NavigateToParent(m)
+	case "esc":
+		m.ClearSelection()
+		return nil
 	case " ":
 		ToggleSelection(m)
 		return nil

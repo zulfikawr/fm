@@ -93,6 +93,16 @@ func TestHandleNavKeys(t *testing.T) {
 			t.Errorf("expected 2 selected, got %d", m.Navigation.SelectedCount)
 		}
 	})
+
+	t.Run("Clear Selection with Esc", func(t *testing.T) {
+		nav.HandleNavKeys(m, tea.KeyMsg{Type: tea.KeyEsc})
+		if m.Navigation.SelectedCount != 0 {
+			t.Errorf("expected 0 selected, got %d", m.Navigation.SelectedCount)
+		}
+		if m.UI.SelectMode {
+			t.Errorf("expected select mode to be false")
+		}
+	})
 }
 
 func TestNavigation_History(t *testing.T) {

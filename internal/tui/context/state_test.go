@@ -67,12 +67,15 @@ func TestNavigationState_Extended(t *testing.T) {
 		nav.Select("/f1")
 		testutil.AssertEqual(t, true, nav.IsSelected("/f1"), "Should be selected")
 		testutil.AssertEqual(t, 1, nav.SelectedCount, "Count should be 1")
+		testutil.AssertEqual(t, true, nav.FilteredItems[1].Selected, "FilteredItem should be visually selected")
 
 		nav.ToggleSelection("/f1")
 		testutil.AssertEqual(t, false, nav.IsSelected("/f1"), "Should be deselected after toggle")
+		testutil.AssertEqual(t, false, nav.FilteredItems[1].Selected, "FilteredItem should be visually deselected")
 
 		nav.SelectAll()
 		testutil.AssertEqual(t, true, nav.IsSelected("/f1"), "Should be selected after SelectAll")
+		testutil.AssertEqual(t, true, nav.FilteredItems[1].Selected, "FilteredItem should be visually selected after SelectAll")
 		// ".." should not be selected
 		testutil.AssertEqual(t, false, nav.IsSelected("/"), "IsUp item should not be selected")
 	})
