@@ -10,6 +10,7 @@ import (
 	"sync"
 
 	"github.com/zulfikawr/fm/internal/constants"
+	"github.com/zulfikawr/fm/internal/files/core"
 	"github.com/zulfikawr/fm/internal/files/errors"
 	"github.com/zulfikawr/fm/internal/ssh"
 
@@ -21,6 +22,7 @@ import (
 
 // RemoteFS implements FileSystem for SFTP.
 type RemoteFS struct {
+	core.UnixPathResolver
 	mu     sync.RWMutex
 	client *sftp.Client
 	conn   *sshx.Client
@@ -179,4 +181,15 @@ func (fs *RemoteFS) Address() string {
 
 func (fs *RemoteFS) User() string {
 	return fs.opts.User
+}
+
+func (fs *RemoteFS) Abs(p string) (string, error) {
+	if strings.HasPrefix(p, "/") {
+		return strings.ReplaceAll(filepath.ToSlash(p), "//", "/"), nil
+	}
+	wd, err := fs.client.Getwd()
+	if err != nil {
+		return "", errors.WrapError(err, "Abs")
+	}
+	return fs.Join(wd, p), nil
 }

@@ -7,12 +7,15 @@ import (
 	"path/filepath"
 
 	"github.com/zulfikawr/fm/internal/constants"
+	"github.com/zulfikawr/fm/internal/files/core"
 
 	"golang.org/x/sync/errgroup"
 )
 
 // LocalFS implements FileSystem for the local disk.
-type LocalFS struct{}
+type LocalFS struct {
+	core.NativePathResolver
+}
 
 func NewLocalFS() *LocalFS {
 	return &LocalFS{}
@@ -120,34 +123,6 @@ func (fs *LocalFS) Address() string {
 
 func (fs *LocalFS) User() string {
 	return ""
-}
-
-func (fs *LocalFS) Join(elem ...string) string {
-	return filepath.Join(elem...)
-}
-
-func (fs *LocalFS) Abs(path string) (string, error) {
-	return filepath.Abs(path)
-}
-
-func (fs *LocalFS) Rel(basepath, targpath string) (string, error) {
-	return filepath.Rel(basepath, targpath)
-}
-
-func (fs *LocalFS) Clean(path string) string {
-	return filepath.Clean(path)
-}
-
-func (fs *LocalFS) Dir(path string) string {
-	return filepath.Dir(path)
-}
-
-func (fs *LocalFS) Base(path string) string {
-	return filepath.Base(path)
-}
-
-func (fs *LocalFS) Ext(path string) string {
-	return filepath.Ext(path)
 }
 
 func (fs *LocalFS) IsReadOnly(ctx context.Context, path string) (bool, error) {
