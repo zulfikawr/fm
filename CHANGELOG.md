@@ -8,25 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [v1.0.2] - 2026-01-22
 
 ### Added
-  - **Full Mouse Support & Interaction Overhaul:**
-  - **Breadcrumb Navigation:** Click any part of the path breadcrumb in the header to navigate directly to that directory.
-  - **Fuzzy Search Interactions:**
-    - Click any result to focus it.
-    - Double-click a match to open the file at the specific line.
-    - Click the `▼`/`▶` arrows to expand or collapse file results.
-  - **Settings, Logs, and Clipboard Menu Mouse Support:**
-    - Click any item to focus it.
-    - Double-click a setting to toggle its value or cycle through options.
-    - Full mouse wheel scrolling support for all views.
-  - **Clickable Footer Actions:**
-    - Click on shortcuts like `[c] Copy`, `[x] Cut`, or the current Sort Mode in the footer to trigger them.
-    - Interactive "Yes/No" prompts in the footer for operations and conflicts.
-  - **Double-Click Actions:** Opening files and navigating into folders now require a double-click, ensuring single-clicks only focus the item.
-
-  - **Intuitive Directory Navigation:** Clicking on a folder now correctly navigates into it instead of opening it in an external editor.
-  - **Tab Switching:** Switch between active tabs by clicking on the `[1] [2] ...` indicators in the header.
-  - **Comprehensive Scrolling:** Use the mouse wheel to navigate through file lists, settings, operation logs, and the clipboard.
-  - **Focus-on-Click:** Single-clicking any item in a list correctly updates the cursor focus.
+- **Full Mouse Support & Interaction:**
+  - Comprehensive support for clicking, double-clicking, and scrolling across all screens including breadcrumbs, fuzzy search, settings, and footer actions.
 
 ### Fixed
 - Esc key now correctly unselect items.

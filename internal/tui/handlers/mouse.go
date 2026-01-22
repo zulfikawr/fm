@@ -70,21 +70,21 @@ func handleScrollUp(m *context.Model) tea.Cmd {
 
 func handleScrollDown(m *context.Model) tea.Cmd {
 	if m.UI.SettingsOpen {
-		// Calculate total settings lines roughly
-		totalSettingsLines := 50 // keybindings adds a lot
-		if m.Settings.Offset < totalSettingsLines {
+		// Total settings rows = 1 (top empty) + 1 (header) + 6 (opts) + 1 (empty) + 1 (header) + 7 (opts) + 1 (empty) + 1 (header) + 1 (opt) + 1 (empty) + 1 (header) + 25 (keys) = 47
+		totalSettingsLines := 47
+		if m.Settings.Offset < totalSettingsLines-m.Display.ViewportHeight {
 			m.Settings.Offset++
 		}
 		return nil
 	}
 	if m.UI.LogOpen {
-		if m.Logs.Offset < len(m.Logs.Entries)-1 {
+		if m.Logs.Offset < len(m.Logs.Entries)-m.Display.ViewportHeight {
 			m.Logs.Offset++
 		}
 		return nil
 	}
 	if m.UI.ClipboardOpen {
-		if m.Operations.Clipboard.Offset < len(m.Operations.Clipboard.Paths)-1 {
+		if m.Operations.Clipboard.Offset < len(m.Operations.Clipboard.Paths)-m.Display.ViewportHeight {
 			m.Operations.Clipboard.Offset++
 		}
 		return nil
@@ -99,13 +99,13 @@ func handleScrollDown(m *context.Model) tea.Cmd {
 			}
 			totalLines++ // Empty line after file
 		}
-		if m.Search.Offset < totalLines-1 {
+		if m.Search.Offset < totalLines-m.Display.ViewportHeight {
 			m.Search.Offset++
 		}
 		return nil
 	}
 
-	if m.Navigation.Offset < len(m.Navigation.FilteredItems)-1 {
+	if m.Navigation.Offset < len(m.Navigation.FilteredItems)-m.Display.ViewportHeight {
 		m.Navigation.Offset++
 	}
 	return nil
@@ -274,6 +274,36 @@ func handleFooterClick(m *context.Model, msg tea.MouseMsg) tea.Cmd {
 
 		if action != "" {
 			return HandleUpdate(m, tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune(action)})
+		}
+
+	case footer_comp.ModeSearching, footer_comp.ModeRenaming, footer_comp.ModeGoto, footer_comp.ModeAuth, footer_comp.ModeFuzzySearch, footer_comp.ModeZip, footer_comp.ModeUnzip, footer_comp.ModeCreate, footer_comp.ModeConflictRename:
+		promptLen := utils.GetPromptLength(m)
+		// Click is after leading space (1) and prompt
+		relativeX := msg.X - 1 - promptLen
+
+		// Check for right-side tab hints
+		// Re-calculate unstyled widths roughly
+		// FuzzySearch has a very long right side. Others are shorter.
+		rightWidth := 0
+		switch mode {
+		case footer_comp.ModeFuzzySearch:
+			rightWidth = 45 // "[Tab] Collapse | [Alt+n/m] Files | [Alt+j/k] Matches "
+		case footer_comp.ModeGoto, footer_comp.ModeAuth, footer_comp.ModeCreate:
+			rightWidth = 15 // "[Tab] Local/Remote "
+		}
+
+		if msg.X >= m.Display.Width-rightWidth {
+			return HandleUpdate(m, tea.KeyMsg{Type: tea.KeyTab})
+		}
+
+		if msg.X >= 1 && msg.X < 1+promptLen {
+			m.Inputs.ActiveInput.SetCursor(0)
+			return nil
+		}
+
+		if relativeX >= 0 {
+			m.Inputs.ActiveInput.SetCursorFromX(relativeX)
+			return nil
 		}
 
 	case footer_comp.ModeSettings, footer_comp.ModeLog, footer_comp.ModeClipboard:

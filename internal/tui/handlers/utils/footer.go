@@ -52,3 +52,41 @@ func DetermineFooterMode(m *context.Model) footer.Mode {
 	}
 	return footer.ModeNormal
 }
+
+// GetPromptLength returns the visual length of the input prompt for the current mode
+func GetPromptLength(m *context.Model) int {
+	switch m.Inputs.Mode {
+	case context.InputGoto:
+		isRemote := m.Inputs.AltMode
+		if !m.FS.IsLocal() {
+			isRemote = !m.Inputs.AltMode
+		}
+		if isRemote {
+			return 16 // "Go to (Remote): "
+		}
+		return 15 // "Go to (Local): "
+	case context.InputAuth:
+		if m.Inputs.AltMode {
+			return 6 // "Path: "
+		}
+		return 10 // "Password: "
+	case context.InputSearch:
+		return 8 // "Filter: "
+	case context.InputFuzzySearch:
+		return 8 // "Search: "
+	case context.InputRename:
+		return 8 // "Rename: "
+	case context.InputZip:
+		return 10 // "Zip name: "
+	case context.InputUnzip:
+		return 10 // "Unzip to: "
+	case context.InputCreate:
+		if m.Inputs.AltMode {
+			return 17 // "Create (Folder): "
+		}
+		return 15 // "Create (File): "
+	case context.InputConflictRename:
+		return 10 // "New name: "
+	}
+	return 0
+}

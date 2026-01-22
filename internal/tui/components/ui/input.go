@@ -135,6 +135,27 @@ func (in *Input) SetPrompt(p string) {
 	in.Prompt = p
 }
 
+// PromptWidth returns the visual width of the prompt string.
+func (in Input) PromptWidth() int {
+	return lipgloss.Width(in.Prompt)
+}
+
+// SetCursorFromX sets the cursor position based on a relative X coordinate from the start of the text.
+func (in *Input) SetCursorFromX(x int) {
+	displayOffset := 0
+	if in.Width > 0 && in.cursor >= in.Width {
+		displayOffset = in.cursor - in.Width + 1
+	}
+
+	in.cursor = displayOffset + x
+	if in.cursor < 0 {
+		in.cursor = 0
+	}
+	if in.cursor > len(in.value) {
+		in.cursor = len(in.value)
+	}
+}
+
 // Blink returns a command that toggles the cursor visibility.
 func (in Input) Blink() tea.Cmd {
 	id := in.blinkID
