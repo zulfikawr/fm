@@ -70,6 +70,7 @@ func NewModel(fs core.FileSystem, startPath string) *Model {
 		Navigation: NavigationState{
 			Path:          startPath,
 			SelectedPaths: make(map[string]bool),
+			LastShiftIdx:  -1,
 		},
 		Display: DisplayState{
 			SortMode:       sorting.SortDefault,

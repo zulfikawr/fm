@@ -31,7 +31,8 @@ When moving or copying files, `fm` handles name collisions gracefully:
 
 ## 🖱️ Mouse Support
 
-`fm` features full mouse support for a more intuitive experience:
+`fm` features full mouse support for a more intuitive experience. For a detailed guide on all mouse interactions (including drag-to-select and drag-to-move), see the [**Mouse Support Guide**](./mouse-support.md).
+
 - **Scrolling:** Use the mouse wheel to scroll through file lists, logs, settings, and fuzzy search results.
 - **Selection:** Click on any file, directory, search result, or setting to focus it.
 - **Navigation:**
@@ -46,11 +47,15 @@ When moving or copying files, `fm` handles name collisions gracefully:
 ## 🎨 Theme System
 
 `fm` supports multiple themes to match your terminal's aesthetic. You can cycle through themes in the settings menu (`.`). Popular themes include:
+- Gruvbox (Default)
 - Nord
 - Dracula
-- Gruvbox
-- Catppuccin
-- And more...
+- Monokai
+- Solarized Dark
+- Red
+- Tokyo Night
+- Rose Pine
+- Catppuccin Mocha
 
 ## 📜 Operation Logs
 

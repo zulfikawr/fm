@@ -18,6 +18,7 @@ func PrintHelp(styles theme.Stylesheet, themeName string) {
 		Desc string
 	}{
 		{"j/down, k/up", "Move cursor"},
+		{"Shift+j/k", "Range selection"},
 		{"l/enter", "Enter directory or open file"},
 		{"h/backspace", "Go to parent directory"},
 		{"[ / ]", "History Back / Forward"},

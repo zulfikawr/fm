@@ -8,8 +8,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [v1.0.2] - 2026-01-22
 
 ### Added
-- **Full Mouse Support & Interaction:**
-  - Comprehensive support for clicking, double-clicking, and scrolling across all screens including breadcrumbs, fuzzy search, settings, and footer actions.
+- **Full Mouse Support & Interaction Overhaul:**
+  - Comprehensive clicking, double-clicking, and scrolling across all screens (breadcrumbs, search, settings, logs, clipboard).
+  - Dynamic drag-to-select: select multiple items by dragging, with support for unselecting by dragging back.
+  - Drag-to-move: move selected items into directories by dragging them onto the target folder.
+  - Double-click on empty file list area to quickly trigger the create file/folder prompt.
+  - Shift+Click support for toggling individual items or selecting ranges.
+  - Clickable selection markers `[ ]` / `[x]` to easily toggle selection state.
+- **Enhanced Keyboard Selection:**
+  - Implemented `Shift + Up/Down` (and `Shift + j/k`) for dynamic range selection with "drag-back" unselection support.
 
 ### Fixed
 - Esc key now correctly unselect items.

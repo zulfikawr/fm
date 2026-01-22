@@ -10,6 +10,8 @@
 | `Backspace` / `←` / `h` | Navigate to parent directory |
 | `j` / `↓` | Move selection down |
 | `k` / `↑` | Move selection up |
+| `Shift` + `j` / `↓` | Range select down |
+| `Shift` + `k` / `↑` | Range select up |
 | `g` | Go to path (opens a prompt for Local or Remote path) |
 | `[` | History Back |
 | `]` | History Forward |
@@ -19,6 +21,7 @@
 | Key | Action |
 | --- | --- |
 | `Space` | Toggle selection for the current item |
+| `Shift` + `Left Click` | Toggle selection / Range select |
 | `Alt+A` | Select all items in the current directory |
 | `Esc` | Clear all selections |
 

@@ -14,6 +14,7 @@ Welcome to the documentation for **fm**, a fast, modular, and feature-rich TUI (
 ## Documentation Sections
 
 - [**Getting Started**](getting-started.md): Installation and your first steps with `fm`.
+- [**Mouse Support**](mouse-support.md): A full guide to using your mouse for navigation and selection.
 - [**Keybindings**](keybindings.md): A comprehensive guide to all keyboard shortcuts.
 - [**Features**](features.md): Deep dives into Git integration, Compression, and Search.
 - [**Remote Access**](remote-access.md): How to manage files on remote servers via SSH/SFTP.

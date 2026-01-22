@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"strings"
 	"time"
 
@@ -22,14 +23,23 @@ func HandleMouse(m *context.Model, msg tea.MouseMsg) tea.Cmd {
 		return nil
 	}
 
-	if msg.Action == tea.MouseActionPress {
+	switch msg.Action {
+	case tea.MouseActionPress:
 		switch msg.Button {
 		case tea.MouseButtonWheelUp:
 			return handleScrollUp(m)
 		case tea.MouseButtonWheelDown:
 			return handleScrollDown(m)
 		case tea.MouseButtonLeft:
-			return handleMouseClick(m, msg)
+			return handleMousePress(m, msg)
+		}
+	case tea.MouseActionMotion:
+		if msg.Button == tea.MouseButtonLeft {
+			return handleMouseDrag(m, msg)
+		}
+	case tea.MouseActionRelease:
+		if msg.Button == tea.MouseButtonLeft {
+			return handleMouseRelease(m, msg)
 		}
 	}
 
@@ -111,12 +121,183 @@ func handleScrollDown(m *context.Model) tea.Cmd {
 	return nil
 }
 
-func handleMouseClick(m *context.Model, msg tea.MouseMsg) tea.Cmd {
-	// 1. Check for footer clicks (Bottom line)
+func handleMousePress(m *context.Model, msg tea.MouseMsg) tea.Cmd {
+	m.Display.IsDragging = true
+	m.Display.DragStartX = msg.X
+	m.Display.DragStartY = msg.Y
+	m.Display.DragEndX = msg.X
+	m.Display.DragEndY = msg.Y
+	m.Display.DragStartIdx = -1
+
+	// Store initial selection state for dynamic selection
+	m.Display.InitialSelectedPaths = make(map[string]bool)
+	for k, v := range m.Navigation.SelectedPaths {
+		m.Display.InitialSelectedPaths[k] = v
+	}
+
+	// App Header is 1 line (y=0)
+	if msg.Y == 0 {
+		return handleMouseClick(m, msg) // Existing header logic
+	}
+
+	// Footer is last line
 	if msg.Y == m.Display.Height-1 {
 		return handleFooterClick(m, msg)
 	}
 
+	// Calculate item index
+	bodyY := msg.Y - 1
+	headerHeight := 0
+	if m.Config.ShowHeader {
+		headerHeight = 3
+	}
+
+	if bodyY < headerHeight {
+		return nil
+	}
+
+	itemIdx := bodyY - headerHeight + m.Navigation.Offset
+	if itemIdx >= 0 && itemIdx < len(m.Navigation.FilteredItems) {
+		m.Display.DragStartIdx = itemIdx
+		item := m.Navigation.FilteredItems[itemIdx]
+
+		// Shift+Click for range selection or toggle
+		if msg.Shift {
+			if m.Navigation.IsSelected(item.Path) {
+				m.Navigation.Deselect(item.Path)
+			} else {
+				if m.Navigation.Cursor != itemIdx {
+					// Range select from current cursor to clicked item
+					return nav.HandleShiftSelect(m, itemIdx-m.Navigation.Cursor)
+				}
+				m.Navigation.Select(item.Path)
+			}
+			m.UI.SelectMode = m.Navigation.SelectedCount > 0
+			return nil
+		}
+
+		// Handle selection marker click
+		if m.UI.SelectMode && msg.X <= 4 {
+			if !item.IsUp {
+				m.Navigation.ToggleSelection(item.Path)
+				m.UI.SelectMode = m.Navigation.SelectedCount > 0
+				return nil
+			}
+		}
+	}
+
+	return handleMouseClick(m, msg)
+}
+
+func handleMouseDrag(m *context.Model, msg tea.MouseMsg) tea.Cmd {
+	if !m.Display.IsDragging {
+		return nil
+	}
+	m.Display.DragEndX = msg.X
+	m.Display.DragEndY = msg.Y
+
+	// If we started on an empty area OR on an item but NOT moving it
+	// (for now, let's treat all drag as selection if startIdx was -1)
+	if m.Display.DragStartIdx == -1 {
+		updateDragSelection(m)
+	}
+
+	return nil
+}
+
+func handleMouseRelease(m *context.Model, msg tea.MouseMsg) tea.Cmd {
+	if !m.Display.IsDragging {
+		return nil
+	}
+
+	startIdx := m.Display.DragStartIdx
+	m.Display.IsDragging = false
+	m.Display.InitialSelectedPaths = nil // Clear
+
+	// Check for drag-to-move
+	if startIdx != -1 {
+		// Calculate target index
+		bodyY := msg.Y - 1
+		headerHeight := 0
+		if m.Config.ShowHeader {
+			headerHeight = 3
+		}
+		targetIdx := bodyY - headerHeight + m.Navigation.Offset
+
+		if targetIdx >= 0 && targetIdx < len(m.Navigation.FilteredItems) && targetIdx != startIdx {
+			targetItem := m.Navigation.FilteredItems[targetIdx]
+			if targetItem.IsDir && !targetItem.IsUp {
+				// Dragged onto a directory -> Move
+				sourceItem := m.Navigation.FilteredItems[startIdx]
+				var sources []string
+				if m.Navigation.IsSelected(sourceItem.Path) {
+					// Move all selected items
+					for path := range m.Navigation.SelectedPaths {
+						sources = append(sources, path)
+					}
+				} else {
+					// Just move the dragged item
+					sources = []string{sourceItem.Path}
+				}
+
+				if len(sources) > 0 {
+					destDir := targetItem.Path
+					m.Operations.Clipboard.SetCut(m.FS, sources)
+					return func() tea.Msg {
+						return messages.PerformPasteMsg{
+							OpName:  "Move",
+							Message: fmt.Sprintf("Moving %d items to %s", len(sources), m.FS.Base(destDir)),
+							Paths:   sources,
+							DestDir: destDir,
+							IsCut:   true,
+						}
+					}
+				}
+			}
+		}
+	}
+
+	return nil
+}
+
+func updateDragSelection(m *context.Model) {
+	headerHeight := 1 // Header row
+	if m.Config.ShowHeader {
+		headerHeight += 3
+	}
+
+	startY := m.Display.DragStartY
+	endY := m.Display.DragEndY
+
+	if startY > endY {
+		startY, endY = endY, startY
+	}
+
+	// Map screen Y to item indices
+	minIdx := startY - headerHeight + m.Navigation.Offset
+	maxIdx := endY - headerHeight + m.Navigation.Offset
+
+	// Reset to initial state before applying current drag rectangle
+	m.Navigation.ClearSelection()
+	if m.Display.InitialSelectedPaths != nil {
+		for path := range m.Display.InitialSelectedPaths {
+			m.Navigation.Select(path)
+		}
+	}
+
+	for i := range m.Navigation.FilteredItems {
+		item := &m.Navigation.FilteredItems[i]
+		if item.IsUp {
+			continue
+		}
+		if i >= minIdx && i <= maxIdx {
+			m.Navigation.Select(item.Path)
+		}
+	}
+	m.UI.SelectMode = m.Navigation.SelectedCount > 0
+}
+
+func handleMouseClick(m *context.Model, msg tea.MouseMsg) tea.Cmd {
 	// App Header is 1 line (y=0)
 	if msg.Y == 0 {
 		// 1. Check for breadcrumb clicks (Left side)
@@ -147,6 +328,11 @@ func handleMouseClick(m *context.Model, msg tea.MouseMsg) tea.Cmd {
 			}
 		}
 		return nil
+	}
+
+	// 1. Check for footer clicks (Bottom line)
+	if msg.Y == m.Display.Height-1 {
+		return handleFooterClick(m, msg)
 	}
 
 	// Body starts at y=1
@@ -183,7 +369,21 @@ func handleMouseClick(m *context.Model, msg tea.MouseMsg) tea.Cmd {
 	}
 
 	itemIdx := bodyY - headerHeight + m.Navigation.Offset
-	if itemIdx < 0 || itemIdx >= len(m.Navigation.FilteredItems) {
+
+	// Check if clicked on empty part below file list
+	if itemIdx >= len(m.Navigation.FilteredItems) {
+		// Double click on empty space -> Create
+		now := time.Now()
+		isDoubleClick := m.Display.LastClickIdx == -2 && now.Sub(m.Display.LastClickTime) < 500*time.Millisecond
+		m.Display.LastClickTime = now
+		m.Display.LastClickIdx = -2
+		if isDoubleClick {
+			return file.StartCreate(m)
+		}
+		return nil
+	}
+
+	if itemIdx < 0 {
 		return nil
 	}
 

@@ -26,6 +26,7 @@ type NavigationState struct {
 	ForwardHistory []string        // History for "Forward" navigation
 	ParentFS       core.FileSystem // Previous FS before entering archive
 	ParentPath     string          // Previous path before entering archive
+	LastShiftIdx   int             // Last index for shift-range selection
 }
 
 // Select adds a path to the selection

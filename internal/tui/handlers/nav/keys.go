@@ -44,8 +44,16 @@ func HandleNavKeys(m *tui_context.Model, msg tea.KeyMsg) tea.Cmd {
 	switch key {
 	case "up", "k":
 		MoveCursor(m, -1)
+		m.Navigation.LastShiftIdx = -1
+		m.Display.InitialSelectedPaths = nil
 	case "down", "j":
 		MoveCursor(m, 1)
+		m.Navigation.LastShiftIdx = -1
+		m.Display.InitialSelectedPaths = nil
+	case "shift+up", "shift+k":
+		return HandleShiftSelect(m, -1)
+	case "shift+down", "shift+j":
+		return HandleShiftSelect(m, 1)
 	case "enter", "right", "l":
 		return NavigateToSelected(m)
 	case "backspace", "left", "h":
@@ -174,4 +182,46 @@ func NavigateToParent(m *tui_context.Model) tea.Cmd {
 	}
 
 	return NavigateToPath(m, core.GetParent(m.FS, m.Navigation.Path))
+}
+
+func HandleShiftSelect(m *tui_context.Model, delta int) tea.Cmd {
+	items := m.Navigation.FilteredItems
+
+	if len(items) == 0 {
+		return nil
+	}
+
+	if m.Navigation.LastShiftIdx == -1 {
+		m.Navigation.LastShiftIdx = m.Navigation.Cursor
+
+		// Store initial state
+		m.Display.InitialSelectedPaths = make(map[string]bool)
+		for k, v := range m.Navigation.SelectedPaths {
+			m.Display.InitialSelectedPaths[k] = v
+		}
+	}
+
+	MoveCursor(m, delta)
+	start := m.Navigation.LastShiftIdx
+	end := m.Navigation.Cursor
+	if start > end {
+		start, end = end, start
+	}
+
+	// Reset to initial state before applying current range
+	m.Navigation.ClearSelection()
+	if m.Display.InitialSelectedPaths != nil {
+		for path := range m.Display.InitialSelectedPaths {
+			m.Navigation.Select(path)
+		}
+	}
+
+	for i := start; i <= end; i++ {
+		item := items[i]
+		if !item.IsUp {
+			m.Navigation.Select(item.Path)
+		}
+	}
+	m.UI.SelectMode = m.Navigation.SelectedCount > 0
+	return nil
 }
