@@ -91,7 +91,7 @@ func scrollSettings(m *tui_context.Model) int {
 }
 
 func toggleSetting(idx int, m *tui_context.Model) bool {
-	cfg := &m.Config
+	cfg := m.Config // Copy
 	reload := false
 	switch idx {
 	case 0:
@@ -137,32 +137,29 @@ func toggleSetting(idx int, m *tui_context.Model) bool {
 		m.Display.Styles = theme.GetStylesheet(cfg.ThemeIndex)
 		m.Display.LoadingSpinner.Style = m.Display.LoadingSpinner.Style.Foreground(theme.Themes[cfg.ThemeIndex].Dir)
 	}
+
 	if err := cfg.Save(); err != nil {
 		logger.Errorf("Failed to save config: %v", err)
 	}
+	m.Config = cfg // Explicit state change
 	return reload
 }
 
 func toggleSettingPrev(idx int, m *tui_context.Model) bool {
-	cfg := &m.Config
+	cfg := m.Config // Copy
+	var reload bool
 	switch idx {
 	case 4:
 		cfg.EditorIndex = (cfg.EditorIndex - 1 + len(constants.Editors)) % len(constants.Editors)
 	case 9:
 		if cfg.ShowSize {
 			cfg.SizeFormatIndex = (cfg.SizeFormatIndex - 1 + len(format.SizeFormats)) % len(format.SizeFormats)
-			if err := cfg.Save(); err != nil {
-				logger.Errorf("Failed to save config: %v", err)
-			}
-			return true
+			reload = true
 		}
 	case 11:
 		if cfg.ShowDateModified {
 			cfg.DateFormatIndex = (cfg.DateFormatIndex - 1 + len(format.DateFormats)) % len(format.DateFormats)
-			if err := cfg.Save(); err != nil {
-				logger.Errorf("Failed to save config: %v", err)
-			}
-			return true
+			reload = true
 		}
 	case 12:
 		cfg.ThemeIndex = (cfg.ThemeIndex - 1 + len(theme.Themes)) % len(theme.Themes)
@@ -171,30 +168,25 @@ func toggleSettingPrev(idx int, m *tui_context.Model) bool {
 	default:
 		return toggleSetting(idx, m)
 	}
+
 	if err := cfg.Save(); err != nil {
 		logger.Errorf("Failed to save config: %v", err)
 	}
-	return false
+	m.Config = cfg // Explicit state change
+	return reload
 }
 
 // ConfirmSettingsReset resets all settings to defaults
-
 func ConfirmSettingsReset(m *tui_context.Model) tea.Cmd {
-
-	m.Config = config.DefaultConfig()
-
-	if err := m.Config.Save(); err != nil {
-
+	newCfg := config.DefaultConfig()
+	if err := newCfg.Save(); err != nil {
 		logger.Errorf("Failed to save config: %v", err)
-
 	}
 
+	m.Config = newCfg
 	m.Display.Styles = theme.GetStylesheet(m.Config.ThemeIndex)
-
 	m.UI.StopConfirming()
-
 	m.Operations.ActionType = ""
 
 	return tea.Batch(utils.SetMsg(m, "Settings reset to defaults"), func() tea.Msg { return messages.ReloadMsg{} })
-
 }

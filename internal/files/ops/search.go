@@ -57,9 +57,10 @@ func Search(opts SearchOptions) ([]core.FileResult, error) {
 		// Parallel search within files
 		fpath := path // Capture for closure
 		g.Go(func() error {
-			opts := opts
-			opts.Root = fpath
-			res, found := searchInFile(opts)
+			// Create a copy of options for each worker with the specific file path
+			fileOpts := opts
+			fileOpts.Root = fpath
+			res, found := searchInFile(fileOpts)
 			if found {
 				mu.Lock()
 				results = append(results, res)

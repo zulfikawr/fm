@@ -36,8 +36,11 @@ func ConnectRemote(opts ssh.SSHConfig, askChan chan *ssh.HostConfirmRequest) tea
 			return messages.RemoteConnectMsg{Err: err}
 		}
 
-		opts.HostKeyCallback = hkcb
-		fs, err := remote.NewRemoteFS(opts)
+		// Create a new config with the callback instead of mutating
+		newOpts := opts
+		newOpts.HostKeyCallback = hkcb
+
+		fs, err := remote.NewRemoteFS(newOpts)
 		if err != nil {
 			return messages.RemoteConnectMsg{Err: err}
 		}

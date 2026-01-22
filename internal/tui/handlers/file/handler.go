@@ -251,12 +251,13 @@ func ListenToProgress(progChan chan core.Progress) tea.Cmd {
 
 func PasteItems(opts ops.BatchOptions, logID string) tea.Cmd {
 	progChan := make(chan core.Progress, 100)
-	opts.OpCtx.Progress = progChan
+	newOpts := opts
+	newOpts.OpCtx.Progress = progChan
 	return tea.Batch(
 		ListenToProgress(progChan),
 		func() tea.Msg {
 			defer close(progChan)
-			err := ops.CopyMultiple(opts)
+			err := ops.CopyMultiple(newOpts)
 			if err != nil {
 				var conflict *conflict.ConflictError
 				if errors.As(err, &conflict) {
@@ -271,19 +272,20 @@ func PasteItems(opts ops.BatchOptions, logID string) tea.Cmd {
 				}
 				return messages.ErrorMsg{Err: err, LogID: logID}
 			}
-			return messages.OperationFinishedMsg{Paths: opts.Sources, LogID: logID}
+			return messages.OperationFinishedMsg{Paths: newOpts.Sources, LogID: logID}
 		},
 	)
 }
 
 func MoveItems(opts ops.BatchOptions, logID string) tea.Cmd {
 	progChan := make(chan core.Progress, 100)
-	opts.OpCtx.Progress = progChan
+	newOpts := opts
+	newOpts.OpCtx.Progress = progChan
 	return tea.Batch(
 		ListenToProgress(progChan),
 		func() tea.Msg {
 			defer close(progChan)
-			err := ops.MoveMultiple(opts)
+			err := ops.MoveMultiple(newOpts)
 			if err != nil {
 				var conflict *conflict.ConflictError
 				if errors.As(err, &conflict) {
@@ -298,7 +300,7 @@ func MoveItems(opts ops.BatchOptions, logID string) tea.Cmd {
 				}
 				return messages.ErrorMsg{Err: err, LogID: logID}
 			}
-			return messages.OperationFinishedMsg{Paths: opts.Sources, LogID: logID}
+			return messages.OperationFinishedMsg{Paths: newOpts.Sources, LogID: logID}
 		},
 	)
 }

@@ -16,8 +16,9 @@ import (
 
 // Copy copies a file or directory recursively from src to dst within the same filesystem.
 func Copy(opts CopyOptions) error {
-	opts.SrcFS = opts.OpCtx.FS
-	return CrossCopy(opts)
+	newOpts := opts
+	newOpts.SrcFS = opts.OpCtx.FS
+	return CrossCopy(newOpts)
 }
 
 // CrossCopy copies a file or directory between different filesystems.
@@ -53,18 +54,18 @@ func CrossCopy(opts CopyOptions) error {
 	if resolvedPath == "" {
 		return nil // Skip
 	}
+
 	if resolvedPath == opts.Dst && opts.Conflict.Policy == conflict.Overwrite {
 		if err := opts.OpCtx.FS.RemoveAll(opts.OpCtx.Context, opts.Dst); err != nil {
 			logger.Warnf("Failed to remove existing item for overwrite: %v", err)
 		}
 	}
-	opts.Dst = resolvedPath
 
 	if opts.OpCtx.Progress != nil && isRenamed {
 		select {
 		case opts.OpCtx.Progress <- core.Progress{
 			Percent: 0,
-			Label:   fmt.Sprintf("Copying %s as %s...", opts.SrcFS.Base(opts.Src), opts.OpCtx.FS.Base(opts.Dst)),
+			Label:   fmt.Sprintf("Copying %s as %s...", opts.SrcFS.Base(opts.Src), opts.OpCtx.FS.Base(resolvedPath)),
 		}:
 		default:
 		}
@@ -81,10 +82,14 @@ func CrossCopy(opts CopyOptions) error {
 		return errors.WrapErrorWithPath(err, "CrossCopy", opts.Src)
 	}
 
+	// Create a new options object for the actual copy with the resolved destination
+	copyOpts := opts
+	copyOpts.Dst = resolvedPath
+
 	if info.IsDir() {
-		return errors.WrapErrorWithPath(crossCopyDir(opts), "CrossCopy", fmt.Sprintf("%s -> %s", opts.Src, opts.Dst))
+		return errors.WrapErrorWithPath(crossCopyDir(copyOpts), "CrossCopy", fmt.Sprintf("%s -> %s", copyOpts.Src, copyOpts.Dst))
 	}
-	return errors.WrapErrorWithPath(crossCopyFile(opts), "CrossCopy", fmt.Sprintf("%s -> %s", opts.Src, opts.Dst))
+	return errors.WrapErrorWithPath(crossCopyFile(copyOpts), "CrossCopy", fmt.Sprintf("%s -> %s", copyOpts.Src, copyOpts.Dst))
 }
 
 func crossCopyFile(opts CopyOptions) error {
@@ -225,10 +230,11 @@ func crossCopyDirRecursive(state *copyState, src, dst string) error {
 			srcPath := srcPath // Capture for closure
 			dstPath := dstPath // Capture for closure
 			state.g.Go(func() error {
-				opts := state.opts
-				opts.Src = srcPath
-				opts.Dst = dstPath
-				return crossCopyFile(opts)
+				// Use a copy of options for each file task
+				fileOpts := state.opts
+				fileOpts.Src = srcPath
+				fileOpts.Dst = dstPath
+				return crossCopyFile(fileOpts)
 			})
 		}
 	}

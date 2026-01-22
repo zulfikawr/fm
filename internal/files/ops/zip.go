@@ -38,12 +38,11 @@ func Zip(opts ZipOptions) error {
 	if resolvedDst == "" {
 		return nil // Skip
 	}
-	opts.Dst = resolvedDst
 
 	// Create destination file
-	out, err := opts.OpCtx.FS.Create(opts.OpCtx.Context, opts.Dst)
+	out, err := opts.OpCtx.FS.Create(opts.OpCtx.Context, resolvedDst)
 	if err != nil {
-		return errors.WrapErrorWithPath(err, "Create", opts.Dst)
+		return errors.WrapErrorWithPath(err, "Create", resolvedDst)
 	}
 	defer out.Close()
 
@@ -60,7 +59,7 @@ func Zip(opts ZipOptions) error {
 			processedFiles++
 			if opts.OpCtx.Progress != nil {
 				opts.OpCtx.Progress <- core.Progress{
-					Label:   fmt.Sprintf("Zipping %d items into %s", len(opts.Srcs), opts.OpCtx.FS.Base(opts.Dst)),
+					Label:   fmt.Sprintf("Zipping %d items into %s", len(opts.Srcs), opts.OpCtx.FS.Base(resolvedDst)),
 					Percent: float64(processedFiles) / float64(len(opts.Srcs)), // Simplified progress
 				}
 			}
@@ -187,7 +186,6 @@ func Unzip(opts ZipOptions) error {
 	if resolvedDst == "" {
 		return nil // Skip
 	}
-	opts.Dst = resolvedDst
 
 	// Open the source file
 	in, err := opts.OpCtx.FS.Open(opts.OpCtx.Context, opts.Src)
@@ -237,7 +235,6 @@ func Unzip(opts ZipOptions) error {
 
 	totalFiles := len(zr.File)
 	processedFiles := 0
-	var isRenamed bool
 
 	for _, f := range zr.File {
 		select {
@@ -246,7 +243,7 @@ func Unzip(opts ZipOptions) error {
 		default:
 		}
 
-		fpath, err := conflict.ValidateSecurePath(opts.OpCtx.FS, opts.Dst, f.Name)
+		fpath, err := conflict.ValidateSecurePath(opts.OpCtx.FS, resolvedDst, f.Name)
 		if err != nil {
 			continue // Skip dangerous paths
 		}
@@ -258,8 +255,7 @@ func Unzip(opts ZipOptions) error {
 			}
 		} else {
 			// Check for conflict
-			var resolvedPath string
-			resolvedPath, isRenamed, err = resolver.Resolve(opts.OpCtx.Context, opts.OpCtx.FS, conflict.ResolveOptions{
+			entryResolvedPath, isRenamed, err := resolver.Resolve(opts.OpCtx.Context, opts.OpCtx.FS, conflict.ResolveOptions{
 				Src:    f.Name,
 				Dst:    fpath,
 				Policy: opts.Conflict.Policy,
@@ -273,19 +269,18 @@ func Unzip(opts ZipOptions) error {
 				return err
 			}
 
-			if resolvedPath == "" {
+			if entryResolvedPath == "" {
 				processedFiles++
 				continue // Skip
 			}
-			if resolvedPath == fpath && opts.Conflict.Policy == conflict.Overwrite {
+			if entryResolvedPath == fpath && opts.Conflict.Policy == conflict.Overwrite {
 				if err := opts.OpCtx.FS.RemoveAll(opts.OpCtx.Context, fpath); err != nil {
 					logger.Warnf("Failed to remove existing file for unzip overwrite: %v", err)
 				}
 			}
-			fpath = resolvedPath
 
 			// Ensure parent directory exists
-			parent := filepath.Dir(fpath)
+			parent := filepath.Dir(entryResolvedPath)
 			if err := opts.OpCtx.FS.MkdirAll(opts.OpCtx.Context, parent, 0755); err != nil {
 				return errors.WrapErrorWithPath(err, "MkdirAllParent", parent)
 			}
@@ -296,10 +291,10 @@ func Unzip(opts ZipOptions) error {
 				return errors.WrapErrorWithPath(err, "OpenZipEntry", f.Name)
 			}
 
-			out, err := opts.OpCtx.FS.Create(opts.OpCtx.Context, fpath)
+			out, err := opts.OpCtx.FS.Create(opts.OpCtx.Context, entryResolvedPath)
 			if err != nil {
 				rc.Close()
-				return errors.WrapErrorWithPath(err, "CreateExtract", fpath)
+				return errors.WrapErrorWithPath(err, "CreateExtract", entryResolvedPath)
 			}
 
 			_, err = io.Copy(out, rc)
@@ -307,23 +302,23 @@ func Unzip(opts ZipOptions) error {
 			rc.Close()
 
 			if err != nil {
-				return errors.WrapErrorWithPath(err, "CopyExtract", fpath)
+				return errors.WrapErrorWithPath(err, "CopyExtract", entryResolvedPath)
 			}
 
-			if err := opts.OpCtx.FS.Chmod(opts.OpCtx.Context, fpath, f.Mode()); err != nil {
-				logger.Warnf("Failed to set permissions on extracted file %s: %v", fpath, err)
+			if err := opts.OpCtx.FS.Chmod(opts.OpCtx.Context, entryResolvedPath, f.Mode()); err != nil {
+				logger.Warnf("Failed to set permissions on extracted file %s: %v", entryResolvedPath, err)
 			}
-		}
 
-		processedFiles++
-		if opts.OpCtx.Progress != nil {
-			label := fmt.Sprintf("Extracting %d/%d: %s", processedFiles, totalFiles, f.Name)
-			if isRenamed {
-				label = fmt.Sprintf("Extracting %d/%d: %s as %s", processedFiles, totalFiles, f.Name, opts.OpCtx.FS.Base(fpath))
-			}
-			opts.OpCtx.Progress <- core.Progress{
-				Label:   label,
-				Percent: float64(processedFiles) / float64(totalFiles),
+			processedFiles++
+			if opts.OpCtx.Progress != nil {
+				label := fmt.Sprintf("Extracting %d/%d: %s", processedFiles, totalFiles, f.Name)
+				if isRenamed {
+					label = fmt.Sprintf("Extracting %d/%d: %s as %s", processedFiles, totalFiles, f.Name, opts.OpCtx.FS.Base(entryResolvedPath))
+				}
+				opts.OpCtx.Progress <- core.Progress{
+					Label:   label,
+					Percent: float64(processedFiles) / float64(totalFiles),
+				}
 			}
 		}
 	}

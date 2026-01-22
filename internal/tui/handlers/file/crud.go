@@ -141,16 +141,17 @@ func PerformRename(m *tui_context.Model, newName string) tea.Cmd {
 
 func DeleteItems(opts ops.DeleteOptions, logID string) tea.Cmd {
 	progChan := make(chan core.Progress, 100)
-	opts.OpCtx.Progress = progChan
+	newOpts := opts
+	newOpts.OpCtx.Progress = progChan
 	return tea.Batch(
 		ListenToProgress(progChan),
 		func() tea.Msg {
 			defer close(progChan)
-			err := ops.DeleteMultiple(opts)
+			err := ops.DeleteMultiple(newOpts)
 			if err != nil {
 				return messages.ErrorMsg{Err: err, LogID: logID}
 			}
-			return messages.OperationFinishedMsg{Paths: opts.Paths, LogID: logID}
+			return messages.OperationFinishedMsg{Paths: newOpts.Paths, LogID: logID}
 		},
 	)
 }

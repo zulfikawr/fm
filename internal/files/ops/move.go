@@ -12,8 +12,9 @@ import (
 
 // Move moves a file or directory. It tries Rename first, and falls back to Copy+Delete if Rename fails.
 func Move(opts CopyOptions) error {
-	opts.SrcFS = opts.OpCtx.FS
-	return CrossMove(opts)
+	newOpts := opts
+	newOpts.SrcFS = opts.OpCtx.FS
+	return CrossMove(newOpts)
 }
 
 // CrossMove moves a file or directory between different filesystems.
@@ -41,18 +42,18 @@ func CrossMove(opts CopyOptions) error {
 	if resolvedPath == "" {
 		return nil // Skip
 	}
+
 	if resolvedPath == opts.Dst && opts.Conflict.Policy == conflict.Overwrite {
 		if err := opts.OpCtx.FS.RemoveAll(opts.OpCtx.Context, opts.Dst); err != nil {
 			logger.Warnf("Failed to remove existing item for overwrite: %v", err)
 		}
 	}
-	opts.Dst = resolvedPath
 
 	if opts.OpCtx.Progress != nil && isRenamed {
 		select {
 		case opts.OpCtx.Progress <- core.Progress{
 			Percent: 0,
-			Label:   fmt.Sprintf("Moving %s as %s...", opts.SrcFS.Base(opts.Src), opts.OpCtx.FS.Base(opts.Dst)),
+			Label:   fmt.Sprintf("Moving %s as %s...", opts.SrcFS.Base(opts.Src), opts.OpCtx.FS.Base(resolvedPath)),
 		}:
 		default:
 		}
@@ -60,7 +61,7 @@ func CrossMove(opts CopyOptions) error {
 
 	// 1. Try atomic rename first if same FS
 	if opts.SrcFS == opts.OpCtx.FS {
-		err := opts.SrcFS.Rename(opts.OpCtx.Context, opts.Src, opts.Dst)
+		err := opts.SrcFS.Rename(opts.OpCtx.Context, opts.Src, resolvedPath)
 		if err == nil {
 			if opts.OpCtx.Progress != nil {
 				select {
@@ -73,19 +74,24 @@ func CrossMove(opts CopyOptions) error {
 		}
 	}
 
-	// 2. Fallback for cross-device/FS moves: Copy then Delete
+	// Create a new options object for the copy-fallback with the resolved destination
 	copyOpts := opts
+	copyOpts.Dst = resolvedPath
 	copyOpts.Conflict.Policy = conflict.Overwrite
+
+	// 2. Fallback for cross-device/FS moves: Copy then Delete
 	if err := CrossCopy(copyOpts); err != nil {
-		if cleanupErr := opts.OpCtx.FS.RemoveAll(opts.OpCtx.Context, opts.Dst); cleanupErr != nil {
+		if cleanupErr := opts.OpCtx.FS.RemoveAll(opts.OpCtx.Context, resolvedPath); cleanupErr != nil {
 			logger.Warnf("Failed to clean up destination after failed move: %v", cleanupErr)
 		}
 		return err
 	}
 
-	// 3. Verify the copy was successful
-	if err := verifyCrossMove(opts); err != nil {
-		if cleanupErr := opts.OpCtx.FS.RemoveAll(opts.OpCtx.Context, opts.Dst); cleanupErr != nil {
+	// 3. Verify the copy was successful using the new destination
+	verifyOpts := opts
+	verifyOpts.Dst = resolvedPath
+	if err := verifyCrossMove(verifyOpts); err != nil {
+		if cleanupErr := opts.OpCtx.FS.RemoveAll(opts.OpCtx.Context, resolvedPath); cleanupErr != nil {
 			logger.Warnf("Failed to clean up destination after failed move verification: %v", cleanupErr)
 		}
 		return errors.WrapErrorWithPath(fmt.Errorf("move verification failed: %w", err), "CrossMove", opts.Src)
