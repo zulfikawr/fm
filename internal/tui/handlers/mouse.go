@@ -41,24 +41,18 @@ func handleScrollUp(m *context.Model) tea.Cmd {
 		if m.Settings.Offset > 0 {
 			m.Settings.Offset--
 		}
-		// Clamp cursor to viewport
-		if m.Settings.Cursor > m.Settings.Offset+m.Display.ViewportHeight-1 {
-			m.Settings.Cursor = m.Settings.Offset + m.Display.ViewportHeight - 1
-		}
 		return nil
 	}
 	if m.UI.LogOpen {
-		if m.Logs.Cursor > 0 {
-			m.Logs.Cursor--
+		if m.Logs.Offset > 0 {
+			m.Logs.Offset--
 		}
-		m.Logs.Offset = app.ScrollLogs(m.Logs.Cursor, m.Logs.Offset, m.Display.ViewportHeight)
 		return nil
 	}
 	if m.UI.ClipboardOpen {
-		if m.Operations.Clipboard.Cursor > 0 {
-			m.Operations.Clipboard.Cursor--
+		if m.Operations.Clipboard.Offset > 0 {
+			m.Operations.Clipboard.Offset--
 		}
-		m.Operations.Clipboard.Offset = app.ScrollLogs(m.Operations.Clipboard.Cursor, m.Operations.Clipboard.Offset, m.Display.ViewportHeight)
 		return nil
 	}
 	if m.Inputs.Mode == context.InputFuzzySearch || len(m.Search.Results) > 0 {
@@ -71,10 +65,6 @@ func handleScrollUp(m *context.Model) tea.Cmd {
 	if m.Navigation.Offset > 0 {
 		m.Navigation.Offset--
 	}
-	// Ensure cursor stays within viewport when scrolling offset
-	if m.Navigation.Cursor >= m.Navigation.Offset+m.Display.ViewportHeight {
-		m.Navigation.Cursor = m.Navigation.Offset + m.Display.ViewportHeight - 1
-	}
 	return nil
 }
 
@@ -85,24 +75,18 @@ func handleScrollDown(m *context.Model) tea.Cmd {
 		if m.Settings.Offset < totalSettingsLines {
 			m.Settings.Offset++
 		}
-		// Clamp cursor to viewport
-		if m.Settings.Cursor < m.Settings.Offset {
-			m.Settings.Cursor = m.Settings.Offset
-		}
 		return nil
 	}
 	if m.UI.LogOpen {
-		if m.Logs.Cursor < len(m.Logs.Entries)-1 {
-			m.Logs.Cursor++
+		if m.Logs.Offset < len(m.Logs.Entries)-1 {
+			m.Logs.Offset++
 		}
-		m.Logs.Offset = app.ScrollLogs(m.Logs.Cursor, m.Logs.Offset, m.Display.ViewportHeight)
 		return nil
 	}
 	if m.UI.ClipboardOpen {
-		if m.Operations.Clipboard.Cursor < len(m.Operations.Clipboard.Paths)-1 {
-			m.Operations.Clipboard.Cursor++
+		if m.Operations.Clipboard.Offset < len(m.Operations.Clipboard.Paths)-1 {
+			m.Operations.Clipboard.Offset++
 		}
-		m.Operations.Clipboard.Offset = app.ScrollLogs(m.Operations.Clipboard.Cursor, m.Operations.Clipboard.Offset, m.Display.ViewportHeight)
 		return nil
 	}
 	if m.Inputs.Mode == context.InputFuzzySearch || len(m.Search.Results) > 0 {
@@ -121,12 +105,8 @@ func handleScrollDown(m *context.Model) tea.Cmd {
 		return nil
 	}
 
-	if m.Navigation.Offset < len(m.Navigation.FilteredItems)-m.Display.ViewportHeight {
+	if m.Navigation.Offset < len(m.Navigation.FilteredItems)-1 {
 		m.Navigation.Offset++
-	}
-	// Ensure cursor stays within viewport when scrolling offset
-	if m.Navigation.Cursor < m.Navigation.Offset {
-		m.Navigation.Cursor = m.Navigation.Offset
 	}
 	return nil
 }

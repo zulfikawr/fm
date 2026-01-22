@@ -21,9 +21,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **Clickable Footer Actions:**
     - Click on shortcuts like `[c] Copy`, `[x] Cut`, or the current Sort Mode in the footer to trigger them.
     - Interactive "Yes/No" prompts in the footer for operations and conflicts.
-  - **Improved Scrolling Behavior:**
-    - Mouse wheel now scrolls the view offset instead of moving the cursor in file lists, search results, and settings.
-    - The selection cursor automatically follows the viewport to ensure it remains visible.
   - **Double-Click Actions:** Opening files and navigating into folders now require a double-click, ensuring single-clicks only focus the item.
 
   - **Intuitive Directory Navigation:** Clicking on a folder now correctly navigates into it instead of opening it in an external editor.
