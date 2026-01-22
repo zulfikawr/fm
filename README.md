@@ -8,55 +8,17 @@ A fast, modular, and feature-rich TUI file manager written in Go.
 [![Go Version](https://img.shields.io/badge/Go-1.25.5-00ADD8?logo=go)](https://go.dev)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-## Features
+## 📖 Documentation
 
-- **🚀 Performance:** Fast navigation with a modular concurrent architecture, real-time file watching, and efficient git integration.
-- **📁 File Operations:** Full CRUD with cut/paste, interactive conflict resolution, and trash support.
-- **📦 Compression:** Zip selected files/directories and extract archives directly within the UI.
-- **🛡️ Conflict Management:** Robust handling of file collisions with Overwrite, Skip, and Auto-rename policies.
-- **🔒 Security:** Secure SSH host key verification, ZipSlip protection, and read-only filesystem protection.
-- **☁️ Remote Access:** Connect to remote servers via SSH/SFTP with password or PEM key auth.
-- **🌿 Git Integration:** Visual status markers (`M`, `A`, `D`, `?`) and current branch display.
-- **🎨 Theme System:** Multiple color schemes including Nord, Dracula, and Gruvbox.
-- **🔍 Search & Filter:** Real-time fuzzy-style filtering within directories.
-- **🔎 Fuzzy Content Search:** Deep content search (`Alt+/`) across all files in a directory using a high-performance concurrent engine.
-- **🖥️ CLI Search:** Direct terminal search via `fm search <query>` with theme-aware highlighting.
-- **📜 Operation Logs:** Full history of all background operations (`Alt+L`) with real-time status tracking.
-- **⚙️ Persistent Config:** Settings saved automatically to `~/.config/fm/config.json`.
-- **💾 Memory:** Remembers your cursor and scroll position for every directory visited.
-- **📑 Tabs:** Multitasking support with up to 9 active directory tabs.
+For detailed guides, configuration options, and advanced usage, please see the [**docs/**](./docs/index.md) directory:
 
-## Keybindings
+- [**Getting Started**](./docs/getting-started.md): Installation and basic usage.
+- [**Keybindings**](./docs/keybindings.md): Comprehensive list of shortcuts.
+- [**Features**](./docs/features.md): Deep dive into Git, Search, and Archive management.
+- [**Remote Access**](./docs/remote-access.md): Managing files over SSH/SFTP.
+- [**Configuration**](./docs/configuration.md): Customizing `fm` to your needs.
 
-| Key | Action |
-| --- | --- |
-| `Enter` / `→` / `l` | Open directory / Open file in editor |
-| `Backspace` / `←` / `h` | Navigate to parent directory |
-| `[` / `]` | History Back / Forward |
-| `Space` | Toggle selection for bulk actions |
-| `Alt+A` | Select all items |
-| `Alt+T` | New tab (max 9) |
-| `Alt+1`-`9` | Switch between tabs |
-| `Alt+W` | Close current tab |
-| `Alt+N` | Create new file or folder (toggle with Tab) |
-| `Alt+/` | Fuzzy content search (Find in Files) |
-| `Alt+C` | View clipboard contents |
-| `Alt+L` | View operation logs |
-| `/` | Enter search/filter mode |
-| `s` | Cycle sort modes (Name, Size, Date) |
-| `c` | Copy selection to clipboard |
-| `x` | Cut selection to clipboard |
-| `v` | Paste clipboard contents |
-| `r` | Rename highlighted item |
-| `z` | Zip selected items |
-| `u` | Unzip selected item |
-| `d` | Trash selection (with confirmation) |
-| `g` | Go to path (Local or Remote) |
-| `.` | Toggle settings |
-| `Esc` | Back / Clear selection |
-| `Ctrl+C` | Quit |
-
-## Installation
+## 🚀 Quick Start
 
 ```bash
 # Build from source
@@ -64,52 +26,44 @@ go build -o fm ./cmd/fm
 
 # Run
 ./fm [path]
-
-# Search content and filenames from terminal
-./fm search "query" [path]
 ```
 
-## Fuzzy Content Search (Find in Files)
+## ⌨️ Keybindings
 
-Powered by a concurrent worker-pool engine, `fm` can search through file contents with high efficiency. 
-- **Respects Git:** Automatically skips files ignored by `.gitignore`.
-- **Intelligent Skipping:** Skips binary files and hidden folders (like `.git`) by default.
-- **Expandable Results:** Grouped by file, toggle results with `Tab`.
-- **Open at Line:** Press `Enter` on any search result to open your editor at the exact line number.
+| Key | Action |
+| --- | --- |
+| `Enter` / `→` / `l` | Open directory / Open file in editor |
+| `Backspace` / `←` / `h` | Navigate to parent directory |
+| `Space` | Toggle selection for bulk actions |
+| `c` / `y` | Copy selection to clipboard |
+| `x` | Cut selection to clipboard |
+| `v` | Paste clipboard contents |
+| `r` | Rename highlighted item |
+| `/` | Enter filter mode |
+| `Alt+/` | Fuzzy content search (Find in Files) |
+| `g` | Go to path (Local or Remote) |
+| `Alt+T` / `Alt+W` | New Tab / Close Tab |
+| `Alt+1`-`9` | Switch between tabs |
+| `.` | Toggle settings |
+| `Ctrl+C` | Quit |
 
-## Remote Access (SSH/SFTP)
+See [**keybindings.md**](./docs/keybindings.md) for the full list.
 
-Connect directly to remote servers using the `--remote` (or `-r`) flag or the in-app `g` (Go to) command. Supports SSH config aliases, SSH agent, identity files, and password authentication.
+## ✨ Core Features
 
-```bash
-# Connect using an alias from ~/.ssh/config
-fm -r my-server
+- **Performance:** Fast navigation with a modular concurrent architecture.
+- **Git Integration:** Real-time status markers and branch information.
+- **Remote Access:** Full SFTP support for managing remote servers.
+- **Fuzzy Search:** Deep content search powered by a concurrent engine.
+- **Tabs:** Multitasking with up to 9 active directory tabs.
+- **Archive Support:** Create and extract Zip/Tar archives directly in the UI.
 
-# Connect using SSH agent or keys in default locations
-fm --remote user@192.168.1.50
+## 🛠️ Technology Stack
 
-# Connect using a specific identity file (.pem, etc.)
-fm -r user@40.82.128.117 ./path/to/key.pem
-```
+- **Go:** Core logic and high-performance concurrency.
+- **Bubble Tea:** The TUI framework for building terminal applications.
+- **Lip Gloss:** For styling and layouts.
 
-### Smart Path Detection (Poly-mode)
-The `g` (Go to) command intelligently handles different input types:
-- **Local:** Paths like `/var/log`, `~/Documents`, or `./src`.
-- **Remote:** `user@host` or `host` (SFTP connection).
-- **Aliases:** Hostnames defined in your `~/.ssh/config`.
-
-Features interactive host key verification—if a host is unknown, `fm` will prompt you to verify the fingerprint and automatically add it to your `~/.ssh/known_hosts` upon confirmation.
-
-## Configuration
-
-Settings are stored in `~/.config/fm/config.json`. Key options include:
-
-- **General:** `show_hidden`, `case_sensitive`, `wrap_navigation`
-- **Display:** `show_size`, `show_date_modified`, `show_header`
-- **Behavior:** `confirm_operations`, `enable_git`, `use_trash`
-- **Preferences:** `theme_index`, `editor_index` (vim, nano, code, etc.)
-- **Formats:** `date_format_index`, `size_format_index`
-
-## License
+## 📜 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
