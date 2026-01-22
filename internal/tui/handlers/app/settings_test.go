@@ -52,14 +52,14 @@ func TestSettings_ToggleLogic(t *testing.T) {
 	})
 
 	t.Run("Toggle All Cases", func(t *testing.T) {
-		for i := 0; i <= 12; i++ {
+		for i := 0; i <= 13; i++ {
 			m.Settings.Cursor = i
 			app.HandleSettings(m, tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{' '}})
 		}
 	})
 
 	t.Run("Toggle Prev All Cases", func(t *testing.T) {
-		for _, i := range []int{4, 9, 11, 12} {
+		for _, i := range []int{4, 9, 11, 13} {
 			m.Settings.Cursor = i
 			app.HandleSettings(m, tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'h'}})
 		}

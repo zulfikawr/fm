@@ -62,3 +62,13 @@
 | `.` | Toggle settings menu |
 | `r` | (In Settings Menu) Reset all settings to default |
 | `Ctrl+C` | Quit `fm` |
+
+## Mouse Support
+
+| Action | Result |
+| --- | --- |
+| `Left Click` | Focus item |
+| `Double Click` | Open file / Navigate to directory |
+| `Scroll Wheel` | Scroll list / logs / settings |
+| `Click Breadcrumb` | Navigate directly to that path |
+| `Click Tab [n]` | Switch to that tab |

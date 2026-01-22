@@ -24,6 +24,7 @@ type Config struct {
 	SizeFormatIndex   int  `json:"size_format_index"`
 	EditorIndex       int  `json:"editor_index"`
 	UseTrash          bool `json:"use_trash"`
+	EnableMouse       bool `json:"enable_mouse"`
 }
 
 const CurrentConfigVersion = 1
@@ -45,6 +46,7 @@ func DefaultConfig() Config {
 		SizeFormatIndex:   0, // Full
 		EditorIndex:       0, // Vim
 		UseTrash:          false,
+		EnableMouse:       true,
 	}
 }
 

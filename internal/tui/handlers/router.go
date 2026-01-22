@@ -34,6 +34,13 @@ func HandleUpdate(m *tuictx.Model, msg tea.Msg) tea.Cmd {
 		return cmd
 	}
 
+	// 1.5 Mouse Handlers
+	if msg, ok := msg.(tea.MouseMsg); ok {
+		if cmd := HandleMouse(m, msg); cmd != nil {
+			return cmd
+		}
+	}
+
 	// 2. Input Handlers (Highest Priority when active)
 	if cmd, handled := handleInputs(m, msg); handled {
 		return cmd
@@ -85,6 +92,9 @@ func HandleUpdate(m *tuictx.Model, msg tea.Msg) tea.Cmd {
 
 	case messages.WatchDirMsg:
 		return nav.WatchDirAction(m)
+
+	case messages.ReEnableMouseMsg:
+		return tea.EnableMouseCellMotion
 
 	case messages.ClearMsg:
 		m.Operations.Progress.Hide()

@@ -27,19 +27,20 @@ func handleLogKeys(m *tui_context.Model, msg tea.KeyMsg) tea.Cmd {
 		if m.Logs.Cursor > 0 {
 			m.Logs.Cursor--
 		}
-		m.Logs.Offset = scrollLogs(m.Logs.Cursor, m.Logs.Offset, m.Display.ViewportHeight)
+		m.Logs.Offset = ScrollLogs(m.Logs.Cursor, m.Logs.Offset, m.Display.ViewportHeight)
 
 	case "down", "j":
 		if m.Logs.Cursor < len(m.Logs.Entries)-1 {
 			m.Logs.Cursor++
 		}
-		m.Logs.Offset = scrollLogs(m.Logs.Cursor, m.Logs.Offset, m.Display.ViewportHeight)
+		m.Logs.Offset = ScrollLogs(m.Logs.Cursor, m.Logs.Offset, m.Display.ViewportHeight)
 	}
 
 	return nil
 }
 
-func scrollLogs(cursor, offset, viewportHeight int) int {
+// ScrollLogs recalculates the logs view offset
+func ScrollLogs(cursor, offset, viewportHeight int) int {
 	if viewportHeight <= 0 {
 		return 0
 	}

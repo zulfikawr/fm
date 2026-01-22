@@ -175,3 +175,5 @@ type StatusMsg struct {
 }
 
 type WatchDirMsg struct{}
+
+type ReEnableMouseMsg struct{}

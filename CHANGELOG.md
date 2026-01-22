@@ -5,6 +5,31 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.0.2] - 2026-01-22
+
+### Added
+- **Full Mouse Support & Interaction Overhaul:**
+  - **Breadcrumb Navigation:** Click any part of the path breadcrumb in the header to navigate directly to that directory.
+  - **Fuzzy Search Interactions:**
+    - Click any result to focus it.
+    - Double-click a match to open the file at the specific line.
+    - Click the `▼`/`▶` arrows to expand or collapse file results.
+  - **Settings Menu Mouse Support:**
+    - Click any setting to focus it.
+    - Double-click a setting to toggle its value or cycle through options.
+    - Full mouse wheel scrolling support for the settings list.
+  - **Improved Scrolling Behavior:**
+    - Mouse wheel now scrolls the view offset instead of moving the cursor in file lists, search results, and settings.
+    - The selection cursor automatically follows the viewport to ensure it remains visible.
+  - **Double-Click Actions:** Opening files and navigating into folders now require a double-click, ensuring single-clicks only focus the item.
+  - **Intuitive Directory Navigation:** Clicking on a folder now correctly navigates into it instead of opening it in an external editor.
+  - **Tab Switching:** Switch between active tabs by clicking on the `[1] [2] ...` indicators in the header.
+  - **Comprehensive Scrolling:** Use the mouse wheel to navigate through file lists, settings, operation logs, and the clipboard.
+  - **Focus-on-Click:** Single-clicking any item in a list correctly updates the cursor focus.
+
+### Fixed
+- Esc key now correctly unselect items.
+
 ## [v1.0.1] - 2026-01-21
 
 ### Added

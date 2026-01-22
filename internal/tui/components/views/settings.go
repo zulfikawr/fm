@@ -91,6 +91,7 @@ func buildSettingGroups(props SettingsProps) []SettingGroup {
 				{Label: "Size Format", Value: ui.Picker(format.SizeFormats[s.SizeFormatIndex], styles)},
 				{Label: "Show Date Modified", Value: ui.Toggle(s.ShowDateModified, styles)},
 				{Label: "Date Format", Value: ui.Picker(format.DateFormats[s.DateFormatIndex].Name, styles)},
+				{Label: "Enable Mouse Support", Value: ui.Toggle(s.EnableMouse, styles)},
 			},
 		},
 		{
@@ -220,7 +221,8 @@ func getSettingsHelp(cursor int) string {
 		9:  "Change the file size display unit",
 		10: "Show last modification time",
 		11: "Change the date and time format",
-		12: "Change the application color scheme",
+		12: "Allow mouse interaction (clicks, scroll)",
+		13: "Change the application color scheme",
 	}
 
 	if help, ok := helpTexts[cursor]; ok {

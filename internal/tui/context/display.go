@@ -1,6 +1,8 @@
 package context
 
 import (
+	"time"
+
 	"github.com/zulfikawr/fm/internal/files/sorting"
 	"github.com/zulfikawr/fm/internal/tui/components/ui"
 	"github.com/zulfikawr/fm/internal/tui/theme"
@@ -27,4 +29,6 @@ type DisplayState struct {
 	ReadOnly       bool             // True if current directory is on a read-only filesystem
 	Styles         theme.Stylesheet // Cached stylesheet
 	Layout         Layout           // Cached layout dimensions
+	LastClickTime  time.Time        // For double-click detection
+	LastClickIdx   int              // For double-click detection
 }

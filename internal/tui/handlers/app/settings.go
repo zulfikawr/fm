@@ -25,7 +25,7 @@ func HandleSettings(m *tui_context.Model, msg tea.Msg) tea.Cmd {
 }
 
 func handleSettingsKeys(m *tui_context.Model, msg tea.KeyMsg) tea.Cmd {
-	totalItems := 37
+	totalItems := 38
 	var reload bool
 
 	switch msg.String() {
@@ -38,9 +38,9 @@ func handleSettingsKeys(m *tui_context.Model, msg tea.KeyMsg) tea.Cmd {
 			m.Settings.Cursor++
 		}
 	case "enter", "right", "l", " ":
-		reload = toggleSetting(m.Settings.Cursor, m)
+		reload = ToggleSetting(m.Settings.Cursor, m)
 	case "left", "h":
-		reload = toggleSettingPrev(m.Settings.Cursor, m)
+		reload = ToggleSettingPrev(m.Settings.Cursor, m)
 	case "r":
 		m.Operations.ActionType = constants.ActionResetSettings
 		m.UI.StartConfirming()
@@ -48,7 +48,7 @@ func handleSettingsKeys(m *tui_context.Model, msg tea.KeyMsg) tea.Cmd {
 		m.UI.ToggleSettings()
 	}
 
-	m.Settings.Offset = scrollSettings(m)
+	m.Settings.Offset = ScrollSettings(m)
 
 	if reload {
 		return func() tea.Msg { return messages.ReloadMsg{} }
@@ -56,7 +56,8 @@ func handleSettingsKeys(m *tui_context.Model, msg tea.KeyMsg) tea.Cmd {
 	return nil
 }
 
-func scrollSettings(m *tui_context.Model) int {
+// ScrollSettings recalculates the settings view offset
+func ScrollSettings(m *tui_context.Model) int {
 	cursor := m.Settings.Cursor
 	offset := m.Settings.Offset
 	height := m.Display.ViewportHeight
@@ -64,9 +65,9 @@ func scrollSettings(m *tui_context.Model) int {
 	rowIdx := 0
 	if cursor <= 5 {
 		rowIdx = cursor + 2
-	} else if cursor <= 11 {
-		rowIdx = cursor + 4
 	} else if cursor <= 12 {
+		rowIdx = cursor + 4
+	} else if cursor <= 13 {
 		rowIdx = cursor + 6
 	} else {
 		rowIdx = cursor + 8
@@ -74,7 +75,7 @@ func scrollSettings(m *tui_context.Model) int {
 
 	if rowIdx < offset {
 		newOffset := rowIdx
-		if cursor == 0 || cursor == 6 || cursor == 12 || cursor == 13 {
+		if cursor == 0 || cursor == 6 || cursor == 13 || cursor == 14 {
 			newOffset -= 2
 		}
 		if newOffset < 0 {
@@ -90,7 +91,7 @@ func scrollSettings(m *tui_context.Model) int {
 	return offset
 }
 
-func toggleSetting(idx int, m *tui_context.Model) bool {
+func ToggleSetting(idx int, m *tui_context.Model) bool {
 	cfg := m.Config // Copy
 	reload := false
 	switch idx {
@@ -133,6 +134,8 @@ func toggleSetting(idx int, m *tui_context.Model) bool {
 			reload = true
 		}
 	case 12:
+		cfg.EnableMouse = !cfg.EnableMouse
+	case 13:
 		cfg.ThemeIndex = (cfg.ThemeIndex + 1) % len(theme.Themes)
 		m.Display.Styles = theme.GetStylesheet(cfg.ThemeIndex)
 		m.Display.LoadingSpinner.Style = m.Display.LoadingSpinner.Style.Foreground(theme.Themes[cfg.ThemeIndex].Dir)
@@ -145,7 +148,7 @@ func toggleSetting(idx int, m *tui_context.Model) bool {
 	return reload
 }
 
-func toggleSettingPrev(idx int, m *tui_context.Model) bool {
+func ToggleSettingPrev(idx int, m *tui_context.Model) bool {
 	cfg := m.Config // Copy
 	var reload bool
 	switch idx {
@@ -161,12 +164,12 @@ func toggleSettingPrev(idx int, m *tui_context.Model) bool {
 			cfg.DateFormatIndex = (cfg.DateFormatIndex - 1 + len(format.DateFormats)) % len(format.DateFormats)
 			reload = true
 		}
-	case 12:
+	case 13:
 		cfg.ThemeIndex = (cfg.ThemeIndex - 1 + len(theme.Themes)) % len(theme.Themes)
 		m.Display.Styles = theme.GetStylesheet(cfg.ThemeIndex)
 		m.Display.LoadingSpinner.Style = m.Display.LoadingSpinner.Style.Foreground(theme.Themes[cfg.ThemeIndex].Dir)
 	default:
-		return toggleSetting(idx, m)
+		return ToggleSetting(idx, m)
 	}
 
 	if err := cfg.Save(); err != nil {

@@ -25,12 +25,20 @@ func OpenFile(m *tui_context.Model, selected core.Item) tea.Cmd {
 	}
 
 	if isTerminal {
-		return tea.ExecProcess(execCmd, func(err error) tea.Msg {
-			if err != nil {
-				return messages.ErrorMsg{Err: err}
-			}
-			return nil
-		})
+		return tea.Sequence(
+			tea.ExecProcess(execCmd, func(err error) tea.Msg {
+				if err != nil {
+					return messages.ErrorMsg{Err: err}
+				}
+				return nil
+			}),
+			func() tea.Msg {
+				if m.Config.EnableMouse {
+					return messages.ReEnableMouseMsg{}
+				}
+				return nil
+			},
+		)
 	} else {
 		if err := execCmd.Start(); err != nil {
 			return utils.LogError(m, err, "Open")
@@ -51,12 +59,20 @@ func OpenFileAtLine(m *tui_context.Model, path string, line int) tea.Cmd {
 	}
 
 	if isTerminal {
-		return tea.ExecProcess(execCmd, func(err error) tea.Msg {
-			if err != nil {
-				return messages.ErrorMsg{Err: err}
-			}
-			return nil
-		})
+		return tea.Sequence(
+			tea.ExecProcess(execCmd, func(err error) tea.Msg {
+				if err != nil {
+					return messages.ErrorMsg{Err: err}
+				}
+				return nil
+			}),
+			func() tea.Msg {
+				if m.Config.EnableMouse {
+					return messages.ReEnableMouseMsg{}
+				}
+				return nil
+			},
+		)
 	} else {
 		if err := execCmd.Start(); err != nil {
 			return utils.SetErrMsg(m, "Error: "+err.Error())

@@ -2,8 +2,9 @@
 
 ![Screenshot](./image.png)
 
-A fast, modular, and feature-rich TUI file manager written in Go.
+A fast, modular, and feature-rich TUI file manager written in Go. 
 
+[![Website](https://img.shields.io/badge/Website-fm.zulfikar.site-blue?style=flat-square)](https://fm.zulfikar.site/)
 [![GitHub Release](https://img.shields.io/github/v/release/zulfikawr/fm)](https://github.com/zulfikawr/fm/releases)
 [![Go Version](https://img.shields.io/badge/Go-1.25.5-00ADD8?logo=go)](https://go.dev)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)

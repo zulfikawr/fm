@@ -33,27 +33,27 @@ func handleSearchKeys(m *tui_context.Model, msg tea.KeyMsg) tea.Cmd {
 	switch key {
 	case "up", "alt+k":
 		moveSearchCursor(m, -1)
-		m.Search.Offset = scrollSearch(m)
+		m.Search.Offset = ScrollSearch(m)
 	case "down", "alt+j":
 		moveSearchCursor(m, 1)
-		m.Search.Offset = scrollSearch(m)
+		m.Search.Offset = ScrollSearch(m)
 	case "alt+m":
 		if m.Search.CursorFile > 0 {
 			m.Search.CursorFile--
 			m.Search.CursorMatch = -1
-			m.Search.Offset = scrollSearch(m)
+			m.Search.Offset = ScrollSearch(m)
 		}
 	case "alt+n":
 		if m.Search.CursorFile < len(m.Search.Results)-1 {
 			m.Search.CursorFile++
 			m.Search.CursorMatch = -1
-			m.Search.Offset = scrollSearch(m)
+			m.Search.Offset = ScrollSearch(m)
 		}
 	case "tab":
 		if len(m.Search.Results) > 0 {
 			res := &m.Search.Results[m.Search.CursorFile]
 			res.Collapsed = !res.Collapsed
-			m.Search.Offset = scrollSearch(m)
+			m.Search.Offset = ScrollSearch(m)
 		}
 	}
 	return nil
@@ -103,8 +103,8 @@ func moveSearchCursor(m *tui_context.Model, dir int) {
 	}
 }
 
-func scrollSearch(m *tui_context.Model) int {
-	cursorLine := calculateSearchCursorLine(m)
+func ScrollSearch(m *tui_context.Model) int {
+	cursorLine := CalculateSearchCursorLine(m)
 	viewportHeight := m.Display.ViewportHeight
 	if viewportHeight <= 0 {
 		viewportHeight = m.Display.Height - 2
@@ -125,7 +125,7 @@ func scrollSearch(m *tui_context.Model) int {
 	return offset
 }
 
-func calculateSearchCursorLine(m *tui_context.Model) int {
+func CalculateSearchCursorLine(m *tui_context.Model) int {
 	if len(m.Search.Results) == 0 {
 		return 0
 	}

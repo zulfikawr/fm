@@ -22,6 +22,7 @@ The configuration uses a flat JSON structure. Below are the available fields:
 - `show_header` (boolean): Show the top header with path and tab information. Default: `true`.
 - `confirm_operations` (boolean): Ask for confirmation before potentially destructive actions. Default: `true`.
 - `enable_git` (boolean): Enable or disable real-time Git status markers. Default: `true`.
+- `enable_mouse` (boolean): Enable or disable mouse interaction (scrolling, clicking). Default: `true`.
 - `use_trash` (boolean): If true, `d` is intended to move files to the system trash. *Note: This feature is currently under maintenance and may perform permanent deletions.*
 - `theme_index` (integer): The index of the active theme.
 - `editor_index` (integer): The index of your preferred editor (0: vim, 1: nano, 2: code, etc.).
@@ -51,6 +52,7 @@ Example `config.json`:
   "show_header": true,
   "confirm_operations": true,
   "enable_git": true,
+  "enable_mouse": true,
   "use_trash": true,
   "theme_index": 0,
   "editor_index": 0,

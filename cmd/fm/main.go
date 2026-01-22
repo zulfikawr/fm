@@ -45,7 +45,12 @@ func run() error {
 		}
 	}()
 
-	p := tea.NewProgram(a, tea.WithAltScreen())
+	pOpts := []tea.ProgramOption{tea.WithAltScreen()}
+	if a.Model.Config.EnableMouse {
+		pOpts = append(pOpts, tea.WithMouseCellMotion())
+	}
+
+	p := tea.NewProgram(a, pOpts...)
 	_, err = p.Run()
 	if err != nil {
 		return fmt.Errorf("running file manager: %w", err)

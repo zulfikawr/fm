@@ -29,6 +29,20 @@ When moving or copying files, `fm` handles name collisions gracefully:
 - **Interactive Prompt:** If a file already exists, `fm` will ask you how to proceed.
 - **Policies:** Choose between **Overwrite**, **Skip**, or **Auto-rename** (which appends a suffix to the new file).
 
+## 🖱️ Mouse Support
+
+`fm` features full mouse support for a more intuitive experience:
+- **Scrolling:** Use the mouse wheel to scroll through file lists, logs, settings, and fuzzy search results.
+- **Selection:** Click on any file, directory, search result, or setting to focus it.
+- **Navigation:**
+  - Double-click on any file or directory to open it.
+  - Double-click a fuzzy search result to open that file at the specific line.
+- **Settings:** Double-click a setting to toggle it or cycle through available options.
+- **Breadcrumbs:** Click on any part of the path breadcrumb in the header to navigate directly to that directory.
+- **Fuzzy Search:** Click the `▼`/`▶` arrows in search results to expand or collapse files.
+- **Tab Switching:** Click on tab indicators in the header to switch between active tabs.
+- **Configurable:** Mouse support can be toggled on or off in the settings menu.
+
 ## 🎨 Theme System
 
 `fm` supports multiple themes to match your terminal's aesthetic. You can cycle through themes in the settings menu (`.`). Popular themes include:
