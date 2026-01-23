@@ -92,7 +92,7 @@ func buildHelpGroups() []HelpSection {
 		{
 			Title: "File Operations",
 			Items: []HelpItem{
-				{Key: "c/y", Desc: "Copy selected items to clipboard"},
+				{Key: "c", Desc: "Copy selected items to clipboard"},
 				{Key: "x", Desc: "Cut selected items to clipboard"},
 				{Key: "v", Desc: "Paste items from clipboard"},
 				{Key: "r", Desc: "Rename highlighted item"},

@@ -37,7 +37,7 @@
 
 | Key | Action |
 | --- | --- |
-| `c` / `y` | Copy selected items to clipboard |
+| `c` | Copy selected items to clipboard |
 | `x` | Cut selected items to clipboard |
 | `v` | Paste items from clipboard |
 | `r` | Rename the highlighted item |

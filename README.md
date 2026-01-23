@@ -37,7 +37,7 @@ go build -o fm ./cmd/fm
 | `Enter` / `→` / `l` | Open directory / Open file in editor |
 | `Backspace` / `←` / `h` | Navigate to parent directory |
 | `Space` | Toggle selection for bulk actions |
-| `c` / `y` | Copy selection to clipboard |
+| `c` | Copy selection to clipboard |
 | `x` | Cut selection to clipboard |
 | `v` | Paste clipboard contents |
 | `r` | Rename highlighted item |

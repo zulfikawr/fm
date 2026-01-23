@@ -42,7 +42,7 @@ func HandleFileKeys(m *tui_context.Model, msg tea.KeyMsg) tea.Cmd {
 	}
 
 	switch msg.String() {
-	case "y", "c":
+	case "c":
 		return CopySelected(m)
 	case "x":
 		return CutSelected(m)

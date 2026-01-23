@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Shift+Click support for toggling individual items or selecting ranges.
   - Clickable selection markers `[ ]` / `[x]` to easily toggle selection state.
 - **Dedicated Help Screen:** Added a new searchable and scrollable help view triggered by `?`, consolidating all keybinding information from the settings menu.
+- **Unified Copy Command:** Removed the `y` shortcut for copying; the action is now exclusively bound to `c` for consistency.
 - **Enhanced Keyboard Selection:**
   - Implemented `Shift + Up/Down` (and `Shift + j/k`) for dynamic range selection with "drag-back" unselection support.
 
