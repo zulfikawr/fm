@@ -44,6 +44,9 @@ func DetermineFooterMode(m *context.Model) footer.Mode {
 	if m.UI.SettingsOpen {
 		return footer.ModeSettings
 	}
+	if m.UI.HelpOpen {
+		return footer.ModeHelp
+	}
 	if m.UI.LogOpen {
 		return footer.ModeLog
 	}

@@ -39,6 +39,9 @@ func handleGlobal(m *tuictx.Model, msg tea.Msg) (tea.Cmd, bool) {
 		case ".":
 			m.UI.ToggleSettings()
 			return nil, true
+		case "?":
+			m.UI.ToggleHelp()
+			return nil, true
 		case "esc":
 			// 1. High Priority: Cancel active confirmation or prompt
 			if m.UI.Confirming {
@@ -55,6 +58,10 @@ func handleGlobal(m *tuictx.Model, msg tea.Msg) (tea.Cmd, bool) {
 			// 2. Handle closing modals next
 			if m.UI.SettingsOpen {
 				m.UI.ToggleSettings()
+				return nil, true
+			}
+			if m.UI.HelpOpen {
+				m.UI.ToggleHelp()
 				return nil, true
 			}
 			if m.UI.LogOpen {

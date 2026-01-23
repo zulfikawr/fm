@@ -8,6 +8,7 @@ import (
 type TitleProps struct {
 	Path          string
 	SettingsOpen  bool
+	HelpOpen      bool
 	LogOpen       bool
 	ClipboardOpen bool
 	Style         theme.Stylesheet
@@ -17,6 +18,9 @@ type TitleProps struct {
 func GetTitle(props TitleProps) string {
 	if props.SettingsOpen {
 		return "Settings"
+	}
+	if props.HelpOpen {
+		return "Help"
 	}
 	if props.LogOpen {
 		return "Operation Log"

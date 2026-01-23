@@ -10,6 +10,7 @@ import (
 type UIState struct {
 	Confirming      bool
 	SettingsOpen    bool
+	HelpOpen        bool
 	LogOpen         bool
 	ClipboardOpen   bool
 	Loading         bool
@@ -26,6 +27,7 @@ type UIState struct {
 func (ui *UIState) Reset() {
 	ui.Confirming = false
 	ui.SettingsOpen = false
+	ui.HelpOpen = false
 	ui.LogOpen = false
 	ui.ClipboardOpen = false
 	ui.Loading = false
@@ -40,6 +42,7 @@ func (ui *UIState) Reset() {
 func (ui *UIState) StartInput() {
 	ui.InputActive = true
 	ui.LogOpen = false
+	ui.HelpOpen = false
 	ui.ClipboardOpen = false
 	ui.Confirming = false
 }
@@ -53,6 +56,7 @@ func (ui *UIState) StopInput() {
 func (ui *UIState) StartConfirming() {
 	ui.Confirming = true
 	ui.InputActive = false
+	ui.HelpOpen = false
 	ui.LogOpen = false
 	ui.ClipboardOpen = false
 }
@@ -68,6 +72,19 @@ func (ui *UIState) ToggleSettings() {
 	if ui.SettingsOpen {
 		ui.InputActive = false
 		ui.Confirming = false
+		ui.HelpOpen = false
+		ui.LogOpen = false
+		ui.ClipboardOpen = false
+	}
+}
+
+// ToggleHelp toggles the help view
+func (ui *UIState) ToggleHelp() {
+	ui.HelpOpen = !ui.HelpOpen
+	if ui.HelpOpen {
+		ui.InputActive = false
+		ui.Confirming = false
+		ui.SettingsOpen = false
 		ui.LogOpen = false
 		ui.ClipboardOpen = false
 	}
@@ -80,6 +97,7 @@ func (ui *UIState) ToggleLogs() {
 		ui.InputActive = false
 		ui.Confirming = false
 		ui.SettingsOpen = false
+		ui.HelpOpen = false
 		ui.ClipboardOpen = false
 	}
 }
@@ -91,6 +109,7 @@ func (ui *UIState) ToggleClipboard() {
 		ui.InputActive = false
 		ui.Confirming = false
 		ui.SettingsOpen = false
+		ui.HelpOpen = false
 		ui.LogOpen = false
 	}
 }

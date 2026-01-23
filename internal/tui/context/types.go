@@ -35,3 +35,9 @@ const (
 	StatusSuccess
 	StatusError
 )
+
+// HelpState holds state for the help view
+type HelpState struct {
+	Cursor int
+	Offset int
+}

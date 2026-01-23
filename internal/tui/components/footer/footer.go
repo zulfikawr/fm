@@ -26,6 +26,7 @@ const (
 	ModeHostConfirm
 	ModeMessage
 	ModeSettings
+	ModeHelp
 	ModeLog
 	ModeClipboard
 	ModeZip
@@ -60,6 +61,12 @@ type Props struct {
 	// Settings
 	SettingsCursor int
 
+	// Help
+	HelpOpen bool
+
+	// Clipboard
+	ClipboardOpen bool
+
 	// Confirming
 	ActionType           constants.ActionType
 	ClipboardCount       int
@@ -83,6 +90,8 @@ func Render(props Props) string {
 		return renderAlertFooter(props)
 	case ModeSettings:
 		return views.RenderSettingsFooter(props.Width, props.SettingsCursor, props.Styles)
+	case ModeHelp:
+		return views.RenderHelpFooter(props.Width, props.Styles)
 	case ModeLog:
 		return views.RenderLogsFooter(props.Width, props.Styles)
 	case ModeClipboard:

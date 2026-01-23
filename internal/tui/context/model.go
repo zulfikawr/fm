@@ -42,6 +42,7 @@ type Model struct {
 	Git        GitState        // Git information
 	Remote     RemoteState     // Remote connection state
 	Settings   SettingsState   // Settings view state
+	Help       HelpState       // Help view state
 	Message    MessageState    // Status messages
 	Search     SearchState     // Fuzzy content search state
 	Logs       LogState        // Operation logs
@@ -182,7 +183,7 @@ func (m *Model) SyncViewportHeight() {
 	h := m.Display.Height - 2
 
 	// If we are in the file list and showing the header, subtract its height
-	if !m.UI.SettingsOpen && !m.UI.LogOpen && !m.UI.ClipboardOpen &&
+	if !m.UI.SettingsOpen && !m.UI.HelpOpen && !m.UI.LogOpen && !m.UI.ClipboardOpen &&
 		m.Inputs.Mode != InputFuzzySearch && m.Config.ShowHeader {
 		h -= 3 // List Header
 	}

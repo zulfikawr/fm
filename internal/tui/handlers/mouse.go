@@ -53,6 +53,16 @@ func handleScrollUp(m *context.Model) tea.Cmd {
 		}
 		return nil
 	}
+	if m.UI.HelpOpen {
+		if m.Help.Offset > 0 {
+			m.Help.Offset--
+		}
+		// Clamp cursor to viewport
+		if m.Help.Cursor > m.Help.Offset+m.Display.ViewportHeight-1 {
+			m.Help.Cursor = m.Help.Offset + m.Display.ViewportHeight - 1
+		}
+		return nil
+	}
 	if m.UI.LogOpen {
 		if m.Logs.Offset > 0 {
 			m.Logs.Offset--
@@ -84,6 +94,18 @@ func handleScrollDown(m *context.Model) tea.Cmd {
 		totalSettingsLines := 47
 		if m.Settings.Offset < totalSettingsLines-m.Display.ViewportHeight {
 			m.Settings.Offset++
+		}
+		return nil
+	}
+	if m.UI.HelpOpen {
+		// Total help rows = 1 (top) + (7+1 header) + 1 spacer + (4+1) + 1 + (3+1) + 1 + (8+1) + 1 + (4+1) + 1 + (6+1) = 43 approx
+		totalHelpLines := 43
+		if m.Help.Offset < totalHelpLines-m.Display.ViewportHeight {
+			m.Help.Offset++
+		}
+		// Clamp cursor to viewport
+		if m.Help.Cursor < m.Help.Offset {
+			m.Help.Cursor = m.Help.Offset
 		}
 		return nil
 	}
@@ -347,6 +369,10 @@ func handleMouseClick(m *context.Model, msg tea.MouseMsg) tea.Cmd {
 		return handleSettingsClick(m, bodyY)
 	}
 
+	if m.UI.HelpOpen {
+		return handleHelpClick(m, bodyY)
+	}
+
 	if m.UI.LogOpen {
 		return handleLogClick(m, bodyY)
 	}
@@ -400,6 +426,54 @@ func handleMouseClick(m *context.Model, msg tea.MouseMsg) tea.Cmd {
 
 	// Single click -> Just select it
 	m.Navigation.Cursor = itemIdx
+	return nil
+}
+
+func handleHelpClick(m *context.Model, bodyY int) tea.Cmd {
+	clickedLine := bodyY + m.Help.Offset
+	if clickedLine < 0 {
+		return nil
+	}
+
+	// This mapping must match buildHelpGroups and renderHelpRows in internal/tui/components/views/help.go
+	currentIndex := 0
+	currentLine := 1 // Initial empty line
+
+	// Helper to check if a line was clicked and update cursor
+	check := func(count int) bool {
+		currentLine++ // Header
+		for i := 0; i < count; i++ {
+			if currentLine == clickedLine {
+				m.Help.Cursor = currentIndex + i
+				m.Help.Offset = app.ScrollHelp(m)
+				return true
+			}
+			currentLine++
+		}
+		currentIndex += count
+		currentLine++ // Spacer
+		return false
+	}
+
+	if check(7) {
+		return nil
+	} // Navigation
+	if check(4) {
+		return nil
+	} // Selection
+	if check(3) {
+		return nil
+	} // Tabs
+	if check(8) {
+		return nil
+	} // File Ops
+	if check(4) {
+		return nil
+	} // Search
+	if check(6) {
+		return nil
+	} // Misc
+
 	return nil
 }
 

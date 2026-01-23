@@ -132,6 +132,10 @@ func HandleUpdate(m *tuictx.Model, msg tea.Msg) tea.Cmd {
 		cmds = append(cmds, cmd)
 	}
 
+	if cmd := app.HandleHelp(m, msg); cmd != nil {
+		cmds = append(cmds, cmd)
+	}
+
 	if cmd := app.HandleLogs(m, msg); cmd != nil {
 		cmds = append(cmds, cmd)
 	}

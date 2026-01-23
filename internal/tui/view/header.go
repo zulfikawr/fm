@@ -19,6 +19,7 @@ func renderHeader(m *context.Model, layout context.Layout) string {
 		TabCount:      len(m.Tabs),
 		ActiveTab:     m.ActiveTab,
 		SettingsOpen:  m.UI.SettingsOpen,
+		HelpOpen:      m.UI.HelpOpen,
 		LogOpen:       m.UI.LogOpen,
 		ClipboardOpen: m.UI.ClipboardOpen,
 		Style:         styles,

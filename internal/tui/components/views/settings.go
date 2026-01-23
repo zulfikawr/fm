@@ -100,39 +100,7 @@ func buildSettingGroups(props SettingsProps) []SettingGroup {
 				{Label: "Theme", Value: ui.Picker(theme.Themes[s.ThemeIndex].Name, styles)},
 			},
 		},
-		{
-			Title: "Keybindings",
-			Settings: []SettingItem{
-				{Label: "Open", Value: "Enter/→/l"},
-				{Label: "Back", Value: "Backspace/←/h"},
-				{Label: "History Back", Value: "["},
-				{Label: "History Forward", Value: "]"},
-				{Label: "Select", Value: "Space/Shift+Click"},
-				{Label: "Range Select", Value: "Shift+↑/↓"},
-				{Label: "Select All", Value: "Alt+A"},
-				{Label: "New Tab", Value: "Alt+T"},
-				{Label: "New Item", Value: "Alt+N"},
-				{Label: "Switch Tab", Value: "Alt+1-9"},
-				{Label: "Sort", Value: "s"},
-				{Label: "Filter", Value: "/"},
-				{Label: "Find", Value: "Alt+/"},
-				{Label: "Clipboard", Value: "Alt+C"},
-				{Label: "Logs", Value: "Alt+L"},
-				{Label: "Go to Path", Value: "g"},
-				{Label: "Copy", Value: "c"},
-				{Label: "Cut", Value: "x"},
-				{Label: "Paste", Value: "v"},
-				{Label: "Rename", Value: "r"},
-				{Label: "Zip", Value: "z"},
-				{Label: "Unzip", Value: "u"},
-				{Label: "Delete", Value: "d"},
-				{Label: "Clear/Esc", Value: "Esc"},
-				{Label: "Settings", Value: "."},
-				{Label: "Quit", Value: "Ctrl+C"},
-			},
-		},
 	}
-
 	// Mark inactive settings
 	if !s.ShowSize {
 		groups[1].Settings[3].Inactive = true

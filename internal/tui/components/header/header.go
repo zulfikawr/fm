@@ -20,6 +20,7 @@ type Props struct {
 	TabCount      int
 	ActiveTab     int
 	SettingsOpen  bool
+	HelpOpen      bool
 	LogOpen       bool
 	ClipboardOpen bool
 	Style         theme.Stylesheet
@@ -49,6 +50,7 @@ func Render(props Props) string {
 	title := GetTitle(TitleProps{
 		Path:          props.Path,
 		SettingsOpen:  props.SettingsOpen,
+		HelpOpen:      props.HelpOpen,
 		LogOpen:       props.LogOpen,
 		ClipboardOpen: props.ClipboardOpen,
 		Style:         props.Style,
@@ -65,12 +67,13 @@ func Render(props Props) string {
 
 	// Breadcrumb rendering
 	var breadcrumb string
-	if props.SettingsOpen || props.LogOpen || props.ClipboardOpen {
+	if props.SettingsOpen || props.HelpOpen || props.LogOpen || props.ClipboardOpen {
 		breadcrumb = props.Style.Header.UnsetPadding().UnsetWidth().Render(title)
 		if lipgloss.Width(breadcrumb) > maxBreadcrumbWidth {
 			breadcrumb = lipgloss.NewStyle().MaxWidth(maxBreadcrumbWidth).Render(breadcrumb)
 		}
 	} else {
+
 		breadcrumb = renderBreadcrumbPath(BreadcrumbProps{
 			Path:         title,
 			Separator:    props.Separator,
