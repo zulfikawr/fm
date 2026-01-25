@@ -128,6 +128,26 @@ func TestNavigation_History(t *testing.T) {
 	}
 }
 
+func TestNavigation_ClearFilter(t *testing.T) {
+	fs := testutil.NewMockFileSystem()
+	fs.StatFunc = func(ctx context.Context, path string) (os.FileInfo, error) {
+		return &testutil.MockFileInfo{FName: filepath.Base(path), FIsDir: true}, nil
+	}
+	m := tuictx.NewModel(fs, "/test")
+
+	m.Navigation.FilterQuery = "search"
+	m.Inputs.ActiveInput.SetValue("search")
+
+	nav.NavigateToPath(m, "/newpath")
+
+	if m.Navigation.FilterQuery != "" {
+		t.Error("expected FilterQuery to be cleared after navigation")
+	}
+	if m.Inputs.ActiveInput.Value() != "" {
+		t.Errorf("expected ActiveInput value to be cleared, got %q", m.Inputs.ActiveInput.Value())
+	}
+}
+
 func TestTabManagement(t *testing.T) {
 	fs := testutil.NewMockFileSystem()
 	m := tuictx.NewModel(fs, "/test")

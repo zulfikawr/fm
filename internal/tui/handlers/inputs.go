@@ -17,17 +17,32 @@ func handleInputs(m *tuictx.Model, msg tea.Msg) (tea.Cmd, bool) {
 
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		// Special case: fuzzy search navigation
-		isFuzzyNavKey := false
+		// Special case: navigation during search/filter
+		isNavKey := false
 		if m.Inputs.Mode == tuictx.InputFuzzySearch {
 			switch msg.String() {
 			case "up", "down", "tab", "alt+j", "alt+k", "alt+n", "alt+m":
-				isFuzzyNavKey = true
+				isNavKey = true
+			}
+		} else if m.Inputs.Mode == tuictx.InputSearch {
+			switch msg.String() {
+			case "up", "down":
+				isNavKey = true
 			}
 		}
 
-		if isFuzzyNavKey {
-			return integration.HandleSearch(m, msg), true
+		if isNavKey {
+			if m.Inputs.Mode == tuictx.InputFuzzySearch {
+				return integration.HandleSearch(m, msg), true
+			}
+			if m.Inputs.Mode == tuictx.InputSearch {
+				if msg.String() == "up" {
+					nav.MoveCursor(m, -1)
+				} else {
+					nav.MoveCursor(m, 1)
+				}
+				return nil, true
+			}
 		}
 
 		if m.Inputs.Mode != tuictx.InputFuzzySearch {

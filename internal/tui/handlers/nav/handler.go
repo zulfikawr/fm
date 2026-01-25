@@ -79,6 +79,9 @@ func NavigateToPathInternal(m *tui_context.Model, path string) tea.Cmd {
 
 	m.ClearSelection()
 
+	m.Navigation.FilterQuery = ""
+	m.Inputs.ActiveInput.Reset()
+
 	return Reload(m, false)
 }
 

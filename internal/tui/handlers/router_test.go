@@ -154,6 +154,87 @@ func TestRouter_FinalizeInput(t *testing.T) {
 		}
 	})
 
+	t.Run("Dot key does not open settings during input", func(t *testing.T) {
+		m.StartInput(tuictx.InputSearch)
+		m.Inputs.ActiveInput.Focus()
+		m.UI.SettingsOpen = false
+
+		tm.Send(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune(".")})
+		time.Sleep(10 * time.Millisecond)
+
+		if m.UI.SettingsOpen {
+			t.Error("expected settings to remain closed when input is active")
+		}
+		if m.Inputs.ActiveInput.Value() != "." {
+			t.Errorf("expected input value to be '.', got %q", m.Inputs.ActiveInput.Value())
+		}
+	})
+
+	t.Run("Question mark does not open help during input", func(t *testing.T) {
+		m.StartInput(tuictx.InputSearch)
+		m.Inputs.ActiveInput.Focus()
+		m.UI.HelpOpen = false
+
+		tm.Send(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("?")})
+		time.Sleep(10 * time.Millisecond)
+
+		if m.UI.HelpOpen {
+			t.Error("expected help to remain closed when input is active")
+		}
+		if m.Inputs.ActiveInput.Value() != "?" {
+			t.Errorf("expected input value to be '?', got %q", m.Inputs.ActiveInput.Value())
+		}
+	})
+
+	t.Run("Dot and Question mark still work when input is NOT active", func(t *testing.T) {
+		m.StopInput(true)
+		m.UI.SettingsOpen = false
+		m.UI.HelpOpen = false
+
+		tm.Send(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune(".")})
+		time.Sleep(10 * time.Millisecond)
+		if !m.UI.SettingsOpen {
+			t.Error("expected settings to open")
+		}
+		m.UI.SettingsOpen = false
+
+		tm.Send(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("?")})
+		time.Sleep(10 * time.Millisecond)
+		if !m.UI.HelpOpen {
+			t.Error("expected help to open")
+		}
+		m.UI.HelpOpen = false
+	})
+
+	t.Run("Up and Down arrows navigate during filtering", func(t *testing.T) {
+		m.StartInput(tuictx.InputSearch)
+		m.Inputs.ActiveInput.Focus()
+		m.Navigation.FilteredItems = []core.Item{
+			{Name: "file1", Path: "/test/file1"},
+			{Name: "file2", Path: "/test/file2"},
+			{Name: "file3", Path: "/test/file3"},
+		}
+		m.Navigation.Cursor = 1 // Start at second item
+
+		// Press Down
+		tm.Send(tea.KeyMsg{Type: tea.KeyDown})
+		time.Sleep(10 * time.Millisecond)
+		if m.Navigation.Cursor != 2 {
+			t.Errorf("expected cursor to be 2 after Down arrow, got %d", m.Navigation.Cursor)
+		}
+
+		// Press Up
+		tm.Send(tea.KeyMsg{Type: tea.KeyUp})
+		time.Sleep(10 * time.Millisecond)
+		if m.Navigation.Cursor != 1 {
+			t.Errorf("expected cursor to be 1 after Up arrow, got %d", m.Navigation.Cursor)
+		}
+
+		if !m.UI.InputActive {
+			t.Error("expected input to remain active during navigation")
+		}
+	})
+
 	_ = tm.Quit()
 }
 
