@@ -6,7 +6,6 @@ import (
 
 	"github.com/zulfikawr/fm/internal/files/remote"
 	"github.com/zulfikawr/fm/internal/ssh"
-	"github.com/zulfikawr/fm/internal/tui/components/ui"
 	tui_context "github.com/zulfikawr/fm/internal/tui/context"
 	"github.com/zulfikawr/fm/internal/tui/handlers/utils"
 	"github.com/zulfikawr/fm/internal/tui/messages"
@@ -78,21 +77,10 @@ func finalizeRemoteConnect(m *tui_context.Model, msg messages.RemoteConnectMsg) 
 		}
 
 		m.UI.RemoteAuth = true
-		m.StartInput(tui_context.InputAuth)
+		m.Operations.ActionType = "auth"
+		m.UI.StartConfirming()
 
-		label := "Password"
-		if m.Inputs.AltMode {
-			label = "PEM Path"
-			m.Inputs.ActiveInput.EchoMode = ui.EchoNormal
-		} else {
-			m.Inputs.ActiveInput.EchoMode = ui.EchoPassword
-		}
-		m.Inputs.ActiveInput.SetPrompt(label + ": ")
-
-		return tea.Batch(
-			utils.SetMsg(m, "Remote Authentication Required"),
-			m.Inputs.ActiveInput.FocusCmd(),
-		)
+		return utils.SetMsg(m, "Remote Authentication Required")
 	}
 
 	m.UI.RemoteAuth = false

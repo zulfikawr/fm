@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Path Preview & Autocompletion:**
+  - Added ghost text preview for autocompletion suggestions in text inputs.
+  - Enabled `Tab` to autocomplete names in the filter input and paths in "Go to" and "PEM Path" inputs.
+- **Improved 'Go to' & Authentication Navigation:**
+  - Pressing `g` now shows an initial selection prompt to choose between Local (`l`) and Remote (`r`) navigation.
+  - Remote authentication now explicitly asks to choose between Password (`p`) or Key (`k`) authentication upfront.
+  - Added autocompletion and ghost text preview for PEM key paths.
+  - Fixed an issue where the PEM path input incorrectly masked characters as if it were a password.
+
 ### Fixed
 - Prevented the `.` and `?` keys from opening settings and help menus while a text input field is active.
 - Enabled `Up` and `Down` arrow navigation in the file list while the filter input is active.

@@ -12,29 +12,13 @@
 | `k` / `↑` | Move selection up |
 | `Shift` + `j` / `↓` | Range select down |
 | `Shift` + `k` / `↑` | Range select up |
-| `g` | Go to path (opens a prompt for Local or Remote path) |
+| `g` | Go to path (choose Local `l` or Remote `r` first) |
 | `[` | History Back |
 | `]` | History Forward |
+| `Tab` | Autocomplete current name or path in text inputs |
 
 ## Selection & Bulk Actions
-
-| Key | Action |
-| --- | --- |
-| `Space` | Toggle selection for the current item |
-| `Shift` + `Left Click` | Toggle selection / Range select |
-| `Alt+A` | Select all items in the current directory |
-| `Esc` | Clear all selections |
-
-## Tabs
-
-| Key | Action |
-| --- | --- |
-| `Alt+T` | Open a new tab (up to 9 tabs) |
-| `Alt+W` | Close the current tab |
-| `Alt+1` - `Alt+9` | Switch to the corresponding tab |
-
-## File Operations
-
+// ...
 | Key | Action |
 | --- | --- |
 | `c` | Copy selected items to clipboard |
@@ -42,7 +26,7 @@
 | `v` | Paste items from clipboard |
 | `r` | Rename the highlighted item |
 | `d` | Move selected items to trash (Note: currently performs permanent deletion) |
-| `Alt+N` | Create a new file or folder (use `Tab` to toggle between them) |
+| `Alt+N` | Create a new item (File/Folder) |
 | `z` | Create a Zip archive of selected items |
 | `u` | Unzip the highlighted archive |
 
@@ -50,7 +34,7 @@
 
 | Key | Action |
 | --- | --- |
-| `/` | Enter filter mode (filters current directory listing) |
+| `/` | Enter filter mode (use `↑`/`↓` to navigate list while filtering) |
 | `Alt+/` | Open Fuzzy Content Search (Find in Files) |
 | `Alt+M` / `Alt+N` | Jump between files in fuzzy search results |
 | `Esc` | Exit search/filter mode |

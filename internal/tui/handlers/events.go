@@ -55,6 +55,7 @@ func handleEvents(m *tuictx.Model, msg tea.Msg) (tea.Cmd, bool) {
 	case messages.DebounceFilterMsg:
 		if msg.Generation == m.Navigation.FilterGen {
 			nav.ApplyFilter(m)
+			utils.UpdateSearchSuggestion(m)
 		}
 		return nil, true
 

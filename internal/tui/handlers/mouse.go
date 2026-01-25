@@ -562,8 +562,8 @@ func handleFooterClick(m *context.Model, msg tea.MouseMsg) tea.Cmd {
 		switch mode {
 		case footer_comp.ModeFuzzySearch:
 			rightWidth = 45 // "[Tab] Collapse | [Alt+n/m] Files | [Alt+j/k] Matches "
-		case footer_comp.ModeGoto, footer_comp.ModeAuth, footer_comp.ModeCreate:
-			rightWidth = 15 // "[Tab] Local/Remote "
+		case footer_comp.ModeCreate:
+			rightWidth = 15 // "[Tab] File/Folder "
 		}
 
 		if msg.X >= m.Display.Width-rightWidth {

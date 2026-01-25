@@ -9,6 +9,7 @@ import (
 	"github.com/zulfikawr/fm/internal/files/conflict"
 	"github.com/zulfikawr/fm/internal/files/core"
 	"github.com/zulfikawr/fm/internal/files/ops"
+	"github.com/zulfikawr/fm/internal/tui/components/ui"
 	tui_context "github.com/zulfikawr/fm/internal/tui/context"
 	"github.com/zulfikawr/fm/internal/tui/messages"
 
@@ -87,6 +88,44 @@ func HandleConfirmKeys(m *tui_context.Model, msg tea.KeyMsg) tea.Cmd {
 	}
 
 	switch msg.String() {
+	case "l", "L":
+		if action == constants.ActionGoto {
+			m.UI.StopConfirming()
+			m.Operations.ActionType = constants.ActionNone
+			m.StartInput(tui_context.InputGoto)
+			m.Inputs.AltMode = false
+			m.Inputs.ActiveInput.SetValue(m.Navigation.Path)
+			return m.Inputs.ActiveInput.FocusCmd()
+		}
+	case "r", "R":
+		if action == constants.ActionGoto {
+			m.UI.StopConfirming()
+			m.Operations.ActionType = constants.ActionNone
+			m.StartInput(tui_context.InputGoto)
+			m.Inputs.AltMode = true
+			m.Inputs.ActiveInput.SetValue("")
+			return m.Inputs.ActiveInput.FocusCmd()
+		}
+	case "p", "P":
+		if action == constants.ActionAuth {
+			m.UI.StopConfirming()
+			m.Operations.ActionType = constants.ActionNone
+			m.StartInput(tui_context.InputAuth)
+			m.Inputs.AltMode = false
+			m.Inputs.ActiveInput.EchoMode = ui.EchoPassword
+			m.Inputs.ActiveInput.SetPrompt("Password: ")
+			return m.Inputs.ActiveInput.FocusCmd()
+		}
+	case "k", "K":
+		if action == constants.ActionAuth {
+			m.UI.StopConfirming()
+			m.Operations.ActionType = constants.ActionNone
+			m.StartInput(tui_context.InputAuth)
+			m.Inputs.AltMode = true
+			m.Inputs.ActiveInput.EchoMode = ui.EchoNormal
+			m.Inputs.ActiveInput.SetPrompt("PEM Path: ")
+			return m.Inputs.ActiveInput.FocusCmd()
+		}
 	case "y", "Y":
 		m.UI.StopConfirming()
 

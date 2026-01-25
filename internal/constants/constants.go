@@ -41,6 +41,8 @@ const (
 	ActionUpdate        ActionType = "update"
 	ActionResetSettings ActionType = "reset-settings"
 	ActionCancel        ActionType = "cancel"
+	ActionGoto          ActionType = "goto"
+	ActionAuth          ActionType = "auth"
 )
 
 // Editors lists supported text editors

@@ -51,6 +51,8 @@ type Input struct {
 	Cursor           Cursor
 
 	styles theme.Stylesheet
+
+	Suggestion string // ghost text for autocomplete
 }
 
 // NewInput creates a new custom text input.
@@ -299,6 +301,13 @@ func (in Input) View() string {
 			} else {
 				b.WriteString(in.TextStyle.Render(char))
 			}
+
+			// Render suggestion tail if at the end of value
+			if idx >= len(val) && in.Suggestion != "" && strings.HasPrefix(strings.ToLower(in.Suggestion), strings.ToLower(string(in.value))) {
+				suggestionTail := in.Suggestion[len(in.value):]
+				b.WriteString(in.PlaceholderStyle.Render(suggestionTail))
+			}
+
 			if idx >= len(val) {
 				break
 			}

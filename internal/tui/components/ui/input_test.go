@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/zulfikawr/fm/internal/tui/theme"
@@ -65,5 +66,29 @@ func TestInput_EchoModes(t *testing.T) {
 	viewNone := input.View()
 	if viewNone != "" {
 		t.Errorf("EchoNone: expected empty, got %q", viewNone)
+	}
+}
+
+func TestInput_Suggestion(t *testing.T) {
+	styles := theme.GetStylesheet(0)
+	input := NewInput(styles)
+	input.Focus()
+	input.SetValue("hello")
+	input.Suggestion = "helloworld"
+
+	// View should show "hello" + dimmed "world"
+	v := input.View()
+	if !strings.Contains(v, "hello") {
+		t.Errorf("expected view to contain 'hello', got %q", v)
+	}
+	if !strings.Contains(v, "world") {
+		t.Errorf("expected view to contain 'world' (suggestion), got %q", v)
+	}
+
+	// Suggestion should not show if it doesn't match prefix
+	input.Suggestion = "goodbye"
+	v = input.View()
+	if strings.Contains(v, "goodbye") {
+		t.Errorf("expected view NOT to contain 'goodbye' (mismatched suggestion), got %q", v)
 	}
 }

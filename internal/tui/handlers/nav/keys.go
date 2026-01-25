@@ -4,10 +4,12 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/zulfikawr/fm/internal/constants"
 	"github.com/zulfikawr/fm/internal/files/core"
 	"github.com/zulfikawr/fm/internal/files/ops"
 	"github.com/zulfikawr/fm/internal/files/sorting"
 	tui_context "github.com/zulfikawr/fm/internal/tui/context"
+	"github.com/zulfikawr/fm/internal/tui/handlers/utils"
 	"github.com/zulfikawr/fm/internal/tui/messages"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -69,6 +71,7 @@ func HandleNavKeys(m *tui_context.Model, msg tea.KeyMsg) tea.Cmd {
 		return nil
 	case "/":
 		m.StartInput(tui_context.InputSearch)
+		utils.UpdateSearchSuggestion(m)
 		return m.Inputs.ActiveInput.FocusCmd()
 	case "s":
 		m.Display.SortMode = m.Display.SortMode.Next()
@@ -76,9 +79,9 @@ func HandleNavKeys(m *tui_context.Model, msg tea.KeyMsg) tea.Cmd {
 		ApplyFilter(m)
 		return nil
 	case "g":
-		m.StartInput(tui_context.InputGoto)
-		m.Inputs.ActiveInput.SetValue(m.Navigation.Path)
-		return m.Inputs.ActiveInput.FocusCmd()
+		m.Operations.ActionType = constants.ActionGoto
+		m.UI.StartConfirming()
+		return nil
 	case "alt+/":
 		m.StartInput(tui_context.InputFuzzySearch)
 		return m.Inputs.ActiveInput.FocusCmd()

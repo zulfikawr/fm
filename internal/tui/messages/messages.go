@@ -177,3 +177,7 @@ type StatusMsg struct {
 type WatchDirMsg struct{}
 
 type ReEnableMouseMsg struct{}
+
+type CompletionsMsg struct {
+	Completions []string
+}

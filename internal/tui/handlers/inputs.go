@@ -1,16 +1,29 @@
 package handlers
 
 import (
+	"github.com/zulfikawr/fm/internal/files/local"
 	tuictx "github.com/zulfikawr/fm/internal/tui/context"
 	"github.com/zulfikawr/fm/internal/tui/handlers/file"
 	"github.com/zulfikawr/fm/internal/tui/handlers/integration"
 	"github.com/zulfikawr/fm/internal/tui/handlers/nav"
+	"github.com/zulfikawr/fm/internal/tui/handlers/utils"
+	"github.com/zulfikawr/fm/internal/tui/messages"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
 
 // handleInputs handles routing and finalization of text/fuzzy inputs
 func handleInputs(m *tuictx.Model, msg tea.Msg) (tea.Cmd, bool) {
+	switch msg := msg.(type) {
+	case messages.CompletionsMsg:
+		if len(msg.Completions) > 0 {
+			m.Inputs.ActiveInput.Suggestion = msg.Completions[0]
+		} else {
+			m.Inputs.ActiveInput.Suggestion = ""
+		}
+		return nil, true
+	}
+
 	if !m.UI.InputActive {
 		return nil, false
 	}
@@ -41,6 +54,7 @@ func handleInputs(m *tuictx.Model, msg tea.Msg) (tea.Cmd, bool) {
 				} else {
 					nav.MoveCursor(m, 1)
 				}
+				utils.UpdateSearchSuggestion(m)
 				return nil, true
 			}
 		}
@@ -48,7 +62,22 @@ func handleInputs(m *tuictx.Model, msg tea.Msg) (tea.Cmd, bool) {
 		if m.Inputs.Mode != tuictx.InputFuzzySearch {
 			switch msg.String() {
 			case "tab":
-				if m.Inputs.Mode == tuictx.InputGoto || m.Inputs.Mode == tuictx.InputAuth || m.Inputs.Mode == tuictx.InputCreate {
+				if m.Inputs.ActiveInput.Suggestion != "" {
+					m.Inputs.ActiveInput.SetValue(m.Inputs.ActiveInput.Suggestion)
+					m.Inputs.ActiveInput.Suggestion = ""
+					if m.Inputs.Mode == tuictx.InputSearch {
+						nav.ApplyFilter(m)
+					} else if m.Inputs.Mode == tuictx.InputGoto || (m.Inputs.Mode == tuictx.InputAuth && m.Inputs.AltMode) {
+						fs := m.FS
+						if m.Inputs.Mode == tuictx.InputAuth && m.Inputs.AltMode {
+							fs = local.NewLocalFS()
+						}
+						return utils.FetchCompletions(m.Context, fs, m.Navigation.Path, m.Inputs.ActiveInput.Value()), true
+					}
+					return nil, true
+				}
+
+				if m.Inputs.Mode == tuictx.InputCreate {
 					m.Inputs.AltMode = !m.Inputs.AltMode
 					return nil, true
 				}
@@ -74,6 +103,17 @@ func handleInputs(m *tuictx.Model, msg tea.Msg) (tea.Cmd, bool) {
 
 		if m.Inputs.Mode == tuictx.InputSearch {
 			cmds = append(cmds, nav.TriggerFilter(m))
+			utils.UpdateSearchSuggestion(m)
+		}
+
+		if m.Inputs.Mode == tuictx.InputGoto || (m.Inputs.Mode == tuictx.InputAuth && m.Inputs.AltMode) {
+			if msg.String() != "enter" && msg.String() != "esc" && msg.String() != "tab" {
+				fs := m.FS
+				if m.Inputs.Mode == tuictx.InputAuth && m.Inputs.AltMode {
+					fs = local.NewLocalFS()
+				}
+				cmds = append(cmds, utils.FetchCompletions(m.Context, fs, m.Navigation.Path, m.Inputs.ActiveInput.Value()))
+			}
 		}
 
 		// Handle Enter/Esc for inputs

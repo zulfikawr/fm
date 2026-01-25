@@ -60,11 +60,7 @@ func DetermineFooterMode(m *context.Model) footer.Mode {
 func GetPromptLength(m *context.Model) int {
 	switch m.Inputs.Mode {
 	case context.InputGoto:
-		isRemote := m.Inputs.AltMode
-		if !m.FS.IsLocal() {
-			isRemote = !m.Inputs.AltMode
-		}
-		if isRemote {
+		if m.Inputs.AltMode {
 			return 16 // "Go to (Remote): "
 		}
 		return 15 // "Go to (Local): "

@@ -23,20 +23,15 @@ func RenderInputPrompt(props Props) string {
 	// Update prompt dynamically
 	switch props.Mode {
 	case ModeGoto:
-		isRemote := props.AltMode
-		if props.RemoteConnected {
-			isRemote = !props.AltMode
-		}
-
 		label := "Local"
-		if isRemote {
+		if props.AltMode {
 			label = "Remote"
 		}
 		input.Prompt = baseStyle.Render("Go to ") + dimStyle.Render("("+label+")") + baseStyle.Render(": ")
 	case ModeAuth:
 		label := "Password"
 		if props.AltMode {
-			label = "Path"
+			label = "PEM Path"
 		}
 		input.Prompt = baseStyle.Render(label + ": ")
 	case ModeSearching:
@@ -59,25 +54,13 @@ func RenderInputPrompt(props Props) string {
 		input.Prompt = baseStyle.Render("New name: ")
 	}
 
-	// Calculate right part (Tab hint) if in Goto, Auth, FuzzySearch, or Create mode
+	// Calculate right part (Tab hint) if in FuzzySearch, or Create mode
 	rightPart := ""
-	if props.Mode == ModeGoto || props.Mode == ModeAuth || props.Mode == ModeFuzzySearch || props.Mode == ModeCreate {
+	if props.Mode == ModeFuzzySearch || props.Mode == ModeCreate {
 		dimStyle := props.Style.DimCol.Inherit(props.Style.Footer).UnsetPadding().UnsetWidth()
 		keyStyle := props.Style.KeyCol.Inherit(props.Style.Footer).UnsetPadding().UnsetWidth()
 
 		switch props.Mode {
-		case ModeGoto:
-			target := "Remote"
-			if props.AltMode {
-				target = "Local"
-			}
-			rightPart = dimStyle.Render("[") + keyStyle.Render("Tab") + dimStyle.Render("] ") + dimStyle.Render(target) + baseStyle.Render(" ")
-		case ModeAuth:
-			target := "Key Path"
-			if props.AltMode {
-				target = "Password"
-			}
-			rightPart = dimStyle.Render("[") + keyStyle.Render("Tab") + dimStyle.Render("] ") + dimStyle.Render(target) + baseStyle.Render(" ")
 		case ModeCreate:
 			target := "Folder"
 			if props.AltMode {

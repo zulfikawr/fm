@@ -23,7 +23,7 @@ fm -r user@hostname /path/to/id_rsa
 
 ### 2. In-App "Go to" Command
 
-While inside `fm`, press `g` to open the "Go to path" prompt. You can enter a remote address like `user@host` or a pre-defined SSH alias. `fm` will automatically detect the remote protocol and attempt to connect.
+While inside `fm`, press `g` to open the "Go to" prompt. You will be asked to choose between **Local** (`l`) or **Remote** (`r`). If you choose Remote, you can enter an address like `user@host` or a pre-defined SSH alias. `fm` also supports **Tab autocompletion** for paths and filenames when navigating or specifying PEM keys.
 
 ## Authentication Methods
 
@@ -31,7 +31,7 @@ While inside `fm`, press `g` to open the "Go to path" prompt. You can enter a re
 - **SSH Agent:** If you have an SSH agent running, `fm` will use it automatically.
 - **Identity Files:** Standard keys like `~/.ssh/id_rsa`, `~/.ssh/id_ed25519`, etc., are checked by default.
 - **Password Auth:** If key-based auth fails, `fm` will interactively prompt you for a password.
-- **Custom Keys:** You can specify a `.pem` or private key file via the CLI.
+- **Custom Keys:** You can specify a `.pem` or private key file via the CLI, or enter its path when prompted in the TUI. Autocompletion is available for local PEM paths.
 
 ## Security Features
 

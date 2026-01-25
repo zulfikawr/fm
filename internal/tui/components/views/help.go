@@ -67,7 +67,7 @@ func buildHelpGroups() []HelpSection {
 				{Key: "Backspace/←/h", Desc: "Navigate to parent directory"},
 				{Key: "j/↓, k/↑", Desc: "Move selection down / up"},
 				{Key: "Shift+j/↓, Shift+k/↑", Desc: "Range selection"},
-				{Key: "g", Desc: "Go to path (Local or Remote)"},
+				{Key: "g", Desc: "Go to path (choose Local [l] or Remote [r])"},
 				{Key: "[", Desc: "History Back"},
 				{Key: "]", Desc: "History Forward"},
 			},
@@ -97,23 +97,23 @@ func buildHelpGroups() []HelpSection {
 				{Key: "v", Desc: "Paste items from clipboard"},
 				{Key: "r", Desc: "Rename highlighted item"},
 				{Key: "d", Desc: "Delete selected items"},
-				{Key: "Alt+N", Desc: "Create new file or folder"},
+				{Key: "Alt+N", Desc: "Create new item (File/Folder)"},
 				{Key: "z", Desc: "Create Zip archive"},
 				{Key: "u", Desc: "Unzip highlighted archive"},
 			},
 		},
 		{
-			Title: "Search & Filtering",
+			Title: "Search, Filtering & Inputs",
 			Items: []HelpItem{
-				{Key: "/", Desc: "Enter filter mode"},
+				{Key: "/", Desc: "Enter filter mode (↑/↓ to navigate)"},
+				{Key: "Tab", Desc: "Autocomplete current name or path"},
 				{Key: "Alt+/", Desc: "Fuzzy Content Search (Find in Files)"},
 				{Key: "Alt+M/Alt+N", Desc: "Jump between files in search results"},
 				{Key: "Esc", Desc: "Exit search/filter mode"},
 			},
 		},
 		{
-			Title: "Miscellaneous",
-			Items: []HelpItem{
+			Title: "Miscellaneous", Items: []HelpItem{
 				{Key: "Alt+C", Desc: "View current clipboard contents"},
 				{Key: "Alt+L", Desc: "View operation logs"},
 				{Key: "s", Desc: "Cycle through sort modes"},

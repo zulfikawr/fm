@@ -7,10 +7,13 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 
+	"github.com/zulfikawr/fm/internal/constants"
 	"github.com/zulfikawr/fm/internal/files/core"
 	"github.com/zulfikawr/fm/internal/testutil"
+	"github.com/zulfikawr/fm/internal/tui/components/ui"
 	tuictx "github.com/zulfikawr/fm/internal/tui/context"
 	"github.com/zulfikawr/fm/internal/tui/handlers"
+	"github.com/zulfikawr/fm/internal/tui/handlers/utils"
 	"github.com/zulfikawr/fm/internal/tui/messages"
 )
 
@@ -121,12 +124,101 @@ func TestRouter_FinalizeInput(t *testing.T) {
 
 	t.Run("Input Tab Toggle", func(t *testing.T) {
 		m.UI.InputActive = true
-		m.Inputs.Mode = tuictx.InputGoto
+		m.Inputs.Mode = tuictx.InputCreate
 		initialAlt := m.Inputs.AltMode
 		tm.Send(tea.KeyMsg{Type: tea.KeyTab})
 		time.Sleep(10 * time.Millisecond)
 		if m.Inputs.AltMode == initialAlt {
 			t.Error("expected AltMode toggled on Tab")
+		}
+	})
+
+	t.Run("Goto command shows initial prompt", func(t *testing.T) {
+		m.UI.StopConfirming()
+		m.StopInput(true)
+		m.Operations.ActionType = constants.ActionNone
+
+		// Press 'g'
+		tm.Send(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("g")})
+		time.Sleep(10 * time.Millisecond)
+
+		if !m.UI.Confirming {
+			t.Error("expected confirming state after 'g'")
+		}
+		if m.Operations.ActionType != constants.ActionGoto {
+			t.Errorf("expected ActionType 'goto', got %q", m.Operations.ActionType)
+		}
+
+		// Press 'l' for local
+		tm.Send(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("l")})
+		time.Sleep(10 * time.Millisecond)
+
+		if m.UI.Confirming {
+			t.Error("expected confirmation to end after choosing 'l'")
+		}
+		if !m.UI.InputActive || m.Inputs.Mode != tuictx.InputGoto {
+			t.Error("expected InputGoto to start after choosing 'l'")
+		}
+		if m.Inputs.AltMode {
+			t.Error("expected AltMode to be false for Local")
+		}
+
+		// Cleanup and test 'r' for remote
+		m.StopInput(true)
+		tm.Send(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("g")})
+		time.Sleep(10 * time.Millisecond)
+		tm.Send(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("r")})
+		time.Sleep(10 * time.Millisecond)
+
+		if !m.UI.InputActive || m.Inputs.Mode != tuictx.InputGoto {
+			t.Error("expected InputGoto to start after choosing 'r'")
+		}
+		if !m.Inputs.AltMode {
+			t.Error("expected AltMode to be true for Remote")
+		}
+	})
+
+	t.Run("Auth command shows initial prompt", func(t *testing.T) {
+		m.UI.StopConfirming()
+		m.StopInput(true)
+		m.UI.RemoteAuth = true
+		m.Operations.ActionType = constants.ActionAuth
+		m.UI.StartConfirming()
+
+		// Press 'p' for password
+		tm.Send(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("p")})
+		time.Sleep(10 * time.Millisecond)
+
+		if m.UI.Confirming {
+			t.Error("expected confirmation to end after choosing 'p'")
+		}
+		if !m.UI.InputActive || m.Inputs.Mode != tuictx.InputAuth {
+			t.Error("expected InputAuth to start after choosing 'p'")
+		}
+		if m.Inputs.AltMode {
+			t.Error("expected AltMode to be false for Password")
+		}
+		if m.Inputs.ActiveInput.EchoMode != ui.EchoPassword {
+			t.Error("expected EchoPassword mode for Password auth")
+		}
+
+		// Cleanup and test 'k' for key
+		m.StopInput(true)
+		m.UI.RemoteAuth = true
+		m.Operations.ActionType = constants.ActionAuth
+		m.UI.StartConfirming()
+
+		tm.Send(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("k")})
+		time.Sleep(10 * time.Millisecond)
+
+		if !m.UI.InputActive || m.Inputs.Mode != tuictx.InputAuth {
+			t.Error("expected InputAuth to start after choosing 'k'")
+		}
+		if !m.Inputs.AltMode {
+			t.Error("expected AltMode to be true for Key")
+		}
+		if m.Inputs.ActiveInput.EchoMode != ui.EchoNormal {
+			t.Error("expected EchoNormal mode for Key Path auth")
 		}
 	})
 
@@ -232,6 +324,44 @@ func TestRouter_FinalizeInput(t *testing.T) {
 
 		if !m.UI.InputActive {
 			t.Error("expected input to remain active during navigation")
+		}
+	})
+
+	t.Run("Tab autocompletes during filtering", func(t *testing.T) {
+		m.StartInput(tuictx.InputSearch)
+		m.Inputs.ActiveInput.Focus()
+		item := core.Item{Name: "gitignore", Path: "/test/.gitignore"}
+		m.Navigation.Items = []core.Item{item}
+		m.Navigation.FilteredItems = []core.Item{item}
+		m.Navigation.Cursor = 0
+		m.Inputs.ActiveInput.SetValue("git")
+		utils.UpdateSearchSuggestion(m)
+
+		if m.Inputs.ActiveInput.Suggestion != "gitignore" {
+			t.Errorf("expected suggestion to be 'gitignore', got %q", m.Inputs.ActiveInput.Suggestion)
+		}
+
+		// Press Tab
+		tm.Send(tea.KeyMsg{Type: tea.KeyTab})
+		time.Sleep(10 * time.Millisecond)
+
+		if m.Inputs.ActiveInput.Value() != "gitignore" {
+			t.Errorf("expected value to be 'gitignore' after Tab, got %q", m.Inputs.ActiveInput.Value())
+		}
+		if m.Inputs.ActiveInput.Suggestion != "" {
+			t.Error("expected suggestion to be cleared after Tab")
+		}
+	})
+
+	t.Run("CompletionsMsg updates suggestion", func(t *testing.T) {
+		m.StartInput(tuictx.InputGoto)
+		m.Inputs.ActiveInput.SetValue("/h")
+
+		msg := messages.CompletionsMsg{Completions: []string{"/home/"}}
+		handlers.HandleUpdate(m, msg)
+
+		if m.Inputs.ActiveInput.Suggestion != "/home/" {
+			t.Errorf("expected suggestion to be '/home/', got %q", m.Inputs.ActiveInput.Suggestion)
 		}
 	})
 

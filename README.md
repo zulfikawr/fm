@@ -43,6 +43,7 @@ go build -o fm ./cmd/fm
 | `r` | Rename highlighted item |
 | `/` | Enter filter mode |
 | `Alt+/` | Fuzzy content search (Find in Files) |
+| `Tab` | Autocomplete name or path |
 | `g` | Go to path (Local or Remote) |
 | `Alt+T` / `Alt+W` | New Tab / Close Tab |
 | `Alt+1`-`9` | Switch between tabs |

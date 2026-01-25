@@ -36,6 +36,10 @@ func BuildConfirmationPrompt(props Props) string {
 		return "Cancel ongoing operation? [y] Yes | [n] No"
 	case constants.ActionUpdate:
 		return fmt.Sprintf("A new version of fm (%s) is available. Update? [y] Yes | [n] No", props.LatestVersion)
+	case constants.ActionGoto:
+		return "Go to: [l] Local | [r] Remote"
+	case constants.ActionAuth:
+		return "Authenticate via: [p] Password | [k] Key"
 	default:
 		return "Confirm? [y] Yes | [n] No"
 	}
