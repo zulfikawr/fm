@@ -1,6 +1,6 @@
 # FM - Terminal File Manager
 
-![Screenshot](./image.png)
+![Screenshot](./assets/screenshot.png)
 
 A fast, modular, and feature-rich TUI file manager written in Go. 
 
