@@ -181,3 +181,11 @@ type ReEnableMouseMsg struct{}
 type CompletionsMsg struct {
 	Completions []string
 }
+
+type IconsDownloadedMsg struct {
+	Err error
+}
+
+type IconTestMsg struct {
+	Success bool
+}

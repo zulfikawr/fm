@@ -18,6 +18,7 @@ type UIState struct {
 	InputActive     bool              // Consolidated flag for any text input (search, rename, etc)
 	RemoteAuth      bool              // Specific flag for remote auth (uses input)
 	HostConfirm     bool              // Waiting for known_hosts confirmation (uses y/n keys)
+	TestingIcons    bool              // Icon support test flow
 	UpdateAvailable bool              // New version is available
 	LatestVersion   string            // Latest version string
 	PromptCache     map[string]string // Pre-calculated styled prompts
@@ -35,6 +36,7 @@ func (ui *UIState) Reset() {
 	ui.InputActive = false
 	ui.RemoteAuth = false
 	ui.HostConfirm = false
+	ui.TestingIcons = false
 	ui.PromptCache = make(map[string]string)
 }
 

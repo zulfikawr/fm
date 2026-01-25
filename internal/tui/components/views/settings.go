@@ -97,6 +97,7 @@ func buildSettingGroups(props SettingsProps) []SettingGroup {
 		{
 			Title: "Appearance",
 			Settings: []SettingItem{
+				{Label: "Enable Nerd Font Icons", Value: ui.Toggle(s.EnableIcons, styles)},
 				{Label: "Theme", Value: ui.Picker(theme.Themes[s.ThemeIndex].Name, styles)},
 			},
 		},
@@ -191,7 +192,8 @@ func getSettingsHelp(cursor int) string {
 		10: "Show last modification time",
 		11: "Change the date and time format",
 		12: "Allow mouse interaction (clicks, scroll)",
-		13: "Change the application color scheme",
+		13: "Toggle Nerd Font icons (requires download)",
+		14: "Change the application color scheme",
 	}
 
 	if help, ok := helpTexts[cursor]; ok {

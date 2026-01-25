@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"github.com/zulfikawr/fm/internal/constants"
 	tuictx "github.com/zulfikawr/fm/internal/tui/context"
 	"github.com/zulfikawr/fm/internal/tui/handlers/app"
 	"github.com/zulfikawr/fm/internal/tui/handlers/file"
@@ -8,6 +9,7 @@ import (
 	"github.com/zulfikawr/fm/internal/tui/handlers/nav"
 	"github.com/zulfikawr/fm/internal/tui/handlers/utils"
 	"github.com/zulfikawr/fm/internal/tui/messages"
+	"github.com/zulfikawr/fm/internal/tui/theme"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -100,6 +102,36 @@ func HandleUpdate(m *tuictx.Model, msg tea.Msg) tea.Cmd {
 		m.Operations.Progress.Hide()
 		m.Message.Pop()
 		return nil
+
+	case messages.IconsDownloadedMsg:
+		m.UI.Loading = false
+		if msg.Err != nil {
+			return utils.SetErrMsg(m, "Failed to download icons: "+msg.Err.Error())
+		}
+		// Icons downloaded, load them
+		if err := theme.LoadIcons(); err != nil {
+			return utils.SetErrMsg(m, "Failed to load icons: "+err.Error())
+		}
+		// Start test flow
+		m.UI.TestingIcons = true
+		m.Operations.ActionType = constants.ActionTestIcons
+		m.UI.StartConfirming()
+		return nil
+
+	case messages.IconTestMsg:
+		m.UI.StopConfirming()
+		m.UI.TestingIcons = false
+		m.Operations.ActionType = constants.ActionNone
+		if msg.Success {
+			m.Config.EnableIcons = true
+			if err := m.Config.Save(); err != nil {
+				return utils.SetErrMsg(m, "Failed to save config: "+err.Error())
+			}
+			return utils.SetMsg(m, "Icons enabled successfully")
+		} else {
+			m.Config.EnableIcons = false
+			return utils.SetMsg(m, "Icons disabled (Nerd Font required)")
+		}
 	}
 
 	// Priority update for specialized messages

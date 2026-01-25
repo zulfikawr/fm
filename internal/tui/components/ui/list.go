@@ -16,7 +16,11 @@ type ListProps struct {
 // Marker renders a selection checkbox marker.
 func Marker(props ListProps) string {
 	if props.IsUp {
-		return "    "
+		content := "    "
+		if props.IsCursor {
+			return props.Styles.SelectedItem.UnsetPadding().UnsetWidth().Render(content)
+		}
+		return content
 	}
 
 	style := props.Styles.DimCol.UnsetPadding().UnsetWidth()

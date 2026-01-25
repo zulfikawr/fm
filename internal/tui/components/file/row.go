@@ -6,6 +6,7 @@ import (
 
 	"github.com/zulfikawr/fm/internal/files/core"
 	"github.com/zulfikawr/fm/internal/tui/components/ui"
+	"github.com/zulfikawr/fm/internal/tui/theme"
 )
 
 // RowContext encapsulates all data needed to render a single row
@@ -24,7 +25,14 @@ func renderRow(ctx RowContext) string {
 	namePart := renderNamePart(ctx)
 	metaPart := renderMetaPart(ctx)
 
-	content := marker + gitMarker + permIndicator + namePart + metaPart
+	// Gap after markers
+	gap := " "
+	if ctx.IsCursor {
+		sStyle := ctx.Props.Styles.SelectedItem.UnsetPadding().UnsetWidth()
+		gap = sStyle.Render(gap)
+	}
+
+	content := marker + gitMarker + permIndicator + gap + namePart + metaPart
 
 	if ctx.IsCursor {
 		return ui.ItemRow(content, ui.ListProps{
@@ -95,6 +103,16 @@ func renderNamePart(ctx RowContext) string {
 		nameStr = ctx.Item.Name
 	}
 
+	iconPart := ""
+	if ctx.Layout.EnableIcons {
+		icon := theme.GetIcon(ctx.Item)
+		if icon != "" {
+			iconPart = icon + "  "
+		} else {
+			iconPart = "   " // Align with Icon (1) + 2 spaces
+		}
+	}
+
 	nameStr = ui.Truncate(nameStr, ctx.Layout.NameWidth)
 
 	// Git Status Coloring for Name
@@ -119,7 +137,7 @@ func renderNamePart(ctx RowContext) string {
 
 	if ctx.IsCursor {
 		sStyle := ctx.Props.Styles.SelectedItem.UnsetPadding().UnsetWidth()
-		styledName := nameStyle.Inherit(sStyle).Render(nameStr)
+		styledName := nameStyle.Inherit(sStyle).Render(iconPart + nameStr)
 		gap := ctx.Layout.NameWidth - len(nameStr)
 		if gap < 0 {
 			gap = 0
@@ -127,7 +145,7 @@ func renderNamePart(ctx RowContext) string {
 		return styledName + sStyle.Render(strings.Repeat(" ", gap))
 	}
 
-	styledName := nameStyle.Render(nameStr)
+	styledName := nameStyle.Render(iconPart + nameStr)
 	gap := ctx.Layout.NameWidth - len(nameStr)
 	if gap < 0 {
 		gap = 0

@@ -40,6 +40,8 @@ func BuildConfirmationPrompt(props Props) string {
 		return "Go to: [l] Local | [r] Remote"
 	case constants.ActionAuth:
 		return "Authenticate via: [p] Password | [k] Key"
+	case constants.ActionTestIcons:
+		return "Do you see these icons correctly?  󰈔  [y] Yes | [n] No"
 	default:
 		return "Confirm? [y] Yes | [n] No"
 	}

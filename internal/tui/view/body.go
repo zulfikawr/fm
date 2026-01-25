@@ -71,6 +71,7 @@ func renderBody(m *context.Model, layout context.Layout) string {
 			Offset:      m.Search.Offset,
 			Spinner:     m.Display.LoadingSpinner,
 			Style:       styles,
+			EnableIcons: m.Config.EnableIcons,
 		})
 	} else {
 		bodyStr = file.Render(file.Props{
@@ -87,6 +88,7 @@ func renderBody(m *context.Model, layout context.Layout) string {
 			DateFormatIndex:  m.Config.DateFormatIndex,
 			Styles:           styles,
 			SelectedPaths:    m.Navigation.SelectedPaths,
+			EnableIcons:      m.Config.EnableIcons,
 		})
 	}
 

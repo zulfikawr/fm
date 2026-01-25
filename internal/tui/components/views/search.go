@@ -24,6 +24,7 @@ type SearchProps struct {
 	Offset      int
 	Spinner     ui.Spinner
 	Style       theme.Stylesheet
+	EnableIcons bool
 }
 
 // MatchProps contains properties for rendering matched content
@@ -109,7 +110,13 @@ func RenderSearch(props SearchProps) string {
 			}
 		}
 
-		fileHeader := fmt.Sprintf("%s%s (%d)", prefix, fileNameView, len(res.Matches))
+		iconPart := ""
+		if props.EnableIcons {
+			icon := theme.GetIcon(core.Item{Name: res.FileName, Path: res.Path})
+			iconPart = icon + "  "
+		}
+
+		fileHeader := fmt.Sprintf("%s%s (%d)", prefix, iconPart+fileNameView, len(res.Matches))
 		allLines = append(allLines, fileHeader)
 
 		if !res.Collapsed {

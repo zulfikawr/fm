@@ -668,8 +668,10 @@ func selectAndToggleSetting(m *context.Model, idx int) tea.Cmd {
 	m.Settings.Offset = app.ScrollSettings(m)
 
 	if isDoubleClick {
-		if reload := app.ToggleSetting(idx, m); reload {
-			return func() tea.Msg { return messages.ReloadMsg{} }
+		if reload, cmd := app.ToggleSetting(idx, m); reload {
+			return tea.Batch(cmd, func() tea.Msg { return messages.ReloadMsg{} })
+		} else {
+			return cmd
 		}
 	}
 	return nil

@@ -23,6 +23,7 @@ The configuration uses a flat JSON structure. Below are the available fields:
 - `confirm_operations` (boolean): Ask for confirmation before potentially destructive actions. Default: `true`.
 - `enable_git` (boolean): Enable or disable real-time Git status markers. Default: `true`.
 - `enable_mouse` (boolean): Enable or disable mouse interaction (scrolling, clicking). Default: `true`.
+- `enable_icons` (boolean): Enable or disable Nerd Font icons for files and folders. Default: `false`.
 - `use_trash` (boolean): If true, `d` is intended to move files to the system trash. *Note: This feature is currently under maintenance and may perform permanent deletions.*
 - `theme_index` (integer): The index of the active theme.
 - `editor_index` (integer): The index of your preferred editor (0: vim, 1: nano, 2: code, etc.).
@@ -53,6 +54,7 @@ Example `config.json`:
   "confirm_operations": true,
   "enable_git": true,
   "enable_mouse": true,
+  "enable_icons": false,
   "use_trash": true,
   "theme_index": 0,
   "editor_index": 0,

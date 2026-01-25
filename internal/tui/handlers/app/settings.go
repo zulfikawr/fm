@@ -25,8 +25,9 @@ func HandleSettings(m *tui_context.Model, msg tea.Msg) tea.Cmd {
 }
 
 func handleSettingsKeys(m *tui_context.Model, msg tea.KeyMsg) tea.Cmd {
-	totalItems := 38
+	totalItems := 15
 	var reload bool
+	var cmd tea.Cmd
 
 	switch msg.String() {
 	case "up", "k":
@@ -38,9 +39,9 @@ func handleSettingsKeys(m *tui_context.Model, msg tea.KeyMsg) tea.Cmd {
 			m.Settings.Cursor++
 		}
 	case "enter", "right", "l", " ":
-		reload = ToggleSetting(m.Settings.Cursor, m)
+		reload, cmd = ToggleSetting(m.Settings.Cursor, m)
 	case "left", "h":
-		reload = ToggleSettingPrev(m.Settings.Cursor, m)
+		reload, cmd = ToggleSettingPrev(m.Settings.Cursor, m)
 	case "r":
 		m.Operations.ActionType = constants.ActionResetSettings
 		m.UI.StartConfirming()
@@ -51,9 +52,9 @@ func handleSettingsKeys(m *tui_context.Model, msg tea.KeyMsg) tea.Cmd {
 	m.Settings.Offset = ScrollSettings(m)
 
 	if reload {
-		return func() tea.Msg { return messages.ReloadMsg{} }
+		return tea.Batch(cmd, func() tea.Msg { return messages.ReloadMsg{} })
 	}
-	return nil
+	return cmd
 }
 
 // ScrollSettings recalculates the settings view offset
@@ -64,18 +65,19 @@ func ScrollSettings(m *tui_context.Model) int {
 
 	rowIdx := 0
 	if cursor <= 5 {
+		// Group 1: rows 2-7
 		rowIdx = cursor + 2
 	} else if cursor <= 12 {
+		// Group 2: rows 10-16
 		rowIdx = cursor + 4
-	} else if cursor <= 13 {
-		rowIdx = cursor + 6
 	} else {
-		rowIdx = cursor + 8
+		// Group 3: rows 19-20
+		rowIdx = cursor + 6
 	}
 
 	if rowIdx < offset {
 		newOffset := rowIdx
-		if cursor == 0 || cursor == 6 || cursor == 13 || cursor == 14 {
+		if cursor == 0 || cursor == 6 || cursor == 13 {
 			newOffset -= 2
 		}
 		if newOffset < 0 {
@@ -91,9 +93,10 @@ func ScrollSettings(m *tui_context.Model) int {
 	return offset
 }
 
-func ToggleSetting(idx int, m *tui_context.Model) bool {
+func ToggleSetting(idx int, m *tui_context.Model) (bool, tea.Cmd) {
 	cfg := m.Config // Copy
 	reload := false
+	var cmd tea.Cmd
 	switch idx {
 	case 0:
 		cfg.ShowHidden = !cfg.ShowHidden
@@ -136,6 +139,24 @@ func ToggleSetting(idx int, m *tui_context.Model) bool {
 	case 12:
 		cfg.EnableMouse = !cfg.EnableMouse
 	case 13:
+		if !cfg.EnableIcons {
+			if !theme.HasIconsDownloaded() {
+				m.UI.Loading = true
+				cmd = func() tea.Msg {
+					err := theme.DownloadIcons()
+					return messages.IconsDownloadedMsg{Err: err}
+				}
+				return true, cmd
+			}
+			// Already downloaded, start test flow
+			m.UI.TestingIcons = true
+			m.Operations.ActionType = constants.ActionTestIcons
+			m.UI.StartConfirming()
+		} else {
+			cfg.EnableIcons = false
+			reload = true
+		}
+	case 14:
 		cfg.ThemeIndex = (cfg.ThemeIndex + 1) % len(theme.Themes)
 		m.Display.Styles = theme.GetStylesheet(cfg.ThemeIndex)
 		m.Display.LoadingSpinner.Style = m.Display.LoadingSpinner.Style.Foreground(theme.Themes[cfg.ThemeIndex].Dir)
@@ -145,12 +166,13 @@ func ToggleSetting(idx int, m *tui_context.Model) bool {
 		logger.Errorf("Failed to save config: %v", err)
 	}
 	m.Config = cfg // Explicit state change
-	return reload
+	return reload, cmd
 }
 
-func ToggleSettingPrev(idx int, m *tui_context.Model) bool {
+func ToggleSettingPrev(idx int, m *tui_context.Model) (bool, tea.Cmd) {
 	cfg := m.Config // Copy
 	var reload bool
+	var cmd tea.Cmd
 	switch idx {
 	case 4:
 		cfg.EditorIndex = (cfg.EditorIndex - 1 + len(constants.Editors)) % len(constants.Editors)
@@ -164,7 +186,7 @@ func ToggleSettingPrev(idx int, m *tui_context.Model) bool {
 			cfg.DateFormatIndex = (cfg.DateFormatIndex - 1 + len(format.DateFormats)) % len(format.DateFormats)
 			reload = true
 		}
-	case 13:
+	case 14:
 		cfg.ThemeIndex = (cfg.ThemeIndex - 1 + len(theme.Themes)) % len(theme.Themes)
 		m.Display.Styles = theme.GetStylesheet(cfg.ThemeIndex)
 		m.Display.LoadingSpinner.Style = m.Display.LoadingSpinner.Style.Foreground(theme.Themes[cfg.ThemeIndex].Dir)
@@ -176,7 +198,7 @@ func ToggleSettingPrev(idx int, m *tui_context.Model) bool {
 		logger.Errorf("Failed to save config: %v", err)
 	}
 	m.Config = cfg // Explicit state change
-	return reload
+	return reload, cmd
 }
 
 // ConfirmSettingsReset resets all settings to defaults

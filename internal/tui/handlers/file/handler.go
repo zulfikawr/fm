@@ -136,10 +136,16 @@ func HandleConfirmKeys(m *tui_context.Model, msg tea.KeyMsg) tea.Cmd {
 			return PerformPaste(m)
 		case constants.ActionResetSettings:
 			return func() tea.Msg { return messages.ResetSettingsMsg{} }
+		case constants.ActionTestIcons:
+			return func() tea.Msg { return messages.IconTestMsg{Success: true} }
 		}
 		m.Operations.ActionType = constants.ActionNone
 	case "n", "N", "esc":
 		m.UI.StopConfirming()
+		if action == constants.ActionTestIcons {
+			m.Operations.ActionType = constants.ActionNone
+			return func() tea.Msg { return messages.IconTestMsg{Success: false} }
+		}
 		m.Operations.ActionType = constants.ActionNone
 	}
 	return nil

@@ -44,6 +44,14 @@ When moving or copying files, `fm` handles name collisions gracefully:
 - **Tab Switching:** Click on tab indicators in the header to switch between active tabs.
 - **Configurable:** Mouse support can be toggled on or off in the settings menu.
 
+## 💎 Nerd Font Icons
+
+`fm` supports modern file and folder icons using Nerd Fonts to enhance visual clarity.
+- **Lazy Loading:** Icons are not bundled by default to keep the binary small. They are downloaded automatically when the feature is enabled.
+- **Smart Mapping:** Icons are assigned based on file extensions, specific filenames (like `Dockerfile` or `LICENSE`), and folder names.
+- **Theme Integrated:** Icon colors automatically match your chosen application theme.
+- **Setup Guide:** For detailed installation instructions, see the [**Icons Guide**](./icons.md).
+
 ## 🎨 Theme System
 
 `fm` supports multiple themes to match your terminal's aesthetic. You can cycle through themes in the settings menu (`.`). Popular themes include:

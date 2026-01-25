@@ -14,8 +14,9 @@ A fast, modular, and feature-rich TUI file manager written in Go.
 For detailed guides, configuration options, and advanced usage, please see the [**docs/**](./docs/index.md) directory:
 
 - [**Getting Started**](./docs/getting-started.md): Installation and basic usage.
-- [**Mouse Support**](./docs/mouse-support.md): Full guide to clicking, dragging, and scrolling.
 - [**Keybindings**](./docs/keybindings.md): Comprehensive list of shortcuts.
+- [**Mouse Support**](./docs/mouse-support.md): Full guide to clicking, dragging, and scrolling.
+- [**Nerd Font Icons**](./docs/icons.md): How to install and enable file icons.
 - [**Features**](./docs/features.md): Deep dive into Git, Search, and Archive management.
 - [**Remote Access**](./docs/remote-access.md): Managing files over SSH/SFTP.
 - [**Configuration**](./docs/configuration.md): Customizing `fm` to your needs.
@@ -56,6 +57,7 @@ See [**keybindings.md**](./docs/keybindings.md) for the full list.
 
 - **Performance:** Fast navigation with a modular concurrent architecture.
 - **Mouse Support:** Modern interaction system with scrolling, drag-to-select, and clickable UI elements.
+- **Nerd Font Icons:** Support for modern file and folder icons.
 - **Git Integration:** Real-time status markers and branch information.
 - **Remote Access:** Full SFTP support for managing remote servers.
 - **Fuzzy Search:** Deep content search powered by a concurrent engine.

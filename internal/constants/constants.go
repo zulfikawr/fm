@@ -43,6 +43,7 @@ const (
 	ActionCancel        ActionType = "cancel"
 	ActionGoto          ActionType = "goto"
 	ActionAuth          ActionType = "auth"
+	ActionTestIcons     ActionType = "test-icons"
 )
 
 // Editors lists supported text editors

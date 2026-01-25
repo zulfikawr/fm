@@ -25,6 +25,7 @@ type Config struct {
 	EditorIndex       int  `json:"editor_index"`
 	UseTrash          bool `json:"use_trash"`
 	EnableMouse       bool `json:"enable_mouse"`
+	EnableIcons       bool `json:"enable_icons"`
 }
 
 const CurrentConfigVersion = 1
@@ -47,6 +48,7 @@ func DefaultConfig() Config {
 		EditorIndex:       0, // Vim
 		UseTrash:          false,
 		EnableMouse:       true,
+		EnableIcons:       false,
 	}
 }
 

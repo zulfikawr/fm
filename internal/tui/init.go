@@ -5,12 +5,16 @@ import (
 	"github.com/zulfikawr/fm/internal/tui/context"
 	"github.com/zulfikawr/fm/internal/tui/handlers/app"
 	"github.com/zulfikawr/fm/internal/tui/handlers/nav"
+	"github.com/zulfikawr/fm/internal/tui/theme"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
 
 // Initialize sets up the initial commands for the TUI
 func (a *App) Initialize() tea.Cmd {
+	if a.Model.Config.EnableIcons {
+		_ = theme.LoadIcons()
+	}
 	return tea.Batch(
 		nav.Reload(a.Model, false),
 		app.CheckForUpdates(),

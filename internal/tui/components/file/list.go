@@ -25,6 +25,7 @@ type Props struct {
 	DateLayout       string
 	Styles           theme.Stylesheet
 	SelectedPaths    map[string]bool
+	EnableIcons      bool
 }
 
 // Layout contains calculated dimensions for the list view
@@ -36,9 +37,11 @@ type Layout struct {
 	MarkerWidth        int
 	GitMarkerWidth     int
 	PermIndicatorWidth int
+	IconWidth          int
 	ColumnGap          int
 	ShowSize           bool
 	ShowDate           bool
+	EnableIcons        bool
 }
 
 // Render renders the complete file list view
@@ -95,7 +98,7 @@ func renderHeaderRows(props Props, layout Layout) []string {
 	var columns []ui.Column
 
 	// Adjust for selection marker and git markers
-	prefixWidth := layout.MarkerWidth + layout.GitMarkerWidth + layout.PermIndicatorWidth
+	prefixWidth := layout.MarkerWidth + layout.GitMarkerWidth + layout.PermIndicatorWidth + layout.IconWidth
 	columns = append(columns, ui.Column{Title: "Name", Width: layout.NameWidth + prefixWidth})
 
 	if layout.ShowDate {
@@ -136,10 +139,15 @@ func calculateLayout(props Props) Layout {
 	}
 	gitMarkerWidth := 2
 	permIndicatorWidth := 1
+	iconWidth := 0
+	if props.EnableIcons {
+		iconWidth = 3 // Icon + 2 spaces
+	}
 
 	// Initial available width for name, size and date
 	// -2 for safety margin/padding
-	availableWidth := props.Width - markerWidth - gitMarkerWidth - permIndicatorWidth - 2
+	// -1 for gap after markers
+	availableWidth := props.Width - markerWidth - gitMarkerWidth - permIndicatorWidth - iconWidth - 3
 
 	showSize := props.ShowSize
 	showDate := props.ShowDateModified
@@ -178,8 +186,10 @@ func calculateLayout(props Props) Layout {
 		MarkerWidth:        markerWidth,
 		GitMarkerWidth:     gitMarkerWidth,
 		PermIndicatorWidth: permIndicatorWidth,
+		IconWidth:          iconWidth,
 		ColumnGap:          columnGap,
 		ShowSize:           showSize,
 		ShowDate:           showDate,
+		EnableIcons:        props.EnableIcons,
 	}
 }
