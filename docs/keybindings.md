@@ -18,7 +18,24 @@
 | `Tab` | Autocomplete current name or path in text inputs |
 
 ## Selection & Bulk Actions
-// ...
+
+| Key | Action |
+| --- | --- |
+| `Space` | Toggle selection for the current item |
+| `Shift` + `Left Click` | Toggle selection / Range select |
+| `Alt+A` | Select all items in the current directory |
+| `Esc` | Clear all selections |
+
+## Tabs
+
+| Key | Action |
+| --- | --- |
+| `Alt+T` | Open a new tab (up to 9 tabs) |
+| `Alt+W` | Close the current tab |
+| `Alt+1` - `Alt+9` | Switch to the corresponding tab |
+
+## File Operations
+
 | Key | Action |
 | --- | --- |
 | `c` | Copy selected items to clipboard |
