@@ -62,3 +62,30 @@ func TestGlobal_Quit(t *testing.T) {
 		}
 	})
 }
+
+func TestGlobal_InputSafety(t *testing.T) {
+	fs := testutil.NewMockFileSystem()
+	m := tuictx.NewModel(fs, "/test")
+
+	t.Run("Dot key ignored during input", func(t *testing.T) {
+		m.StartInput(tuictx.InputSearch)
+		m.UI.SettingsOpen = false
+
+		handlers.HandleUpdate(m, tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune(".")})
+
+		if m.UI.SettingsOpen {
+			t.Error("Settings should NOT open when input is active")
+		}
+	})
+
+	t.Run("Question mark ignored during input", func(t *testing.T) {
+		m.StartInput(tuictx.InputSearch)
+		m.UI.HelpOpen = false
+
+		handlers.HandleUpdate(m, tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("?")})
+
+		if m.UI.HelpOpen {
+			t.Error("Help should NOT open when input is active")
+		}
+	})
+}

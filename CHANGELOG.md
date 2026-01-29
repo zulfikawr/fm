@@ -10,6 +10,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Fixed an issue where the settings (`.`) and help (`?`) menus would open while typing in an input field.
 
+### Documentation
+- Updated [Keybindings](./docs/keybindings.md) to explicitly mention that global shortcuts are context-aware and disabled during text input.
+
+### Tests
+- Added regression tests to `internal/tui/handlers` to ensure global shortcuts remain disabled during active input modes.
+
 ## [v1.0.3] - 2026-01-25
 
 ### Added

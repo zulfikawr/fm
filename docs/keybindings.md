@@ -67,6 +67,8 @@
 | `r` | (In Settings Menu) Reset all settings to default |
 | `Ctrl+C` | Quit `fm` |
 
+> **Note:** Global shortcuts like `.` and `?` are automatically disabled while typing in text input fields (e.g., Search, Rename, Filter) to prevent accidental toggles.
+
 ## Mouse Support
 
 | Action | Result |
