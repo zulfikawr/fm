@@ -25,7 +25,7 @@ For detailed guides, configuration options, and advanced usage, please see the [
 
 ```bash
 # Build from source
-go build -o fm ./cmd/fm
+make build
 
 # Run
 ./fm [path]

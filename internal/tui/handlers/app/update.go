@@ -30,7 +30,7 @@ func HandleUpdateMessages(m *tui_context.Model, msg tea.Msg) tea.Cmd {
 			return utils.SetErrMsg(m, "Update failed: "+msg.Err.Error())
 		}
 		m.UI.UpdateAvailable = false
-		return utils.SetMsg(m, "Successfully updated. Press [r] to restart")
+		return utils.SetMsg(m, "Successfully updated. Press Ctrl+C twice to quit")
 
 	case tea.KeyMsg:
 		if m.UI.UpdateAvailable && m.Operations.ActionType == constants.ActionUpdate {
@@ -48,11 +48,6 @@ func HandleUpdateMessages(m *tui_context.Model, msg tea.Msg) tea.Cmd {
 				m.Operations.ActionType = constants.ActionNone
 				return func() tea.Msg { return nil }
 			}
-		}
-
-		// Handle restart after update
-		if msg.String() == "r" && m.Message.Text == "Successfully updated. Press [r] to restart" {
-			return RestartApp()
 		}
 	}
 

@@ -11,7 +11,7 @@ This guide will help you get `fm` up and running on your system.
 
 ### Building from Source
 
-To build `fm` from source, clone the repository and use the `go build` command:
+To build `fm` from source, clone the repository and use the `make build` command:
 
 ```bash
 # Clone the repository
@@ -19,7 +19,7 @@ git clone https://github.com/zulfikawr/fm.git
 cd fm
 
 # Build the binary
-go build -o fm ./cmd/fm
+make build
 
 # Move it to your PATH (optional)
 sudo mv fm /usr/local/bin/

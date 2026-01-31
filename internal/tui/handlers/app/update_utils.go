@@ -1,7 +1,6 @@
 package app
 
 import (
-	"os"
 	"strings"
 
 	"github.com/zulfikawr/fm/internal/constants"
@@ -53,11 +52,3 @@ func listenForUpdateProgress(progress chan float64) tea.Cmd {
 	}
 }
 
-// RestartApp restarts the application
-func RestartApp() tea.Cmd {
-	return func() tea.Msg {
-		_ = update.Restart()
-		os.Exit(0)
-		return nil
-	}
-}
