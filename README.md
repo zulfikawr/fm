@@ -31,6 +31,15 @@ make build
 ./fm [path]
 ```
 
+## 📦 Installation
+
+**One-line install (Linux & macOS):**
+```bash
+curl -fsSL https://raw.githubusercontent.com/zulfikawr/fm/main/install.sh | bash
+```
+
+See [**docs/getting-started.md**](./docs/getting-started.md) for other methods (Debian/Ubuntu, Go Install, etc).
+
 ## ⌨️ Quick Keybindings
 
 | Key | Action |

@@ -9,6 +9,22 @@ This guide will help you get `fm` up and running on your system.
 
 ## Installation
 
+### Automatic Install (Linux & macOS)
+
+The easiest way to install `fm` is using the install script:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/zulfikawr/fm/main/install.sh | bash
+```
+
+### Debian / Ubuntu (`.deb`)
+
+Download the latest `.deb` package from the [Releases page](https://github.com/zulfikawr/fm/releases) and install it:
+
+```bash
+sudo apt install ./fm_*_linux_amd64.deb
+```
+
 ### Building from Source
 
 To build `fm` from source, clone the repository and use the `make build` command:

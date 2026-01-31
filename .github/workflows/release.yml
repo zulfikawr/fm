@@ -36,13 +36,21 @@ jobs:
             go build -trimpath -ldflags="$LDFLAGS" -o fm-${{ matrix.goos }}-${{ matrix.goarch }}.exe ./cmd/fm
           else
             go build -trimpath -ldflags="$LDFLAGS" -o fm-${{ matrix.goos }}-${{ matrix.goarch }} ./cmd/fm
+            
+            # Generate .deb for Linux
+            if [ "${{ matrix.goos }}" = "linux" ]; then
+              chmod +x scripts/generate_deb.sh
+              ./scripts/generate_deb.sh "$VERSION" "${{ matrix.goarch }}" "fm-${{ matrix.goos }}-${{ matrix.goarch }}"
+            fi
           fi
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: fm-${{ matrix.goos }}-${{ matrix.goarch }}
-          path: fm-${{ matrix.goos }}-${{ matrix.goarch }}${{ matrix.goos == 'windows' && '.exe' || '' }}
+          path: |
+            fm-${{ matrix.goos }}-${{ matrix.goarch }}${{ matrix.goos == 'windows' && '.exe' || '' }}
+            *.deb
 
   release:
     needs: build
@@ -66,5 +74,7 @@ jobs:
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
-          files: dist/fm-*
+          files: |
+            dist/fm-*
+            dist/*.deb
           body_path: RELEASE_NOTES.md
