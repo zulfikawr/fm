@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - Added `Makefile` for consistent builds and automatic version injection from git tags.
+- Added `install.sh` for easy one-line installation (`curl | bash`).
 
 ### Changed
 - Refactored build process: `AppVersion` is now injected via linker flags (`-ldflags`) instead of being hardcoded.

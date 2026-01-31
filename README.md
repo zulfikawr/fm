@@ -38,7 +38,7 @@ make build
 curl -fsSL https://raw.githubusercontent.com/zulfikawr/fm/main/install.sh | bash
 ```
 
-See [**docs/getting-started.md**](./docs/getting-started.md) for other methods (Debian/Ubuntu, Go Install, etc).
+See [**docs/getting-started.md**](./docs/getting-started.md) for other methods (Build from Source).
 
 ## ⌨️ Quick Keybindings
 

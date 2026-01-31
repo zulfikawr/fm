@@ -17,14 +17,6 @@ The easiest way to install `fm` is using the install script:
 curl -fsSL https://raw.githubusercontent.com/zulfikawr/fm/main/install.sh | bash
 ```
 
-### Debian / Ubuntu (`.deb`)
-
-Download the latest `.deb` package from the [Releases page](https://github.com/zulfikawr/fm/releases) and install it:
-
-```bash
-sudo apt install ./fm_*_linux_amd64.deb
-```
-
 ### Building from Source
 
 To build `fm` from source, clone the repository and use the `make build` command:
