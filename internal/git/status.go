@@ -63,7 +63,7 @@ func (gs *gitService) GetIgnoredFiles(ctx context.Context, repoRoot string) ([]s
 		return nil, nil
 	}
 
-	cmd := exec.CommandContext(ctx, "git", "-C", repoRoot, "ls-files", "--others", "--ignored", "--exclude-standard")
+	cmd := exec.CommandContext(ctx, "git", "-C", repoRoot, "ls-files", "--others", "--ignored", "--exclude-standard", "--directory")
 	out, err := cmd.Output()
 	if err != nil {
 		return nil, err

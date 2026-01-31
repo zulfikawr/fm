@@ -44,6 +44,9 @@ func Search(opts SearchOptions) ([]core.FileResult, error) {
 		}
 
 		if info.IsDir() {
+			if info.Name() == ".git" {
+				return filepath.SkipDir
+			}
 			if ignored[path] {
 				return filepath.SkipDir
 			}

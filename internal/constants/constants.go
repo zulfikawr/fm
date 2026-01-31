@@ -3,7 +3,7 @@ package constants
 import "time"
 
 // Application version
-var AppVersion = "v0.0.0-dev"
+var AppVersion = "v1.0.5"
 
 // Timeouts
 const (
