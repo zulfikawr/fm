@@ -52,14 +52,14 @@ func ProgressBar(props ProgressProps) string {
 		filled = 0
 	}
 
-	progressStyle := props.Styles.KeyCol.Inherit(props.Styles.Footer).UnsetPadding().UnsetWidth()
-	dimStyle := props.Styles.DimCol.Inherit(props.Styles.Footer).UnsetPadding().UnsetWidth()
+	progressStyle := props.Styles.PrimaryCol.Inherit(props.Styles.Footer).UnsetPadding().UnsetWidth()
+	mutedStyle := props.Styles.MutedCol.Inherit(props.Styles.Footer).UnsetPadding().UnsetWidth()
 	baseStyle := props.Styles.Footer.UnsetPadding().UnsetWidth()
 
-	colorizedBar := dimStyle.Render("[") +
+	colorizedBar := mutedStyle.Render("[") +
 		progressStyle.Render(strings.Repeat("#", filled)) +
-		dimStyle.Render(strings.Repeat(".", barWidth-filled)) +
-		dimStyle.Render("]")
+		mutedStyle.Render(strings.Repeat(".", barWidth-filled)) +
+		mutedStyle.Render("]")
 
 	content := baseStyle.Render(" "+displayLabel+" ") + colorizedBar + baseStyle.Render(percStr)
 	return props.Styles.Footer.Width(props.Width).Render(content)

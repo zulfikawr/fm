@@ -58,7 +58,7 @@ type Input struct {
 // NewInput creates a new custom text input.
 func NewInput(styles theme.Stylesheet) Input {
 	bg := styles.Footer.GetBackground()
-	primary := styles.KeyCol.GetForeground()
+	primary := styles.PrimaryCol.GetForeground()
 	if primary == nil {
 		primary = lipgloss.Color("15") // Fallback to white
 	}
@@ -73,7 +73,7 @@ func NewInput(styles theme.Stylesheet) Input {
 		Cursor:           Cursor{Style: lipgloss.NewStyle().Background(primary).Foreground(bg)},
 		TextStyle:        styles.Footer.UnsetPadding().UnsetWidth().Background(bg),
 		PromptStyle:      styles.Footer.UnsetPadding().UnsetWidth().Background(bg),
-		PlaceholderStyle: styles.DimCol.Background(bg),
+		PlaceholderStyle: styles.MutedCol.Background(bg),
 	}
 }
 
@@ -170,20 +170,20 @@ func (in Input) Blink() tea.Cmd {
 func (in *Input) SetStyles(styles theme.Stylesheet) {
 	in.styles = styles
 	bg := styles.Footer.GetBackground()
-	primary := styles.KeyCol.GetForeground()
+	primary := styles.PrimaryCol.GetForeground()
 	if primary == nil {
 		primary = lipgloss.Color("15")
 	}
 	in.TextStyle = styles.Footer.UnsetPadding().UnsetWidth().Background(bg)
 	in.PromptStyle = styles.Footer.UnsetPadding().UnsetWidth().Background(bg)
-	in.PlaceholderStyle = styles.DimCol.Background(bg)
+	in.PlaceholderStyle = styles.MutedCol.Background(bg)
 	in.Cursor.Style = lipgloss.NewStyle().Background(primary).Foreground(bg)
 }
 
 // FixBackground ensures the background matches the theme.
 func (in *Input) FixBackground() {
 	bg := in.styles.Footer.GetBackground()
-	primary := in.styles.KeyCol.GetForeground()
+	primary := in.styles.PrimaryCol.GetForeground()
 	if primary == nil {
 		primary = lipgloss.Color("15")
 	}

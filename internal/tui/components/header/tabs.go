@@ -20,8 +20,8 @@ func renderTabList(config TabConfig, styles theme.Stylesheet) string {
 		return ""
 	}
 
-	activeTabStyle := styles.KeyCol.Inherit(styles.Header).UnsetPadding().UnsetWidth()
-	inactiveTabStyle := styles.DimCol.Inherit(styles.Header).UnsetPadding().UnsetWidth()
+	activeTabStyle := styles.HighlightCol.Inherit(styles.Header).UnsetPadding().UnsetWidth()
+	inactiveTabStyle := styles.MutedCol.Inherit(styles.Header).UnsetPadding().UnsetWidth()
 	spacerStyle := styles.Header.UnsetPadding().UnsetWidth()
 
 	var tabParts []string

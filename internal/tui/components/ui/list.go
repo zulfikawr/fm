@@ -23,10 +23,10 @@ func Marker(props ListProps) string {
 		return content
 	}
 
-	style := props.Styles.DimCol.UnsetPadding().UnsetWidth()
+	style := props.Styles.MutedCol.UnsetPadding().UnsetWidth()
 	content := "[ ] "
 	if props.Selected {
-		style = props.Styles.KeyCol.UnsetPadding().UnsetWidth()
+		style = props.Styles.HighlightCol.UnsetPadding().UnsetWidth()
 		content = "[x] "
 	}
 

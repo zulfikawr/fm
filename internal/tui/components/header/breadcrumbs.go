@@ -28,7 +28,7 @@ func renderBreadcrumbPath(props BreadcrumbProps) string {
 		}
 	}
 
-	dimHeaderStyle := props.Styles.DimCol.Inherit(props.Styles.Header)
+	dimHeaderStyle := props.Styles.MutedCol.Inherit(props.Styles.Header)
 	baseStyle := props.Styles.Header.UnsetPadding().UnsetWidth()
 
 	// Determine the root indicator (local sep or remote string)
@@ -112,8 +112,8 @@ func addGitBranch(breadcrumb, gitBranch string, styles theme.Stylesheet) string 
 		return breadcrumb
 	}
 
-	gitStyle := styles.GitStaged.Inherit(styles.Header).UnsetPadding().UnsetWidth()
-	dimStyle := styles.DimCol.Inherit(styles.Header).UnsetPadding().UnsetWidth()
+	gitStyle := styles.AccentCol.Inherit(styles.Header).UnsetPadding().UnsetWidth()
+	dimStyle := styles.MutedCol.Inherit(styles.Header).UnsetPadding().UnsetWidth()
 
 	gitIndicator := dimStyle.Render(" (") + gitStyle.Render(gitBranch) + dimStyle.Render("*)")
 	return breadcrumb + gitIndicator
@@ -124,8 +124,8 @@ func addReadOnlyIndicator(breadcrumb string, readOnly bool, styles theme.Stylesh
 		return breadcrumb
 	}
 
-	dimStyle := styles.DimCol.Inherit(styles.Header).UnsetPadding().UnsetWidth()
-	roStyle := styles.KeyCol.Inherit(styles.Header).UnsetPadding().UnsetWidth()
+	dimStyle := styles.MutedCol.Inherit(styles.Header).UnsetPadding().UnsetWidth()
+	roStyle := styles.InfoCol.Inherit(styles.Header).UnsetPadding().UnsetWidth()
 
 	roIndicator := dimStyle.Render(" [") + roStyle.Render("RO") + dimStyle.Render("]")
 	return breadcrumb + roIndicator

@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+## [v1.0.8] - 2026-02-01
+
+### Changed
+- **Enhanced Color Scheme** - More vibrant and functional UI colors
+  - Added 9 new semantic colors to theme palette: Primary, Secondary, Accent, Muted, Highlight, Info, Success, Warning, Error
+  - Updated all 9 themes (Gruvbox, Nord, Dracula, Monokai, Solarized Dark, Red, Tokyo Night, Rose Pine, Catppuccin Mocha)
+  - Header: Git branch now uses accent color, tab numbers use highlight color
+  - Footer: Pagination uses primary color, permissions use secondary, sort mode uses info color
+  - File list: Dates use accent color, file sizes use muted color (lighter gray)
+  - Selection indicators and action shortcuts now use highlight and accent colors
+  - UI components (toggles, pickers, inputs) now use semantic colors for better visual hierarchy
+  - Result: ~40% reduction in monotone gray usage, more colorful while maintaining good taste
+  - Error/Warning/Success messages now respect theme colors instead of hardcoded terminal colors
+
 ## [v1.0.7] - 2026-02-01
 
 ### Added

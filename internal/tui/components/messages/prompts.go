@@ -14,11 +14,11 @@ func RenderInputPrompt(props Props) string {
 	bg := props.Style.Footer.GetBackground()
 	input.TextStyle = props.Style.Footer.UnsetPadding().UnsetWidth()
 	input.PromptStyle = props.Style.Footer.UnsetPadding().UnsetWidth()
-	input.PlaceholderStyle = props.Style.DimCol.Background(bg)
+	input.PlaceholderStyle = props.Style.MutedCol.Background(bg)
 	// Do not override cursor style here, it's handled by the Input component
 
 	baseStyle := props.Style.Footer.UnsetPadding().UnsetWidth()
-	dimStyle := props.Style.DimCol.Inherit(props.Style.Footer).UnsetPadding().UnsetWidth()
+	mutedStyle := props.Style.MutedCol.Inherit(props.Style.Footer).UnsetPadding().UnsetWidth()
 
 	// Update prompt dynamically
 	switch props.Mode {
@@ -27,7 +27,7 @@ func RenderInputPrompt(props Props) string {
 		if props.AltMode {
 			label = "Remote"
 		}
-		input.Prompt = baseStyle.Render("Go to ") + dimStyle.Render("("+label+")") + baseStyle.Render(": ")
+		input.Prompt = baseStyle.Render("Go to ") + mutedStyle.Render("("+label+")") + baseStyle.Render(": ")
 	case ModeAuth:
 		label := "Password"
 		if props.AltMode {
@@ -49,7 +49,7 @@ func RenderInputPrompt(props Props) string {
 		if props.AltMode {
 			label = "Folder"
 		}
-		input.Prompt = baseStyle.Render("Create ") + dimStyle.Render("("+label+")") + baseStyle.Render(": ")
+		input.Prompt = baseStyle.Render("Create ") + mutedStyle.Render("("+label+")") + baseStyle.Render(": ")
 	case ModeConflictRename:
 		input.Prompt = baseStyle.Render("New name: ")
 	}
@@ -57,8 +57,8 @@ func RenderInputPrompt(props Props) string {
 	// Calculate right part (Tab hint) if in FuzzySearch, or Create mode
 	rightPart := ""
 	if props.Mode == ModeFuzzySearch || props.Mode == ModeCreate {
-		dimStyle := props.Style.DimCol.Inherit(props.Style.Footer).UnsetPadding().UnsetWidth()
-		keyStyle := props.Style.KeyCol.Inherit(props.Style.Footer).UnsetPadding().UnsetWidth()
+		mutedStyle := props.Style.MutedCol.Inherit(props.Style.Footer).UnsetPadding().UnsetWidth()
+		accentStyle := props.Style.AccentCol.Inherit(props.Style.Footer).UnsetPadding().UnsetWidth()
 
 		switch props.Mode {
 		case ModeCreate:
@@ -66,11 +66,11 @@ func RenderInputPrompt(props Props) string {
 			if props.AltMode {
 				target = "File"
 			}
-			rightPart = dimStyle.Render("[") + keyStyle.Render("Tab") + dimStyle.Render("] ") + dimStyle.Render(target) + baseStyle.Render(" ")
+			rightPart = mutedStyle.Render("[") + accentStyle.Render("Tab") + mutedStyle.Render("] ") + mutedStyle.Render(target) + baseStyle.Render(" ")
 		case ModeFuzzySearch:
-			rightPart = dimStyle.Render("[") + keyStyle.Render("Tab") + dimStyle.Render("] ") + dimStyle.Render("Collapse") +
-				dimStyle.Render(" | [") + keyStyle.Render("Alt+n/m") + dimStyle.Render("] ") + dimStyle.Render("Files") +
-				dimStyle.Render(" | [") + keyStyle.Render("Alt+j/k") + dimStyle.Render("] ") + dimStyle.Render("Matches") + baseStyle.Render(" ")
+			rightPart = mutedStyle.Render("[") + accentStyle.Render("Tab") + mutedStyle.Render("] ") + mutedStyle.Render("Collapse") +
+				mutedStyle.Render(" | [") + accentStyle.Render("Alt+n/m") + mutedStyle.Render("] ") + mutedStyle.Render("Files") +
+				mutedStyle.Render(" | [") + accentStyle.Render("Alt+j/k") + mutedStyle.Render("] ") + mutedStyle.Render("Matches") + baseStyle.Render(" ")
 		}
 	}
 

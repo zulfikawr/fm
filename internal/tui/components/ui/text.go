@@ -26,14 +26,14 @@ func Truncate(s string, width int) string {
 	return lipgloss.NewStyle().MaxWidth(width-1).Render(s) + "…"
 }
 
-// Dim renders text using the theme's diminished style
+// Dim renders text using the theme's muted style
 func Dim(styles theme.Stylesheet, content string) string {
-	return styles.DimCol.Render(content)
+	return styles.MutedCol.Render(content)
 }
 
 // Bold renders text in bold using the theme's primary color
 func Bold(styles theme.Stylesheet, content string) string {
-	return styles.KeyCol.Bold(true).Render(content)
+	return styles.PrimaryCol.Bold(true).Render(content)
 }
 
 // Highlight renders text using the theme's selected/highlight style

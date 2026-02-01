@@ -147,8 +147,8 @@ func renderHelpRow(props HelpProps, item HelpItem, isCursor bool) string {
 		keyWidth = props.Width / 3
 	}
 
-	keyStyle := props.Style.GitStaged.UnsetPadding().UnsetWidth()
-	descStyle := props.Style.DimCol.UnsetPadding().UnsetWidth()
+	keyStyle := props.Style.SecondaryCol.UnsetPadding().UnsetWidth()
+	descStyle := props.Style.MutedCol.UnsetPadding().UnsetWidth()
 
 	key := keyStyle.Render(item.Key)
 	desc := descStyle.Render(item.Desc)

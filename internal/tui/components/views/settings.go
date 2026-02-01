@@ -137,7 +137,7 @@ func renderGroups(props SettingsProps, groups []SettingGroup) []string {
 func renderSettingRow(props SettingsProps, sItem SettingItem, isCursor bool) string {
 	val := sItem.Value
 	if sItem.Inactive {
-		val = props.Style.DimCol.Render(sItem.Value)
+		val = props.Style.MutedCol.Render(sItem.Value)
 	}
 
 	labelWidth := 35

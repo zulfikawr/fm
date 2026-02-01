@@ -33,6 +33,14 @@ type Stylesheet struct {
 	Warning lipgloss.Style
 	Success lipgloss.Style
 	Prompt  lipgloss.Style
+	
+	// Enhanced Color Styles
+	PrimaryCol   lipgloss.Style
+	SecondaryCol lipgloss.Style
+	AccentCol    lipgloss.Style
+	MutedCol     lipgloss.Style
+	HighlightCol lipgloss.Style
+	InfoCol      lipgloss.Style
 }
 
 // NewStylesheet computes styles based on the provided theme.
@@ -96,10 +104,18 @@ func NewStylesheet(t Theme) Stylesheet {
 			Padding(0, 0, 0, 1),
 		ProgressBar: lipgloss.NewStyle().Foreground(t.Dir),
 
-		// Semantic Styles (Using standard terminal colors as defaults)
-		Error:   lipgloss.NewStyle().Foreground(lipgloss.Color("9")).Bold(true),  // Red
-		Warning: lipgloss.NewStyle().Foreground(lipgloss.Color("11")).Bold(true), // Yellow
-		Success: lipgloss.NewStyle().Foreground(lipgloss.Color("10")).Bold(true), // Green
-		Prompt:  lipgloss.NewStyle().Foreground(t.Dir).Bold(true),                // Theme Primary
+		// Semantic Styles (Using theme colors)
+		Error:   lipgloss.NewStyle().Foreground(t.Error).Bold(true),
+		Warning: lipgloss.NewStyle().Foreground(t.Warning).Bold(true),
+		Success: lipgloss.NewStyle().Foreground(t.Success).Bold(true),
+		Prompt:  lipgloss.NewStyle().Foreground(t.Primary).Bold(true),
+		
+		// Enhanced Color Styles
+		PrimaryCol:   lipgloss.NewStyle().Foreground(t.Primary),
+		SecondaryCol: lipgloss.NewStyle().Foreground(t.Secondary),
+		AccentCol:    lipgloss.NewStyle().Foreground(t.Accent),
+		MutedCol:     lipgloss.NewStyle().Foreground(t.Muted),
+		HighlightCol: lipgloss.NewStyle().Foreground(t.Highlight).Bold(true),
+		InfoCol:      lipgloss.NewStyle().Foreground(t.Info),
 	}
 }

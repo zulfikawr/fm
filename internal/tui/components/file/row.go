@@ -181,9 +181,9 @@ func renderMetaPart(ctx RowContext) string {
 		dateStr := ctx.Item.FormattedDate
 		content := fmt.Sprintf("%*s%*s", ctx.Layout.ColumnGap, "", ctx.Layout.DateWidth, dateStr)
 		if ctx.IsCursor {
-			datePart = ctx.Props.Styles.DimCol.Inherit(sStyle).Render(content)
+			datePart = ctx.Props.Styles.AccentCol.Inherit(sStyle).Render(content)
 		} else {
-			datePart = ctx.Props.Styles.DimCol.Render(content)
+			datePart = ctx.Props.Styles.AccentCol.Render(content)
 		}
 	}
 
@@ -192,9 +192,9 @@ func renderMetaPart(ctx RowContext) string {
 		sizeStr := ctx.Item.FormattedSize
 		content := fmt.Sprintf("%*s%*s", ctx.Layout.ColumnGap, "", ctx.Layout.SizeWidth, sizeStr)
 		if ctx.IsCursor {
-			sizePart = ctx.Props.Styles.DimCol.Inherit(sStyle).Render(content)
+			sizePart = ctx.Props.Styles.MutedCol.Inherit(sStyle).Render(content)
 		} else {
-			sizePart = ctx.Props.Styles.DimCol.Render(content)
+			sizePart = ctx.Props.Styles.MutedCol.Render(content)
 		}
 	}
 

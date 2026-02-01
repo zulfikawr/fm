@@ -7,9 +7,9 @@ import (
 // Toggle renders a boolean ON/OFF switch with theme awareness.
 func Toggle(value bool, styles theme.Stylesheet) string {
 	if value {
-		return styles.KeyCol.Render("[ON]")
+		return styles.HighlightCol.Render("[ON]")
 	}
-	return styles.DimCol.Render("[OFF]")
+	return styles.MutedCol.Render("[OFF]")
 }
 
 // ToggleProps encapsulates data for rendering a labeled toggle

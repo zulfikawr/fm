@@ -18,7 +18,7 @@ func assembleFooterContent(parts []string, width int, styles theme.Stylesheet) s
 		return ""
 	}
 
-	dimStyle := styles.DimCol.Inherit(styles.Footer).UnsetPadding().UnsetWidth()
+	dimStyle := styles.MutedCol.Inherit(styles.Footer).UnsetPadding().UnsetWidth()
 	spacer := dimStyle.Render(" | ")
 	content := strings.Join(parts, spacer)
 
@@ -47,11 +47,11 @@ type PaginationInfo struct {
 }
 
 func renderPaginationInfo(info PaginationInfo, styles theme.Stylesheet) string {
-	dimStyle := styles.DimCol.Inherit(styles.Footer).UnsetPadding().UnsetWidth()
-	normalStyle := styles.Footer.UnsetPadding().UnsetWidth()
+	primaryStyle := styles.PrimaryCol.Inherit(styles.Footer).UnsetPadding().UnsetWidth()
+	mutedStyle := styles.MutedCol.Inherit(styles.Footer).UnsetPadding().UnsetWidth()
 
 	if info.Total == 0 {
-		return normalStyle.Render("-/0")
+		return primaryStyle.Render("-/0")
 	}
 
 	var currentStr string
@@ -61,7 +61,7 @@ func renderPaginationInfo(info PaginationInfo, styles theme.Stylesheet) string {
 		currentStr = fmt.Sprintf("%d", info.Current+1)
 	}
 
-	return normalStyle.Render(currentStr) + dimStyle.Render("/") + normalStyle.Render(fmt.Sprintf("%d", info.Total))
+	return primaryStyle.Render(currentStr) + mutedStyle.Render("/") + primaryStyle.Render(fmt.Sprintf("%d", info.Total))
 }
 
 func renderPermissionInfo(items []core.Item, cursor int, styles theme.Stylesheet) string {
@@ -74,10 +74,10 @@ func renderPermissionInfo(items []core.Item, cursor int, styles theme.Stylesheet
 		return ""
 	}
 
-	normalStyle := styles.Footer.UnsetPadding().UnsetWidth()
+	secondaryStyle := styles.SecondaryCol.Inherit(styles.Footer).UnsetPadding().UnsetWidth()
 	permStr := formatPermissions(uint32(item.Mode.Perm()))
 
-	return normalStyle.Render(permStr)
+	return secondaryStyle.Render(permStr)
 }
 
 func formatPermissions(perm uint32) string {
@@ -123,26 +123,26 @@ func renderSortMode(sortMode sorting.SortMode, styles theme.Stylesheet) string {
 		return ""
 	}
 
-	normalStyle := styles.Footer.UnsetPadding().UnsetWidth()
-	return normalStyle.Render(sortStr)
+	infoStyle := styles.InfoCol.Inherit(styles.Footer).UnsetPadding().UnsetWidth()
+	return infoStyle.Render(sortStr)
 }
 
 func buildSelectedIndicator(props Props) string {
-	dimStyle := props.Styles.DimCol.Inherit(props.Styles.Footer).UnsetPadding().UnsetWidth()
-	keyStyle := props.Styles.KeyCol.Inherit(props.Styles.Footer).UnsetPadding().UnsetWidth()
+	mutedStyle := props.Styles.MutedCol.Inherit(props.Styles.Footer).UnsetPadding().UnsetWidth()
+	highlightStyle := props.Styles.HighlightCol.Inherit(props.Styles.Footer).UnsetPadding().UnsetWidth()
 
-	return dimStyle.Render("[") + keyStyle.Render(fmt.Sprintf("%d selected", props.SelectedCount)) + dimStyle.Render("]")
+	return mutedStyle.Render("[") + highlightStyle.Render(fmt.Sprintf("%d selected", props.SelectedCount)) + mutedStyle.Render("]")
 }
 
 func buildActionShortcuts(props Props) string {
-	dimStyle := props.Styles.DimCol.Inherit(props.Styles.Footer).UnsetPadding().UnsetWidth()
-	keyStyle := props.Styles.KeyCol.Inherit(props.Styles.Footer).UnsetPadding().UnsetWidth()
+	mutedStyle := props.Styles.MutedCol.Inherit(props.Styles.Footer).UnsetPadding().UnsetWidth()
+	accentStyle := props.Styles.AccentCol.Inherit(props.Styles.Footer).UnsetPadding().UnsetWidth()
 	normalStyle := props.Styles.Footer.UnsetPadding().UnsetWidth()
 
 	hints := []string{
-		dimStyle.Render("[") + keyStyle.Render("c") + dimStyle.Render("]") + normalStyle.Render(" Copy"),
-		dimStyle.Render("[") + keyStyle.Render("x") + dimStyle.Render("]") + normalStyle.Render(" Cut"),
-		dimStyle.Render("[") + keyStyle.Render("z") + dimStyle.Render("]") + normalStyle.Render(" Zip"),
+		mutedStyle.Render("[") + accentStyle.Render("c") + mutedStyle.Render("]") + normalStyle.Render(" Copy"),
+		mutedStyle.Render("[") + accentStyle.Render("x") + mutedStyle.Render("]") + normalStyle.Render(" Cut"),
+		mutedStyle.Render("[") + accentStyle.Render("z") + mutedStyle.Render("]") + normalStyle.Render(" Zip"),
 	}
 
 	// Check if a zip file is focused or selected to show Unzip hint
@@ -162,19 +162,19 @@ func buildActionShortcuts(props Props) string {
 	}
 
 	if showUnzip {
-		hints = append(hints, dimStyle.Render("[")+keyStyle.Render("u")+dimStyle.Render("]")+normalStyle.Render(" Unzip"))
+		hints = append(hints, mutedStyle.Render("[")+accentStyle.Render("u")+mutedStyle.Render("]")+normalStyle.Render(" Unzip"))
 	}
 
 	hints = append(hints,
-		dimStyle.Render("[")+keyStyle.Render("r")+dimStyle.Render("]")+normalStyle.Render(" Rename"),
-		dimStyle.Render("[")+keyStyle.Render("d")+dimStyle.Render("]")+normalStyle.Render(" Delete"),
+		mutedStyle.Render("[")+accentStyle.Render("r")+mutedStyle.Render("]")+normalStyle.Render(" Rename"),
+		mutedStyle.Render("[")+accentStyle.Render("d")+mutedStyle.Render("]")+normalStyle.Render(" Delete"),
 	)
 
 	if props.ClipboardCount > 0 {
-		hints = append(hints, dimStyle.Render("[")+keyStyle.Render("v")+dimStyle.Render("]")+normalStyle.Render(" Paste"))
+		hints = append(hints, mutedStyle.Render("[")+accentStyle.Render("v")+mutedStyle.Render("]")+normalStyle.Render(" Paste"))
 	}
 
-	return strings.Join(hints, dimStyle.Render(" | "))
+	return strings.Join(hints, mutedStyle.Render(" | "))
 }
 
 // GetActionAt returns the action shortcut key at the given x-coordinate

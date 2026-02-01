@@ -18,6 +18,16 @@ type Theme struct {
 	GitUntracked lipgloss.Color
 	GitConflict  lipgloss.Color
 	GitGhost     lipgloss.Color
+	// Semantic Colors
+	Primary   lipgloss.Color // Main accent (usually same as Dir)
+	Secondary lipgloss.Color // Secondary accent (usually same as Exec)
+	Accent    lipgloss.Color // Tertiary accent for highlights
+	Muted     lipgloss.Color // Muted text (lighter than Subtle)
+	Highlight lipgloss.Color // Bright highlights for badges/counts
+	Info      lipgloss.Color // Informational elements
+	Success   lipgloss.Color // Success states
+	Warning   lipgloss.Color // Warning states
+	Error     lipgloss.Color // Error states
 }
 
 // Available Themes
@@ -36,6 +46,15 @@ var Themes = []Theme{
 		GitUntracked: lipgloss.Color("243"),
 		GitConflict:  lipgloss.Color("167"),
 		GitGhost:     lipgloss.Color("237"),
+		Primary:      lipgloss.Color("208"), // Orange
+		Secondary:    lipgloss.Color("142"), // Green
+		Accent:       lipgloss.Color("109"), // Blue-gray
+		Muted:        lipgloss.Color("245"), // Lighter gray
+		Highlight:    lipgloss.Color("214"), // Bright orange
+		Info:         lipgloss.Color("66"),  // Blue-teal
+		Success:      lipgloss.Color("142"), // Green
+		Warning:      lipgloss.Color("214"), // Orange
+		Error:        lipgloss.Color("167"), // Red
 	},
 	{
 		Name:         "Nord",
@@ -51,6 +70,15 @@ var Themes = []Theme{
 		GitUntracked: lipgloss.Color("243"),
 		GitConflict:  lipgloss.Color("167"),
 		GitGhost:     lipgloss.Color("240"),
+		Primary:      lipgloss.Color("81"),  // Cyan
+		Secondary:    lipgloss.Color("150"), // Light green
+		Accent:       lipgloss.Color("109"), // Gray-blue
+		Muted:        lipgloss.Color("246"), // Lighter gray
+		Highlight:    lipgloss.Color("117"), // Bright cyan
+		Info:         lipgloss.Color("67"),  // Darker blue
+		Success:      lipgloss.Color("150"), // Green
+		Warning:      lipgloss.Color("214"), // Warm orange
+		Error:        lipgloss.Color("167"), // Red
 	},
 	{
 		Name:         "Dracula",
@@ -66,6 +94,15 @@ var Themes = []Theme{
 		GitUntracked: lipgloss.Color("61"),
 		GitConflict:  lipgloss.Color("203"),
 		GitGhost:     lipgloss.Color("238"),
+		Primary:      lipgloss.Color("212"), // Purple
+		Secondary:    lipgloss.Color("84"),  // Cyan
+		Accent:       lipgloss.Color("141"), // Pink-purple
+		Muted:        lipgloss.Color("104"), // Lighter purple-gray
+		Highlight:    lipgloss.Color("219"), // Bright pink
+		Info:         lipgloss.Color("117"), // Blue
+		Success:      lipgloss.Color("84"),  // Cyan
+		Warning:      lipgloss.Color("228"), // Yellow
+		Error:        lipgloss.Color("203"), // Red
 	},
 	{
 		Name:         "Monokai",
@@ -81,6 +118,15 @@ var Themes = []Theme{
 		GitUntracked: lipgloss.Color("241"),
 		GitConflict:  lipgloss.Color("197"),
 		GitGhost:     lipgloss.Color("237"),
+		Primary:      lipgloss.Color("197"), // Magenta
+		Secondary:    lipgloss.Color("148"), // Green
+		Accent:       lipgloss.Color("81"),  // Cyan
+		Muted:        lipgloss.Color("244"), // Lighter gray
+		Highlight:    lipgloss.Color("213"), // Bright magenta
+		Info:         lipgloss.Color("117"), // Blue
+		Success:      lipgloss.Color("148"), // Green
+		Warning:      lipgloss.Color("208"), // Orange
+		Error:        lipgloss.Color("197"), // Red
 	},
 	{
 		Name:         "Solarized Dark",
@@ -96,6 +142,15 @@ var Themes = []Theme{
 		GitUntracked: lipgloss.Color("241"),
 		GitConflict:  lipgloss.Color("160"),
 		GitGhost:     lipgloss.Color("236"),
+		Primary:      lipgloss.Color("33"),  // Blue
+		Secondary:    lipgloss.Color("64"),  // Green
+		Accent:       lipgloss.Color("37"),  // Cyan
+		Muted:        lipgloss.Color("244"), // Base0
+		Highlight:    lipgloss.Color("136"), // Yellow
+		Info:         lipgloss.Color("61"),  // Violet
+		Success:      lipgloss.Color("64"),  // Green
+		Warning:      lipgloss.Color("166"), // Orange
+		Error:        lipgloss.Color("160"), // Red
 	},
 	{
 		Name:         "Red",
@@ -111,6 +166,15 @@ var Themes = []Theme{
 		GitUntracked: lipgloss.Color("240"),
 		GitConflict:  lipgloss.Color("160"),
 		GitGhost:     lipgloss.Color("235"),
+		Primary:      lipgloss.Color("196"), // Bright red
+		Secondary:    lipgloss.Color("124"), // Dark red
+		Accent:       lipgloss.Color("203"), // Medium red-pink
+		Muted:        lipgloss.Color("243"), // Lighter gray
+		Highlight:    lipgloss.Color("209"), // Bright red-orange
+		Info:         lipgloss.Color("167"), // Red-pink
+		Success:      lipgloss.Color("34"),  // Green
+		Warning:      lipgloss.Color("208"), // Orange
+		Error:        lipgloss.Color("160"), // Dark red
 	},
 	{
 		Name:         "Tokyo Night",
@@ -126,6 +190,15 @@ var Themes = []Theme{
 		GitUntracked: lipgloss.Color("240"),
 		GitConflict:  lipgloss.Color("161"),
 		GitGhost:     lipgloss.Color("235"),
+		Primary:      lipgloss.Color("117"), // Sky blue
+		Secondary:    lipgloss.Color("120"), // Teal
+		Accent:       lipgloss.Color("147"), // Purple
+		Muted:        lipgloss.Color("242"), // Lighter gray
+		Highlight:    lipgloss.Color("159"), // Bright cyan
+		Info:         lipgloss.Color("111"), // Blue
+		Success:      lipgloss.Color("120"), // Teal
+		Warning:      lipgloss.Color("215"), // Orange
+		Error:        lipgloss.Color("161"), // Red
 	},
 	{
 		Name:         "Rose Pine",
@@ -141,6 +214,15 @@ var Themes = []Theme{
 		GitUntracked: lipgloss.Color("240"),
 		GitConflict:  lipgloss.Color("167"),
 		GitGhost:     lipgloss.Color("236"),
+		Primary:      lipgloss.Color("38"),  // Foam (teal)
+		Secondary:    lipgloss.Color("150"), // Pine (green)
+		Accent:       lipgloss.Color("183"), // Rose (pink)
+		Muted:        lipgloss.Color("245"), // Muted
+		Highlight:    lipgloss.Color("219"), // Iris (bright pink)
+		Info:         lipgloss.Color("110"), // Iris (purple-blue)
+		Success:      lipgloss.Color("150"), // Pine
+		Warning:      lipgloss.Color("214"), // Gold
+		Error:        lipgloss.Color("167"), // Love (red)
 	},
 	{
 		Name:         "Catppuccin Mocha",
@@ -156,6 +238,15 @@ var Themes = []Theme{
 		GitUntracked: lipgloss.Color("241"),
 		GitConflict:  lipgloss.Color("203"),
 		GitGhost:     lipgloss.Color("236"),
+		Primary:      lipgloss.Color("111"), // Lavender
+		Secondary:    lipgloss.Color("149"), // Mauve
+		Accent:       lipgloss.Color("147"), // Sapphire
+		Muted:        lipgloss.Color("245"), // Overlay1
+		Highlight:    lipgloss.Color("183"), // Pink
+		Info:         lipgloss.Color("117"), // Sky
+		Success:      lipgloss.Color("149"), // Green
+		Warning:      lipgloss.Color("221"), // Yellow
+		Error:        lipgloss.Color("203"), // Red
 	},
 }
 
