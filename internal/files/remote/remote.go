@@ -116,7 +116,7 @@ func NewRemoteFS(opts ssh.SSHConfig) (*RemoteFS, error) {
 		sftp.UseConcurrentWrites(true),
 	)
 	if err != nil {
-		conn.Close()
+		_ = conn.Close()
 		return nil, errors.WrapError(err, "create sftp client failed: "+address)
 	}
 

@@ -115,7 +115,7 @@ func searchInFile(opts SearchOptions) (core.FileResult, bool) {
 		}
 		return core.FileResult{}, false
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 
 	reader := bufio.NewReader(f)
 	if isBinary(reader) {

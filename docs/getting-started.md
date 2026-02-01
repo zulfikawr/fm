@@ -49,6 +49,46 @@ To open a specific directory:
 fm ~/Documents
 ```
 
+### Command Line Tools
+
+`fm` provides powerful CLI commands for quick operations:
+
+#### Search
+Search for files and content without entering the TUI:
+
+```bash
+# Search in current directory
+fm search "your search term"
+
+# Search in specific path
+fm search "query" /path/to/search
+
+# Search with regex patterns
+fm search "func.*main" ./src
+```
+
+#### Info
+Display detailed information about files and directories:
+
+```bash
+# Show info for current directory
+fm info .
+
+# Show info for specific file
+fm info README.md
+
+# JSON output for scripting
+fm info --json .
+
+# Tree view
+fm info --tree --depth 2 ./src
+
+# Remote file info
+fm info -r user@server:/path
+```
+
+See the [**CLI Reference**](./cli-reference.md) for complete documentation.
+
 ### Basic Navigation
 
 Navigation in `fm` is designed to be intuitive:
@@ -57,18 +97,6 @@ Navigation in `fm` is designed to be intuitive:
 - **Enter** or **Right Arrow** to enter a directory.
 - **Backspace** or **Left Arrow** to go to the parent directory.
 - **Ctrl+C** to exit the application.
-
-### Command Line Search
-
-`fm` also includes a standalone search command that can be used directly from your shell without entering the TUI:
-
-```bash
-# Search for a query in the current directory
-fm search "your search term"
-
-# Search in a specific path
-fm search "query" /path/to/search
-```
 
 ## First Steps
 

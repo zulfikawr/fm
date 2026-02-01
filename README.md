@@ -14,6 +14,7 @@ A fast, modular, and feature-rich TUI file manager written in Go.
 For detailed guides, configuration options, and advanced usage, please see the [**docs/**](./docs/index.md) directory:
 
 - [**Getting Started**](./docs/getting-started.md): Installation and basic usage.
+- [**CLI Reference**](./docs/cli-reference.md): Command-line tools and scripting guide.
 - [**Keybindings**](./docs/keybindings.md): Comprehensive list of shortcuts.
 - [**Mouse Support**](./docs/mouse-support.md): Full guide to clicking, dragging, and scrolling.
 - [**Nerd Font Icons**](./docs/icons.md): How to install and enable file icons.
@@ -27,8 +28,14 @@ For detailed guides, configuration options, and advanced usage, please see the [
 # Build from source
 make build
 
-# Run
+# Launch TUI
 ./fm [path]
+
+# Search for files and content
+./fm search <query>
+
+# Show file/directory info
+./fm info [path|file]
 ```
 
 ## 📦 Installation
@@ -72,6 +79,7 @@ See [**keybindings.md**](./docs/keybindings.md) for the full list.
 - **Fuzzy Search:** Deep content search powered by a concurrent engine.
 - **Tabs:** Multitasking with up to 9 active directory tabs.
 - **Archive Support:** Create and extract Zip/Tar archives directly in the UI.
+- **CLI Tools:** Powerful command-line tools (`info`, `search`) for scripting and quick checks.
 
 ## 🛠️ Technology Stack
 

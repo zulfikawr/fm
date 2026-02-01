@@ -77,7 +77,7 @@ func AddToKnownHosts(hostname string, remote net.Addr, key sshx.PublicKey) error
 	if err != nil {
 		return err
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 
 	// Use both hostname and remote address for known_hosts
 	entry := knownhosts.Line([]string{hostname, remote.String()}, key)

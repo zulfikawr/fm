@@ -44,10 +44,10 @@ func Zip(opts ZipOptions) error {
 	if err != nil {
 		return errors.WrapErrorWithPath(err, "Create", resolvedDst)
 	}
-	defer out.Close()
+	defer func() { _ = out.Close() }()
 
 	zw := zip.NewWriter(out)
-	defer zw.Close()
+	defer func() { _ = zw.Close() }()
 
 	// For simplicity, we'll increment progress per file processed
 	processedFiles := 0
@@ -151,7 +151,7 @@ func walkAndZip(state *zipState, currentPath, baseDir string) error {
 	if err != nil {
 		return errors.WrapErrorWithPath(err, "Open", currentPath)
 	}
-	defer in.Close()
+	defer func() { _ = in.Close() }()
 
 	// Use a buffer for copying
 	buf := GetBuffer()
@@ -192,7 +192,7 @@ func Unzip(opts ZipOptions) error {
 	if err != nil {
 		return errors.WrapErrorWithPath(err, "Open", opts.Src)
 	}
-	defer in.Close()
+	defer func() { _ = in.Close() }()
 
 	// zip.NewReader needs a ReaderAt and the size.
 	// We'll get the size first.
@@ -209,7 +209,7 @@ func Unzip(opts ZipOptions) error {
 		if err != nil {
 			return errors.WrapErrorWithPath(err, "OpenLocal", opts.Src)
 		}
-		defer f.Close()
+		defer func() { _ = f.Close() }()
 		readerAt = f
 	} else {
 		// For remote files, we'll download to a temporary file first
@@ -218,8 +218,8 @@ func Unzip(opts ZipOptions) error {
 		if err != nil {
 			return errors.WrapError(err, "CreateTemp")
 		}
-		defer os.Remove(tmpFile.Name())
-		defer tmpFile.Close()
+		defer func() { _ = os.Remove(tmpFile.Name()) }()
+		defer func() { _ = tmpFile.Close() }()
 
 		_, err = io.Copy(tmpFile, in)
 		if err != nil {
@@ -293,13 +293,13 @@ func Unzip(opts ZipOptions) error {
 
 			out, err := opts.OpCtx.FS.Create(opts.OpCtx.Context, entryResolvedPath)
 			if err != nil {
-				rc.Close()
+				_ = rc.Close()
 				return errors.WrapErrorWithPath(err, "CreateExtract", entryResolvedPath)
 			}
 
 			_, err = io.Copy(out, rc)
-			out.Close()
-			rc.Close()
+			_ = out.Close()
+			_ = rc.Close()
 
 			if err != nil {
 				return errors.WrapErrorWithPath(err, "CopyExtract", entryResolvedPath)

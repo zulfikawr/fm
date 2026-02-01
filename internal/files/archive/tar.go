@@ -28,7 +28,9 @@ func NewTarFS(path string) (*TarFS, error) {
 	if err != nil {
 		return nil, errors.WrapErrorWithPath(err, "OpenArchive", path)
 	}
-	defer f.Close()
+	defer func() {
+		_ = f.Close() // Errors on defer Close in read-only operations are typically not critical
+	}()
 
 	var tr *tar.Reader
 	if strings.HasSuffix(path, ".gz") || strings.HasSuffix(path, ".tgz") {
@@ -36,7 +38,9 @@ func NewTarFS(path string) (*TarFS, error) {
 		if err != nil {
 			return nil, errors.WrapErrorWithPath(err, "OpenArchive", path)
 		}
-		defer gzr.Close()
+		defer func() {
+			_ = gzr.Close() // Errors on defer Close in read-only operations are typically not critical
+		}()
 		tr = tar.NewReader(gzr)
 	} else {
 		tr = tar.NewReader(f)
@@ -199,7 +203,7 @@ func (fs *TarFS) Open(ctx context.Context, path string) (io.ReadCloser, error) {
 	if strings.HasSuffix(fs.archivePath, ".gz") || strings.HasSuffix(fs.archivePath, ".tgz") {
 		gzr, err := gzip.NewReader(f)
 		if err != nil {
-			f.Close()
+			_ = f.Close()
 			return nil, errors.WrapErrorWithPath(err, "OpenArchive", fs.archivePath)
 		}
 		tr = tar.NewReader(gzr)
@@ -214,7 +218,7 @@ func (fs *TarFS) Open(ctx context.Context, path string) (io.ReadCloser, error) {
 			break
 		}
 		if err != nil {
-			f.Close()
+			_ = f.Close()
 			return nil, errors.WrapErrorWithPath(err, "ReadArchive", fs.archivePath)
 		}
 
@@ -226,7 +230,7 @@ func (fs *TarFS) Open(ctx context.Context, path string) (io.ReadCloser, error) {
 		}
 	}
 
-	f.Close()
+	_ = f.Close()
 	return nil, errors.WrapErrorWithPath(os.ErrNotExist, "Open", path)
 }
 

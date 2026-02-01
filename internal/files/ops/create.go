@@ -28,7 +28,7 @@ func CreateAtomic(opts CreateOptions) (string, error) {
 		var f io.WriteCloser
 		f, err = opts.OpCtx.FS.Create(opts.OpCtx.Context, resolvedPath)
 		if err == nil {
-			f.Close()
+			_ = f.Close()
 		}
 	}
 

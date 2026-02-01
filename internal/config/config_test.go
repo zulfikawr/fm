@@ -198,7 +198,7 @@ func TestConfig_SaveError(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer os.Remove(tempFile.Name())
+	defer func() { _ = os.Remove(tempFile.Name()) }()
 
 	// Setting config path to something under a file should make MkdirAll fail
 	configPath := filepath.Join(tempFile.Name(), "config.json")
@@ -238,14 +238,14 @@ func TestConfig_PathsError(t *testing.T) {
 	oldXDGCache := os.Getenv("XDG_CACHE_HOME")
 
 	// Unset variables that os.UserConfigDir/os.UserCacheDir use
-	os.Unsetenv("HOME")
-	os.Unsetenv("XDG_CONFIG_HOME")
-	os.Unsetenv("XDG_CACHE_HOME")
+	_ = os.Unsetenv("HOME")
+	_ = os.Unsetenv("XDG_CONFIG_HOME")
+	_ = os.Unsetenv("XDG_CACHE_HOME")
 
 	defer func() {
-		os.Setenv("HOME", oldHome)
-		os.Setenv("XDG_CONFIG_HOME", oldXDGConfig)
-		os.Setenv("XDG_CACHE_HOME", oldXDGCache)
+		_ = os.Setenv("HOME", oldHome)
+		_ = os.Setenv("XDG_CONFIG_HOME", oldXDGConfig)
+		_ = os.Setenv("XDG_CACHE_HOME", oldXDGCache)
 	}()
 
 	_ = GetConfigPath()

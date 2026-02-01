@@ -31,6 +31,20 @@ func run() error {
 		return cli.RunSearch(args)
 	}
 
+	if args.IsInfo {
+		opts := cli.InfoOptions{
+			Path:      ".",
+			JSON:      args.InfoJSON,
+			Tree:      args.InfoTree,
+			TreeDepth: args.InfoDepth,
+			Remote:    args.Remote,
+		}
+		if len(args.Args) > 0 {
+			opts.Path = args.Args[0]
+		}
+		return cli.RunInfo(opts)
+	}
+
 	a, err := bootstrap.InitializeApp(args.Remote, args.Args)
 	if err != nil {
 		return err

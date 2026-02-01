@@ -59,7 +59,7 @@ func TestZipUnzip(t *testing.T) {
 		// Verify zip content
 		r, err := zip.OpenReader(zipFile)
 		testutil.AssertNoError(t, err, "Open zip reader")
-		defer r.Close()
+		defer func() { _ = r.Close() }()
 
 		found := make(map[string]bool)
 		for _, f := range r.File {
@@ -121,8 +121,8 @@ func TestUnzip_ZipSlip(t *testing.T) {
 	}
 	writer, _ := zw.CreateHeader(header)
 	_, _ = io.WriteString(writer, "evil")
-	zw.Close()
-	f.Close()
+	_ = zw.Close()
+	_ = f.Close()
 
 	err := Unzip(ZipOptions{
 		OpCtx:    OpContext{Context: ctx, FS: fs},
@@ -164,8 +164,8 @@ func TestUnzip_Remote(t *testing.T) {
 	zw := zip.NewWriter(f)
 	w, _ := zw.Create("test.txt")
 	_, _ = w.Write([]byte("content"))
-	zw.Close()
-	f.Close()
+	_ = zw.Close()
+	_ = f.Close()
 
 	fs.StatFunc = func(ctx context.Context, path string) (os.FileInfo, error) {
 		return os.Stat(realZip)
@@ -243,8 +243,8 @@ func TestUnzip_ConflictPolicies(t *testing.T) {
 	zw := zip.NewWriter(f)
 	w, _ := zw.Create("file1.txt")
 	_, _ = w.Write([]byte("new content"))
-	zw.Close()
-	f.Close()
+	_ = zw.Close()
+	_ = f.Close()
 
 	// Pre-create file1.txt
 	if err := os.WriteFile(filepath.Join(extractDir, "file1.txt"), []byte("old content"), 0644); err != nil {
@@ -340,8 +340,8 @@ func TestUnzip_ConflictError(t *testing.T) {
 	zw := zip.NewWriter(f)
 	w, _ := zw.Create("file1.txt")
 	_, _ = w.Write([]byte("content"))
-	zw.Close()
-	f.Close()
+	_ = zw.Close()
+	_ = f.Close()
 
 	// Pre-create file1.txt
 	if err := os.WriteFile(filepath.Join(extractDir, "file1.txt"), []byte("existing"), 0644); err != nil {
@@ -378,10 +378,10 @@ func TestUnzip_MultipleFiles(t *testing.T) {
 	zw := zip.NewWriter(f)
 	for i := 1; i <= 3; i++ {
 		w, _ := zw.Create(fmt.Sprintf("file%d.txt", i))
-		_, _ = w.Write([]byte(fmt.Sprintf("content%d", i)))
+		_, _ = fmt.Fprintf(w, "content%d", i)
 	}
-	zw.Close()
-	f.Close()
+	_ = zw.Close()
+	_ = f.Close()
 
 	progChan := make(chan core.Progress, 10)
 	err := Unzip(ZipOptions{

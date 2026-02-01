@@ -22,7 +22,7 @@ func ParseSSHConfig() (map[string]*SSHConfig, error) {
 		}
 		return nil, err
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 
 	configs := make(map[string]*SSHConfig)
 	var currentHost []string

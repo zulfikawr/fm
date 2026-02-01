@@ -101,7 +101,7 @@ func WatchRemoteDir() tea.Cmd {
 func RestartWatcherAction(m *tui_context.Model) tea.Cmd {
 	return func() tea.Msg {
 		if m.Watcher.Watcher != nil {
-			m.Watcher.Watcher.Close()
+			_ = m.Watcher.Watcher.Close()
 		}
 
 		watcher, err := fsnotify.NewWatcher()

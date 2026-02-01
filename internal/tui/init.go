@@ -33,19 +33,19 @@ func Close(m *context.Model) {
 		m.Cancel()
 	}
 	if m.Watcher.Watcher != nil {
-		m.Watcher.Watcher.Close()
+		_ = m.Watcher.Watcher.Close()
 	}
 
 	// Close all unique filesystems across all tabs
 	closed := make(map[core.FileSystem]bool)
 	if m.FS != nil {
-		m.FS.Close()
+		_ = m.FS.Close()
 		closed[m.FS] = true
 	}
 
 	for _, t := range m.Tabs {
 		if t.FS != nil && !closed[t.FS] {
-			t.FS.Close()
+			_ = t.FS.Close()
 			closed[t.FS] = true
 		}
 	}

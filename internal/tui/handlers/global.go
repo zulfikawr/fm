@@ -25,7 +25,7 @@ func handleGlobal(m *tuictx.Model, msg tea.Msg) (tea.Cmd, bool) {
 		case "ctrl+c":
 			if m.Message.Text == "Press [Ctrl+C] again to close" {
 				if m.FS.IsLocal() && m.Watcher.Watcher != nil {
-					m.Watcher.Watcher.Close()
+					_ = m.Watcher.Watcher.Close()
 				}
 				return tea.Quit, true
 			}

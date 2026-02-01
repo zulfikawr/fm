@@ -42,7 +42,7 @@ func TestLocalFS(t *testing.T) {
 		f, err := fs.Create(ctx, filePath)
 		testutil.AssertNoError(t, err, "Create should succeed")
 		_, _ = f.Write([]byte("data"))
-		f.Close()
+		_ = f.Close()
 
 		err = fs.RemoveAll(ctx, filePath)
 		testutil.AssertNoError(t, err, "RemoveAll should succeed")
@@ -74,7 +74,7 @@ func TestLocalFS(t *testing.T) {
 
 		f, err := fs.Open(ctx, path)
 		testutil.AssertNoError(t, err, "Open should succeed")
-		defer f.Close()
+		defer func() { _ = f.Close() }()
 
 		data, _ := io.ReadAll(f)
 		testutil.AssertEqual(t, "hello", string(data), "Content should match")

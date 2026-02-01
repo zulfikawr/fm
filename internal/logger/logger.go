@@ -45,7 +45,7 @@ func (l *fileLogger) Log(level string, msg string) {
 	if err != nil {
 		return
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 
 	timestamp := time.Now().Format("2006-01-02 15:04:05")
 
@@ -56,7 +56,7 @@ func (l *fileLogger) Log(level string, msg string) {
 		caller = fmt.Sprintf("%s:%d", filepath.Base(file), line)
 	}
 
-	fmt.Fprintf(f, "[%s] [%s] [%s] %s\n", timestamp, level, caller, msg)
+	_, _ = fmt.Fprintf(f, "[%s] [%s] [%s] %s\n", timestamp, level, caller, msg)
 }
 
 // SetLogger overrides the global logger (useful for testing)

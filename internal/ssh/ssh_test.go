@@ -77,8 +77,8 @@ func TestResolveRemote(t *testing.T) {
 func TestAddToKnownHosts(t *testing.T) {
 	tmpDir := testutil.TempDir(t)
 	oldHome := os.Getenv("HOME")
-	os.Setenv("HOME", tmpDir)
-	defer os.Setenv("HOME", oldHome)
+	_ = os.Setenv("HOME", tmpDir)
+	defer func() { _ = os.Setenv("HOME", oldHome) }()
 
 	// Ensure .ssh dir exists
 	_ = os.MkdirAll(filepath.Join(tmpDir, ".ssh"), 0700)
@@ -100,9 +100,7 @@ func TestAddToKnownHosts(t *testing.T) {
 
 func TestGetHostKeyCallback(t *testing.T) {
 	tmpDir := testutil.TempDir(t)
-	oldHome := os.Getenv("HOME")
-	os.Setenv("HOME", tmpDir)
-	defer os.Setenv("HOME", oldHome)
+	_ = os.Setenv("HOME", tmpDir)
 
 	// Ensure .ssh dir exists
 	_ = os.MkdirAll(filepath.Join(tmpDir, ".ssh"), 0700)

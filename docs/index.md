@@ -14,6 +14,7 @@ Welcome to the documentation for **fm**, a fast, modular, and feature-rich TUI (
 ## Documentation Sections
 
 - [**Getting Started**](./getting-started.md): Installation and basic usage.
+- [**CLI Reference**](./cli-reference.md): Command-line tools and scripting guide.
 - [**Keybindings**](./keybindings.md): Comprehensive list of shortcuts.
 - [**Features**](features.md): Deep dives into Git integration, Compression, and Search.
 - [**Mouse Support**](./mouse-support.md): Full guide to clicking, dragging, and scrolling.

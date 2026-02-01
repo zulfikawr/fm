@@ -90,7 +90,9 @@ func TestRunSearch(t *testing.T) {
 		}
 		err := RunSearch(args)
 
-		w.Close()
+		if err := w.Close(); err != nil {
+			t.Errorf("Failed to close pipe: %v", err)
+		}
 		os.Stdout = old
 
 		var buf bytes.Buffer
@@ -120,7 +122,9 @@ func TestRunSearch(t *testing.T) {
 		}
 		_ = RunSearch(args)
 
-		w.Close()
+		if err := w.Close(); err != nil {
+			t.Errorf("Failed to close pipe: %v", err)
+		}
 		os.Stdout = old
 
 		var buf bytes.Buffer

@@ -48,7 +48,7 @@ func CheckForUpdate() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		return "", fmt.Errorf("unexpected status code: %d", resp.StatusCode)
@@ -82,7 +82,7 @@ func DownloadAndInstall(version string, progress chan float64) error {
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	var release Release
 	if err := json.NewDecoder(resp.Body).Decode(&release); err != nil {
@@ -111,7 +111,7 @@ func DownloadAndInstall(version string, progress chan float64) error {
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		return fmt.Errorf("failed to download asset: %d", resp.StatusCode)
@@ -123,7 +123,7 @@ func DownloadAndInstall(version string, progress chan float64) error {
 		return err
 	}
 	tmpPath := tmpFile.Name()
-	defer os.Remove(tmpPath)
+	defer func() { _ = os.Remove(tmpPath) }()
 
 	// Wrap response body for progress
 	reader := &progressReader{
@@ -133,10 +133,12 @@ func DownloadAndInstall(version string, progress chan float64) error {
 	}
 
 	if _, err := io.Copy(tmpFile, reader); err != nil {
-		tmpFile.Close()
+		_ = tmpFile.Close()
 		return err
 	}
-	tmpFile.Close()
+	if err := tmpFile.Close(); err != nil {
+		return err
+	}
 
 	// Set executable permissions
 	if err := os.Chmod(tmpPath, 0755); err != nil {
@@ -177,13 +179,13 @@ func copyFile(src, dst string) error {
 	if err != nil {
 		return err
 	}
-	defer s.Close()
+	defer func() { _ = s.Close() }()
 
 	d, err := os.OpenFile(dst, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0755)
 	if err != nil {
 		return err
 	}
-	defer d.Close()
+	defer func() { _ = d.Close() }()
 
 	_, err = io.Copy(d, s)
 	return err

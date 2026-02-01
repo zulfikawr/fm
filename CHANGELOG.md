@@ -5,6 +5,31 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.0.7] - 2026-02-01
+
+### Added
+- **`fm info` command** - Display detailed file and directory information from CLI
+  - Show file/directory stats (size, permissions, file count)
+  - Git integration with status statistics (modified, added, deleted, staged, untracked)
+  - JSON output format (`--json`) for scripting and automation
+  - Directory tree view (`--tree --depth N`) with customizable depth
+  - Works with remote filesystems via `-r` flag
+  - Color-themed output consistent with TUI
+  - Comprehensive unit tests with 100% coverage
+
+### Changed
+- **Code Quality Improvements**
+  - Fixed all 54 golangci-lint issues (50 errcheck, 2 staticcheck, 2 unused)
+  - Improved error handling across all file operations
+  - Better resource cleanup with proper defer Close() patterns
+  - Removed unused variables and dead code
+
+### Documentation
+- Added comprehensive [CLI Reference](./docs/cli-reference.md) guide
+- Updated [Getting Started](./docs/getting-started.md) with CLI tools section
+- Updated [README.md](./README.md) with CLI examples
+- Updated [.github/copilot-instructions.md](./.github/copilot-instructions.md) with CLI architecture
+
 ## [v1.0.6] - 2026-01-31
 
 ### Added

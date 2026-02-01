@@ -20,7 +20,9 @@ func TestPrintHelp(t *testing.T) {
 	styles := theme.GetStylesheet(0)
 	PrintHelp(styles, "Gruvbox")
 
-	w.Close()
+	if err := w.Close(); err != nil {
+		t.Errorf("Failed to close pipe: %v", err)
+	}
 	var buf bytes.Buffer
 	_, _ = io.Copy(&buf, r)
 	os.Stdout = oldStdout

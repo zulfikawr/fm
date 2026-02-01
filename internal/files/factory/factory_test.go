@@ -188,8 +188,8 @@ func TestCreateFileSystem(t *testing.T) {
 func TestHostKeyCallbackInner(t *testing.T) {
 	tmpDir := testutil.TempDir(t)
 	oldHome := os.Getenv("HOME")
-	os.Setenv("HOME", tmpDir)
-	defer os.Setenv("HOME", oldHome)
+	_ = os.Setenv("HOME", tmpDir)
+	defer func() { _ = os.Setenv("HOME", oldHome) }()
 
 	keyData := "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOm6y8v0W6Wz7mHn6/W1uF1v7Q+V2b2u5u5u5u5u5u5u"
 	parts := strings.Split(keyData, " ")
@@ -203,7 +203,7 @@ func TestHostKeyCallbackInner(t *testing.T) {
 		os.Stdin = r
 		defer func() { os.Stdin = oldStdin }()
 		_, _ = w.Write([]byte("n\n"))
-		w.Close()
+		_ = w.Close()
 
 		err := cb("example.com:22", addr, pk)
 		if err == nil {
@@ -218,7 +218,7 @@ func TestHostKeyCallbackInner(t *testing.T) {
 		os.Stdin = r
 		defer func() { os.Stdin = oldStdin }()
 		_, _ = w.Write([]byte("y\n"))
-		w.Close()
+		_ = w.Close()
 
 		_ = cb("example.com:22", addr, pk)
 	})
@@ -227,8 +227,8 @@ func TestHostKeyCallbackInner(t *testing.T) {
 func TestCreateHostKeyCallback(t *testing.T) {
 	tmpDir := testutil.TempDir(t)
 	oldHome := os.Getenv("HOME")
-	os.Setenv("HOME", tmpDir)
-	defer os.Setenv("HOME", oldHome)
+	_ = os.Setenv("HOME", tmpDir)
+	defer func() { _ = os.Setenv("HOME", oldHome) }()
 
 	t.Run("Create new known_hosts", func(t *testing.T) {
 		cb, err := ssh.CreateCLIHostKeyCallback()

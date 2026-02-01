@@ -103,7 +103,7 @@ func crossCopyFile(opts CopyOptions) error {
 	if err != nil {
 		return errors.WrapErrorWithPath(err, "Create", opts.Dst)
 	}
-	defer out.Close()
+	defer func() { _ = out.Close() }()
 
 	info, err := opts.SrcFS.Stat(opts.OpCtx.Context, opts.Src)
 	if err != nil {
@@ -119,13 +119,13 @@ func crossCopyFile(opts CopyOptions) error {
 
 	in, err := opts.SrcFS.Open(opts.OpCtx.Context, opts.Src)
 	if err != nil {
-		out.Close()
+		_ = out.Close()
 		if err := opts.OpCtx.FS.RemoveAll(opts.OpCtx.Context, opts.Dst); err != nil {
 			logger.Warnf("Failed to clean up partial file %s: %v", opts.Dst, err)
 		}
 		return errors.WrapErrorWithPath(err, "Open", opts.Src)
 	}
-	defer in.Close()
+	defer func() { _ = in.Close() }()
 
 	// Wrap with cancellable I/O
 	cin := NewCancellableReader(opts.OpCtx.Context, in)
@@ -148,7 +148,7 @@ func crossCopyFile(opts CopyOptions) error {
 	}
 
 	if err != nil {
-		out.Close()
+		_ = out.Close()
 		if err := opts.OpCtx.FS.RemoveAll(opts.OpCtx.Context, opts.Dst); err != nil {
 			logger.Warnf("Failed to clean up partial file %s: %v", opts.Dst, err)
 		}

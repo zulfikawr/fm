@@ -88,7 +88,7 @@ func TestRemoteFS_ClientMethods(t *testing.T) {
 		t.Fatal(err)
 	}
 	go func() { _ = server.Serve() }()
-	defer server.Close()
+	defer func() { _ = server.Close() }()
 
 	// Create a client on the client end of the pipe
 	client, err := sftp.NewClientPipe(clientRWC, clientRWC)
@@ -137,12 +137,12 @@ func TestRemoteFS_ClientMethods(t *testing.T) {
 		w, err := fs.Create(ctx, path)
 		testutil.AssertNoError(t, err, "Create should succeed")
 		_, _ = w.Write([]byte("data"))
-		w.Close()
+		_ = w.Close()
 
 		r, err := fs.Open(ctx, path)
 		testutil.AssertNoError(t, err, "Open should succeed")
 		data, _ := io.ReadAll(r)
-		r.Close()
+		_ = r.Close()
 		testutil.AssertEqual(t, "data", string(data), "Content should match")
 	})
 

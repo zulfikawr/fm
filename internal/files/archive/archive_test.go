@@ -39,18 +39,18 @@ func createTestZip(t *testing.T) string {
 	testutil.AssertNoError(t, err, "create temp zip file")
 	_, err = tmpFile.Write(buf.Bytes())
 	testutil.AssertNoError(t, err, "write temp zip file")
-	tmpFile.Close()
+	_ = tmpFile.Close()
 
 	return tmpFile.Name()
 }
 
 func TestArchiveFS(t *testing.T) {
 	zipPath := createTestZip(t)
-	defer os.Remove(zipPath)
+	defer func() { _ = os.Remove(zipPath) }()
 
 	fs, err := NewArchiveFS(zipPath)
 	testutil.AssertNoError(t, err, "NewArchiveFS")
-	defer fs.Close()
+	defer func() { _ = fs.Close() }()
 
 	ctx := context.Background()
 
@@ -80,7 +80,7 @@ func TestArchiveFS(t *testing.T) {
 	t.Run("Zip Open and Read", func(t *testing.T) {
 		r, err := fs.Open(ctx, "gopher.txt")
 		testutil.AssertNoError(t, err, "Open gopher.txt")
-		defer r.Close()
+		defer func() { _ = r.Close() }()
 
 		data, err := io.ReadAll(r)
 		testutil.AssertNoError(t, err, "ReadAll gopher.txt")
@@ -123,18 +123,18 @@ func createTestTar(t *testing.T) string {
 	testutil.AssertNoError(t, err, "create temp tar file")
 	_, err = tmpFile.Write(buf.Bytes())
 	testutil.AssertNoError(t, err, "write temp tar file")
-	tmpFile.Close()
+	_ = tmpFile.Close()
 
 	return tmpFile.Name()
 }
 
 func TestTarFS(t *testing.T) {
 	tarPath := createTestTar(t)
-	defer os.Remove(tarPath)
+	defer func() { _ = os.Remove(tarPath) }()
 
 	fs, err := NewArchiveFS(tarPath)
 	testutil.AssertNoError(t, err, "NewArchiveFS tar")
-	defer fs.Close()
+	defer func() { _ = fs.Close() }()
 
 	ctx := context.Background()
 
@@ -157,7 +157,7 @@ func TestTarFS(t *testing.T) {
 	t.Run("Tar Open and Read", func(t *testing.T) {
 		r, err := fs.Open(ctx, "readme.txt")
 		testutil.AssertNoError(t, err, "Open readme.txt")
-		defer r.Close()
+		defer func() { _ = r.Close() }()
 
 		data, err := io.ReadAll(r)
 		testutil.AssertNoError(t, err, "ReadAll")
@@ -219,9 +219,9 @@ func TestArchiveHelpers(t *testing.T) {
 
 func TestArchiveFS_Extra(t *testing.T) {
 	zipPath := createTestZip(t)
-	defer os.Remove(zipPath)
+	defer func() { _ = os.Remove(zipPath) }()
 	fs, _ := NewArchiveFS(zipPath)
-	defer fs.Close()
+	defer func() { _ = fs.Close() }()
 	ctx := context.Background()
 
 	t.Run("Stat", func(t *testing.T) {

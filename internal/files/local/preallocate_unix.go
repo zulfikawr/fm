@@ -17,7 +17,7 @@ func preallocate(path string, size int64) error {
 	if err != nil {
 		return err
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 
 	// Mode 0 is the default allocation
 	return unix.Fallocate(int(f.Fd()), 0, 0, size)

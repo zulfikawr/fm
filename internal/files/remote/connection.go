@@ -37,10 +37,10 @@ func (fs *RemoteFS) reconnect() error {
 
 	// Close old connection if still open
 	if fs.client != nil {
-		fs.client.Close()
+		_ = fs.client.Close()
 	}
 	if fs.conn != nil {
-		fs.conn.Close()
+		_ = fs.conn.Close()
 	}
 
 	// Dial again
@@ -51,7 +51,7 @@ func (fs *RemoteFS) reconnect() error {
 
 	client, err := sftp.NewClient(conn, sftp.UseConcurrentWrites(true))
 	if err != nil {
-		conn.Close()
+		_ = conn.Close()
 		return fmt.Errorf("reconnect sftp failed: %w", err)
 	}
 
