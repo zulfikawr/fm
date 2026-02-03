@@ -221,3 +221,19 @@ func Restart() error {
 
 	return cmd.Run()
 }
+
+// CanUpdate checks if the current process has permission to replace the binary
+func CanUpdate() bool {
+	selfPath, err := os.Executable()
+	if err != nil {
+		return false
+	}
+
+	// Try to open the file for writing (without truncating)
+	f, err := os.OpenFile(selfPath, os.O_WRONLY, 0666)
+	if err != nil {
+		return false
+	}
+	_ = f.Close()
+	return true
+}

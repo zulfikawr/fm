@@ -5,6 +5,7 @@ import (
 	tui_context "github.com/zulfikawr/fm/internal/tui/context"
 	"github.com/zulfikawr/fm/internal/tui/handlers/utils"
 	"github.com/zulfikawr/fm/internal/tui/messages"
+	"github.com/zulfikawr/fm/internal/update"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -37,6 +38,9 @@ func HandleUpdateMessages(m *tui_context.Model, msg tea.Msg) tea.Cmd {
 			switch msg.String() {
 			case "y", "Y":
 				m.UI.StopConfirming()
+				if !update.CanUpdate() {
+					return utils.SetErrMsg(m, "Update failed: Permission denied. Please run with sudo.")
+				}
 				return StartUpdate(m)
 			case "n", "N":
 				m.UI.StopConfirming()
