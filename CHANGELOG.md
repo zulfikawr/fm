@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Displays usage in a clean, themed row layout with horizontal percentage bars.
   - Supports custom paths and remote servers via the `-r` flag.
   - Fast concurrent scanning engine with "One Filesystem" protection.
+  - Comprehensive unit tests for CLI and TUI components (90%+ coverage).
 
 ### Changed
 - **CLI Search Improvements**

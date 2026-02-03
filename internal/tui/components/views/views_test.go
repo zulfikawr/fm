@@ -198,3 +198,72 @@ func TestRenderMatchContent(t *testing.T) {
 		testutil.AssertEqual(t, "hello world", plain, "Content should match")
 	})
 }
+
+func TestRenderAnalyze(t *testing.T) {
+	styles := theme.GetStylesheet(0)
+	root := &core.AnalysisResult{
+		Name:        "root",
+		Path:        "/root",
+		IsDirectory: true,
+		Size:        1000,
+		Percentage:  1.0,
+		Children: []*core.AnalysisResult{
+			{
+				Name:        "child1",
+				Path:        "/root/child1",
+				IsDirectory: false,
+				Size:        500,
+				Percentage:  0.5,
+			},
+		},
+	}
+
+	props := AnalyzeProps{
+		Width:           100,
+		Height:          20,
+		ActiveNode:      root,
+		Style:           styles,
+		EnableIcons:     true,
+		SizeFormatIndex: 0,
+	}
+
+	t.Run("Basic Render", func(t *testing.T) {
+		output := RenderAnalyze(props)
+		plain := testutil.StripANSI(output)
+		if !strings.Contains(plain, "child1") {
+			t.Errorf("Expected 'child1' in analyze view, got %q", plain)
+		}
+		if !strings.Contains(plain, "50.0%") {
+			t.Errorf("Expected percentage in analyze view, got %q", plain)
+		}
+	})
+
+	t.Run("Empty Node", func(t *testing.T) {
+		props.ActiveNode = nil
+		output := RenderAnalyze(props)
+		plain := testutil.StripANSI(output)
+		if !strings.Contains(plain, "No analysis data") {
+			t.Errorf("Expected no data message, got %q", plain)
+		}
+	})
+
+	t.Run("With Up Entry", func(t *testing.T) {
+		parent := &core.AnalysisResult{Name: "parent", Path: "/"}
+		root.Parent = parent
+		props.ActiveNode = root
+		props.IsRoot = false
+		output := RenderAnalyze(props)
+		plain := testutil.StripANSI(output)
+		if !strings.Contains(plain, "↑ ..") {
+			t.Errorf("Expected '↑ ..' in analyze view, got %q", plain)
+		}
+	})
+
+	t.Run("Analyze Footer", func(t *testing.T) {
+		output := RenderAnalyzeFooter(100, styles)
+		plain := testutil.StripANSI(output)
+		if !strings.Contains(plain, "Back") || !strings.Contains(plain, "Delete") {
+			t.Errorf("Expected navigation hints in analyze footer, got %q", plain)
+		}
+	})
+}
