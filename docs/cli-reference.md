@@ -27,27 +27,25 @@ fm -r ssh-alias
 ---
 
 ### `fm search`
-Perform fuzzy search for files and content within directories.
+Perform fuzzy or regex search for files and content within directories.
 
 ```bash
-# Search in current directory
+# Search in current directory (Fuzzy)
 fm search <query>
+
+# Search using Regular Expressions
+fm search --regex "func.*Test" .
 
 # Search in specific directory
 fm search <query> [path]
 
 # Search remote server (requires SSH)
 fm -r user@host search <query> [path]
-
-# Examples
-fm search "TODO" ./src
-fm search "HandleUpdate" ./internal
-fm search "config.json"
-fm -r server search "error" /var/log
 ```
 
 **Features:**
-- Fuzzy file name matching
+- Fuzzy file name matching (default)
+- Full Regular Expression support with `--regex` or `-e`
 - Content search across files (substring matching)
 - Case-insensitive matching
 - Respects `.gitignore` rules

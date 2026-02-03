@@ -55,6 +55,7 @@
 | `/` | Enter filter mode (use `↑`/`↓` to navigate list while filtering) |
 | `Alt+/` | Open Fuzzy Content Search (Find in Files) |
 | `Alt+M` / `Alt+N` | Jump between files in fuzzy search results |
+| `Alt+R` | Toggle Regex Search mode (TUI) |
 | `Esc` | Exit search/filter mode |
 
 ## Miscellaneous

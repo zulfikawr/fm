@@ -14,6 +14,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Supports custom paths and remote servers via the `-r` flag.
   - Fast concurrent scanning engine with "One Filesystem" protection.
   - Comprehensive unit tests for CLI and TUI components (90%+ coverage).
+- **Regex Search Support**
+  - Added full regular expression support for both CLI and TUI search.
+  - New `--regex` and `-e` flags for `fm search` command.
+  - New "Enable Regex Search" toggle in TUI settings menu.
 
 ### Changed
 - **CLI Search Improvements**

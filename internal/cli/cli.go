@@ -14,6 +14,7 @@ type Args struct {
 	ShowVersion bool
 	IsSearch    bool
 	SearchQuery string
+	IsRegex     bool
 	IsInfo      bool
 	InfoJSON    bool
 	InfoTree    bool
@@ -31,6 +32,7 @@ func parse(f *flag.FlagSet, args []string) *Args {
 	var remoteStr string
 	var showVersion bool
 	var searchStr string
+	var isRegex bool
 	var infoJSON bool
 	var infoTree bool
 	var infoDepth int
@@ -40,6 +42,8 @@ func parse(f *flag.FlagSet, args []string) *Args {
 	f.BoolVar(&showVersion, "v", false, "Show version information (shorthand)")
 	f.StringVar(&searchStr, "search", "", "Perform fuzzy search for files and content")
 	f.StringVar(&searchStr, "s", "", "Perform fuzzy search (shorthand)")
+	f.BoolVar(&isRegex, "regex", false, "Use regular expressions for search")
+	f.BoolVar(&isRegex, "e", false, "Use regular expressions (shorthand)")
 
 	// Custom Usage
 	f.Usage = func() {
@@ -58,10 +62,18 @@ func parse(f *flag.FlagSet, args []string) *Args {
 	// Handle "search" as a subcommand
 	if !isSearch && len(remainingArgs) > 0 && remainingArgs[0] == "search" {
 		isSearch = true
-		if len(remainingArgs) > 1 {
-			searchStr = remainingArgs[1]
-			remainingArgs = remainingArgs[2:]
-		} else {
+		remainingArgs = remainingArgs[1:]
+
+		// Parse search-specific flags
+		searchFlags := flag.NewFlagSet("search", flag.ContinueOnError)
+		searchFlags.BoolVar(&isRegex, "regex", false, "Use regular expressions")
+		searchFlags.BoolVar(&isRegex, "e", false, "Use regular expressions")
+
+		_ = searchFlags.Parse(remainingArgs)
+		remainingArgs = searchFlags.Args()
+
+		if len(remainingArgs) > 0 {
+			searchStr = remainingArgs[0]
 			remainingArgs = remainingArgs[1:]
 		}
 	}
@@ -92,6 +104,7 @@ func parse(f *flag.FlagSet, args []string) *Args {
 		ShowVersion: showVersion,
 		IsSearch:    isSearch,
 		SearchQuery: searchStr,
+		IsRegex:     isRegex,
 		IsInfo:      isInfo,
 		InfoJSON:    infoJSON,
 		InfoTree:    infoTree,

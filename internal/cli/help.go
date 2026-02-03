@@ -32,6 +32,7 @@ func PrintHelp(styles theme.Stylesheet, themeName string) {
 		{"alt+l", "Toggle operation logs"},
 		{"alt+c", "Toggle clipboard view"},
 		{"alt+/", "Fuzzy content search"},
+		{"alt+r", "Toggle regex search mode"},
 		{"/", "Filter directory (↑/↓ to navigate)"},
 		{"Tab", "Autocomplete name or path"},
 		{"g", "Go to path (Local [l] or Remote [r])"},
@@ -64,8 +65,8 @@ func PrintHelp(styles theme.Stylesheet, themeName string) {
 	fmt.Printf("  %s %s\n", padString(usage1Command, maxWidth), styles.DimCol.Render("Open fm in the specified directory"))
 	usage2Command := styles.GitStaged.Render("fm") + " " + styles.FileCol.Render("-r user@host[:path]")
 	fmt.Printf("  %s %s\n", padString(usage2Command, maxWidth), styles.DimCol.Render("Open fm on a remote server via SFTP"))
-	usage3Command := styles.GitStaged.Render("fm") + " " + styles.GitConflict.Render("search") + " " + styles.FileCol.Render("<query>")
-	fmt.Printf("  %s %s\n", padString(usage3Command, maxWidth), styles.DimCol.Render("Perform fuzzy search for files and content"))
+	usage3Command := styles.GitStaged.Render("fm") + " " + styles.GitConflict.Render("search") + " " + styles.DimCol.Render("[--regex]") + " " + styles.FileCol.Render("<query>")
+	fmt.Printf("  %s %s\n", padString(usage3Command, maxWidth), styles.DimCol.Render("Perform fuzzy or regex search for files and content"))
 	usage4Command := styles.GitStaged.Render("fm") + " " + styles.GitConflict.Render("info") + " " + styles.FileCol.Render("[path]")
 	fmt.Printf("  %s %s\n", padString(usage4Command, maxWidth), styles.DimCol.Render("Show file/directory information"))
 	usage5Command := styles.GitStaged.Render("fm") + " " + styles.GitConflict.Render("analyze") + " " + styles.FileCol.Render("[path]")

@@ -25,7 +25,7 @@ func HandleSettings(m *tui_context.Model, msg tea.Msg) tea.Cmd {
 }
 
 func handleSettingsKeys(m *tui_context.Model, msg tea.KeyMsg) tea.Cmd {
-	totalItems := 15
+	totalItems := 16
 	var reload bool
 	var cmd tea.Cmd
 
@@ -70,14 +70,17 @@ func ScrollSettings(m *tui_context.Model) int {
 	} else if cursor <= 12 {
 		// Group 2: rows 10-16
 		rowIdx = cursor + 4
-	} else {
-		// Group 3: rows 19-20
+	} else if cursor == 13 {
+		// Group 3: row 19
 		rowIdx = cursor + 6
+	} else {
+		// Group 4: rows 22-23
+		rowIdx = cursor + 8
 	}
 
 	if rowIdx < offset {
 		newOffset := rowIdx
-		if cursor == 0 || cursor == 6 || cursor == 13 {
+		if cursor == 0 || cursor == 6 || cursor == 13 || cursor == 14 {
 			newOffset -= 2
 		}
 		if newOffset < 0 {
@@ -139,6 +142,8 @@ func ToggleSetting(idx int, m *tui_context.Model) (bool, tea.Cmd) {
 	case 12:
 		cfg.EnableMouse = !cfg.EnableMouse
 	case 13:
+		cfg.EnableRegexSearch = !cfg.EnableRegexSearch
+	case 14:
 		if !cfg.EnableIcons {
 			if !theme.HasIconsDownloaded() {
 				m.UI.Loading = true
@@ -156,7 +161,7 @@ func ToggleSetting(idx int, m *tui_context.Model) (bool, tea.Cmd) {
 			cfg.EnableIcons = false
 			reload = true
 		}
-	case 14:
+	case 15:
 		cfg.ThemeIndex = (cfg.ThemeIndex + 1) % len(theme.Themes)
 		m.Display.Styles = theme.GetStylesheet(cfg.ThemeIndex)
 		m.Display.LoadingSpinner.Style = m.Display.LoadingSpinner.Style.Foreground(theme.Themes[cfg.ThemeIndex].Dir)
@@ -186,7 +191,7 @@ func ToggleSettingPrev(idx int, m *tui_context.Model) (bool, tea.Cmd) {
 			cfg.DateFormatIndex = (cfg.DateFormatIndex - 1 + len(format.DateFormats)) % len(format.DateFormats)
 			reload = true
 		}
-	case 14:
+	case 15:
 		cfg.ThemeIndex = (cfg.ThemeIndex - 1 + len(theme.Themes)) % len(theme.Themes)
 		m.Display.Styles = theme.GetStylesheet(cfg.ThemeIndex)
 		m.Display.LoadingSpinner.Style = m.Display.LoadingSpinner.Style.Foreground(theme.Themes[cfg.ThemeIndex].Dir)

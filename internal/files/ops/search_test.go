@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"testing"
 
@@ -30,6 +31,26 @@ func TestFuzzyMatch(t *testing.T) {
 		result, _ := FuzzyMatch(tt.s, tt.query)
 		if result != tt.expected {
 			t.Errorf("FuzzyMatch(%q, %q) = %v, want %v", tt.s, tt.query, result, tt.expected)
+		}
+	}
+}
+
+func TestRegexMatch(t *testing.T) {
+	re, _ := regexp.Compile("(?i)h.llo")
+	tests := []struct {
+		s        string
+		expected bool
+	}{
+		{"Hello World", true},
+		{"hallo", true},
+		{"hillo", true},
+		{"hxllo", true},
+		{"world", false},
+	}
+	for _, tt := range tests {
+		result, _ := matchStrings(tt.s, "", re)
+		if result != tt.expected {
+			t.Errorf("RegexMatch(%q) = %v, want %v", tt.s, result, tt.expected)
 		}
 	}
 }
@@ -64,7 +85,7 @@ func TestSearch_MatchLimit(t *testing.T) {
 		OpCtx: OpContext{Context: ctx, FS: fs},
 		Root:  "/large.txt",
 		Query: "match",
-	})
+	}, nil)
 	if !found {
 		t.Fatal("Should have found matches")
 	}

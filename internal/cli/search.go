@@ -74,6 +74,7 @@ func RunSearch(args *Args) error {
 		Git:   gs,
 		Root:  searchPath,
 		Query: args.SearchQuery,
+		Regex: args.IsRegex,
 	})
 	if err != nil {
 		return fmt.Errorf("search failed: %w", err)

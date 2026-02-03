@@ -95,6 +95,12 @@ func buildSettingGroups(props SettingsProps) []SettingGroup {
 			},
 		},
 		{
+			Title: "Search, Filtering & Inputs",
+			Settings: []SettingItem{
+				{Label: "Enable Regex Search", Value: ui.Toggle(s.EnableRegexSearch, styles)},
+			},
+		},
+		{
 			Title: "Appearance",
 			Settings: []SettingItem{
 				{Label: "Enable Nerd Font Icons", Value: ui.Toggle(s.EnableIcons, styles)},
@@ -192,8 +198,9 @@ func getSettingsHelp(cursor int) string {
 		10: "Show last modification time",
 		11: "Change the date and time format",
 		12: "Allow mouse interaction (clicks, scroll)",
-		13: "Toggle Nerd Font icons (requires download)",
-		14: "Change the application color scheme",
+		13: "Use regular expressions for searching",
+		14: "Toggle Nerd Font icons (requires download)",
+		15: "Change the application color scheme",
 	}
 
 	if help, ok := helpTexts[cursor]; ok {

@@ -108,6 +108,7 @@ func buildHelpGroups() []HelpSection {
 				{Key: "/", Desc: "Enter filter mode (↑/↓ to navigate)"},
 				{Key: "Tab", Desc: "Autocomplete current name or path"},
 				{Key: "Alt+/", Desc: "Fuzzy Content Search (Find in Files)"},
+				{Key: "Alt+R", Desc: "Toggle Regex Search mode"},
 				{Key: "Alt+M/Alt+N", Desc: "Jump between files in search results"},
 				{Key: "Esc", Desc: "Exit search/filter mode"},
 			},

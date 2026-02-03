@@ -26,6 +26,7 @@ type Config struct {
 	UseTrash          bool `json:"use_trash"`
 	EnableMouse       bool `json:"enable_mouse"`
 	EnableIcons       bool `json:"enable_icons"`
+	EnableRegexSearch bool `json:"enable_regex_search"`
 }
 
 const CurrentConfigVersion = 1
@@ -49,6 +50,7 @@ func DefaultConfig() Config {
 		UseTrash:          false,
 		EnableMouse:       true,
 		EnableIcons:       false,
+		EnableRegexSearch: false,
 	}
 }
 

@@ -40,6 +40,17 @@ func handleGlobal(m *tuictx.Model, msg tea.Msg) (tea.Cmd, bool) {
 				return func() tea.Msg { return messages.StartAnalyzeMsg{} }, true
 			}
 			return nil, false
+		case "alt+r":
+			if !m.UI.InputActive && !m.UI.SettingsOpen && !m.UI.HelpOpen {
+				m.Config.EnableRegexSearch = !m.Config.EnableRegexSearch
+				_ = m.Config.Save()
+				msg := "Regex Search enabled"
+				if !m.Config.EnableRegexSearch {
+					msg = "Regex Search disabled"
+				}
+				return utils.SetMsg(m, msg), true
+			}
+			return nil, false
 		case "alt+l":
 			m.UI.ToggleLogs()
 			return nil, true

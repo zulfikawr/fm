@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"sync"
 
@@ -15,10 +16,19 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-// Search performs a fuzzy content search within the specified directory.
+// Search performs a fuzzy or regex content search within the specified directory.
 func Search(opts SearchOptions) ([]core.FileResult, error) {
 	if opts.Query == "" {
 		return nil, nil
+	}
+
+	var re *regexp.Regexp
+	var err error
+	if opts.Regex {
+		re, err = regexp.Compile("(?i)" + opts.Query) // Case-insensitive by default
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	// Get ignored files if git is enabled
@@ -38,7 +48,7 @@ func Search(opts SearchOptions) ([]core.FileResult, error) {
 	g, ctx := errgroup.WithContext(opts.OpCtx.Context)
 	g.SetLimit(constants.MaxSearchWorkers)
 
-	err := opts.OpCtx.FS.Walk(ctx, opts.Root, func(path string, info os.FileInfo, err error) error {
+	err = opts.OpCtx.FS.Walk(ctx, opts.Root, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return nil // Skip errors
 		}
@@ -63,7 +73,7 @@ func Search(opts SearchOptions) ([]core.FileResult, error) {
 			// Create a copy of options for each worker with the specific file path
 			fileOpts := opts
 			fileOpts.Root = fpath
-			res, found := searchInFile(fileOpts)
+			res, found := searchInFile(fileOpts, re)
 			if found {
 				mu.Lock()
 				results = append(results, res)
@@ -86,7 +96,7 @@ func Search(opts SearchOptions) ([]core.FileResult, error) {
 	return results, nil
 }
 
-func searchInFile(opts SearchOptions) (core.FileResult, bool) {
+func searchInFile(opts SearchOptions, re *regexp.Regexp) (core.FileResult, bool) {
 	path := opts.Root
 	query := opts.Query
 	fs := opts.OpCtx.FS
@@ -96,7 +106,7 @@ func searchInFile(opts SearchOptions) (core.FileResult, bool) {
 	var matches []core.Match
 
 	// Check filename first
-	if ok, matchedIdx := FuzzyMatch(fileName, query); ok {
+	if ok, matchedIdx := matchStrings(fileName, query, re); ok {
 		matches = append(matches, core.Match{
 			Line:       0, // 0 indicates filename match
 			Content:    fileName,
@@ -139,7 +149,7 @@ func searchInFile(opts SearchOptions) (core.FileResult, bool) {
 		}
 
 		line := scanner.Text()
-		if ok, matchedIdx := FuzzyMatch(line, query); ok {
+		if ok, matchedIdx := matchStrings(line, query, re); ok {
 			matches = append(matches, core.Match{
 				Line:       lineNum,
 				Content:    line,
@@ -162,6 +172,22 @@ func searchInFile(opts SearchOptions) (core.FileResult, bool) {
 	}
 
 	return core.FileResult{}, false
+}
+
+func matchStrings(s, query string, re *regexp.Regexp) (bool, []int) {
+	if re != nil {
+		loc := re.FindStringIndex(s)
+		if loc == nil {
+			return false, nil
+		}
+		// Return all indices in the match range
+		var indices []int
+		for i := loc[0]; i < loc[1]; i++ {
+			indices = append(indices, i)
+		}
+		return true, indices
+	}
+	return FuzzyMatch(s, query)
 }
 
 // isBinary checks if a file is likely binary by looking for null bytes in the first 1KB.

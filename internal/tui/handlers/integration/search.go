@@ -218,6 +218,7 @@ func performSearch(m *tui_context.Model, query string) tea.Cmd {
 	fs := m.FS
 	gs := m.GS
 	path := m.Navigation.Path
+	isRegex := m.Config.EnableRegexSearch
 
 	ctx, cancel := context.WithTimeout(m.Context, 30*time.Second)
 	m.Search.CancelFunc = cancel
@@ -228,6 +229,7 @@ func performSearch(m *tui_context.Model, query string) tea.Cmd {
 			Git:   gs,
 			Root:  path,
 			Query: query,
+			Regex: isRegex,
 		})
 		return messages.SearchMsg{
 			Query:   query,

@@ -13,6 +13,7 @@
 
 One of the most powerful features of `fm` is the deep content search (`Alt+/`).
 - **Concurrent Engine:** Uses a worker-pool architecture to search thousands of files quickly.
+- **Regex Support:** Use full regular expressions by enabling "Regex Search" in settings or using the `--regex` flag in the CLI.
 - **Smart Filtering:** Automatically ignores files specified in `.gitignore` and binary files.
 - **Interactive Results:** Results are grouped by file. You can expand/collapse results with `Tab` and jump directly to a line in your editor by pressing `Enter`.
 

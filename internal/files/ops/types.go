@@ -45,6 +45,7 @@ type SearchOptions struct {
 	Git   git.GitService
 	Root  string
 	Query string
+	Regex bool
 }
 
 // ZipOptions encapsulates parameters for zip/unzip operations.
