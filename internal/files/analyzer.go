@@ -26,7 +26,7 @@ func (a *Analyzer) AnalyzeConcurrent(ctx context.Context, rootPath string, progr
 	// Semaphore limits concurrent IO operations (ReadDir/Stat)
 	sem := semaphore.NewWeighted(64)
 	var totalProcessed int64
-	
+
 	track := func(s int64) {
 		atomic.AddInt64(&totalProcessed, s)
 		if progress != nil {
@@ -48,7 +48,7 @@ func (a *Analyzer) AnalyzeConcurrent(ctx context.Context, rootPath string, progr
 	if err != nil {
 		return nil, err
 	}
-	
+
 	if res != nil {
 		a.calculatePercentages(res)
 		a.sortResult(res)
@@ -121,7 +121,7 @@ func (a *Analyzer) scanConcurrent(ctx context.Context, path string, track func(i
 	for _, entry := range entries {
 		wg.Add(1)
 		childPath := a.fs.Join(path, entry.Name())
-		
+
 		go func(p string) {
 			defer wg.Done()
 			child, _ := a.scanConcurrent(ctx, p, track, sem, rootDev)

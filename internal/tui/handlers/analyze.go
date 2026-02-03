@@ -159,7 +159,7 @@ func getAnalyzeItems(m *tuictx.Model, node *core.AnalysisResult) []*core.Analysi
 		return nil
 	}
 	var items []*core.AnalysisResult
-	
+
 	parentPath := m.FS.Dir(node.Path)
 	if parentPath != node.Path {
 		items = append(items, &core.AnalysisResult{

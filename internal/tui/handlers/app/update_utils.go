@@ -51,4 +51,3 @@ func listenForUpdateProgress(progress chan float64) tea.Cmd {
 		)()
 	}
 }
-

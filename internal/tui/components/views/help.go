@@ -160,16 +160,16 @@ func renderHelpRow(props HelpProps, item HelpItem, isCursor bool) string {
 
 	// To ensure full-width highlight, we construct the row as a single string
 	// with explicit padding and then render it with rowStyle.
-	
+
 	// Key part with fixed width and padding
 	keyContent := keyStyle.Render(item.Key)
-	
+
 	leftPart := rowStyle.PaddingLeft(3).Width(keyWidth).Render(keyContent)
-	
+
 	// Desc part with remaining width
-	descWidth := max(props.Width - keyWidth, 10)
+	descWidth := max(props.Width-keyWidth, 10)
 	descContent := descStyle.Render(item.Desc)
-	
+
 	rightPart := rowStyle.Width(descWidth).Render(descContent)
 
 	return lipgloss.JoinHorizontal(lipgloss.Top, leftPart, rightPart)

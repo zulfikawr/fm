@@ -40,7 +40,7 @@ func parse(f *flag.FlagSet, args []string) *Args {
 	f.BoolVar(&showVersion, "v", false, "Show version information (shorthand)")
 	f.StringVar(&searchStr, "search", "", "Perform fuzzy search for files and content")
 	f.StringVar(&searchStr, "s", "", "Perform fuzzy search (shorthand)")
-	
+
 	// Custom Usage
 	f.Usage = func() {
 		cfg := config.Load()
@@ -70,13 +70,13 @@ func parse(f *flag.FlagSet, args []string) *Args {
 	if !isSearch && !isInfo && len(remainingArgs) > 0 && remainingArgs[0] == "info" {
 		isInfo = true
 		remainingArgs = remainingArgs[1:]
-		
+
 		// Parse info-specific flags
 		infoFlags := flag.NewFlagSet("info", flag.ContinueOnError)
 		infoFlags.BoolVar(&infoJSON, "json", false, "Output in JSON format")
 		infoFlags.BoolVar(&infoTree, "tree", false, "Display directory tree")
 		infoFlags.IntVar(&infoDepth, "depth", 2, "Tree depth (0 for unlimited)")
-		
+
 		_ = infoFlags.Parse(remainingArgs)
 		remainingArgs = infoFlags.Args()
 	}

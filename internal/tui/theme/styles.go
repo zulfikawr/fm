@@ -33,7 +33,7 @@ type Stylesheet struct {
 	Warning lipgloss.Style
 	Success lipgloss.Style
 	Prompt  lipgloss.Style
-	
+
 	// Enhanced Color Styles
 	PrimaryCol   lipgloss.Style
 	SecondaryCol lipgloss.Style
@@ -109,7 +109,7 @@ func NewStylesheet(t Theme) Stylesheet {
 		Warning: lipgloss.NewStyle().Foreground(t.Warning).Bold(true),
 		Success: lipgloss.NewStyle().Foreground(t.Success).Bold(true),
 		Prompt:  lipgloss.NewStyle().Foreground(t.Primary).Bold(true),
-		
+
 		// Enhanced Color Styles
 		PrimaryCol:   lipgloss.NewStyle().Foreground(t.Primary),
 		SecondaryCol: lipgloss.NewStyle().Foreground(t.Secondary),

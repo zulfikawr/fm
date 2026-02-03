@@ -61,7 +61,7 @@ func ScrollHelp(m *tui_context.Model) int {
 	}
 
 	if rowIdx < offset {
-		// When moving up, if we hit the first item of a section, 
+		// When moving up, if we hit the first item of a section,
 		// scroll up one more to show the header
 		if cursor == 0 || cursor == 7 || cursor == 11 || cursor == 14 || cursor == 22 || cursor == 27 {
 			return rowIdx - 1

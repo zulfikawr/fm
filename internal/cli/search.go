@@ -3,6 +3,7 @@ package cli
 import (
 	"context"
 	"fmt"
+	"os"
 	"path/filepath"
 	"strings"
 
@@ -44,6 +45,18 @@ func RunSearch(args *Args) error {
 	fs, _, err := factory.CreateFileSystem(args.Remote, nil)
 	if err != nil {
 		return fmt.Errorf("initializing filesystem: %w", err)
+	}
+	defer func() {
+		_ = fs.Close()
+	}()
+
+	if fs.IsLocal() {
+		if searchPath == "." {
+			searchPath, _ = os.Getwd()
+		}
+		searchPath, _ = fs.Abs(searchPath)
+	} else {
+		searchPath = fs.Clean(searchPath)
 	}
 
 	gs := git.NewGitService(true)

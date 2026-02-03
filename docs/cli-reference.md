@@ -64,6 +64,31 @@ fm -r server search "error" /var/log
 
 ---
 
+### `fm analyze`
+Analyze disk usage of a directory recursively.
+
+```bash
+# Analyze current directory
+fm analyze
+
+# Analyze specific path
+fm analyze /home/user
+
+# Analyze remote server disk usage
+fm -r user@host analyze /var/log
+```
+
+**Features:**
+- Recursive disk usage calculation
+- Fast concurrent scanning
+- Themed tree view with percentage bars
+- Respects "One Filesystem" rule by default
+
+**Options:**
+- `-r, --remote <addr>` - Analyze remote disk usage via SFTP
+
+---
+
 ### `fm info`
 Display detailed information about files and directories.
 

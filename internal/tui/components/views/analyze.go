@@ -7,9 +7,9 @@ import (
 	"github.com/charmbracelet/lipgloss"
 	"github.com/zulfikawr/fm/internal/files/core"
 	"github.com/zulfikawr/fm/internal/files/format"
-	"github.com/zulfikawr/fm/internal/tui/theme"
-	"github.com/zulfikawr/fm/internal/tui/components/ui"
 	"github.com/zulfikawr/fm/internal/tui/components/messages"
+	"github.com/zulfikawr/fm/internal/tui/components/ui"
+	"github.com/zulfikawr/fm/internal/tui/theme"
 )
 
 type AnalyzeProps struct {
@@ -83,7 +83,7 @@ func RenderAnalyze(props AnalyzeProps) string {
 			if child.Name != "↑ .." {
 				icon = theme.GetIcon(core.Item{IsDir: child.IsDirectory, Name: child.Name})
 			}
-			
+
 			if icon != "" {
 				iconPart = icon + "  "
 			} else {
@@ -100,10 +100,12 @@ func RenderAnalyze(props AnalyzeProps) string {
 			sizeStr = format.FormatSize(child.Size, props.SizeFormatIndex)
 			percStr = fmt.Sprintf("%5.1f%%", child.Percentage*100)
 		}
-		
+
 		nameWidth := props.Width / 4
-		if nameWidth < 15 { nameWidth = 15 }
-		
+		if nameWidth < 15 {
+			nameWidth = 15
+		}
+
 		nameStr := child.Name
 		if child.Name != "↑ .." && child.IsDirectory {
 			nameStr = child.Name + "/"
@@ -112,8 +114,10 @@ func RenderAnalyze(props AnalyzeProps) string {
 
 		occupiedWidth := iconWidth + nameWidth + sizeWidth + percWidth + 6
 		barWidth := props.Width - occupiedWidth
-		if barWidth < 5 { barWidth = 5 }
-		
+		if barWidth < 5 {
+			barWidth = 5
+		}
+
 		var bar string
 		if child.Name == "↑ .." {
 			bar = lineStyle.Width(barWidth).Render("")
@@ -138,10 +142,10 @@ func RenderAnalyze(props AnalyzeProps) string {
 		}
 
 		prefixPart := nameStyle.Inherit(bgStyle).Render(iconPart)
-		namePart   := nameStyle.Inherit(bgStyle).Width(nameWidth).Render(nameStr)
-		sizePart   := metaSizeStyle.Inherit(bgStyle).Width(sizeWidth).Align(lipgloss.Right).Render(sizeStr)
-		percPart   := metaPercStyle.Inherit(bgStyle).Width(percWidth).Align(lipgloss.Right).Render(percStr)
-		gapPart    := bgStyle.Render(" ")
+		namePart := nameStyle.Inherit(bgStyle).Width(nameWidth).Render(nameStr)
+		sizePart := metaSizeStyle.Inherit(bgStyle).Width(sizeWidth).Align(lipgloss.Right).Render(sizeStr)
+		percPart := metaPercStyle.Inherit(bgStyle).Width(percWidth).Align(lipgloss.Right).Render(percStr)
+		gapPart := bgStyle.Render(" ")
 
 		line := lipgloss.JoinHorizontal(lipgloss.Left,
 			gapPart, prefixPart, namePart, gapPart, bar, gapPart, sizePart, gapPart, percPart,
@@ -162,8 +166,10 @@ func renderMiniBar(percent float64, width int, style theme.Stylesheet, isSelecte
 	if filled > width {
 		filled = width
 	}
-	if filled < 0 { filled = 0 }
-	
+	if filled < 0 {
+		filled = 0
+	}
+
 	bgStyle := style.Item
 	if isSelected {
 		bgStyle = style.SelectedItem
@@ -173,9 +179,9 @@ func renderMiniBar(percent float64, width int, style theme.Stylesheet, isSelecte
 	emptyStyle := style.MutedCol.Inherit(bgStyle).UnsetPadding().UnsetWidth()
 	bracketStyle := style.MutedCol.Inherit(bgStyle).UnsetPadding().UnsetWidth()
 
-	bar := filledStyle.Render(strings.Repeat("#", filled)) + 
-	       emptyStyle.Render(strings.Repeat(".", width-filled))
-	
+	bar := filledStyle.Render(strings.Repeat("#", filled)) +
+		emptyStyle.Render(strings.Repeat(".", width-filled))
+
 	return bracketStyle.Render("[") + bar + bracketStyle.Render("]")
 }
 

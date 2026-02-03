@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.1.1] - 2026-02-03
+
+### Added
+- **CLI Disk Usage Analyzer (`fm analyze`)**
+  - New command-line tool to analyze directory disk usage without entering the TUI.
+  - Displays usage in a clean, themed row layout with horizontal percentage bars.
+  - Supports custom paths and remote servers via the `-r` flag.
+  - Fast concurrent scanning engine with "One Filesystem" protection.
+
+### Changed
+- **CLI Search Improvements**
+  - Updated `fm search` output to display the absolute/resolved path being searched.
+  - Aligned CLI search header style with the new disk usage analyzer.
+
 ## [v1.1.0] - 2026-02-03
 
 ### Fixed
