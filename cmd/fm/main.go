@@ -49,6 +49,7 @@ func run() error {
 	if err != nil {
 		return err
 	}
+	a.Model.StartInAnalyzeMode = args.IsAnalyze
 	defer tui.Close(a.Model)
 
 	// Ensure cleanup happens even on panic

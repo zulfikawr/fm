@@ -5,6 +5,7 @@ import (
 	"github.com/zulfikawr/fm/internal/tui/context"
 	"github.com/zulfikawr/fm/internal/tui/handlers/app"
 	"github.com/zulfikawr/fm/internal/tui/handlers/nav"
+	"github.com/zulfikawr/fm/internal/tui/messages"
 	"github.com/zulfikawr/fm/internal/tui/theme"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -15,11 +16,15 @@ func (a *App) Initialize() tea.Cmd {
 	if a.Model.Config.EnableIcons {
 		_ = theme.LoadIcons()
 	}
-	return tea.Batch(
+	cmds := []tea.Cmd{
 		nav.Reload(a.Model, false),
 		app.CheckForUpdates(),
 		a.Model.Display.LoadingSpinner.Start(),
-	)
+	}
+	if a.Model.StartInAnalyzeMode {
+		cmds = append(cmds, func() tea.Msg { return messages.StartAnalyzeMsg{} })
+	}
+	return tea.Batch(cmds...)
 }
 
 // InitModel returns the initial command for the model

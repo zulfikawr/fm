@@ -3,12 +3,12 @@ package files
 import (
 	"context"
 	"os"
-	"path/filepath"
 	"sort"
 	"sync"
 	"sync/atomic"
 
 	"github.com/zulfikawr/fm/internal/files/core"
+	"golang.org/x/sync/semaphore"
 )
 
 // Analyzer handles recursive disk usage calculation
@@ -21,75 +21,130 @@ func NewAnalyzer(fs core.FileSystem) *Analyzer {
 	return &Analyzer{fs: fs}
 }
 
-// Analyze performs a recursive scan of the given path
-func (a *Analyzer) Analyze(ctx context.Context, rootPath string, progress chan<- int64) (*core.AnalysisResult, error) {
-	// For simplicity in this first version, we use a recursive approach.
-	// We can optimize with a worker pool later if needed.
+// AnalyzeConcurrent performs a recursive scan of the given path using a worker pool
+func (a *Analyzer) AnalyzeConcurrent(ctx context.Context, rootPath string, progress chan<- int64) (*core.AnalysisResult, error) {
+	// Semaphore limits concurrent IO operations (ReadDir/Stat)
+	sem := semaphore.NewWeighted(64)
+	var totalProcessed int64
 	
-	result, err := a.scan(ctx, rootPath, progress)
+	track := func(s int64) {
+		atomic.AddInt64(&totalProcessed, s)
+		if progress != nil {
+			select {
+			case progress <- s:
+			default:
+			}
+		}
+	}
+
+	// Capture root device ID to implement "One Filesystem" rule
+	var rootDev uint64
+	info, err := a.fs.Lstat(ctx, rootPath)
+	if err == nil {
+		rootDev = GetDeviceID(info)
+	}
+
+	res, err := a.scanConcurrent(ctx, rootPath, track, sem, rootDev)
 	if err != nil {
 		return nil, err
 	}
-
-	if result != nil {
-		a.calculatePercentages(result)
-		a.sortResult(result)
+	
+	if res != nil {
+		a.calculatePercentages(res)
+		a.sortResult(res)
 	}
-
-	return result, nil
+	return res, nil
 }
 
-func (a *Analyzer) scan(ctx context.Context, path string, progress chan<- int64) (*core.AnalysisResult, error) {
+func (a *Analyzer) scanConcurrent(ctx context.Context, path string, track func(int64), sem *semaphore.Weighted, rootDev uint64) (*core.AnalysisResult, error) {
 	select {
 	case <-ctx.Done():
 		return nil, ctx.Err()
 	default:
 	}
 
-	info, err := os.Lstat(path)
-	if err != nil {
+	// 1. Get file info (Throttled via FileSystem interface)
+	if err := sem.Acquire(ctx, 1); err != nil {
 		return nil, err
 	}
+	info, err := a.fs.Lstat(ctx, path)
+	sem.Release(1)
 
-	result := &core.AnalysisResult{
+	if err != nil {
+		return nil, nil
+	}
+
+	// Implement One Filesystem Rule:
+	// If this is a directory and its device ID differs from root, skip recursion
+	currentDev := GetDeviceID(info)
+	if rootDev != 0 && currentDev != 0 && currentDev != rootDev {
+		return &core.AnalysisResult{
+			Path:        path,
+			Name:        a.fs.Base(path) + " [Mount Point]",
+			IsDirectory: true,
+			Size:        0,
+		}, nil
+	}
+
+	res := &core.AnalysisResult{
 		Path:        path,
-		Name:        filepath.Base(path),
+		Name:        a.fs.Base(path),
 		IsDirectory: info.IsDir(),
 	}
 
-	if !info.IsDir() {
-		result.Size = info.Size()
-		if progress != nil {
-			progress <- result.Size
-		}
-		return result, nil
+	// 2. Handle non-directories or symlinks
+	if !info.IsDir() || info.Mode()&os.ModeSymlink != 0 {
+		res.Size = info.Size()
+		track(res.Size)
+		return res, nil
 	}
 
-	entries, err := os.ReadDir(path)
+	// 3. Read directory entries (Throttled via FileSystem interface)
+	if err := sem.Acquire(ctx, 1); err != nil {
+		return nil, err
+	}
+	entries, err := a.fs.ReadDirEntries(ctx, path)
+	sem.Release(1)
+
 	if err != nil {
-		return result, nil // Return what we have even if we can't read children
+		return res, nil
 	}
 
-	var totalSize int64
-	var mu sync.Mutex
+	if len(entries) == 0 {
+		return res, nil
+	}
+
+	// 4. Process children concurrently
+	results := make(chan *core.AnalysisResult, len(entries))
+	var wg sync.WaitGroup
 
 	for _, entry := range entries {
-		childPath := filepath.Join(path, entry.Name())
+		wg.Add(1)
+		childPath := a.fs.Join(path, entry.Name())
 		
-		// To avoid too many goroutines, we could limit depth or use a pool.
-		// For now, let's do it synchronously for each level but we could parallelize sibling directories.
-		child, err := a.scan(ctx, childPath, progress)
-		if err == nil && child != nil {
-			child.Parent = result
-			mu.Lock()
-			result.Children = append(result.Children, child)
-			totalSize += child.Size
-			mu.Unlock()
-		}
+		go func(p string) {
+			defer wg.Done()
+			child, _ := a.scanConcurrent(ctx, p, track, sem, rootDev)
+			if child != nil {
+				results <- child
+			}
+		}(childPath)
 	}
 
-	result.Size = totalSize
-	return result, nil
+	go func() {
+		wg.Wait()
+		close(results)
+	}()
+
+	var total int64
+	for child := range results {
+		child.Parent = res
+		res.Children = append(res.Children, child)
+		total += child.Size
+	}
+	res.Size = total
+
+	return res, nil
 }
 
 func (a *Analyzer) calculatePercentages(r *core.AnalysisResult) {
@@ -109,91 +164,4 @@ func (a *Analyzer) sortResult(r *core.AnalysisResult) {
 	for _, child := range r.Children {
 		a.sortResult(child)
 	}
-}
-
-// Optimized concurrent scanner
-func (a *Analyzer) AnalyzeConcurrent(ctx context.Context, rootPath string, progress chan<- int64) (*core.AnalysisResult, error) {
-	var totalProcessed int64
-	
-	// Helper to track progress
-	track := func(s int64) {
-		atomic.AddInt64(&totalProcessed, s)
-		if progress != nil {
-			select {
-			case progress <- s:
-			default:
-			}
-		}
-	}
-
-	res, err := a.scanConcurrent(ctx, rootPath, track)
-	if err != nil {
-		return nil, err
-	}
-	
-	if res != nil {
-		a.calculatePercentages(res)
-		a.sortResult(res)
-	}
-	return res, nil
-}
-
-func (a *Analyzer) scanConcurrent(ctx context.Context, path string, track func(int64)) (*core.AnalysisResult, error) {
-	select {
-	case <-ctx.Done():
-		return nil, ctx.Err()
-	default:
-	}
-
-	info, err := os.Lstat(path)
-	if err != nil {
-		return nil, err
-	}
-
-	res := &core.AnalysisResult{
-		Path:        path,
-		Name:        filepath.Base(path),
-		IsDirectory: info.IsDir(),
-	}
-
-	if !info.IsDir() {
-		res.Size = info.Size()
-		track(res.Size)
-		return res, nil
-	}
-
-	entries, err := os.ReadDir(path)
-	if err != nil {
-		return res, nil
-	}
-
-	results := make(chan *core.AnalysisResult, len(entries))
-	var wg sync.WaitGroup
-
-	for _, entry := range entries {
-		wg.Add(1)
-		go func(e os.DirEntry) {
-			defer wg.Done()
-			childPath := filepath.Join(path, e.Name())
-			child, err := a.scanConcurrent(ctx, childPath, track)
-			if err == nil && child != nil {
-				child.Parent = res
-				results <- child
-			}
-		}(entry)
-	}
-
-	go func() {
-		wg.Wait()
-		close(results)
-	}()
-
-	var total int64
-	for child := range results {
-		res.Children = append(res.Children, child)
-		total += child.Size
-	}
-	res.Size = total
-
-	return res, nil
 }

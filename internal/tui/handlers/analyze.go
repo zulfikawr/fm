@@ -28,10 +28,10 @@ func HandleAnalyze(m *tuictx.Model, msg tea.Msg) tea.Cmd {
 			case "n", "N", "esc":
 				m.UI.StopConfirming()
 				m.Operations.ActionType = constants.ActionNone
-				return nil
+				return func() tea.Msg { return nil }
 			}
 		}
-		return nil
+		return func() tea.Msg { return nil }
 	}
 
 	switch msg := msg.(type) {
@@ -39,27 +39,24 @@ func HandleAnalyze(m *tuictx.Model, msg tea.Msg) tea.Cmd {
 		if msg.Action == tea.MouseActionPress {
 			switch msg.Button {
 			case tea.MouseButtonLeft:
-				// Only handle click if not a wheel event (handled by global)
-				if msg.Action == tea.MouseActionPress {
-					// Header is removed, so row starts at msg.Y
-					row := msg.Y
-					if row >= 0 && m.Analyze.ActiveNode != nil {
-						idx := row + m.Analyze.Offset
-						items := getAnalyzeItems(m, m.Analyze.ActiveNode)
-						if idx >= 0 && idx < len(items) {
-							m.Analyze.Cursor = idx
-						}
+				// Header is removed, so row starts at msg.Y
+				row := msg.Y
+				if row >= 0 && m.Analyze.ActiveNode != nil {
+					idx := row + m.Analyze.Offset
+					items := getAnalyzeItems(m, m.Analyze.ActiveNode)
+					if idx >= 0 && idx < len(items) {
+						m.Analyze.Cursor = idx
 					}
 				}
 			}
 		}
-		return nil
+		return func() tea.Msg { return nil }
 
 	case tea.KeyMsg:
 		switch msg.String() {
-		case "esc", "q":
+		case "esc", "q", "alt+u":
 			m.UI.AnalyzeOpen = false
-			return nil
+			return func() tea.Msg { return nil }
 
 		case "up", "k":
 			if m.Analyze.Cursor > 0 {
@@ -68,7 +65,7 @@ func HandleAnalyze(m *tuictx.Model, msg tea.Msg) tea.Cmd {
 			if m.Analyze.Cursor < m.Analyze.Offset {
 				m.Analyze.Offset = m.Analyze.Cursor
 			}
-			return nil
+			return func() tea.Msg { return nil }
 
 		case "down", "j":
 			items := getAnalyzeItems(m, m.Analyze.ActiveNode)
@@ -79,32 +76,29 @@ func HandleAnalyze(m *tuictx.Model, msg tea.Msg) tea.Cmd {
 			if m.Analyze.Cursor >= m.Analyze.Offset+m.Display.ViewportHeight {
 				m.Analyze.Offset = m.Analyze.Cursor - m.Display.ViewportHeight + 1
 			}
-			return nil
+			return func() tea.Msg { return nil }
 
 		case "enter", "right", "l":
 			items := getAnalyzeItems(m, m.Analyze.ActiveNode)
 			if m.Analyze.Cursor < len(items) {
 				selected := items[m.Analyze.Cursor]
+				// ONLY allow navigation if it's a directory. Disable Open File.
 				if selected.IsDirectory {
 					if selected.Name == "↑ .." {
-						// Going up via "↑ .."
 						if m.Analyze.ActiveNode.Parent != nil {
 							m.Analyze.ActiveNode = m.Analyze.ActiveNode.Parent
 							m.Analyze.Cursor = 0
 							m.Analyze.Offset = 0
-							return nil
+							return func() tea.Msg { return nil }
 						}
-						// If at root of analysis, re-analyze parent
 						return StartAnalysisAtPath(m, m.FS.Dir(m.Analyze.ActiveNode.Path))
 					}
-					// Drilling down
 					m.Analyze.ActiveNode = selected
 					m.Analyze.Cursor = 0
 					m.Analyze.Offset = 0
-					return nil
 				}
 			}
-			return nil
+			return func() tea.Msg { return nil }
 
 		case "backspace", "left", "h":
 			if m.Analyze.ActiveNode != nil {
@@ -112,51 +106,49 @@ func HandleAnalyze(m *tuictx.Model, msg tea.Msg) tea.Cmd {
 					m.Analyze.ActiveNode = m.Analyze.ActiveNode.Parent
 					m.Analyze.Cursor = 0
 					m.Analyze.Offset = 0
-					return nil
+					return func() tea.Msg { return nil }
 				}
-				// At root of current analysis, go up and re-analyze
 				parentPath := m.FS.Dir(m.Analyze.ActiveNode.Path)
-				// If we are already at filesystem root, exit
 				if parentPath == m.Analyze.ActiveNode.Path {
 					m.UI.AnalyzeOpen = false
-					return nil
+					return func() tea.Msg { return nil }
 				}
 				return StartAnalysisAtPath(m, parentPath)
 			}
 			m.UI.AnalyzeOpen = false
-			return nil
+			return func() tea.Msg { return nil }
 
 		case "d":
 			items := getAnalyzeItems(m, m.Analyze.ActiveNode)
 			if m.Analyze.Cursor < len(items) {
 				selected := items[m.Analyze.Cursor]
 				if selected.Name == "↑ .." {
-					return nil
+					return func() tea.Msg { return nil }
 				}
 				if m.Config.ConfirmOperations {
 					m.UI.StartConfirming()
 					m.Operations.ActionType = constants.ActionDelete
-					return nil
+					return func() tea.Msg { return nil }
 				}
 				return PerformDeleteFromAnalyze(m)
 			}
-			return nil
+			return func() tea.Msg { return nil }
 
 		default:
-			// Suppress global keys by returning nil and not bubbling up
-			return nil
+			// Suppress all other global keys
+			return func() tea.Msg { return nil }
 		}
 
 	case messages.AnalyzeFinishedMsg:
 		m.UI.Loading = false
 		if msg.Err != nil {
-			return nil
+			return func() tea.Msg { return nil }
 		}
 		m.Analyze.Result = msg.Result
 		m.Analyze.ActiveNode = msg.Result
 		m.Analyze.Cursor = 0
 		m.Analyze.Offset = 0
-		return nil
+		return func() tea.Msg { return nil }
 	}
 
 	return nil
@@ -168,7 +160,6 @@ func getAnalyzeItems(m *tuictx.Model, node *core.AnalysisResult) []*core.Analysi
 	}
 	var items []*core.AnalysisResult
 	
-	// Check if we should show "↑ .." (not at filesystem root)
 	parentPath := m.FS.Dir(node.Path)
 	if parentPath != node.Path {
 		items = append(items, &core.AnalysisResult{
@@ -190,7 +181,6 @@ func StartAnalysis(m *tuictx.Model) tea.Cmd {
 func StartAnalysisAtPath(m *tuictx.Model, path string) tea.Cmd {
 	m.UI.AnalyzeOpen = true
 	m.UI.Loading = true
-	// Update navigation path so if we exit, we are in the new dir
 	m.Navigation.Path = path
 
 	return func() tea.Msg {

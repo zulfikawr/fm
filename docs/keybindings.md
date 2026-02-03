@@ -31,6 +31,7 @@
 | Key | Action |
 | --- | --- |
 | `Alt+T` | Open a new tab (up to 9 tabs) |
+| `Alt+U` | Analyze current directory disk usage |
 | `Alt+W` | Close the current tab |
 | `Alt+1` - `Alt+9` | Switch to the corresponding tab |
 

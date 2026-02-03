@@ -63,7 +63,9 @@ See [**docs/getting-started.md**](./docs/getting-started.md) for other methods (
 | `Tab` | Autocomplete name or path |
 | `g` | Go to path (Local or Remote) |
 | `Alt+T` / `Alt+W` | New Tab / Close Tab |
+| `Alt+U` | Analyze Disk Usage |
 | `Alt+1`-`9` | Switch between tabs |
+| `?` | Toggle help |
 | `.` | Toggle settings |
 | `Ctrl+C` | Quit |
 
@@ -73,6 +75,7 @@ See [**keybindings.md**](./docs/keybindings.md) for the full list.
 
 - **Performance:** Fast navigation with a modular concurrent architecture.
 - **Mouse Support:** Modern interaction system with scrolling, drag-to-select, and clickable UI elements.
+- **Disk Usage Analyzer:** Interactive high-performance heat-map for identifying space-hogs.
 - **Nerd Font Icons:** Support for modern file and folder icons.
 - **Git Integration:** Real-time status markers and branch information.
 - **Remote Access:** Full SFTP support for managing remote servers.

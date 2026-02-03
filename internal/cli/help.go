@@ -25,6 +25,7 @@ func PrintHelp(styles theme.Stylesheet, themeName string) {
 		{"Space", "Toggle selection"},
 		{"alt+a", "Select all"},
 		{"alt+t", "Create new tab"},
+		{"alt+u", "Analyze disk usage"},
 		{"alt+n", "Create new file or folder"},
 		{"alt+1-9", "Switch to tab 1-9"},
 		{"alt+w", "Close current tab"},
@@ -66,7 +67,9 @@ func PrintHelp(styles theme.Stylesheet, themeName string) {
 	usage3Command := styles.GitStaged.Render("fm") + " " + styles.GitConflict.Render("search") + " " + styles.FileCol.Render("<query>")
 	fmt.Printf("  %s %s\n", padString(usage3Command, maxWidth), styles.DimCol.Render("Perform fuzzy search for files and content"))
 	usage4Command := styles.GitStaged.Render("fm") + " " + styles.GitConflict.Render("info") + " " + styles.FileCol.Render("[path]")
-	fmt.Printf("  %s %s\n\n", padString(usage4Command, maxWidth), styles.DimCol.Render("Show file/directory information"))
+	fmt.Printf("  %s %s\n", padString(usage4Command, maxWidth), styles.DimCol.Render("Show file/directory information"))
+	usage5Command := styles.GitStaged.Render("fm") + " " + styles.GitConflict.Render("analyze") + " " + styles.FileCol.Render("[path]")
+	fmt.Printf("  %s %s\n\n", padString(usage5Command, maxWidth), styles.DimCol.Render("Analyze disk usage of a directory"))
 
 	fmt.Println(styles.DirCol.Render("Keybindings:"))
 

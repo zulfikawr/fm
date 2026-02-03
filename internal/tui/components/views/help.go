@@ -114,6 +114,7 @@ func buildHelpGroups() []HelpSection {
 		},
 		{
 			Title: "Miscellaneous", Items: []HelpItem{
+				{Key: "Alt+U", Desc: "Analyze Disk Usage"},
 				{Key: "Alt+C", Desc: "View current clipboard contents"},
 				{Key: "Alt+L", Desc: "View operation logs"},
 				{Key: "s", Desc: "Cycle through sort modes"},

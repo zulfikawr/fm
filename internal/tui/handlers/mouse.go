@@ -23,6 +23,16 @@ func HandleMouse(m *context.Model, msg tea.MouseMsg) tea.Cmd {
 		return nil
 	}
 
+	// 1. App Header is 1 line (y=0)
+	if msg.Y == 0 {
+		return handleMouseClick(m, msg) // Existing header logic
+	}
+
+	// 2. Analyze Handlers (High Priority Modal)
+	if m.UI.AnalyzeOpen {
+		return HandleAnalyze(m, msg)
+	}
+
 	switch msg.Action {
 	case tea.MouseActionPress:
 		switch msg.Button {

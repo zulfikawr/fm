@@ -47,13 +47,13 @@ func handleGlobal(m *tuictx.Model, msg tea.Msg) (tea.Cmd, bool) {
 			m.UI.ToggleClipboard()
 			return nil, true
 		case ".":
-			if m.UI.InputActive {
+			if m.UI.InputActive || m.UI.AnalyzeOpen {
 				return nil, false
 			}
 			m.UI.ToggleSettings()
 			return nil, true
 		case "?":
-			if m.UI.InputActive {
+			if m.UI.InputActive || m.UI.AnalyzeOpen {
 				return nil, false
 			}
 			m.UI.ToggleHelp()

@@ -18,6 +18,7 @@ type Args struct {
 	InfoJSON    bool
 	InfoTree    bool
 	InfoDepth   int
+	IsAnalyze   bool
 	Args        []string
 }
 
@@ -80,6 +81,12 @@ func parse(f *flag.FlagSet, args []string) *Args {
 		remainingArgs = infoFlags.Args()
 	}
 
+	isAnalyze := false
+	if !isSearch && !isInfo && len(remainingArgs) > 0 && remainingArgs[0] == "analyze" {
+		isAnalyze = true
+		remainingArgs = remainingArgs[1:]
+	}
+
 	return &Args{
 		Remote:      remoteStr,
 		ShowVersion: showVersion,
@@ -89,6 +96,7 @@ func parse(f *flag.FlagSet, args []string) *Args {
 		InfoJSON:    infoJSON,
 		InfoTree:    infoTree,
 		InfoDepth:   infoDepth,
+		IsAnalyze:   isAnalyze,
 		Args:        remainingArgs,
 	}
 }

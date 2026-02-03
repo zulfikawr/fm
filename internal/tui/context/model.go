@@ -47,6 +47,9 @@ type Model struct {
 	Search     SearchState     // Fuzzy content search state
 	Logs       LogState        // Operation logs
 	Analyze    AnalyzeState    // Disk usage analysis state
+
+	// Startup flags
+	StartInAnalyzeMode bool
 }
 
 // AnalyzeRow represents a row in the analyze view

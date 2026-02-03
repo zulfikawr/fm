@@ -23,6 +23,15 @@ Manage compressed files without leaving the TUI.
 - **Unzipping:** Highlight a `.zip` or `.tar.gz` file and press `u` to extract it to the current directory.
 - **ZipSlip Protection:** Built-in security to prevent directory traversal attacks during extraction.
 
+## 📊 Disk Usage Analysis
+
+Quickly identify what is taking up space on your disk with the built-in analyzer (`Alt+U`).
+- **Concurrent Scanner:** Uses a worker-pool to walk directory trees at high speed.
+- **One Filesystem Rule:** Automatically stays within the same filesystem to avoid "fake" large files in virtual directories like `/proc` or `/sys`.
+- **Interactive Heat-map:** Visual bars show what percentage of the parent directory each item consumes.
+- **Actionable:** Drill down into subdirectories with `Enter` or delete space-hogs directly with `d`.
+- **Remote Support:** Analyze disk usage on remote servers over SFTP just like your local machine.
+
 ## 🛡️ Conflict Resolution
 
 When moving or copying files, `fm` handles name collisions gracefully:
