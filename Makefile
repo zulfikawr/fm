@@ -27,6 +27,11 @@ clean:
 test:
 	go test ./...
 
+## Lint: Run golangci-lint and go fmt
+lint:
+	go fmt ./...
+	golangci-lint run
+
 ## Help: Show this help message
 help:
 	@echo "Usage: make [target]"
