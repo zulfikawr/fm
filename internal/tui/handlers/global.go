@@ -6,6 +6,7 @@ import (
 	tuictx "github.com/zulfikawr/fm/internal/tui/context"
 	"github.com/zulfikawr/fm/internal/tui/handlers/app"
 	"github.com/zulfikawr/fm/internal/tui/handlers/utils"
+	"github.com/zulfikawr/fm/internal/tui/messages"
 )
 
 // handleGlobal handles system-level messages like resizing, ticks, and global shortcuts
@@ -30,6 +31,15 @@ func handleGlobal(m *tuictx.Model, msg tea.Msg) (tea.Cmd, bool) {
 				return tea.Quit, true
 			}
 			return utils.SetMsg(m, "Press [Ctrl+C] again to close"), true
+		case "alt+u":
+			if !m.UI.InputActive && !m.UI.SettingsOpen && !m.UI.HelpOpen {
+				if m.UI.AnalyzeOpen {
+					m.UI.AnalyzeOpen = false
+					return nil, true
+				}
+				return func() tea.Msg { return messages.StartAnalyzeMsg{} }, true
+			}
+			return nil, false
 		case "alt+l":
 			m.UI.ToggleLogs()
 			return nil, true
@@ -76,6 +86,10 @@ func handleGlobal(m *tuictx.Model, msg tea.Msg) (tea.Cmd, bool) {
 			}
 			if m.UI.ClipboardOpen {
 				m.UI.ToggleClipboard()
+				return nil, true
+			}
+			if m.UI.AnalyzeOpen {
+				m.UI.AnalyzeOpen = false
 				return nil, true
 			}
 		}

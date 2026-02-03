@@ -46,6 +46,46 @@ type Model struct {
 	Message    MessageState    // Status messages
 	Search     SearchState     // Fuzzy content search state
 	Logs       LogState        // Operation logs
+	Analyze    AnalyzeState    // Disk usage analysis state
+}
+
+// AnalyzeRow represents a row in the analyze view
+type AnalyzeRow struct {
+	IsUp        bool
+	IsDirectory bool
+	Name        string
+	Path        string
+	Node        *core.AnalysisResult
+}
+
+// AnalyzeState holds state for the analyze view
+type AnalyzeState struct {
+	Result     *core.AnalysisResult
+	ActiveNode *core.AnalysisResult
+	Cursor     int
+	Offset     int
+}
+
+// GetRows returns the currently displayed rows for the analyze view
+func (s *AnalyzeState) GetRows() []AnalyzeRow {
+	var rows []AnalyzeRow
+	if s.ActiveNode == nil {
+		return rows
+	}
+
+	if s.ActiveNode.Parent != nil {
+		rows = append(rows, AnalyzeRow{IsUp: true, IsDirectory: true, Name: ".."})
+	}
+
+	for _, child := range s.ActiveNode.Children {
+		rows = append(rows, AnalyzeRow{
+			IsDirectory: child.IsDirectory,
+			Name:        child.Name,
+			Path:        child.Path,
+			Node:        child,
+		})
+	}
+	return rows
 }
 
 // NewModel creates a new model with initial state

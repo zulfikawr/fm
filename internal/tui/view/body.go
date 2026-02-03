@@ -48,6 +48,26 @@ func renderBody(m *context.Model, layout context.Layout) string {
 			Logs:   m.Logs.Entries,
 			Style:  styles,
 		})
+	} else if m.UI.AnalyzeOpen && m.UI.Loading {
+		bodyStr = loading.Render(loading.Props{
+			Width:   layout.Width,
+			Height:  layout.BodyHeight,
+			Message: "Analyzing Disk Usage...",
+			Spinner: m.Display.LoadingSpinner,
+			Style:   styles,
+		})
+	} else if m.UI.AnalyzeOpen {
+		bodyStr = views.RenderAnalyze(views.AnalyzeProps{
+			Width:           layout.Width,
+			Height:          layout.BodyHeight,
+			ActiveNode:      m.Analyze.ActiveNode,
+			Cursor:          m.Analyze.Cursor,
+			Offset:          m.Analyze.Offset,
+			Style:           styles,
+			EnableIcons:     m.Config.EnableIcons,
+			SizeFormatIndex: m.Config.SizeFormatIndex,
+			IsRoot:          m.Analyze.ActiveNode != nil && m.FS.Dir(m.Analyze.ActiveNode.Path) == m.Analyze.ActiveNode.Path,
+		})
 	} else if m.UI.ClipboardOpen {
 		bodyStr = views.RenderClipboard(views.ClipboardProps{
 			Width:    layout.Width,

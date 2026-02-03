@@ -133,7 +133,7 @@ func renderHelpRows(props HelpProps, groups []HelpSection) []string {
 	for _, s := range groups {
 		rows = append(rows, props.Style.SettingsHeader.Width(props.Width).Render(s.Title))
 		for _, item := range s.Items {
-			rows = append(rows, renderHelpRow(props, item, currentIndex == props.Cursor))
+			rows = append(rows, renderHelpRow(props, item))
 			currentIndex++
 		}
 		rows = append(rows, "") // Spacer
@@ -141,7 +141,7 @@ func renderHelpRows(props HelpProps, groups []HelpSection) []string {
 	return rows
 }
 
-func renderHelpRow(props HelpProps, item HelpItem, isCursor bool) string {
+func renderHelpRow(props HelpProps, item HelpItem) string {
 	keyWidth := 25
 	if props.Width < 60 {
 		keyWidth = props.Width / 3

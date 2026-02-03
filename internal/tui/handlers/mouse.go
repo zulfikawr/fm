@@ -75,6 +75,12 @@ func handleScrollUp(m *context.Model) tea.Cmd {
 		}
 		return nil
 	}
+	if m.UI.AnalyzeOpen {
+		if m.Analyze.Offset > 0 {
+			m.Analyze.Offset--
+		}
+		return nil
+	}
 	if m.Inputs.Mode == context.InputFuzzySearch || len(m.Search.Results) > 0 {
 		if m.Search.Offset > 0 {
 			m.Search.Offset--
@@ -118,6 +124,13 @@ func handleScrollDown(m *context.Model) tea.Cmd {
 	if m.UI.ClipboardOpen {
 		if m.Operations.Clipboard.Offset < len(m.Operations.Clipboard.Paths)-m.Display.ViewportHeight {
 			m.Operations.Clipboard.Offset++
+		}
+		return nil
+	}
+	if m.UI.AnalyzeOpen {
+		items := getAnalyzeItems(m, m.Analyze.ActiveNode)
+		if m.Analyze.Offset < len(items)-m.Display.ViewportHeight {
+			m.Analyze.Offset++
 		}
 		return nil
 	}
@@ -381,6 +394,10 @@ func handleMouseClick(m *context.Model, msg tea.MouseMsg) tea.Cmd {
 		return handleClipboardClick(m, bodyY)
 	}
 
+	if m.UI.AnalyzeOpen {
+		return handleAnalyzeClick(m, bodyY)
+	}
+
 	if m.Inputs.Mode == context.InputFuzzySearch || len(m.Search.Results) > 0 {
 		return handleSearchClick(m, msg)
 	}
@@ -501,6 +518,47 @@ func handleClipboardClick(m *context.Model, bodyY int) tea.Cmd {
 
 	m.Operations.Clipboard.Cursor = itemIdx
 	m.Operations.Clipboard.Offset = app.ScrollLogs(m.Operations.Clipboard.Cursor, m.Operations.Clipboard.Offset, m.Display.ViewportHeight)
+	return nil
+}
+
+func handleAnalyzeClick(m *context.Model, bodyY int) tea.Cmd {
+	idx := bodyY + m.Analyze.Offset
+	if idx < 0 {
+		return nil
+	}
+
+	items := getAnalyzeItems(m, m.Analyze.ActiveNode)
+	if idx >= len(items) {
+		return nil
+	}
+
+	now := time.Now()
+	// Use a high offset for analyze clicks
+	clickID := 0xAC1D0000 | idx
+	isDoubleClick := clickID == m.Display.LastClickIdx && now.Sub(m.Display.LastClickTime) < 500*time.Millisecond
+
+	m.Display.LastClickTime = now
+	m.Display.LastClickIdx = clickID
+
+	if isDoubleClick {
+		selected := items[idx]
+		if selected.IsDirectory {
+			if selected.Name == ".." {
+				if m.Analyze.ActiveNode.Parent != nil {
+					m.Analyze.ActiveNode = m.Analyze.ActiveNode.Parent
+				} else {
+					return StartAnalysisAtPath(m, m.FS.Dir(m.Analyze.ActiveNode.Path))
+				}
+			} else {
+				m.Analyze.ActiveNode = selected
+			}
+			m.Analyze.Cursor = 0
+			m.Analyze.Offset = 0
+			return nil
+		}
+	}
+
+	m.Analyze.Cursor = idx
 	return nil
 }
 

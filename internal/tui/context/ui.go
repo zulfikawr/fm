@@ -22,6 +22,7 @@ type UIState struct {
 	UpdateAvailable bool              // New version is available
 	LatestVersion   string            // Latest version string
 	PromptCache     map[string]string // Pre-calculated styled prompts
+	AnalyzeOpen     bool
 }
 
 // Reset resets all UI flags to false
@@ -31,6 +32,7 @@ func (ui *UIState) Reset() {
 	ui.HelpOpen = false
 	ui.LogOpen = false
 	ui.ClipboardOpen = false
+	ui.AnalyzeOpen = false
 	ui.Loading = false
 	ui.SelectMode = false
 	ui.InputActive = false

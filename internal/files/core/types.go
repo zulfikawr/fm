@@ -38,6 +38,17 @@ type PathResolver interface {
 	Ext(path string) string
 }
 
+// AnalysisResult represents the disk usage of a path
+type AnalysisResult struct {
+	Path        string
+	Name        string
+	Size        int64
+	IsDirectory bool
+	Children    []*AnalysisResult
+	Parent      *AnalysisResult
+	Percentage  float64 // Relative to parent
+}
+
 // FileSystem defines the interface for file system operations.
 type FileSystem interface {
 	Reader

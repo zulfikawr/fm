@@ -33,6 +33,7 @@ const (
 	ModeUnzip
 	ModeCreate
 	ModeConflictRename
+	ModeAnalyze
 )
 
 // Props contains all data needed to render the footer
@@ -84,6 +85,8 @@ func Render(props Props) string {
 	switch props.Mode {
 	case ModeProgress:
 		return renderProgressFooter(props)
+	case ModeAnalyze:
+		return views.RenderAnalyzeFooter(props.Width, props.Styles)
 	case ModeSearching, ModeRenaming, ModeGoto, ModeAuth, ModeFuzzySearch, ModeZip, ModeUnzip, ModeCreate, ModeConflictRename, ModeConfirming, ModeHostConfirm:
 		return renderPromptsFooter(props)
 	case ModeMessage:
@@ -97,6 +100,9 @@ func Render(props Props) string {
 	case ModeClipboard:
 		return views.RenderClipboardFooter(props.Width, props.ClipboardCount == 0, props.Styles)
 	default:
+		if props.HelpOpen { // This is a bit hacky, but consistent with Render logic
+			return views.RenderHelpFooter(props.Width, props.Styles)
+		}
 		return renderStatsFooter(props)
 	}
 }

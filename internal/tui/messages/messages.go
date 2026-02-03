@@ -189,3 +189,10 @@ type IconsDownloadedMsg struct {
 type IconTestMsg struct {
 	Success bool
 }
+
+type StartAnalyzeMsg struct{}
+
+type AnalyzeFinishedMsg struct {
+	Result *core.AnalysisResult
+	Err    error
+}

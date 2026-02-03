@@ -36,6 +36,11 @@ func HandleUpdate(m *tuictx.Model, msg tea.Msg) tea.Cmd {
 		return cmd
 	}
 
+	// 1.2 Analyze Handlers (Capture keys before other keybinds)
+	if cmd := HandleAnalyze(m, msg); cmd != nil {
+		return cmd
+	}
+
 	// 1.5 Mouse Handlers
 	if msg, ok := msg.(tea.MouseMsg); ok {
 		if cmd := HandleMouse(m, msg); cmd != nil {
@@ -132,6 +137,12 @@ func HandleUpdate(m *tuictx.Model, msg tea.Msg) tea.Cmd {
 			m.Config.EnableIcons = false
 			return utils.SetMsg(m, "Icons disabled (Nerd Font required)")
 		}
+
+	case messages.StartAnalyzeMsg:
+		return StartAnalysis(m)
+
+	case messages.AnalyzeFinishedMsg:
+		return HandleAnalyze(m, msg)
 	}
 
 	// Priority update for specialized messages
