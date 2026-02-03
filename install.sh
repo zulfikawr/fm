@@ -30,11 +30,12 @@ if [ -z "$DOWNLOAD_URL" ]; then
 fi
 
 echo "Downloading $DOWNLOAD_URL..."
-curl -L -o fm "$DOWNLOAD_URL"
-chmod +x fm
+TMP_BIN=$(mktemp)
+curl -L -o "$TMP_BIN" "$DOWNLOAD_URL"
+chmod +x "$TMP_BIN"
 
 echo "Installing to /usr/local/bin (requires sudo)..."
-sudo mv fm /usr/local/bin/fm
+sudo mv "$TMP_BIN" /usr/local/bin/fm
 
 echo "Successfully installed fm!"
 fm --version
