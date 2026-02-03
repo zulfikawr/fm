@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"runtime"
 	"strings"
 	"time"
@@ -22,8 +23,8 @@ const (
 )
 
 var (
-	githubAPI    = "https://api.github.com/repos/%s/%s/releases/latest"
-	osExecutable = os.Executable
+	githubAPI  = "https://api.github.com/repos/%s/%s/releases/latest"
+	executable = os.Executable
 )
 
 // Release represents a GitHub release
@@ -146,7 +147,7 @@ func DownloadAndInstall(version string, progress chan float64) error {
 	}
 
 	// Replace the current executable
-	selfPath, err := os.Executable()
+	selfPath, err := executable()
 	if err != nil {
 		return err
 	}
@@ -209,7 +210,7 @@ func (pr *progressReader) Read(p []byte) (n int, err error) {
 
 // Restart restarts the application
 func Restart() error {
-	selfPath, err := os.Executable()
+	selfPath, err := executable()
 	if err != nil {
 		return err
 	}
@@ -224,16 +225,28 @@ func Restart() error {
 
 // CanUpdate checks if the current process has permission to replace the binary
 func CanUpdate() bool {
-	selfPath, err := os.Executable()
+	selfPath, err := executable()
 	if err != nil {
 		return false
 	}
 
-	// Try to open the file for writing (without truncating)
-	f, err := os.OpenFile(selfPath, os.O_WRONLY, 0666)
+	// 1. Check if the file itself is writable
+	f, err := os.OpenFile(selfPath, os.O_WRONLY, 0)
+	if err == nil {
+		_ = f.Close()
+		return true
+	}
+
+	// 2. If file open fails, check the parent directory
+	// In many cases (like /usr/local/bin), we need write permission on the DIR
+	// because we are deleting/renaming the file, not just writing to it.
+	dir := filepath.Dir(selfPath)
+	tmpFile, err := os.CreateTemp(dir, ".fm-up-test-*")
 	if err != nil {
 		return false
 	}
-	_ = f.Close()
+	_ = tmpFile.Close()
+	_ = os.Remove(tmpFile.Name())
+
 	return true
 }

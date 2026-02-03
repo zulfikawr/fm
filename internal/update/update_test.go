@@ -170,9 +170,9 @@ func TestDownloadAndInstall(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		oldExecutable := osExecutable
-		osExecutable = func() (string, error) { return fakeExec, nil }
-		defer func() { osExecutable = oldExecutable }()
+		oldExecutable := executable
+		executable = func() (string, error) { return fakeExec, nil }
+		defer func() { executable = oldExecutable }()
 
 		progress := make(chan float64, 100)
 		err := DownloadAndInstall("v99.99.99", progress)
@@ -183,9 +183,9 @@ func TestDownloadAndInstall(t *testing.T) {
 }
 
 func TestRestart(t *testing.T) {
-	oldExecutable := osExecutable
-	osExecutable = func() (string, error) { return "/nonexistent/path", nil }
-	defer func() { osExecutable = oldExecutable }()
+	oldExecutable := executable
+	executable = func() (string, error) { return "/nonexistent/path", nil }
+	defer func() { executable = oldExecutable }()
 
 	err := Restart()
 	if err == nil {
