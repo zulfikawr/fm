@@ -134,7 +134,7 @@ func renderHelpRows(props HelpProps, groups []HelpSection) []string {
 	for _, s := range groups {
 		rows = append(rows, props.Style.SettingsHeader.Width(props.Width).Render(s.Title))
 		for _, item := range s.Items {
-			rows = append(rows, renderHelpRow(props, item))
+			rows = append(rows, renderHelpRow(props, item, currentIndex == props.Cursor))
 			currentIndex++
 		}
 		rows = append(rows, "") // Spacer
@@ -142,7 +142,7 @@ func renderHelpRows(props HelpProps, groups []HelpSection) []string {
 	return rows
 }
 
-func renderHelpRow(props HelpProps, item HelpItem) string {
+func renderHelpRow(props HelpProps, item HelpItem, isCursor bool) string {
 	keyWidth := 25
 	if props.Width < 60 {
 		keyWidth = props.Width / 3
@@ -150,16 +150,29 @@ func renderHelpRow(props HelpProps, item HelpItem) string {
 
 	keyStyle := props.Style.SecondaryCol.UnsetPadding().UnsetWidth()
 	descStyle := props.Style.MutedCol.UnsetPadding().UnsetWidth()
+	rowStyle := props.Style.Item
 
-	key := keyStyle.Render(item.Key)
-	desc := descStyle.Render(item.Desc)
+	if isCursor {
+		rowStyle = props.Style.SelectedItem.UnsetPadding().UnsetWidth()
+		keyStyle = keyStyle.Inherit(rowStyle)
+		descStyle = descStyle.Inherit(rowStyle)
+	}
 
-	rowContent := lipgloss.JoinHorizontal(lipgloss.Top,
-		lipgloss.NewStyle().Width(keyWidth).PaddingLeft(3).Render(key),
-		lipgloss.NewStyle().Width(props.Width-keyWidth-3).Render(desc),
-	)
+	// To ensure full-width highlight, we construct the row as a single string
+	// with explicit padding and then render it with rowStyle.
+	
+	// Key part with fixed width and padding
+	keyContent := keyStyle.Render(item.Key)
+	
+	leftPart := rowStyle.PaddingLeft(3).Width(keyWidth).Render(keyContent)
+	
+	// Desc part with remaining width
+	descWidth := max(props.Width - keyWidth, 10)
+	descContent := descStyle.Render(item.Desc)
+	
+	rightPart := rowStyle.Width(descWidth).Render(descContent)
 
-	return props.Style.Item.Width(props.Width).Render(rowContent)
+	return lipgloss.JoinHorizontal(lipgloss.Top, leftPart, rightPart)
 }
 
 // RenderHelpFooter renders hints for the help view

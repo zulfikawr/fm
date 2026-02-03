@@ -17,6 +17,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Full mouse support: scroll through analysis results and double-click to navigate folders.
   - Respects all global configurations including theme colors, Nerd Font icons, and size formats.
 
+### Fixed
+- **Help Screen Polish**
+  - Added full-width selection highlighting for keyboard navigation.
+  - Fixed scrolling logic to ensure section titles remain visible when moving up the list.
+  - Standardized row alignment and padding to match the settings menu.
+
 ## [v1.0.8] - 2026-02-01
 
 ### Changed

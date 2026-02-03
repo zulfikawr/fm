@@ -18,7 +18,7 @@ func HandleHelp(m *tui_context.Model, msg tea.Msg) tea.Cmd {
 }
 
 func handleHelpKeys(m *tui_context.Model, msg tea.KeyMsg) tea.Cmd {
-	totalItems := 35 // Number of keybinding entries
+	totalItems := 34 // Total items across all sections
 
 	switch msg.String() {
 	case "up", "k":
@@ -54,13 +54,18 @@ func ScrollHelp(m *tui_context.Model) int {
 		rowIdx = cursor + 6
 	} else if cursor <= 21 { // File Ops (8 items)
 		rowIdx = cursor + 8
-	} else if cursor <= 25 { // Search (4 items)
+	} else if cursor <= 26 { // Search (5 items)
 		rowIdx = cursor + 10
-	} else { // Misc (6 items)
+	} else { // Misc (7 items)
 		rowIdx = cursor + 12
 	}
 
 	if rowIdx < offset {
+		// When moving up, if we hit the first item of a section, 
+		// scroll up one more to show the header
+		if cursor == 0 || cursor == 7 || cursor == 11 || cursor == 14 || cursor == 22 || cursor == 27 {
+			return rowIdx - 1
+		}
 		return rowIdx
 	}
 
