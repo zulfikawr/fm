@@ -1,41 +1,116 @@
 #!/bin/bash
 set -e
 
+# Gruvbox Theme Colors (matching internal/tui/theme/theme.go)
+COLOR_DIR='\033[38;5;208m'      # Orange
+COLOR_EXEC='\033[38;5;142m'     # Green
+COLOR_FILE='\033[38;5;223m'     # Light Cream
+COLOR_SUBTLE='\033[38;5;243m'   # Dark Gray
+COLOR_PRIMARY='\033[38;5;208m'  # Orange
+COLOR_SECONDARY='\033[38;5;142m' # Green
+COLOR_ACCENT='\033[38;5;109m'   # Blue-gray
+COLOR_MUTED='\033[38;5;245m'    # Light Gray
+COLOR_HIGHLIGHT='\033[38;5;214m' # Bright Yellow/Orange
+COLOR_INFO='\033[38;5;66m'      # Blue-teal
+COLOR_SUCCESS='\033[38;5;142m'  # Green
+COLOR_WARNING='\033[38;5;214m'  # Yellow/Orange
+COLOR_ERROR='\033[38;5;167m'    # Red
+COLOR_BOLD='\033[1m'
+NC='\033[0m' # No Color
+
+# Header
+echo -e "\n${COLOR_PRIMARY}${COLOR_BOLD}FM - Terminal File Manager Installer${NC}"
+echo -e "${COLOR_SUBTLE}──────────────────────────────────────────────────${NC}\n"
+
 REPO="zulfikawr/fm"
 LATEST_URL="https://api.github.com/repos/$REPO/releases/latest"
 
-echo "Detecting architecture..."
+# 1. Dependency Check
+echo -e "${COLOR_INFO}::${NC} ${COLOR_BOLD}Validating system dependencies...${NC}"
+for cmd in curl grep cut mktemp; do
+    if ! command -v $cmd &> /dev/null; then
+        echo -e "   ${COLOR_ERROR}✗${NC} ${COLOR_ERROR}Error:${NC} ${COLOR_FILE}$cmd${NC} is required but not installed."
+        exit 1
+    fi
+done
+echo -e "   ${COLOR_SUCCESS}✓${NC} All dependencies found.\n"
+
+# 2. Detect Architecture
+echo -e "${COLOR_INFO}::${NC} ${COLOR_BOLD}Identifying system architecture...${NC}"
 OS="$(uname -s)"
 ARCH="$(uname -m)"
 
 case "$OS" in
     Linux)     OS="linux" ;;
     Darwin)    OS="darwin" ;;
-    *)         echo "Unsupported OS: $OS"; exit 1 ;;
+    *)         echo -e "   ${COLOR_ERROR}✗${NC} ${COLOR_ERROR}Error:${NC} Unsupported OS: ${COLOR_FILE}$OS${NC}"; exit 1 ;;
 esac
 
 case "$ARCH" in
     x86_64)  ARCH="amd64" ;;
     aarch64) ARCH="arm64" ;;
     arm64)   ARCH="arm64" ;;
-    *)       echo "Unsupported Architecture: $ARCH"; exit 1 ;;
+    *)       echo -e "   ${COLOR_ERROR}✗${NC} ${COLOR_ERROR}Error:${NC} Unsupported Architecture: ${COLOR_FILE}$ARCH${NC}"; exit 1 ;;
 esac
+echo -e "   ${COLOR_SUCCESS}✓${NC} Detected ${COLOR_ACCENT}$OS${NC} on ${COLOR_ACCENT}$ARCH${NC} platform.\n"
 
-echo "Fetching latest release for $OS/$ARCH..."
-DOWNLOAD_URL=$(curl -s $LATEST_URL | grep "browser_download_url" | grep "$OS-$ARCH" | cut -d '"' -f 4)
+# 3. Fetch Release Info
+echo -e "${COLOR_INFO}::${NC} ${COLOR_BOLD}Querying GitHub for latest release...${NC}"
+RELEASE_DATA=$(curl -s $LATEST_URL)
+VERSION=$(echo "$RELEASE_DATA" | grep "tag_name" | cut -d '"' -f 4)
+DOWNLOAD_URL=$(echo "$RELEASE_DATA" | grep "browser_download_url" | grep "$OS-$ARCH" | cut -d '"' -f 4)
 
 if [ -z "$DOWNLOAD_URL" ]; then
-    echo "Error: Could not find a release for $OS/$ARCH"
+    echo -e "   ${COLOR_ERROR}✗${NC} ${COLOR_ERROR}Error:${NC} Could not find binary for ${COLOR_FILE}$OS/$ARCH${NC}"
     exit 1
 fi
+echo -e "   ${COLOR_SUCCESS}✓${NC} Found ${COLOR_HIGHLIGHT}$VERSION${NC} as the most recent version.\n"
 
-echo "Downloading $DOWNLOAD_URL..."
+# 4. Interactive Path Selection
+echo -e "${COLOR_INFO}::${NC} ${COLOR_BOLD}Select installation target:${NC}"
+echo -e "   ${COLOR_HIGHLIGHT}1)${NC} ${COLOR_FILE}System-wide${NC}  ${COLOR_SUBTLE}(/usr/local/bin/fm)${NC} ${COLOR_BOLD}${COLOR_WARNING}*${NC} ${COLOR_SUBTLE}requires sudo${NC}"
+echo -e "   ${COLOR_HIGHLIGHT}2)${NC} ${COLOR_FILE}User-only${NC}    ${COLOR_SUBTLE}(~/.local/bin/fm)${NC}"
+echo -ne "   ${COLOR_BOLD}${COLOR_INFO}>>${NC} ${COLOR_FILE}Pick an option [1-2, default 1]: ${NC}"
+read choice
+choice=${choice:-1}
+echo ""
+
+if [ "$choice" == "1" ]; then
+    INSTALL_DIR="/usr/local/bin"
+    USE_SUDO=true
+else
+    INSTALL_DIR="$HOME/.local/bin"
+    USE_SUDO=false
+    mkdir -p "$INSTALL_DIR"
+fi
+
+# 5. Download
+echo -e "${COLOR_INFO}::${NC} ${COLOR_BOLD}Downloading binary...${NC}"
 TMP_BIN=$(mktemp)
-curl -L -o "$TMP_BIN" "$DOWNLOAD_URL"
-chmod +x "$TMP_BIN"
 
-echo "Installing to /usr/local/bin (requires sudo)..."
-sudo mv "$TMP_BIN" /usr/local/bin/fm
+# Use curl with a Gruvbox primary color progress bar
+echo -ne "${COLOR_PRIMARY}"
+curl -L -# -o "$TMP_BIN" "$DOWNLOAD_URL"
+echo -ne "${NC}"
+echo ""
+chmod 755 "$TMP_BIN"
 
-echo "Successfully installed fm!"
-fm --version
+# 6. Install
+echo -e "${COLOR_INFO}::${NC} ${COLOR_BOLD}Moving binary to installation directory...${NC}"
+if [ "$USE_SUDO" = true ]; then
+    sudo mv "$TMP_BIN" "$INSTALL_DIR/fm"
+    sudo chown root:root "$INSTALL_DIR/fm"
+else
+    mv "$TMP_BIN" "$INSTALL_DIR/fm"
+fi
+
+echo -e "\n${COLOR_SUBTLE}──────────────────────────────────────────────────${NC}"
+echo -e "${COLOR_SUCCESS}${COLOR_BOLD}Success!${NC} ${COLOR_FILE}fm${NC} ${COLOR_HIGHLIGHT}$VERSION${NC} has been deployed to ${COLOR_ACCENT}$INSTALL_DIR${NC}."
+
+# Check if path is in PATH
+if [[ ":$PATH:" != *":$INSTALL_DIR:"* ]]; then
+    echo -e "   ${COLOR_WARNING}Note:${NC} ${COLOR_ACCENT}$INSTALL_DIR${NC} is not in your ${COLOR_BOLD}PATH${NC}."
+    echo -e "   Please add it to your shell profile (e.g., .bashrc or .zshrc)."
+fi
+
+echo -e "\n${COLOR_INFO}Execute ${COLOR_BOLD}'fm'${NC} ${COLOR_INFO}to begin navigation.${NC}\n"
