@@ -556,11 +556,13 @@ func handleAnalyzeClick(m *context.Model, bodyY int) tea.Cmd {
 			if selected.Name == ".." {
 				if m.Analyze.ActiveNode.Parent != nil {
 					m.Analyze.ActiveNode = m.Analyze.ActiveNode.Parent
+					m.Navigation.Path = m.Analyze.ActiveNode.Path
 				} else {
 					return StartAnalysisAtPath(m, m.FS.Dir(m.Analyze.ActiveNode.Path))
 				}
 			} else {
 				m.Analyze.ActiveNode = selected
+				m.Navigation.Path = m.Analyze.ActiveNode.Path
 			}
 			m.Analyze.Cursor = 0
 			m.Analyze.Offset = 0

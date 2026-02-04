@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.1.4] - 2026-02-04
+
+### Fixed
+- **Analyze Screen Persistence**
+  - Implemented cursor and scroll offset memory for the disk usage analyzer.
+  - The analyzer now remembers your position when navigating deep into subdirectories or returning to parent folders.
+  - Improved mouse click accuracy in the analyze view by fixing a 1-pixel row offset.
+- **Analyze Screen Navigation Polish**
+  - Updated breadcrumb path to accurately reflect the current directory being analyzed.
+  - Automatically hide Git status markers in the header while in analyze mode to prevent visual clutter and inaccurate status reporting for the analysis view.
+  - Added bounds checking and automatic scroll synchronization for more reliable navigation.
+
 ## [v1.1.3] - 2026-02-04
 
 ### Added

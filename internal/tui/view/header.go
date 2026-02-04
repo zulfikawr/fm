@@ -8,16 +8,29 @@ import (
 func renderHeader(m *context.Model, layout context.Layout) string {
 	styles := m.Display.Styles
 
+	gitBranch := m.Git.Branch
+	gitModified := m.Git.Modified
+	gitStaged := m.Git.Staged
+	gitUntracked := m.Git.Untracked
+
+	// Hide git status when in analyze mode as requested
+	if m.UI.AnalyzeOpen {
+		gitBranch = ""
+		gitModified = 0
+		gitStaged = 0
+		gitUntracked = 0
+	}
+
 	return header.Render(header.Props{
 		Width:         layout.Width,
 		Path:          m.Navigation.Path,
 		Separator:     m.FS.Separator(),
 		RemoteStr:     formatRemoteStr(m),
 		RootOverride:  formatArchiveRoot(m),
-		GitBranch:     m.Git.Branch,
-		GitModified:   m.Git.Modified,
-		GitStaged:     m.Git.Staged,
-		GitUntracked:  m.Git.Untracked,
+		GitBranch:     gitBranch,
+		GitModified:   gitModified,
+		GitStaged:     gitStaged,
+		GitUntracked:  gitUntracked,
 		ReadOnly:      m.Display.ReadOnly,
 		TabCount:      len(m.Tabs),
 		ActiveTab:     m.ActiveTab,

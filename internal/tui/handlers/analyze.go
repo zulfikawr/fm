@@ -39,13 +39,14 @@ func HandleAnalyze(m *tuictx.Model, msg tea.Msg) tea.Cmd {
 		if msg.Action == tea.MouseActionPress {
 			switch msg.Button {
 			case tea.MouseButtonLeft:
-				// Header is removed, so row starts at msg.Y
-				row := msg.Y
+				// Body starts at y=1
+				row := msg.Y - 1
 				if row >= 0 && m.Analyze.ActiveNode != nil {
 					idx := row + m.Analyze.Offset
 					items := getAnalyzeItems(m, m.Analyze.ActiveNode)
 					if idx >= 0 && idx < len(items) {
 						m.Analyze.Cursor = idx
+						saveAnalyzeState(m)
 					}
 				}
 			}
@@ -62,9 +63,8 @@ func HandleAnalyze(m *tuictx.Model, msg tea.Msg) tea.Cmd {
 			if m.Analyze.Cursor > 0 {
 				m.Analyze.Cursor--
 			}
-			if m.Analyze.Cursor < m.Analyze.Offset {
-				m.Analyze.Offset = m.Analyze.Cursor
-			}
+			syncAnalyzeOffset(m)
+			saveAnalyzeState(m)
 			return func() tea.Msg { return nil }
 
 		case "down", "j":
@@ -73,9 +73,8 @@ func HandleAnalyze(m *tuictx.Model, msg tea.Msg) tea.Cmd {
 			if m.Analyze.Cursor < max-1 {
 				m.Analyze.Cursor++
 			}
-			if m.Analyze.Cursor >= m.Analyze.Offset+m.Display.ViewportHeight {
-				m.Analyze.Offset = m.Analyze.Cursor - m.Display.ViewportHeight + 1
-			}
+			syncAnalyzeOffset(m)
+			saveAnalyzeState(m)
 			return func() tea.Msg { return nil }
 
 		case "enter", "right", "l":
@@ -84,28 +83,30 @@ func HandleAnalyze(m *tuictx.Model, msg tea.Msg) tea.Cmd {
 				selected := items[m.Analyze.Cursor]
 				// ONLY allow navigation if it's a directory. Disable Open File.
 				if selected.IsDirectory {
+					saveAnalyzeState(m)
 					if selected.Name == "↑ .." {
 						if m.Analyze.ActiveNode.Parent != nil {
 							m.Analyze.ActiveNode = m.Analyze.ActiveNode.Parent
-							m.Analyze.Cursor = 0
-							m.Analyze.Offset = 0
+							m.Navigation.Path = m.Analyze.ActiveNode.Path
+							restoreAnalyzeState(m)
 							return func() tea.Msg { return nil }
 						}
 						return StartAnalysisAtPath(m, m.FS.Dir(m.Analyze.ActiveNode.Path))
 					}
 					m.Analyze.ActiveNode = selected
-					m.Analyze.Cursor = 0
-					m.Analyze.Offset = 0
+					m.Navigation.Path = m.Analyze.ActiveNode.Path
+					restoreAnalyzeState(m)
 				}
 			}
 			return func() tea.Msg { return nil }
 
 		case "backspace", "left", "h":
 			if m.Analyze.ActiveNode != nil {
+				saveAnalyzeState(m)
 				if m.Analyze.ActiveNode.Parent != nil {
 					m.Analyze.ActiveNode = m.Analyze.ActiveNode.Parent
-					m.Analyze.Cursor = 0
-					m.Analyze.Offset = 0
+					m.Navigation.Path = m.Analyze.ActiveNode.Path
+					restoreAnalyzeState(m)
 					return func() tea.Msg { return nil }
 				}
 				parentPath := m.FS.Dir(m.Analyze.ActiveNode.Path)
@@ -146,8 +147,8 @@ func HandleAnalyze(m *tuictx.Model, msg tea.Msg) tea.Cmd {
 		}
 		m.Analyze.Result = msg.Result
 		m.Analyze.ActiveNode = msg.Result
-		m.Analyze.Cursor = 0
-		m.Analyze.Offset = 0
+		m.Navigation.Path = msg.Result.Path
+		restoreAnalyzeState(m)
 		return func() tea.Msg { return nil }
 	}
 
@@ -210,5 +211,51 @@ func PerformDeleteFromAnalyze(m *tuictx.Model) tea.Cmd {
 			return messages.StatusMsg{Message: "Failed to delete: " + err.Error(), IsError: true}
 		}
 		return messages.StartAnalyzeMsg{}
+	}
+}
+
+func saveAnalyzeState(m *tuictx.Model) {
+	if m.Analyze.ActiveNode != nil {
+		m.Cache.AnalyzeCursorMemory.Put(m.Analyze.ActiveNode.Path, m.Analyze.Cursor)
+		m.Cache.AnalyzeOffsetMemory.Put(m.Analyze.ActiveNode.Path, m.Analyze.Offset)
+	}
+}
+
+func restoreAnalyzeState(m *tuictx.Model) {
+	if m.Analyze.ActiveNode != nil {
+		m.Analyze.Cursor, _ = m.Cache.AnalyzeCursorMemory.Get(m.Analyze.ActiveNode.Path)
+		m.Analyze.Offset, _ = m.Cache.AnalyzeOffsetMemory.Get(m.Analyze.ActiveNode.Path)
+
+		// Bounds check
+		items := getAnalyzeItems(m, m.Analyze.ActiveNode)
+		max := len(items)
+		if m.Analyze.Cursor >= max && max > 0 {
+			m.Analyze.Cursor = max - 1
+		}
+		if m.Analyze.Cursor < 0 {
+			m.Analyze.Cursor = 0
+		}
+
+		syncAnalyzeOffset(m)
+	}
+}
+
+func syncAnalyzeOffset(m *tuictx.Model) {
+	if m.Display.ViewportHeight == 0 {
+		return
+	}
+
+	cursor := m.Analyze.Cursor
+	offset := m.Analyze.Offset
+	height := m.Display.ViewportHeight
+
+	if cursor < offset {
+		m.Analyze.Offset = cursor
+	} else if cursor >= offset+height {
+		m.Analyze.Offset = cursor - height + 1
+	}
+
+	if m.Analyze.Offset < 0 {
+		m.Analyze.Offset = 0
 	}
 }

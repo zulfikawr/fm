@@ -12,11 +12,13 @@ import (
 
 // CacheState holds caching-related state
 type CacheState struct {
-	CursorMemory   *core.SimpleCache[string, int]               // Path -> Cursor index
-	OffsetMemory   *core.SimpleCache[string, int]               // Path -> Scroll offset
-	GitStatusCache *core.SimpleCache[string, map[string]string] // Path -> Git status map
-	GitRootCache   *core.SimpleCache[string, string]            // Path -> Git root path
-	ItemCache      *core.SimpleCache[string, []core.Item]       // Path -> Formatted items
+	CursorMemory        *core.SimpleCache[string, int]               // Path -> Cursor index
+	OffsetMemory        *core.SimpleCache[string, int]               // Path -> Scroll offset
+	AnalyzeCursorMemory *core.SimpleCache[string, int]               // Path -> Cursor index for analyze
+	AnalyzeOffsetMemory *core.SimpleCache[string, int]               // Path -> Scroll offset for analyze
+	GitStatusCache      *core.SimpleCache[string, map[string]string] // Path -> Git status map
+	GitRootCache        *core.SimpleCache[string, string]            // Path -> Git root path
+	ItemCache           *core.SimpleCache[string, []core.Item]       // Path -> Formatted items
 }
 
 // --- Watcher State ---
