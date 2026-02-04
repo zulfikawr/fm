@@ -77,6 +77,8 @@ func Reload(m *tui_context.Model, silent bool) tea.Cmd {
 
 		var gitStatuses map[string]string
 		var gitRoot string
+		var branch string
+		var modified, staged, untracked int
 
 		if gs.IsEnabled() {
 			if root, ok := m.Cache.GitRootCache.Get(path); ok {
@@ -87,7 +89,7 @@ func Reload(m *tui_context.Model, silent bool) tea.Cmd {
 					m.Cache.GitRootCache.Put(path, gitRoot)
 				}
 			}
-			gitStatuses, _ = gs.GetStatus(ctx, path)
+			gitStatuses, branch, modified, staged, untracked = gs.GetStatus(ctx, path)
 		}
 
 		items, err := listing.LoadSkeleton(ctx, listing.LoadOptions{
@@ -110,6 +112,11 @@ func Reload(m *tui_context.Model, silent bool) tea.Cmd {
 			Generation: gen,
 			Path:       path,
 			Items:      items,
+			GitRoot:    gitRoot,
+			Branch:     branch,
+			Modified:   modified,
+			Staged:     staged,
+			Untracked:  untracked,
 		}
 	}
 
@@ -127,6 +134,11 @@ func HandlePartialItems(m *tui_context.Model, msg messages.PartialItemsMsg) tea.
 	m.UI.Loading = false
 	m.Navigation.Items = msg.Items
 	m.Navigation.FilteredItems = msg.Items
+	m.Git.Branch = msg.Branch
+	m.Git.Root = msg.GitRoot
+	m.Git.Modified = msg.Modified
+	m.Git.Staged = msg.Staged
+	m.Git.Untracked = msg.Untracked
 
 	if val, ok := m.Cache.CursorMemory.Get(m.Navigation.Path); ok {
 		m.Navigation.Cursor = val
@@ -152,6 +164,13 @@ func fetchMetadata(m *tui_context.Model) tea.Cmd {
 
 	sizeFormatIdx := m.Config.SizeFormatIndex
 	dateFormatIdx := m.Config.DateFormatIndex
+
+	// Capture current Git state to pass through
+	gitBranch := m.Git.Branch
+	gitRoot := m.Git.Root
+	gitMod := m.Git.Modified
+	gitStaged := m.Git.Staged
+	gitUntracked := m.Git.Untracked
 
 	return func() tea.Msg {
 		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
@@ -240,6 +259,11 @@ func fetchMetadata(m *tui_context.Model) tea.Cmd {
 			Path:       path,
 			Items:      updatedItems,
 			IsReadOnly: ro,
+			GitBranch:  gitBranch,
+			GitRoot:    gitRoot,
+			Modified:   gitMod,
+			Staged:     gitStaged,
+			Untracked:  gitUntracked,
 		}
 	}
 }
@@ -268,6 +292,9 @@ func FinalizeDirectoryLoad(m *tui_context.Model, msg messages.LoadedItemsMsg) te
 	ApplyFilter(m)
 	m.Git.Branch = msg.GitBranch
 	m.Git.Root = msg.GitRoot
+	m.Git.Modified = msg.Modified
+	m.Git.Staged = msg.Staged
+	m.Git.Untracked = msg.Untracked
 	m.Display.ReadOnly = msg.IsReadOnly
 
 	if !msg.Cached && msg.Err == nil {

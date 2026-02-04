@@ -26,6 +26,31 @@ fm -r ssh-alias
 
 ---
 
+### `fm config`
+Manage application configuration directly from the CLI.
+
+```bash
+# View current configuration
+fm config
+
+# Reset configuration to defaults
+fm config --reset
+
+# Run interactive configuration wizard
+fm config init
+```
+
+**Features:**
+- **Themed View**: Displays current settings in a beautiful, theme-aware colorful list.
+- **Easy Reset**: Quickly revert all settings to factory defaults if something goes wrong.
+- **Interactive Init**: Step-by-step wizard to configure your environment without manually editing JSON.
+
+**Options:**
+- `--reset` - Reset configuration to default values
+- `init` - Launch the interactive configuration wizard
+
+---
+
 ### `fm search`
 Perform fuzzy or regex search for files and content within directories.
 

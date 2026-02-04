@@ -6,7 +6,7 @@
 
 `fm` provides real-time Git status updates for your files and directories.
 - **Status Markers:** Files are marked with `M` (Modified), `A` (Added), `D` (Deleted), `?` (Untracked), `!` (Ignored), or `U` (Unmerged).
-- **Branch Display:** The current Git branch is visible in the UI header.
+- **Live Repository Summary:** The breadcrumb header displays the current Git branch and a summary of pending changes (e.g., `[main] • 3 Staged • 2 Modified • 1 Untracked`).
 - **Performance:** Git status is fetched concurrently to avoid slowing down navigation.
 
 ## 🔎 Fuzzy Content Search (Find in Files)

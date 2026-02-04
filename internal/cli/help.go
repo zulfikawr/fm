@@ -70,7 +70,9 @@ func PrintHelp(styles theme.Stylesheet, themeName string) {
 	usage4Command := styles.GitStaged.Render("fm") + " " + styles.GitConflict.Render("info") + " " + styles.FileCol.Render("[path]")
 	fmt.Printf("  %s %s\n", padString(usage4Command, maxWidth), styles.DimCol.Render("Show file/directory information"))
 	usage5Command := styles.GitStaged.Render("fm") + " " + styles.GitConflict.Render("analyze") + " " + styles.FileCol.Render("[path]")
-	fmt.Printf("  %s %s\n\n", padString(usage5Command, maxWidth), styles.DimCol.Render("Analyze disk usage of a directory"))
+	fmt.Printf("  %s %s\n", padString(usage5Command, maxWidth), styles.DimCol.Render("Analyze disk usage of a directory"))
+	usage6Command := styles.GitStaged.Render("fm") + " " + styles.GitConflict.Render("config") + " " + styles.DimCol.Render("[--reset | init]")
+	fmt.Printf("  %s %s\n\n", padString(usage6Command, maxWidth), styles.DimCol.Render("Manage configuration (view, reset, or interactive init)"))
 
 	fmt.Println(styles.DirCol.Render("Keybindings:"))
 

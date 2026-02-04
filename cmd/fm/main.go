@@ -49,6 +49,10 @@ func run() error {
 		return cli.RunAnalyze(args)
 	}
 
+	if args.IsConfig {
+		return cli.RunConfig(args)
+	}
+
 	a, err := bootstrap.InitializeApp(args.Remote, args.Args)
 	if err != nil {
 		return err

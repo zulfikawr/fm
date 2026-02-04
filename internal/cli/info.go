@@ -6,17 +6,16 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"sync"
 	"time"
 
 	"github.com/charmbracelet/lipgloss"
 	"github.com/zulfikawr/fm/internal/config"
+	"github.com/zulfikawr/fm/internal/files"
 	"github.com/zulfikawr/fm/internal/files/core"
 	"github.com/zulfikawr/fm/internal/files/factory"
 	"github.com/zulfikawr/fm/internal/files/format"
 	"github.com/zulfikawr/fm/internal/git"
 	"github.com/zulfikawr/fm/internal/tui/theme"
-	"golang.org/x/sync/errgroup"
 )
 
 // InfoOptions contains options for the info command
@@ -90,7 +89,6 @@ func RunInfo(opts InfoOptions) error {
 	}
 	defer func() {
 		if closeErr := fs.Close(); closeErr != nil {
-			// Log error but don't override main error
 			fmt.Fprintf(os.Stderr, "Warning: failed to close filesystem: %v\n", closeErr)
 		}
 	}()
@@ -124,9 +122,6 @@ func RunInfo(opts InfoOptions) error {
 		return fmt.Errorf("accessing path: %w", err)
 	}
 
-	// Initialize git service
-	gs := git.NewGitService(cfg.EnableGit)
-
 	// Build result
 	result := &InfoResult{
 		Path:          targetPath,
@@ -140,6 +135,9 @@ func RunInfo(opts InfoOptions) error {
 		CanWrite:      canWrite(info),
 	}
 
+	// Initialize git service
+	gs := git.NewGitService(cfg.EnableGit)
+
 	// Get git information
 	if fs.IsLocal() && gs.IsEnabled() {
 		gitRoot := gs.GetRoot(ctx, targetPath)
@@ -148,42 +146,47 @@ func RunInfo(opts InfoOptions) error {
 			result.GitRoot = gitRoot
 
 			// Get status and branch
-			statuses, branch := gs.GetStatus(ctx, targetPath)
+			statuses, branch, modified, staged, untracked := gs.GetStatus(ctx, targetPath)
 			result.GitBranch = branch
 
-			// If it's a file, get its status
 			if !info.IsDir() {
 				if status, ok := statuses[targetPath]; ok {
 					result.GitStatus = status
 				}
 			}
 
-			// Calculate git stats for directory
 			if info.IsDir() {
-				result.GitStats = calculateGitStats(statuses)
+				result.GitStats = &GitStats{
+					Modified:  modified,
+					Staged:    staged,
+					Untracked: untracked,
+				}
 			}
 		}
 	}
 
 	// Directory-specific information
 	if info.IsDir() {
+		// Use the Analyzer for accurate recursive stats
+		analyzer := files.NewAnalyzer(fs)
+		analysis, err := analyzer.AnalyzeConcurrent(ctx, targetPath, nil)
+		if err != nil {
+			return fmt.Errorf("analyzing directory: %w", err)
+		}
+
+		if analysis != nil {
+			fc, dc := countRecursive(analysis)
+			result.FileCount = fc
+			result.DirectoryCount = dc
+			result.TotalSize = analysis.Size
+			result.TotalSizeFormatted = format.FormatSize(analysis.Size, cfg.SizeFormatIndex)
+
+			// Overwrite the base size with recursive size for directories
+			result.SizeFormatted = result.TotalSizeFormatted
+		}
+
 		if opts.Tree {
-			// Build tree view
-			tree, err := buildTree(ctx, fs, targetPath, 0, opts.TreeDepth)
-			if err != nil {
-				return fmt.Errorf("building tree: %w", err)
-			}
-			result.Tree = tree
-		} else {
-			// Calculate directory stats
-			stats, err := calculateDirStats(ctx, fs, targetPath)
-			if err != nil {
-				return fmt.Errorf("calculating directory stats: %w", err)
-			}
-			result.FileCount = stats.FileCount
-			result.DirectoryCount = stats.DirectoryCount
-			result.TotalSize = stats.TotalSize
-			result.TotalSizeFormatted = format.FormatSize(stats.TotalSize, cfg.SizeFormatIndex)
+			result.Tree = buildTreeFromAnalysis(analysis, 0, opts.TreeDepth)
 		}
 	}
 
@@ -199,151 +202,45 @@ func RunInfo(opts InfoOptions) error {
 	return nil
 }
 
-// DirStats contains statistics about a directory
-type DirStats struct {
-	FileCount      int
-	DirectoryCount int
-	TotalSize      int64
+func countRecursive(node *core.AnalysisResult) (files, dirs int) {
+	for _, child := range node.Children {
+		if child.IsDirectory {
+			dirs++
+			cf, cd := countRecursive(child)
+			files += cf
+			dirs += cd
+		} else {
+			files++
+		}
+	}
+	return
 }
 
-// calculateDirStats calculates statistics for a directory
-func calculateDirStats(ctx context.Context, fs core.FileSystem, path string) (*DirStats, error) {
-	stats := &DirStats{}
-
-	entries, err := fs.ReadDir(ctx, path)
-	if err != nil {
-		return nil, err
+func buildTreeFromAnalysis(node *core.AnalysisResult, depth, maxDepth int) *TreeNode {
+	if node == nil {
+		return nil
 	}
 
-	g, gctx := errgroup.WithContext(ctx)
-	g.SetLimit(10) // Limit concurrent operations
-
-	var mu sync.Mutex
-
-	for _, entry := range entries {
-		entry := entry
-		g.Go(func() error {
-			if entry.IsDir() {
-				mu.Lock()
-				stats.DirectoryCount++
-				mu.Unlock()
-
-				// Recursively calculate subdirectory size
-				subStats, err := calculateDirStats(gctx, fs, fs.Join(path, entry.Name()))
-				if err != nil {
-					// Ignore permission errors
-					return nil
-				}
-				mu.Lock()
-				stats.FileCount += subStats.FileCount
-				stats.DirectoryCount += subStats.DirectoryCount
-				stats.TotalSize += subStats.TotalSize
-				mu.Unlock()
-			} else {
-				mu.Lock()
-				stats.FileCount++
-				stats.TotalSize += entry.Size()
-				mu.Unlock()
-			}
-			return nil
-		})
+	treeNode := &TreeNode{
+		Name:  node.Name,
+		Path:  node.Path,
+		IsDir: node.IsDirectory,
+		Size:  node.Size,
 	}
 
-	if err := g.Wait(); err != nil {
-		return nil, err
-	}
-
-	return stats, nil
-}
-
-// buildTree builds a tree view of the directory structure
-func buildTree(ctx context.Context, fs core.FileSystem, path string, depth, maxDepth int) (*TreeNode, error) {
-	info, err := fs.Stat(ctx, path)
-	if err != nil {
-		return nil, err
-	}
-
-	node := &TreeNode{
-		Name:  info.Name(),
-		Path:  path,
-		IsDir: info.IsDir(),
-		Size:  info.Size(),
-	}
-
-	if info.IsDir() && (maxDepth == 0 || depth < maxDepth) {
-		entries, err := fs.ReadDir(ctx, path)
-		if err != nil {
-			// Permission error, return node without children
-			return node, nil
-		}
-
-		for _, entry := range entries {
-			childPath := fs.Join(path, entry.Name())
-			childNode, err := buildTree(ctx, fs, childPath, depth+1, maxDepth)
-			if err != nil {
-				// Skip entries we can't access
-				continue
-			}
-			node.Children = append(node.Children, *childNode)
+	if node.IsDirectory && (maxDepth == 0 || depth < maxDepth) {
+		for _, child := range node.Children {
+			treeNode.Children = append(treeNode.Children, *buildTreeFromAnalysis(child, depth+1, maxDepth))
 		}
 	}
 
-	return node, nil
-}
-
-// calculateGitStats calculates git statistics from status map
-func calculateGitStats(statuses map[string]string) *GitStats {
-	stats := &GitStats{}
-
-	for _, status := range statuses {
-		if len(status) == 0 {
-			continue
-		}
-
-		// Git status is 2 characters: XY
-		// X = index status, Y = working tree status
-		x := string(status[0])
-		y := ""
-		if len(status) > 1 {
-			y = string(status[1])
-		}
-
-		// Index status
-		switch x {
-		case "M", "T":
-			stats.Staged++
-		case "A":
-			stats.Added++
-			stats.Staged++
-		case "D":
-			stats.Deleted++
-			stats.Staged++
-		case "R", "C":
-			stats.Staged++
-		}
-
-		// Working tree status
-		switch y {
-		case "M", "T":
-			stats.Modified++
-		case "D":
-			stats.Deleted++
-		case "?":
-			stats.Untracked++
-		}
-	}
-
-	return stats
+	return treeNode
 }
 
 // printInfo prints the info result in a pretty format
 func printInfo(result *InfoResult, styles *theme.Stylesheet, sizeFormat int, isTree bool) {
 	// Header
-	title := lipgloss.NewStyle().
-		Bold(true).
-		Foreground(styles.Header.GetForeground()).
-		Render("File Information")
-	fmt.Println(title)
+	fmt.Println(styles.DirCol.Render("File Information"))
 	fmt.Println()
 
 	// Basic info
@@ -361,17 +258,13 @@ func printInfo(result *InfoResult, styles *theme.Stylesheet, sizeFormat int, isT
 		fmt.Println()
 		printField(styles, "Files", fmt.Sprintf("%d", result.FileCount))
 		printField(styles, "Directories", fmt.Sprintf("%d", result.DirectoryCount))
-		printField(styles, "Total Size", result.TotalSizeFormatted)
+		// Total size is already shown in the "Size" field above for directories
 	}
 
 	// Git info
 	if result.InGitRepo {
 		fmt.Println()
-		gitTitle := lipgloss.NewStyle().
-			Bold(true).
-			Foreground(styles.Header.GetForeground()).
-			Render("Git Information")
-		fmt.Println(gitTitle)
+		fmt.Println(styles.DirCol.Render("Git Information"))
 		fmt.Println()
 
 		printField(styles, "Repository", result.GitRoot)
@@ -383,22 +276,16 @@ func printInfo(result *InfoResult, styles *theme.Stylesheet, sizeFormat int, isT
 
 		if result.GitStats != nil {
 			fmt.Println()
-			printField(styles, "Modified", fmt.Sprintf("%d", result.GitStats.Modified))
-			printField(styles, "Added", fmt.Sprintf("%d", result.GitStats.Added))
-			printField(styles, "Deleted", fmt.Sprintf("%d", result.GitStats.Deleted))
-			printField(styles, "Untracked", fmt.Sprintf("%d", result.GitStats.Untracked))
 			printField(styles, "Staged", fmt.Sprintf("%d", result.GitStats.Staged))
+			printField(styles, "Modified", fmt.Sprintf("%d", result.GitStats.Modified))
+			printField(styles, "Untracked", fmt.Sprintf("%d", result.GitStats.Untracked))
 		}
 	}
 
 	// Tree view
 	if isTree && result.Tree != nil {
 		fmt.Println()
-		treeTitle := lipgloss.NewStyle().
-			Bold(true).
-			Foreground(styles.Header.GetForeground()).
-			Render("Directory Tree")
-		fmt.Println(treeTitle)
+		fmt.Println(styles.DirCol.Render("Directory Tree"))
 		fmt.Println()
 
 		// Print root directory name
@@ -421,12 +308,20 @@ func printInfo(result *InfoResult, styles *theme.Stylesheet, sizeFormat int, isT
 
 // printField prints a labeled field
 func printField(styles *theme.Stylesheet, label, value string) {
-	labelStyle := lipgloss.NewStyle().
-		Bold(true).
-		Foreground(styles.DirCol.GetForeground()).
-		Width(15)
+	labelStyle := styles.GitStaged.Width(15).Bold(true)
+	valueStyle := styles.FileCol
 
-	fmt.Printf("%s %s\n", labelStyle.Render(label+":"), value)
+	// Special values
+	switch label {
+	case "Path":
+		valueStyle = styles.AccentCol
+	case "Branch":
+		valueStyle = styles.HighlightCol
+	case "Size", "Total Size":
+		valueStyle = styles.HighlightCol
+	}
+
+	fmt.Printf("%s %s\n", labelStyle.Render(label+":"), valueStyle.Render(value))
 }
 
 // printTree prints a tree node recursively
@@ -448,9 +343,7 @@ func printTree(node *TreeNode, prefix string, isLast bool, styles *theme.Stylesh
 	// Format size
 	sizeStr := ""
 	if !node.IsDir {
-		sizeStr = " " + lipgloss.NewStyle().
-			Faint(true).
-			Render(fmt.Sprintf("(%s)", format.FormatSize(node.Size, sizeFormat)))
+		sizeStr = " " + styles.DimCol.Render(fmt.Sprintf("(%s)", format.FormatSize(node.Size, sizeFormat)))
 	}
 
 	fmt.Printf("%s%s%s%s\n", prefix, branch, name, sizeStr)

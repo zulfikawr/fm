@@ -16,12 +16,20 @@ type LoadedItemsMsg struct {
 	IsReadOnly  bool
 	Cached      bool
 	Err         error
+	Modified    int
+	Staged      int
+	Untracked   int
 }
 
 type PartialItemsMsg struct {
 	Generation int
 	Path       string
 	Items      []core.Item
+	GitRoot    string
+	Branch     string
+	Modified   int
+	Staged     int
+	Untracked  int
 }
 
 type ErrorMsg struct {
@@ -70,9 +78,12 @@ type ConflictMsg struct {
 }
 
 type GitStatusMsg struct {
-	Path     string
-	Statuses map[string]string
-	Branch   string
+	Path      string
+	Statuses  map[string]string
+	Branch    string
+	Modified  int
+	Staged    int
+	Untracked int
 }
 
 type RemoteConnectMsg struct {

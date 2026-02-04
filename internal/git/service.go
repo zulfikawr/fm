@@ -8,7 +8,7 @@ import (
 // GitService provides git repository operations
 type GitService interface {
 	// GetStatus returns file statuses and branch for a directory
-	GetStatus(ctx context.Context, path string) (statuses map[string]string, branch string)
+	GetStatus(ctx context.Context, path string) (statuses map[string]string, branch string, modified, staged, untracked int)
 
 	// GetRoot returns the git repository root for a path, cached
 	GetRoot(ctx context.Context, path string) string

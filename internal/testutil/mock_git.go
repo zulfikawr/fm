@@ -6,7 +6,7 @@ import (
 
 // MockGitService implements a git service interface for testing.
 type MockGitService struct {
-	GetStatusFunc       func(ctx context.Context, path string) (map[string]string, string)
+	GetStatusFunc       func(ctx context.Context, path string) (map[string]string, string, int, int, int)
 	GetRootFunc         func(ctx context.Context, path string) string
 	GetIgnoredFilesFunc func(ctx context.Context, repoRoot string) ([]string, error)
 	IsEnabledFunc       func() bool
@@ -19,11 +19,11 @@ func NewMockGitService() *MockGitService {
 	}
 }
 
-func (m *MockGitService) GetStatus(ctx context.Context, path string) (map[string]string, string) {
+func (m *MockGitService) GetStatus(ctx context.Context, path string) (map[string]string, string, int, int, int) {
 	if m.GetStatusFunc != nil {
 		return m.GetStatusFunc(ctx, path)
 	}
-	return make(map[string]string), "main"
+	return make(map[string]string), "main", 0, 0, 0
 }
 
 func (m *MockGitService) GetRoot(ctx context.Context, path string) string {

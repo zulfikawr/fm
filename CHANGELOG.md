@@ -5,6 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.1.3] - 2026-02-04
+
+### Added
+- **CLI Configuration Manager (`fm config`)**
+  - New subcommand to manage application settings directly from the terminal.
+  - **`fm config`**: Displays all current settings in a beautiful, theme-aware colorful list.
+  - **`fm config --reset`**: Quickly restores all configuration to factory defaults.
+  - **`fm config init`**: Interactive configuration wizard to set up theme, icons, mouse, and editor.
+- **Interactive Git Summary Header**
+  - Enhanced the breadcrumb header to display a live summary of repository health: `[branch] • n Staged • n Modified • n Untracked`.
+  - Statistics update in real-time while navigating different subdirectories.
+  - Clean, theme-aware styling that highlights the branch name and dims the status counts.
+
+### Fixed
+- **CLI Git Statistics Consistency**
+  - Updated `fm info` to use the same robust Git status parsing engine as the TUI.
+  - Aligned CLI Git information output with TUI summary header (Staged, Modified, Untracked).
+- **CLI Info Styling Polish**
+  - Updated `fm info` coloring to match the high-fidelity style of the help and search CLI tools.
+  - Improved visual hierarchy with themed headers, green labels, and highlighted path/size values.
+
 ## [v1.1.2] - 2026-02-03
 
 ### Fixed

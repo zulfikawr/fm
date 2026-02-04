@@ -20,6 +20,9 @@ type Args struct {
 	InfoTree    bool
 	InfoDepth   int
 	IsAnalyze   bool
+	IsConfig    bool
+	ConfigReset bool
+	ConfigInit  bool
 	Args        []string
 }
 
@@ -57,6 +60,10 @@ func parse(f *flag.FlagSet, args []string) *Args {
 
 	isSearch := searchStr != ""
 	isInfo := false
+	isAnalyze := false
+	isConfig := false
+	configReset := false
+	configInit := false
 	remainingArgs := f.Args()
 
 	// Handle "search" as a subcommand
@@ -93,10 +100,27 @@ func parse(f *flag.FlagSet, args []string) *Args {
 		remainingArgs = infoFlags.Args()
 	}
 
-	isAnalyze := false
 	if !isSearch && !isInfo && len(remainingArgs) > 0 && remainingArgs[0] == "analyze" {
 		isAnalyze = true
 		remainingArgs = remainingArgs[1:]
+	}
+
+	// Handle "config" as a subcommand
+	if !isSearch && !isInfo && !isAnalyze && len(remainingArgs) > 0 && remainingArgs[0] == "config" {
+		isConfig = true
+		remainingArgs = remainingArgs[1:]
+
+		if len(remainingArgs) > 0 && remainingArgs[0] == "init" {
+			configInit = true
+			remainingArgs = remainingArgs[1:]
+		} else {
+			// Parse config-specific flags
+			configFlags := flag.NewFlagSet("config", flag.ContinueOnError)
+			configFlags.BoolVar(&configReset, "reset", false, "Reset configuration to default")
+
+			_ = configFlags.Parse(remainingArgs)
+			remainingArgs = configFlags.Args()
+		}
 	}
 
 	return &Args{
@@ -110,6 +134,9 @@ func parse(f *flag.FlagSet, args []string) *Args {
 		InfoTree:    infoTree,
 		InfoDepth:   infoDepth,
 		IsAnalyze:   isAnalyze,
+		IsConfig:    isConfig,
+		ConfigReset: configReset,
+		ConfigInit:  configInit,
 		Args:        remainingArgs,
 	}
 }

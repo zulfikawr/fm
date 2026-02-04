@@ -16,6 +16,9 @@ type Props struct {
 	RemoteStr     string
 	RootOverride  string
 	GitBranch     string
+	GitModified   int
+	GitStaged     int
+	GitUntracked  int
 	ReadOnly      bool
 	TabCount      int
 	ActiveTab     int
@@ -82,7 +85,7 @@ func Render(props Props) string {
 			Styles:       props.Style,
 			MaxWidth:     maxBreadcrumbWidth,
 		})
-		breadcrumb = addGitBranch(breadcrumb, props.GitBranch, props.Style)
+		breadcrumb = addGitStatus(breadcrumb, props.GitBranch, props.GitModified, props.GitStaged, props.GitUntracked, props.Style)
 		breadcrumb = addReadOnlyIndicator(breadcrumb, props.ReadOnly, props.Style)
 	}
 

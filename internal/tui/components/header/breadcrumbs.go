@@ -1,6 +1,7 @@
 package header
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/charmbracelet/lipgloss"
@@ -107,7 +108,7 @@ func renderBreadcrumbPath(props BreadcrumbProps) string {
 	return lipgloss.NewStyle().MaxWidth(props.MaxWidth).Render(fullBreadcrumb)
 }
 
-func addGitBranch(breadcrumb, gitBranch string, styles theme.Stylesheet) string {
+func addGitStatus(breadcrumb, gitBranch string, modified, staged, untracked int, styles theme.Stylesheet) string {
 	if gitBranch == "" {
 		return breadcrumb
 	}
@@ -115,8 +116,24 @@ func addGitBranch(breadcrumb, gitBranch string, styles theme.Stylesheet) string 
 	gitStyle := styles.AccentCol.Inherit(styles.Header).UnsetPadding().UnsetWidth()
 	dimStyle := styles.MutedCol.Inherit(styles.Header).UnsetPadding().UnsetWidth()
 
-	gitIndicator := dimStyle.Render(" (") + gitStyle.Render(gitBranch) + dimStyle.Render("*)")
-	return breadcrumb + gitIndicator
+	branchPart := dimStyle.Render(" [") + gitStyle.Render(gitBranch) + dimStyle.Render("]")
+
+	statusParts := []string{}
+	if staged > 0 {
+		statusParts = append(statusParts, fmt.Sprintf("%d Staged", staged))
+	}
+	if modified > 0 {
+		statusParts = append(statusParts, fmt.Sprintf("%d Modified", modified))
+	}
+	if untracked > 0 {
+		statusParts = append(statusParts, fmt.Sprintf("%d Untracked", untracked))
+	}
+
+	if len(statusParts) == 0 {
+		return breadcrumb + branchPart
+	}
+
+	return breadcrumb + branchPart + dimStyle.Render(" • ") + dimStyle.Render(strings.Join(statusParts, " • "))
 }
 
 func addReadOnlyIndicator(breadcrumb string, readOnly bool, styles theme.Stylesheet) string {

@@ -9,9 +9,9 @@ import (
 	"github.com/zulfikawr/fm/internal/constants"
 )
 
-func (gs *gitService) GetStatus(ctx context.Context, path string) (map[string]string, string) {
+func (gs *gitService) GetStatus(ctx context.Context, path string) (map[string]string, string, int, int, int) {
 	if !gs.IsEnabled() {
-		return nil, ""
+		return nil, "", 0, 0, 0
 	}
 
 	statuses := make(map[string]string)
@@ -22,7 +22,7 @@ func (gs *gitService) GetStatus(ctx context.Context, path string) (map[string]st
 
 	repoRoot := gs.GetRoot(ctx, path)
 	if repoRoot == "" {
-		return statuses, ""
+		return statuses, "", 0, 0, 0
 	}
 
 	// Get branch
@@ -33,29 +33,78 @@ func (gs *gitService) GetStatus(ctx context.Context, path string) (map[string]st
 		branch = strings.TrimSpace(string(branchOut))
 	}
 
-	// Calculate relative path
-	relPath, err := filepath.Rel(repoRoot, path)
-	if err != nil {
-		return statuses, branch
+	// Get FULL repository status for stats
+	fullCmd := exec.CommandContext(ctx, "git", "-C", repoRoot, "status", "--porcelain", "-uall")
+	fullOut, err := fullCmd.Output()
+	var modified, staged, untracked int
+	if err == nil {
+		modified, staged, untracked = ParseGitStatusStats(string(fullOut))
 	}
 
-	// Get file statuses - scope to current directory for performance, keep --ignored
+	// Calculate relative path for scoped status
+	relPath, err := filepath.Rel(repoRoot, path)
+	if err != nil {
+		return statuses, branch, modified, staged, untracked
+	}
+
+	// Get file statuses scoped to current directory for visual markers
 	var cmd *exec.Cmd
 	if relPath == "." || relPath == "" {
-		// At repo root, get all statuses
 		cmd = exec.CommandContext(ctx, "git", "-C", repoRoot, "status", "--porcelain", "-uall", "--ignored")
 	} else {
-		// In subdirectory, limit to current directory only for better performance
 		cmd = exec.CommandContext(ctx, "git", "-C", repoRoot, "status", "--porcelain", "-uall", "--ignored", "--", relPath)
 	}
 
 	out, err := cmd.Output()
 	if err != nil {
-		return statuses, branch
+		return statuses, branch, modified, staged, untracked
 	}
 
 	statuses = ParseGitStatusPorcelain(string(out), repoRoot, path)
-	return statuses, branch
+	return statuses, branch, modified, staged, untracked
+}
+
+// ParseGitStatusStats calculates summary statistics for the whole repo
+func ParseGitStatusStats(output string) (modified, staged, untracked int) {
+	lines := strings.Split(output, "\n")
+	for _, line := range lines {
+		if len(line) < 3 {
+			continue
+		}
+		status := line[:2]
+		x := status[0] // Index
+		y := status[1] // Working Tree
+
+		// Porcelain format XY:
+		// ?? = untracked
+		// !! = ignored
+		// ' ' = unmodified
+		// M = modified
+		// A = added
+		// D = deleted
+		// R = renamed
+		// C = copied
+		// U = updated but unmerged
+
+		// 1. Untracked
+		if x == '?' {
+			untracked++
+			continue
+		}
+
+		// 2. Staged (Index column x is not empty and not untracked/ignored)
+		if x != ' ' && x != '?' && x != '!' {
+			staged++
+		}
+
+		// 3. Modified (Working tree column y is not empty)
+		// Logic: If there is a status in column y, it represents a change in the working tree.
+		// For the summary header, we count any working tree change as "Modified".
+		if y != ' ' && y != '?' && y != '!' {
+			modified++
+		}
+	}
+	return
 }
 
 func (gs *gitService) GetIgnoredFiles(ctx context.Context, repoRoot string) ([]string, error) {

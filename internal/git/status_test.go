@@ -32,3 +32,17 @@ D  deleted_file.txt
 		testutil.AssertEqual(t, "?", subStatuses["item_test.go"], "Untracked file should match")
 	})
 }
+
+func TestParseGitStatusStats(t *testing.T) {
+	output := `M  internal/files/core/item.go
+?? internal/files/core/item_test.go
+!! internal/testutil/mock_clock.go
+A  new_file.txt
+ D deleted_working.txt
+`
+	modified, staged, untracked := ParseGitStatusStats(output)
+
+	testutil.AssertEqual(t, 1, modified, "Modified count should match (deleted_working.txt)")
+	testutil.AssertEqual(t, 2, staged, "Staged count should match (item.go and new_file.txt)")
+	testutil.AssertEqual(t, 1, untracked, "Untracked count should match (item_test.go)")
+}

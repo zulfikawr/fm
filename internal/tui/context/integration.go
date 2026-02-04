@@ -13,6 +13,9 @@ import (
 type GitState struct {
 	Branch     string             // Current git branch name
 	Root       string             // Git repository root path
+	Modified   int                // Count of modified files
+	Staged     int                // Count of staged files
+	Untracked  int                // Count of untracked files
 	CancelFunc context.CancelFunc // Function to cancel the current git operation
 }
 
