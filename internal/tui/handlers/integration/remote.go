@@ -2,6 +2,7 @@ package integration
 
 import (
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/zulfikawr/fm/internal/files/remote"
@@ -72,23 +73,50 @@ func finalizeRemoteConnect(m *tui_context.Model, msg messages.RemoteConnectMsg) 
 			Details: errStr,
 		})
 
+		// Check if it's a fatal network/host error - don't offer password fallback
 		if strings.Contains(errStr, "connection refused") || strings.Contains(errStr, "no such host") || strings.Contains(errStr, "i/o timeout") {
 			return utils.LogError(m, msg.Err, "Remote connection failed")
 		}
 
-		m.UI.RemoteAuth = true
-		m.Operations.ActionType = "auth"
-		m.UI.StartConfirming()
+		// If we were trying key auth and it failed, show specific error
+		if m.Remote.TryKeyAuth {
+			m.Remote.TryKeyAuth = false
+			if strings.Contains(errStr, "failed to read key file") || strings.Contains(errStr, "failed to parse key file") {
+				return utils.LogError(m, msg.Err, "Key authentication failed")
+			}
+			if strings.Contains(errStr, "ssh: handshake failed") || strings.Contains(errStr, "unable to authenticate") {
+				// Key auth failed - user can try password manually
+				errMsg := "Key auth failed. Try: 'g' -> 'r' -> [p] for password"
+				utils.LogPush(m, tui_context.LogEntry{
+					Type:    "Remote",
+					Level:   tui_context.LogError,
+					Status:  tui_context.StatusError,
+					Message: "Key authentication failed",
+					Details: errMsg,
+				})
+				return utils.LogError(m, msg.Err, "Key authentication failed")
+			}
+		}
 
-		return utils.SetMsg(m, "Remote Authentication Required")
+		// Only offer password auth if we weren't just trying key auth
+		if !m.Remote.TryKeyAuth {
+			m.UI.RemoteAuth = true
+			m.Operations.ActionType = "auth"
+			m.UI.StartConfirming()
+
+			return utils.SetMsg(m, "Remote Authentication Required")
+		}
+
+		return utils.LogError(m, msg.Err, "Remote connection failed")
 	}
 
 	m.UI.RemoteAuth = false
 	m.FS = msg.FS
+	m.Remote.TryKeyAuth = false
 
 	authMethod := "password/key"
-	if m.Inputs.AltMode {
-		authMethod = "PEM file"
+	if m.Remote.KeyPath != "" {
+		authMethod = fmt.Sprintf("PEM: %s", m.Remote.KeyPath)
 	} else if m.Inputs.ActiveInput.Value() == "" {
 		authMethod = "agent/default keys"
 	}
@@ -161,6 +189,8 @@ func HandleRemoteGoto(m *tui_context.Model, input string) tea.Cmd {
 
 	m.Remote.Host = host
 	m.Remote.User = user
+	m.Remote.KeyPath = ""
+	m.Remote.TryKeyAuth = false
 	m.UI.Loading = true
 	m.UI.RemoteAuth = false
 	m.Inputs.AltMode = false
@@ -176,15 +206,34 @@ func HandleRemoteGoto(m *tui_context.Model, input string) tea.Cmd {
 }
 
 func HandleAuthFinalize(m *tui_context.Model, input string) tea.Cmd {
-	m.UI.Loading = true
 	password := ""
 	keyPath := ""
+	tryKeyAuth := false
 
 	if m.Inputs.AltMode {
 		keyPath = input
+		tryKeyAuth = true
+
+		// Check if key file exists first
+		if _, err := os.Stat(keyPath); os.IsNotExist(err) {
+			errMsg := fmt.Sprintf("Key file not found: %s", keyPath)
+			utils.LogPush(m, tui_context.LogEntry{
+				Type:    "Remote",
+				Level:   tui_context.LogError,
+				Status:  tui_context.StatusError,
+				Message: "Key authentication failed",
+				Details: errMsg,
+			})
+			utils.LogError(m, fmt.Errorf("%s", errMsg), "Key file not found")
+			return nil
+		}
 	} else {
 		password = input
 	}
+
+	m.UI.Loading = true
+	m.Remote.KeyPath = keyPath
+	m.Remote.TryKeyAuth = tryKeyAuth
 
 	return tea.Batch(
 		ConnectRemote(ssh.SSHConfig{

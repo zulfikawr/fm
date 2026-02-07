@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.1.5] - 2026-02-07
+
+### Added
+- **Enhanced SSH Key Authentication**
+  - Added pre-flight validation to ensure PEM key files exist before attempting a remote connection.
+  - Improved error reporting for key-based authentication failures (missing files, parsing errors, or handshake failures).
+  - Added a manual fallback hint when key authentication fails, guiding users to retry with a password.
+  - The UI now displays the specific PEM file path being used during the connection process.
+
+### Fixed
+- **Remote Connection Resilience**
+  - Fixed an issue where fatal network errors (connection refused, timeout, host not found) would incorrectly trigger a password authentication prompt.
+  - Improved state management for remote authentication, ensuring `TryKeyAuth` is correctly reset between attempts.
+
 ## [v1.1.4] - 2026-02-04
 
 ### Fixed

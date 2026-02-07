@@ -27,6 +27,8 @@ type RemoteState struct {
 	User            string                       // For interactive remote connection
 	HostConfirmChan chan *ssh.HostConfirmRequest // Channel for host confirmation requests
 	HostConfirmReq  *ssh.HostConfirmRequest      // Current host confirmation request
+	KeyPath         string                       // Last attempted key path for auth
+	TryKeyAuth      bool                         // Whether we're currently trying key-based auth
 }
 
 // --- Search State ---
