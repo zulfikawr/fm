@@ -109,8 +109,10 @@ echo -e "${COLOR_SUCCESS}${COLOR_BOLD}Success!${NC} ${COLOR_FILE}fm${NC} ${COLOR
 
 # Check if path is in PATH
 if [[ ":$PATH:" != *":$INSTALL_DIR:"* ]]; then
-    echo -e "   ${COLOR_WARNING}Note:${NC} ${COLOR_ACCENT}$INSTALL_DIR${NC} is not in your ${COLOR_BOLD}PATH${NC}."
-    echo -e "   Please add it to your shell profile (e.g., .bashrc or .zshrc)."
+    echo -e "\n${COLOR_WARNING}⚠️  Important:${NC} ${COLOR_ACCENT}$INSTALL_DIR${NC} is not in your ${COLOR_BOLD}PATH${NC}."
+    echo -e "   To run 'fm' from anywhere, add this line to your ${COLOR_BOLD}.bashrc${NC} or ${COLOR_BOLD}.zshrc${NC}:"
+    echo -e "   ${COLOR_PRIMARY}export PATH=\"\$PATH:$INSTALL_DIR\"${NC}"
+    echo -e "   Then restart your terminal or run: ${COLOR_PRIMARY}source ~/.bashrc${NC} (or .zshrc)\n"
 fi
 
 echo -e "\n${COLOR_INFO}Execute ${COLOR_BOLD}'fm'${NC} ${COLOR_INFO}to begin navigation.${NC}\n"
