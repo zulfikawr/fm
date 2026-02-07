@@ -32,6 +32,13 @@ func HandleUpdate(m *tuictx.Model, msg tea.Msg) tea.Cmd {
 	}
 
 	// 1. Global/System Handlers (Resize, Quit, Tick, Toggles)
+	// Handle keybinding input before global quit to allow recording the quit key
+	if m.UI.InputActive && m.Inputs.Mode == tuictx.InputKeybinding {
+		if cmd, handled := handleInputs(m, msg); handled {
+			return cmd
+		}
+	}
+
 	if cmd, handled := handleGlobal(m, msg); handled {
 		return cmd
 	}
@@ -107,6 +114,10 @@ func HandleUpdate(m *tuictx.Model, msg tea.Msg) tea.Cmd {
 
 	case messages.ClearMsg:
 		m.Operations.Progress.Hide()
+		m.Message.Pop()
+		return nil
+
+	case messages.ClearStatusMsg:
 		m.Message.Pop()
 		return nil
 

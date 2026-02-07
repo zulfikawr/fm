@@ -5,6 +5,40 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.1.6] - 2026-02-07
+
+### Added
+- **Customizable Keybindings System**
+  - Robust configuration system using `~/.config/fm/keybindings.json`.
+  - Proactive conflict detection and browser-hijack validation (e.g., warning for `Ctrl+T`).
+  - Integrated "Reset to Default" functionality in settings.
+- **Dynamic Settings UI**
+  - Settings menu now live-updates to reflect custom key mappings.
+  - Implemented dynamic scrolling and group-aware indexing for settings.
+  - Added support for Title Case in all UI labels and section headers.
+  - Enhanced color parsing for key indicators (e.g., correctly handling `[[]` and `[]]`).
+- **Professional Key Recording UX**
+  - High-precision keybinding recorder with raw event capture (no manual typing needed).
+  - Support for all modifiers (Control, Alt, Shift) and specialized keys (Space, Enter, etc.).
+  - Explicit `shift+key` recording format for consistency.
+  - Toggle behavior: tapping a key appends it to the list, tapping it again removes it.
+- **Improved Exit UX**
+  - Implemented **Exit Confirmation Priority**: quit messages now hijack the footer with absolute precedence.
+  - Added automatic state restoration for footer inputs and status messages after exit-confirm timeouts.
+  - Dynamic exit messages that automatically reflect the configured quit key.
+- **Development & QA Tools**
+  - Integrated `golangci-lint` into the `make lint` workflow.
+  - Added comprehensive test suite for keybinding validation, helper logic, and UI labeling.
+
+### Fixed
+- **Input Resilience**
+  - Improved `Esc` key priority in the TUI router to ensure input closing doesn't trigger global exits.
+  - Improved configuration persistence to ensure user settings are preserved across builds.
+
+### Changed
+- Refactored TUI router and navigation handlers to use the centralized keybinding system.
+- Standardized UI section headers and help descriptions to Title Case for a professional look.
+
 ## [v1.1.5] - 2026-02-07
 
 ### Added

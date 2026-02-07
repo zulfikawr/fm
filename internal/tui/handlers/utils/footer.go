@@ -1,12 +1,19 @@
 package utils
 
 import (
+	"strings"
+
 	"github.com/zulfikawr/fm/internal/tui/components/footer"
 	"github.com/zulfikawr/fm/internal/tui/context"
 )
 
 // DetermineFooterMode calculates the current footer display mode
 func DetermineFooterMode(m *context.Model) footer.Mode {
+	// Quit confirmation has absolute precedence
+	if strings.HasPrefix(m.Message.Text, "press [") && strings.HasSuffix(m.Message.Text, "] again to close") {
+		return footer.ModeMessage
+	}
+
 	if m.UI.InputActive {
 		switch m.Inputs.Mode {
 		case context.InputSearch:
@@ -27,6 +34,8 @@ func DetermineFooterMode(m *context.Model) footer.Mode {
 			return footer.ModeCreate
 		case context.InputConflictRename:
 			return footer.ModeConflictRename
+		case context.InputKeybinding:
+			return footer.ModeKeybinding
 		}
 	}
 	if m.UI.HostConfirm {
@@ -89,6 +98,8 @@ func GetPromptLength(m *context.Model) int {
 		return 15 // "Create (File): "
 	case context.InputConflictRename:
 		return 10 // "New name: "
+	case context.InputKeybinding:
+		return 8 // "Bind: "
 	}
 	return 0
 }

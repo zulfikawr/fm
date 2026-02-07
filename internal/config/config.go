@@ -10,23 +10,24 @@ import (
 
 // Config holds the user preferences.
 type Config struct {
-	ConfigVersion     int  `json:"config_version"`
-	ThemeIndex        int  `json:"theme_index"`
-	ShowHidden        bool `json:"show_hidden"`
-	CaseSensitive     bool `json:"case_sensitive"`
-	ConfirmOperations bool `json:"confirm_operations"`
-	WrapNavigation    bool `json:"wrap_navigation"`
-	EnableGit         bool `json:"enable_git"`
-	ShowSize          bool `json:"show_size"`
-	ShowDateModified  bool `json:"show_date_modified"`
-	ShowHeader        bool `json:"show_header"`
-	DateFormatIndex   int  `json:"date_format_index"`
-	SizeFormatIndex   int  `json:"size_format_index"`
-	EditorIndex       int  `json:"editor_index"`
-	UseTrash          bool `json:"use_trash"`
-	EnableMouse       bool `json:"enable_mouse"`
-	EnableIcons       bool `json:"enable_icons"`
-	EnableRegexSearch bool `json:"enable_regex_search"`
+	ConfigVersion     int          `json:"config_version"`
+	ThemeIndex        int          `json:"theme_index"`
+	ShowHidden        bool         `json:"show_hidden"`
+	CaseSensitive     bool         `json:"case_sensitive"`
+	ConfirmOperations bool         `json:"confirm_operations"`
+	WrapNavigation    bool         `json:"wrap_navigation"`
+	EnableGit         bool         `json:"enable_git"`
+	ShowSize          bool         `json:"show_size"`
+	ShowDateModified  bool         `json:"show_date_modified"`
+	ShowHeader        bool         `json:"show_header"`
+	DateFormatIndex   int          `json:"date_format_index"`
+	SizeFormatIndex   int          `json:"size_format_index"`
+	EditorIndex       int          `json:"editor_index"`
+	UseTrash          bool         `json:"use_trash"`
+	EnableMouse       bool         `json:"enable_mouse"`
+	EnableIcons       bool         `json:"enable_icons"`
+	EnableRegexSearch bool         `json:"enable_regex_search"`
+	Keybindings       []Keybinding `json:"keybindings"`
 }
 
 const CurrentConfigVersion = 1
@@ -51,6 +52,7 @@ func DefaultConfig() Config {
 		EnableMouse:       true,
 		EnableIcons:       false,
 		EnableRegexSearch: false,
+		Keybindings:       DefaultKeybindings(),
 	}
 }
 
@@ -106,12 +108,9 @@ func Load() Config {
 
 	// Auto-migrate old configs
 	if cfg.ConfigVersion < CurrentConfigVersion {
-		// For v0 -> v1 migration, reset to defaults since we're introducing versioning
-		if cfg.ConfigVersion == 0 {
-			cfg = DefaultConfig()
-		} else {
-			cfg.ConfigVersion = CurrentConfigVersion
-		}
+		// Migration logic
+		cfg.ConfigVersion = CurrentConfigVersion
+
 		if err := cfg.Save(); err != nil {
 			logger.Errorf("Failed to save migrated config: %v", err)
 		}

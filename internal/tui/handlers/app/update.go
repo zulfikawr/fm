@@ -31,7 +31,7 @@ func HandleUpdateMessages(m *tui_context.Model, msg tea.Msg) tea.Cmd {
 			return utils.SetErrMsg(m, "Update failed: "+msg.Err.Error())
 		}
 		m.UI.UpdateAvailable = false
-		return utils.SetMsg(m, "Successfully updated. Press Ctrl+C twice to quit")
+		return utils.SetMsg(m, "successfully updated. press [ctrl+c] twice to quit")
 
 	case tea.KeyMsg:
 		if m.UI.UpdateAvailable && m.Operations.ActionType == constants.ActionUpdate {

@@ -31,10 +31,14 @@ func TestPrintHelp(t *testing.T) {
 	output := testutil.StripANSI(buf.String())
 
 	expectedSubstrings := []string{
-		"FM - Terminal File Manager",
+		"fm - Terminal File Manager",
 		"Usage:",
-		"Keybindings:",
-		"j/down, k/up",
+		"General:",
+		"Navigation:",
+		"File Operations:",
+		"Selection:",
+		"Search & Filter:",
+		"Tabs:",
 	}
 
 	for _, s := range expectedSubstrings {

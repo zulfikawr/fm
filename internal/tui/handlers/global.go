@@ -1,7 +1,10 @@
 package handlers
 
 import (
+	"time"
+
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/zulfikawr/fm/internal/config"
 	"github.com/zulfikawr/fm/internal/constants"
 	tuictx "github.com/zulfikawr/fm/internal/tui/context"
 	"github.com/zulfikawr/fm/internal/tui/handlers/app"
@@ -22,16 +25,42 @@ func handleGlobal(m *tuictx.Model, msg tea.Msg) (tea.Cmd, bool) {
 		return nil, true
 
 	case tea.KeyMsg:
-		switch msg.String() {
-		case "ctrl+c":
-			if m.Message.Text == "Press [Ctrl+C] again to close" {
+		// Handle keybindings using custom configuration
+		action := config.GetActionForKey(msg.String(), m.Config.Keybindings)
+
+		switch action {
+		case "quit":
+			// If we are recording a keybinding, don't trigger quit
+			if m.UI.InputActive && m.Inputs.Mode == tuictx.InputKeybinding {
+				return nil, false
+			}
+
+			// Get current quit key for dynamic message
+			quitKey := "ctrl+c"
+			for _, kb := range m.Config.Keybindings {
+				if kb.Action == "quit" && len(kb.Keys) > 0 {
+					quitKey = kb.Keys[0]
+					if quitKey == " " {
+						quitKey = "space"
+					}
+					break
+				}
+			}
+			msg := "press [" + quitKey + "] again to close"
+
+			if m.Message.Text == msg {
 				if m.FS.IsLocal() && m.Watcher.Watcher != nil {
 					_ = m.Watcher.Watcher.Close()
 				}
 				return tea.Quit, true
 			}
-			return utils.SetMsg(m, "Press [Ctrl+C] again to close"), true
-		case "alt+u":
+			// Set exit message and clear it after 2 seconds if not confirmed
+			m.Message.Push(msg, false)
+			return func() tea.Msg {
+				time.Sleep(2 * time.Second)
+				return messages.ClearStatusMsg{}
+			}, true
+		case "analyze":
 			if !m.UI.InputActive && !m.UI.SettingsOpen && !m.UI.HelpOpen {
 				if m.UI.AnalyzeOpen {
 					m.UI.AnalyzeOpen = false
@@ -40,7 +69,7 @@ func handleGlobal(m *tuictx.Model, msg tea.Msg) (tea.Cmd, bool) {
 				return func() tea.Msg { return messages.StartAnalyzeMsg{} }, true
 			}
 			return nil, false
-		case "alt+r":
+		case "toggle_regex_search":
 			if !m.UI.InputActive && !m.UI.SettingsOpen && !m.UI.HelpOpen {
 				m.Config.EnableRegexSearch = !m.Config.EnableRegexSearch
 				_ = m.Config.Save()
@@ -51,26 +80,32 @@ func handleGlobal(m *tuictx.Model, msg tea.Msg) (tea.Cmd, bool) {
 				return utils.SetMsg(m, msg), true
 			}
 			return nil, false
-		case "alt+l":
+		case "logs_view":
 			m.UI.ToggleLogs()
 			return nil, true
-		case "alt+c":
+		case "clipboard_view":
 			m.UI.ToggleClipboard()
 			return nil, true
-		case ".":
+		case "settings":
 			if m.UI.InputActive || m.UI.AnalyzeOpen {
 				return nil, false
 			}
 			m.UI.ToggleSettings()
 			return nil, true
-		case "?":
+		case "help":
 			if m.UI.InputActive || m.UI.AnalyzeOpen {
 				return nil, false
 			}
 			m.UI.ToggleHelp()
 			return nil, true
-		case "esc":
-			// 1. High Priority: Cancel active confirmation or prompt
+		case "clear_selection", "cancel_input":
+			// Handle escape key for multiple purposes
+			// 1. High Priority: Cancel active input/prompt
+			if m.UI.InputActive {
+				// inputs.go already handles 'esc' for actual inputs,
+				// but this ensures we don't fall through to closing screens
+				return nil, false
+			}
 			if m.UI.Confirming {
 				m.UI.StopConfirming()
 				m.Operations.ActionType = constants.ActionNone

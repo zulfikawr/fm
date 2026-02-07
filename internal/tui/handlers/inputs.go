@@ -1,8 +1,11 @@
 package handlers
 
 import (
+	"strings"
+
 	"github.com/zulfikawr/fm/internal/files/local"
 	tuictx "github.com/zulfikawr/fm/internal/tui/context"
+	"github.com/zulfikawr/fm/internal/tui/handlers/app"
 	"github.com/zulfikawr/fm/internal/tui/handlers/file"
 	"github.com/zulfikawr/fm/internal/tui/handlers/integration"
 	"github.com/zulfikawr/fm/internal/tui/handlers/nav"
@@ -56,6 +59,55 @@ func handleInputs(m *tuictx.Model, msg tea.Msg) (tea.Cmd, bool) {
 					nav.MoveCursor(m, 1)
 				}
 				utils.UpdateSearchSuggestion(m)
+				return nil, true
+			}
+		}
+
+		if m.Inputs.Mode == tuictx.InputKeybinding {
+			switch msg.String() {
+			case "enter":
+				if cmd := finalizeInput(m); cmd != nil {
+					return cmd, true
+				}
+				return nil, true
+			case "esc":
+				m.StopInput(true)
+				return nil, true
+			case "backspace":
+				m.Inputs.ActiveInput.SetValue("")
+				return nil, true
+			default:
+				keyStr := msg.String()
+
+				// Handle Shift properly for the keybinding recorder
+				if msg.Type == tea.KeyRunes && len(msg.Runes) > 0 && msg.Runes[0] >= 'A' && msg.Runes[0] <= 'Z' {
+					// It's a shifted key, let's make it explicitly "shift+key"
+					// for consistency in the configuration.
+					keyStr = "shift+" + strings.ToLower(string(msg.Runes[0]))
+				}
+
+				if keyStr == " " {
+					keyStr = "space"
+				}
+
+				currentValue := m.Inputs.ActiveInput.Value()
+				if currentValue == "" {
+					m.Inputs.ActiveInput.SetValue(keyStr)
+				} else {
+					keys := strings.Split(currentValue, ", ")
+					exists := false
+					for i, k := range keys {
+						if k == keyStr {
+							keys = append(keys[:i], keys[i+1:]...)
+							exists = true
+							break
+						}
+					}
+					if !exists {
+						keys = append(keys, keyStr)
+					}
+					m.Inputs.ActiveInput.SetValue(strings.Join(keys, ", "))
+				}
 				return nil, true
 			}
 		}
@@ -151,6 +203,8 @@ func finalizeInput(m *tuictx.Model) tea.Cmd {
 	case tuictx.InputSearch:
 		m.StopInput(false)
 		return nil
+	case tuictx.InputKeybinding:
+		return app.FinalizeKeybinding(m)
 	case tuictx.InputRename:
 		m.StopInput(true)
 		return file.PerformRename(m, val)

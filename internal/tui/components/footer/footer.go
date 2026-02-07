@@ -33,6 +33,7 @@ const (
 	ModeUnzip
 	ModeCreate
 	ModeConflictRename
+	ModeKeybinding
 	ModeAnalyze
 )
 
@@ -87,7 +88,7 @@ func Render(props Props) string {
 		return renderProgressFooter(props)
 	case ModeAnalyze:
 		return views.RenderAnalyzeFooter(props.Width, props.Styles)
-	case ModeSearching, ModeRenaming, ModeGoto, ModeAuth, ModeFuzzySearch, ModeZip, ModeUnzip, ModeCreate, ModeConflictRename, ModeConfirming, ModeHostConfirm:
+	case ModeSearching, ModeRenaming, ModeGoto, ModeAuth, ModeFuzzySearch, ModeZip, ModeUnzip, ModeCreate, ModeConflictRename, ModeKeybinding, ModeConfirming, ModeHostConfirm:
 		return renderPromptsFooter(props)
 	case ModeMessage:
 		return renderAlertFooter(props)
@@ -128,6 +129,8 @@ func renderPromptsFooter(props Props) string {
 		msgMode = messages.ModeCreate
 	case ModeConflictRename:
 		msgMode = messages.ModeConflictRename
+	case ModeKeybinding:
+		msgMode = messages.ModeKeybinding
 	case ModeConfirming:
 		msgMode = messages.ModeConfirming
 	case ModeHostConfirm:

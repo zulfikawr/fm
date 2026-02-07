@@ -1,6 +1,9 @@
 package app
 
 import (
+	"fmt"
+	"strings"
+
 	"github.com/zulfikawr/fm/internal/config"
 	"github.com/zulfikawr/fm/internal/constants"
 	"github.com/zulfikawr/fm/internal/files/format"
@@ -13,7 +16,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-// HandleSettings handles settings-related messages
+// handleSettingsKeys handles settings-related messages
 func HandleSettings(m *tui_context.Model, msg tea.Msg) tea.Cmd {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
@@ -25,7 +28,12 @@ func HandleSettings(m *tui_context.Model, msg tea.Msg) tea.Cmd {
 }
 
 func handleSettingsKeys(m *tui_context.Model, msg tea.KeyMsg) tea.Cmd {
-	totalItems := 16
+	groups := buildSettingGroups(m)
+	totalItems := 0
+	for _, g := range groups {
+		totalItems += len(g.Settings)
+	}
+
 	var reload bool
 	var cmd tea.Cmd
 
@@ -39,6 +47,9 @@ func handleSettingsKeys(m *tui_context.Model, msg tea.KeyMsg) tea.Cmd {
 			m.Settings.Cursor++
 		}
 	case "enter", "right", "l", " ":
+		if m.UI.InputActive && m.Inputs.Mode == tui_context.InputKeybinding {
+			return FinalizeKeybinding(m)
+		}
 		reload, cmd = ToggleSetting(m.Settings.Cursor, m)
 	case "left", "h":
 		reload, cmd = ToggleSettingPrev(m.Settings.Cursor, m)
@@ -46,6 +57,10 @@ func handleSettingsKeys(m *tui_context.Model, msg tea.KeyMsg) tea.Cmd {
 		m.Operations.ActionType = constants.ActionResetSettings
 		m.UI.StartConfirming()
 	case "esc", "q":
+		if m.UI.InputActive && m.Inputs.Mode == tui_context.InputKeybinding {
+			m.StopInput(true)
+			return nil
+		}
 		m.UI.ToggleSettings()
 	}
 
@@ -57,36 +72,96 @@ func handleSettingsKeys(m *tui_context.Model, msg tea.KeyMsg) tea.Cmd {
 	return cmd
 }
 
+func buildSettingGroups(m *tui_context.Model) []struct {
+	Title    string
+	Settings []struct{ Label string }
+} {
+	// Simple version just for counting items, actual rendering is in views/settings.go
+	groups := []struct {
+		Title    string
+		Settings []struct{ Label string }
+	}{
+		{Title: "File Operations", Settings: make([]struct{ Label string }, 6)},
+		{Title: "Display Options", Settings: make([]struct{ Label string }, 7)},
+		{Title: "Search, Filtering & Inputs", Settings: make([]struct{ Label string }, 1)},
+		{Title: "Appearance", Settings: make([]struct{ Label string }, 2)},
+	}
+
+	categories := []string{"general", "navigation", "file_ops", "selection", "search", "tabs"}
+	titles := map[string]string{
+		"general":    "Keybindings: General",
+		"navigation": "Keybindings: Navigation",
+		"file_ops":   "Keybindings: File Operations",
+		"selection":  "Keybindings: Selection",
+		"search":     "Keybindings: Search & Filter",
+		"tabs":       "Keybindings: Tabs",
+	}
+
+	for _, cat := range categories {
+		count := 0
+		for _, kb := range m.Config.Keybindings {
+			if kb.Category == cat {
+				count++
+			}
+		}
+		if count > 0 {
+			groups = append(groups, struct {
+				Title    string
+				Settings []struct{ Label string }
+			}{Title: titles[cat], Settings: make([]struct{ Label string }, count)})
+		}
+	}
+
+	return groups
+}
+
+func GetSettingGroups(m *tui_context.Model) []struct {
+	Title    string
+	Settings []struct {
+		Label    string
+		Value    string
+		Inactive bool
+	}
+} {
+	// This should match the structure in internal/tui/components/views/settings.go
+	// In a real refactor, we would unify these.
+	return nil
+}
+
 // ScrollSettings recalculates the settings view offset
 func ScrollSettings(m *tui_context.Model) int {
 	cursor := m.Settings.Cursor
 	offset := m.Settings.Offset
 	height := m.Display.ViewportHeight
 
-	rowIdx := 0
-	if cursor <= 5 {
-		// Group 1: rows 2-7
-		rowIdx = cursor + 2
-	} else if cursor <= 12 {
-		// Group 2: rows 10-16
-		rowIdx = cursor + 4
-	} else if cursor == 13 {
-		// Group 3: row 19
-		rowIdx = cursor + 6
-	} else {
-		// Group 4: rows 22-23
-		rowIdx = cursor + 8
+	// Map cursor index to actual display row index (including headers and spacing)
+	groups := buildSettingGroups(m)
+	rowIdx := 1 // Start with spacing above first group
+	itemCount := 0
+
+	for i, g := range groups {
+		if i > 0 {
+			rowIdx += 1 // Spacing between groups
+		}
+		rowIdx += 1 // Group title row
+
+		groupSize := len(g.Settings)
+		if cursor < itemCount+groupSize {
+			// Found the group containing the cursor
+			rowIdx += (cursor - itemCount)
+			break
+		}
+		rowIdx += groupSize
+		itemCount += groupSize
 	}
 
 	if rowIdx < offset {
-		newOffset := rowIdx
-		if cursor == 0 || cursor == 6 || cursor == 13 || cursor == 14 {
-			newOffset -= 2
-		}
-		if newOffset < 0 {
-			newOffset = 0
-		}
-		return newOffset
+		return rowIdx
+	}
+
+	// When moving back to the top, ensure we show the first header and its gap
+	if cursor == 0 {
+		return 0
 	}
 
 	if rowIdx >= offset+height {
@@ -96,54 +171,125 @@ func ScrollSettings(m *tui_context.Model) int {
 	return offset
 }
 
+func buildFullSettingList(m *tui_context.Model) []SettingItem {
+	cfg := m.Config
+	var items []SettingItem
+
+	// Group 1: File Operations (6)
+	items = append(items, SettingItem{Label: "Show Hidden Files", Action: "toggle_hidden"})
+	items = append(items, SettingItem{Label: "Case-Sensitive Search", Action: "toggle_case"})
+	items = append(items, SettingItem{Label: "Confirm Operations", Action: "toggle_confirm"})
+	items = append(items, SettingItem{Label: "Wrap Navigation", Action: "toggle_wrap"})
+	items = append(items, SettingItem{Label: "Preferred Editor", Action: "pick_editor"})
+	items = append(items, SettingItem{Label: "Use Trash (Move to Trash)", Action: "toggle_trash"})
+
+	// Group 2: Display Options (7)
+	items = append(items, SettingItem{Label: "Show Column Headers", Action: "toggle_header"})
+	items = append(items, SettingItem{Label: "Enable Git Status", Action: "toggle_git"})
+	items = append(items, SettingItem{Label: "Show File Size", Action: "toggle_size"})
+	items = append(items, SettingItem{Label: "Size Format", Action: "pick_size_format"})
+	items = append(items, SettingItem{Label: "Show Date Modified", Action: "toggle_date"})
+	items = append(items, SettingItem{Label: "Date Format", Action: "pick_date_format"})
+	items = append(items, SettingItem{Label: "Enable Mouse Support", Action: "toggle_mouse"})
+
+	// Group 3: Search, Filtering & Inputs (1)
+	items = append(items, SettingItem{Label: "Enable Regex Search", Action: "toggle_regex"})
+
+	// Group 4: Appearance (2)
+	items = append(items, SettingItem{Label: "Enable Nerd Font Icons", Action: "toggle_icons"})
+	items = append(items, SettingItem{Label: "Theme", Action: "pick_theme"})
+
+	// Group 5+: Keybindings
+	categories := []string{"general", "navigation", "file_ops", "selection", "search", "tabs"}
+	for _, cat := range categories {
+		for _, kb := range cfg.Keybindings {
+			if kb.Category == cat {
+				items = append(items, SettingItem{
+					Label:        kb.HumanLabel(),
+					IsKeybinding: true,
+					Action:       kb.Action,
+					Keys:         kb.Keys,
+				})
+			}
+		}
+	}
+
+	return items
+}
+
+type SettingItem struct {
+	Label        string
+	Action       string
+	IsKeybinding bool
+	Keys         []string
+}
+
 func ToggleSetting(idx int, m *tui_context.Model) (bool, tea.Cmd) {
-	cfg := m.Config // Copy
+	items := buildFullSettingList(m)
+	if idx < 0 || idx >= len(items) {
+		return false, nil
+	}
+
+	item := items[idx]
+	cfg := m.Config
 	reload := false
 	var cmd tea.Cmd
-	switch idx {
-	case 0:
+
+	if item.IsKeybinding {
+		m.StartInput(tui_context.InputKeybinding)
+		m.Inputs.ActiveInput.SetValue(strings.Join(item.Keys, ", "))
+
+		// Find the human label
+		label := item.Label
+
+		m.Inputs.ActiveInput.SetPrompt(fmt.Sprintf("Bind %s: ", label))
+		return false, m.Inputs.ActiveInput.FocusCmd()
+	}
+
+	switch item.Action {
+	case "toggle_hidden":
 		cfg.ShowHidden = !cfg.ShowHidden
 		reload = true
-	case 1:
+	case "toggle_case":
 		cfg.CaseSensitive = !cfg.CaseSensitive
 		reload = true
-	case 2:
+	case "toggle_confirm":
 		cfg.ConfirmOperations = !cfg.ConfirmOperations
-	case 3:
+	case "toggle_wrap":
 		cfg.WrapNavigation = !cfg.WrapNavigation
-	case 4:
+	case "pick_editor":
 		cfg.EditorIndex = (cfg.EditorIndex + 1) % len(constants.Editors)
-	case 5:
+	case "toggle_trash":
 		cfg.UseTrash = !cfg.UseTrash
-	case 6:
+	case "toggle_header":
 		cfg.ShowHeader = !cfg.ShowHeader
 		m.SyncViewportHeight()
-	case 7:
+	case "toggle_git":
 		cfg.EnableGit = !cfg.EnableGit
 		reload = true
-	case 8:
+	case "toggle_size":
 		cfg.ShowSize = !cfg.ShowSize
 		m.SyncViewportHeight()
 		reload = true
-	case 9:
+	case "pick_size_format":
 		if cfg.ShowSize {
 			cfg.SizeFormatIndex = (cfg.SizeFormatIndex + 1) % len(format.SizeFormats)
 			reload = true
 		}
-	case 10:
+	case "toggle_date":
 		cfg.ShowDateModified = !cfg.ShowDateModified
 		m.SyncViewportHeight()
 		reload = true
-	case 11:
+	case "pick_date_format":
 		if cfg.ShowDateModified {
 			cfg.DateFormatIndex = (cfg.DateFormatIndex + 1) % len(format.DateFormats)
 			reload = true
 		}
-	case 12:
+	case "toggle_mouse":
 		cfg.EnableMouse = !cfg.EnableMouse
-	case 13:
+	case "toggle_regex":
 		cfg.EnableRegexSearch = !cfg.EnableRegexSearch
-	case 14:
+	case "toggle_icons":
 		if !cfg.EnableIcons {
 			if !theme.HasIconsDownloaded() {
 				m.UI.Loading = true
@@ -153,7 +299,6 @@ func ToggleSetting(idx int, m *tui_context.Model) (bool, tea.Cmd) {
 				}
 				return true, cmd
 			}
-			// Already downloaded, start test flow
 			m.UI.TestingIcons = true
 			m.Operations.ActionType = constants.ActionTestIcons
 			m.UI.StartConfirming()
@@ -161,7 +306,7 @@ func ToggleSetting(idx int, m *tui_context.Model) (bool, tea.Cmd) {
 			cfg.EnableIcons = false
 			reload = true
 		}
-	case 15:
+	case "pick_theme":
 		cfg.ThemeIndex = (cfg.ThemeIndex + 1) % len(theme.Themes)
 		m.Display.Styles = theme.GetStylesheet(cfg.ThemeIndex)
 		m.Display.LoadingSpinner.Style = m.Display.LoadingSpinner.Style.Foreground(theme.Themes[cfg.ThemeIndex].Dir)
@@ -170,28 +315,39 @@ func ToggleSetting(idx int, m *tui_context.Model) (bool, tea.Cmd) {
 	if err := cfg.Save(); err != nil {
 		logger.Errorf("Failed to save config: %v", err)
 	}
-	m.Config = cfg // Explicit state change
+	m.Config = cfg
 	return reload, cmd
 }
 
 func ToggleSettingPrev(idx int, m *tui_context.Model) (bool, tea.Cmd) {
-	cfg := m.Config // Copy
+	items := buildFullSettingList(m)
+	if idx < 0 || idx >= len(items) {
+		return false, nil
+	}
+
+	item := items[idx]
+	if item.IsKeybinding {
+		return ToggleSetting(idx, m)
+	}
+
+	cfg := m.Config
 	var reload bool
 	var cmd tea.Cmd
-	switch idx {
-	case 4:
+
+	switch item.Action {
+	case "pick_editor":
 		cfg.EditorIndex = (cfg.EditorIndex - 1 + len(constants.Editors)) % len(constants.Editors)
-	case 9:
+	case "pick_size_format":
 		if cfg.ShowSize {
 			cfg.SizeFormatIndex = (cfg.SizeFormatIndex - 1 + len(format.SizeFormats)) % len(format.SizeFormats)
 			reload = true
 		}
-	case 11:
+	case "pick_date_format":
 		if cfg.ShowDateModified {
 			cfg.DateFormatIndex = (cfg.DateFormatIndex - 1 + len(format.DateFormats)) % len(format.DateFormats)
 			reload = true
 		}
-	case 15:
+	case "pick_theme":
 		cfg.ThemeIndex = (cfg.ThemeIndex - 1 + len(theme.Themes)) % len(theme.Themes)
 		m.Display.Styles = theme.GetStylesheet(cfg.ThemeIndex)
 		m.Display.LoadingSpinner.Style = m.Display.LoadingSpinner.Style.Foreground(theme.Themes[cfg.ThemeIndex].Dir)
@@ -202,8 +358,57 @@ func ToggleSettingPrev(idx int, m *tui_context.Model) (bool, tea.Cmd) {
 	if err := cfg.Save(); err != nil {
 		logger.Errorf("Failed to save config: %v", err)
 	}
-	m.Config = cfg // Explicit state change
+	m.Config = cfg
 	return reload, cmd
+}
+
+// FinalizeKeybinding saves the new keybinding for an action
+func FinalizeKeybinding(m *tui_context.Model) tea.Cmd {
+	val := m.Inputs.ActiveInput.Value()
+	m.StopInput(true)
+
+	items := buildFullSettingList(m)
+	idx := m.Settings.Cursor
+	if idx < 0 || idx >= len(items) || !items[idx].IsKeybinding {
+		return nil
+	}
+
+	targetAction := items[idx].Action
+
+	// Simple comma-separated keys parsing
+	keys := strings.Split(val, ", ")
+	for i := range keys {
+		keys[i] = strings.TrimSpace(keys[i])
+	}
+
+	// Update the specific keybinding in the config
+	newKeybinds := make([]config.Keybinding, len(m.Config.Keybindings))
+	copy(newKeybinds, m.Config.Keybindings)
+
+	found := false
+	for i := range newKeybinds {
+		if newKeybinds[i].Action == targetAction {
+			newKeybinds[i].Keys = keys
+			found = true
+			break
+		}
+	}
+
+	if !found {
+		return nil
+	}
+
+	// Validate before saving
+	if err := config.ValidateKeybindings(newKeybinds); err != nil {
+		return utils.SetErrMsg(m, err.Error())
+	}
+
+	m.Config.Keybindings = newKeybinds
+	if err := m.Config.Save(); err != nil {
+		return utils.SetErrMsg(m, "Failed to save keybindings: "+err.Error())
+	}
+
+	return utils.SetMsg(m, "Keybinding updated")
 }
 
 // ConfirmSettingsReset resets all settings to defaults

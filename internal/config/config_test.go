@@ -151,9 +151,9 @@ func TestConfig_Migration(t *testing.T) {
 		if cfg.ConfigVersion != CurrentConfigVersion {
 			t.Errorf("Expected version %d, got %d", CurrentConfigVersion, cfg.ConfigVersion)
 		}
-		// v0 migration currently resets to default
-		if cfg.ThemeIndex != 0 {
-			t.Errorf("Expected ThemeIndex 0 after v0 reset, got %d", cfg.ThemeIndex)
+		// v0 migration now preserves values
+		if cfg.ThemeIndex != 1 {
+			t.Errorf("Expected ThemeIndex 1 after v0 migration, got %d", cfg.ThemeIndex)
 		}
 	})
 

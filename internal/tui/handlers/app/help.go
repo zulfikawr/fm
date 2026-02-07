@@ -29,8 +29,20 @@ func handleHelpKeys(m *tui_context.Model, msg tea.KeyMsg) tea.Cmd {
 		if m.Help.Cursor < totalItems-1 {
 			m.Help.Cursor++
 		}
-	case "esc", "?", "q":
+	case "esc", "q":
 		m.UI.ToggleHelp()
+	default:
+		// Check for custom help toggle key
+		for _, kb := range m.Config.Keybindings {
+			if kb.Action == "help" {
+				for _, k := range kb.Keys {
+					if k == msg.String() {
+						m.UI.ToggleHelp()
+						return nil
+					}
+				}
+			}
+		}
 	}
 
 	m.Help.Offset = ScrollHelp(m)

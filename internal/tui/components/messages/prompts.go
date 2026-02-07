@@ -103,29 +103,54 @@ func RenderInputPrompt(props Props) string {
 
 // ColorizeKeys colorizes key indicators in brackets
 func ColorizeKeys(props Props, str string) string {
+	return ColorizeKeysWithStyle(props, str, props.Style.Footer)
+}
+
+// ColorizeKeysWithStyle colorizes key indicators in brackets with a specific base style
+func ColorizeKeysWithStyle(props Props, str string, base lipgloss.Style) string {
 	var result strings.Builder
 	inBracket := false
-	keyStyle := props.Style.KeyCol.Inherit(props.Style.Footer).UnsetPadding().UnsetWidth()
-	dimStyle := props.Style.DimCol.Inherit(props.Style.Footer).UnsetPadding().UnsetWidth()
-	baseStyle := props.Style.Footer.UnsetPadding().UnsetWidth()
+
+	// Extract the background from the base style to ensure consistency
+	bg := base.GetBackground()
+
+	keyStyle := props.Style.KeyCol.Inherit(base).UnsetPadding().UnsetWidth().Background(bg)
+	dimStyle := props.Style.DimCol.Inherit(base).UnsetPadding().UnsetWidth().Background(bg)
+	baseStyle := base.UnsetPadding().UnsetWidth()
 
 	var current strings.Builder
-	for _, r := range str {
+	runes := []rune(str)
+	for i := 0; i < len(runes); i++ {
+		r := runes[i]
 		switch r {
 		case '[':
-			if current.Len() > 0 {
-				result.WriteString(baseStyle.Render(current.String()))
-				current.Reset()
+			if !inBracket {
+				if current.Len() > 0 {
+					result.WriteString(baseStyle.Render(current.String()))
+					current.Reset()
+				}
+				inBracket = true
+				result.WriteString(dimStyle.Render("["))
+			} else {
+				// Nested bracket or bracket as content
+				current.WriteRune(r)
 			}
-			inBracket = true
-			result.WriteString(dimStyle.Render("["))
 		case ']':
-			if current.Len() > 0 {
-				result.WriteString(keyStyle.Render(current.String()))
-				current.Reset()
+			if inBracket {
+				// Heuristic: if there's another ']' immediately following this one,
+				// then this one is likely part of the key content (e.g., in "[]]")
+				if i+1 < len(runes) && runes[i+1] == ']' {
+					current.WriteRune(r)
+				} else {
+					// This is the closing bracket
+					result.WriteString(keyStyle.Render(current.String()))
+					current.Reset()
+					inBracket = false
+					result.WriteString(dimStyle.Render("]"))
+				}
+			} else {
+				current.WriteRune(r)
 			}
-			inBracket = false
-			result.WriteString(dimStyle.Render("]"))
 		default:
 			current.WriteRune(r)
 		}

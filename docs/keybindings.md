@@ -1,82 +1,68 @@
 # Keybindings
 
-`fm` relies heavily on keybindings for fast navigation and operation. Below is a comprehensive list of available shortcuts.
+`fm` relies heavily on keybindings for fast navigation and operation. Below is a comprehensive list of available shortcuts. You can customize these in `~/.config/fm/keybindings.json` or via the TUI settings menu.
+
+## General
+
+| Action | Key |
+| --- | --- |
+| Quit `fm` | `Ctrl+C` |
+| Toggle Help | `?` |
+| Toggle Settings | `.` |
+| Analyze Disk Usage | `Alt+U` |
+| Toggle Clipboard | `Alt+C` |
+| Toggle Logs | `Alt+L` |
 
 ## Navigation
 
-| Key | Action |
+| Action | Key |
 | --- | --- |
-| `Enter` / `→` / `l` | Open directory / Open file in editor |
-| `Backspace` / `←` / `h` | Navigate to parent directory |
-| `j` / `↓` | Move selection down |
-| `k` / `↑` | Move selection up |
-| `Shift` + `j` / `↓` | Range select down |
-| `Shift` + `k` / `↑` | Range select up |
-| `g` | Go to path (choose Local `l` or Remote `r` first) |
-| `[` | History Back |
-| `]` | History Forward |
-| `Tab` | Autocomplete current name or path in text inputs |
-
-## Selection & Bulk Actions
-
-| Key | Action |
-| --- | --- |
-| `Space` | Toggle selection for the current item |
-| `Shift` + `Left Click` | Toggle selection / Range select |
-| `Alt+A` | Select all items in the current directory |
-| `Esc` | Clear all selections |
-
-## Tabs
-
-| Key | Action |
-| --- | --- |
-| `Alt+T` | Open a new tab (up to 9 tabs) |
-| `Alt+U` | Analyze current directory disk usage |
-| `Alt+W` | Close the current tab |
-| `Alt+1` - `Alt+9` | Switch to the corresponding tab |
+| Open / Enter | `Enter` / `→` / `l` |
+| Go to Parent | `Backspace` / `←` / `h` |
+| Move Cursor | `j` / `↓` / `k` / `↑` |
+| Range Selection | `Shift` + `j` / `↓` / `k` / `↑` |
+| Go to Path | `g` |
+| History Back / Forward | `[` / `]` |
+| Cycle Sort | `s` |
+| Autocomplete | `Tab` (in inputs) |
 
 ## File Operations
 
-| Key | Action |
+| Action | Key |
 | --- | --- |
-| `c` | Copy selected items to clipboard |
-| `x` | Cut selected items to clipboard |
-| `v` | Paste items from clipboard |
-| `r` | Rename the highlighted item |
-| `d` | Move selected items to trash (Note: currently performs permanent deletion) |
-| `Alt+N` | Create a new item (File/Folder) |
-| `z` | Create a Zip archive of selected items |
-| `u` | Unzip the highlighted archive |
+| Copy | `c` |
+| Cut | `x` |
+| Paste | `v` |
+| Rename | `r` |
+| Delete | `d` |
+| Create New Item | `Alt+N` |
+| Zip | `z` |
+| Unzip | `u` |
 
-## Search & Filtering
+## Selection
 
-| Key | Action |
+| Action | Key |
 | --- | --- |
-| `/` | Enter filter mode (use `↑`/`↓` to navigate list while filtering) |
-| `Alt+/` | Open Fuzzy Content Search (Find in Files) |
-| `Alt+M` / `Alt+N` | Jump between files in fuzzy search results |
-| `Alt+R` | Toggle Regex Search mode (TUI) |
-| `Esc` | Exit search/filter mode |
+| Toggle Selection | `Space` |
+| Multi-select / Range | `Shift` + `Left Click` |
+| Select All | `Alt+A` |
+| Clear Selection | `Esc` |
 
-## Miscellaneous
+## Search & Filter
 
-| Key | Action |
+| Action | Key |
 | --- | --- |
-| `Alt+C` | View current clipboard contents |
-| `Alt+L` | View background operation logs |
-| `s` | Cycle through 7 sort modes (Name, Size, Date, Extension, etc.) |
-| `.` | Toggle settings menu |
-| `r` | (In Settings Menu) Reset all settings to default |
-| `Ctrl+C` | Quit `fm` |
+| Filter Directory | `/` |
+| Fuzzy Search | `Alt+/` |
+| Toggle Regex Search | `Alt+R` |
+| Jump Search Results | `Alt+M` / `Alt+N` |
+
+## Tabs
+
+| Action | Key |
+| --- | --- |
+| New Tab | `Alt+T` |
+| Close Tab | `Alt+W` |
+| Switch Tab 1-9 | `Alt+1` - `Alt+9` |
 
 > **Note:** Global shortcuts like `.` and `?` are automatically disabled while typing in text input fields (e.g., Search, Rename, Filter) to prevent accidental toggles.
-
-## Mouse Support
-
-| Action | Result |
-| --- | --- |
-| `Left Click` | Focus item |
-| `Double Click` | Open file / Navigate to directory |
-| `Scroll Wheel` | Scroll list / logs / settings |
-| `Click Breadcrumb` | Navigate directly to that path |
-| `Click Tab [n]` | Switch to that tab |

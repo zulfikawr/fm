@@ -14,6 +14,7 @@ const (
 	InputUnzip
 	InputCreate
 	InputConflictRename
+	InputKeybinding
 )
 
 // LogLevel defines the severity level of a log entry

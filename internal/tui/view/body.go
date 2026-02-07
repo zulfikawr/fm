@@ -33,11 +33,12 @@ func renderBody(m *context.Model, layout context.Layout) string {
 		})
 	} else if m.UI.HelpOpen {
 		bodyStr = views.RenderHelp(views.HelpProps{
-			Width:  layout.Width,
-			Height: layout.BodyHeight,
-			Cursor: m.Help.Cursor,
-			Offset: m.Help.Offset,
-			Style:  styles,
+			Width:       layout.Width,
+			Height:      layout.BodyHeight,
+			Cursor:      m.Help.Cursor,
+			Offset:      m.Help.Offset,
+			Style:       styles,
+			Keybindings: m.Config.Keybindings,
 		})
 	} else if m.UI.LogOpen {
 		bodyStr = views.RenderLogs(views.LogsProps{

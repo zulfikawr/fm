@@ -3,6 +3,7 @@ package views
 import (
 	"strings"
 
+	"github.com/zulfikawr/fm/internal/config"
 	"github.com/zulfikawr/fm/internal/tui/components/messages"
 	"github.com/zulfikawr/fm/internal/tui/theme"
 
@@ -11,11 +12,12 @@ import (
 
 // HelpProps contains data for rendering the help view
 type HelpProps struct {
-	Width  int
-	Height int
-	Cursor int
-	Offset int
-	Style  theme.Stylesheet
+	Width       int
+	Height      int
+	Cursor      int
+	Offset      int
+	Style       theme.Stylesheet
+	Keybindings []config.Keybinding
 }
 
 // HelpSection represents a categorized group of keybindings
@@ -36,7 +38,7 @@ func RenderHelp(props HelpProps) string {
 		return ""
 	}
 
-	groups := buildHelpGroups()
+	groups := buildHelpGroups(props.Keybindings)
 	rows := renderHelpRows(props, groups)
 
 	// Apply scroll offset
@@ -58,70 +60,88 @@ func RenderHelp(props HelpProps) string {
 	return strings.Join(rows, "\n")
 }
 
-func buildHelpGroups() []HelpSection {
+func buildHelpGroups(keybinds []config.Keybinding) []HelpSection {
+	// Helper to get formatted keys for an action
+	getKeys := func(action string) string {
+		for _, kb := range keybinds {
+			if kb.Action == action {
+				displayKeys := make([]string, len(kb.Keys))
+				for i, k := range kb.Keys {
+					if k == " " {
+						displayKeys[i] = "[space]"
+					} else {
+						displayKeys[i] = "[" + k + "]"
+					}
+				}
+				return strings.Join(displayKeys, "/")
+			}
+		}
+		return ""
+	}
+
 	return []HelpSection{
+		{
+			Title: "General",
+			Items: []HelpItem{
+				{Key: getKeys("quit"), Desc: "Quit fm"},
+				{Key: getKeys("help"), Desc: "Toggle this help screen"},
+				{Key: getKeys("settings"), Desc: "Toggle settings menu"},
+				{Key: getKeys("analyze"), Desc: "Analyze Disk Usage"},
+				{Key: getKeys("clipboard_view"), Desc: "View current clipboard contents"},
+				{Key: getKeys("logs_view"), Desc: "View operation logs"},
+			},
+		},
 		{
 			Title: "Navigation",
 			Items: []HelpItem{
-				{Key: "Enter/→/l", Desc: "Open directory / Open file in editor"},
-				{Key: "Backspace/←/h", Desc: "Navigate to parent directory"},
-				{Key: "j/↓, k/↑", Desc: "Move selection down / up"},
-				{Key: "Shift+j/↓, Shift+k/↑", Desc: "Range selection"},
-				{Key: "g", Desc: "Go to path (choose Local [l] or Remote [r])"},
-				{Key: "[", Desc: "History Back"},
-				{Key: "]", Desc: "History Forward"},
-			},
-		},
-		{
-			Title: "Selection & Bulk Actions",
-			Items: []HelpItem{
-				{Key: "Space", Desc: "Toggle selection"},
-				{Key: "Shift+Left Click", Desc: "Toggle selection / Range select"},
-				{Key: "Alt+A", Desc: "Select all items in directory"},
-				{Key: "Esc", Desc: "Clear all selections"},
-			},
-		},
-		{
-			Title: "Tabs",
-			Items: []HelpItem{
-				{Key: "Alt+T", Desc: "Open a new tab (up to 9)"},
-				{Key: "Alt+W", Desc: "Close current tab"},
-				{Key: "Alt+1-9", Desc: "Switch to corresponding tab"},
+				{Key: getKeys("open"), Desc: "Open directory / Open file in editor"},
+				{Key: getKeys("go_parent"), Desc: "Navigate to parent directory"},
+				{Key: getKeys("move_down") + ", " + getKeys("move_up"), Desc: "Move selection down / up"},
+				{Key: "[Shift+j/↓], [Shift+k/↑]", Desc: "Range selection"},
+				{Key: getKeys("go_to_path"), Desc: "Go to path (choose Local [l] or Remote [r])"},
+				{Key: getKeys("history_back"), Desc: "History Back"},
+				{Key: getKeys("history_forward"), Desc: "History Forward"},
+				{Key: getKeys("cycle_sort"), Desc: "Cycle through sort modes"},
 			},
 		},
 		{
 			Title: "File Operations",
 			Items: []HelpItem{
-				{Key: "c", Desc: "Copy selected items to clipboard"},
-				{Key: "x", Desc: "Cut selected items to clipboard"},
-				{Key: "v", Desc: "Paste items from clipboard"},
-				{Key: "r", Desc: "Rename highlighted item"},
-				{Key: "d", Desc: "Delete selected items"},
-				{Key: "Alt+N", Desc: "Create new item (File/Folder)"},
-				{Key: "z", Desc: "Create Zip archive"},
-				{Key: "u", Desc: "Unzip highlighted archive"},
+				{Key: getKeys("copy"), Desc: "Copy selected items to clipboard"},
+				{Key: getKeys("cut"), Desc: "Cut selected items to clipboard"},
+				{Key: getKeys("paste"), Desc: "Paste items from clipboard"},
+				{Key: getKeys("rename"), Desc: "Rename highlighted item"},
+				{Key: getKeys("delete"), Desc: "Delete selected items"},
+				{Key: getKeys("create"), Desc: "Create new item (File/Folder)"},
+				{Key: getKeys("zip"), Desc: "Create Zip archive"},
+				{Key: getKeys("unzip"), Desc: "Unzip highlighted archive"},
 			},
 		},
 		{
-			Title: "Search, Filtering & Inputs",
+			Title: "Selection",
 			Items: []HelpItem{
-				{Key: "/", Desc: "Enter filter mode (↑/↓ to navigate)"},
-				{Key: "Tab", Desc: "Autocomplete current name or path"},
-				{Key: "Alt+/", Desc: "Fuzzy Content Search (Find in Files)"},
-				{Key: "Alt+R", Desc: "Toggle Regex Search mode"},
-				{Key: "Alt+M/Alt+N", Desc: "Jump between files in search results"},
-				{Key: "Esc", Desc: "Exit search/filter mode"},
+				{Key: getKeys("toggle_selection"), Desc: "Toggle selection"},
+				{Key: "[Shift+Left Click]", Desc: "Toggle selection / Range select"},
+				{Key: getKeys("select_all"), Desc: "Select all items in directory"},
+				{Key: getKeys("clear_selection"), Desc: "Clear all selections"},
 			},
 		},
 		{
-			Title: "Miscellaneous", Items: []HelpItem{
-				{Key: "Alt+U", Desc: "Analyze Disk Usage"},
-				{Key: "Alt+C", Desc: "View current clipboard contents"},
-				{Key: "Alt+L", Desc: "View operation logs"},
-				{Key: "s", Desc: "Cycle through sort modes"},
-				{Key: ".", Desc: "Toggle settings menu"},
-				{Key: "?", Desc: "Toggle this help screen"},
-				{Key: "Ctrl+C", Desc: "Quit fm"},
+			Title: "Search & Filter",
+			Items: []HelpItem{
+				{Key: getKeys("filter"), Desc: "Enter filter mode (↑/↓ to navigate)"},
+				{Key: "[tab]", Desc: "Autocomplete current name or path"},
+				{Key: getKeys("fuzzy_search"), Desc: "Fuzzy Content Search (Find in Files)"},
+				{Key: getKeys("toggle_regex_search"), Desc: "Toggle Regex Search mode"},
+				{Key: "[Alt+M/Alt+N]", Desc: "Jump between files in search results"},
+			},
+		},
+		{
+			Title: "Tabs",
+			Items: []HelpItem{
+				{Key: getKeys("new_tab"), Desc: "Open a new tab (up to 9)"},
+				{Key: getKeys("close_tab"), Desc: "Close current tab"},
+				{Key: "[Alt+1-9]", Desc: "Switch to corresponding tab"},
 			},
 		},
 	}

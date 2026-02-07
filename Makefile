@@ -30,7 +30,7 @@ test:
 ## Lint: Run golangci-lint and go fmt
 lint:
 	go fmt ./...
-	golangci-lint run
+	go run github.com/golangci/golangci-lint/cmd/golangci-lint@latest run ./...
 
 ## Help: Show this help message
 help:

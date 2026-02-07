@@ -75,12 +75,14 @@ func TestHandleNavKeys(t *testing.T) {
 
 	t.Run("Move Cursor Down", func(t *testing.T) {
 		nav.HandleNavKeys(m, tea.KeyMsg{Type: tea.KeyDown})
+		// MoveCursor(m, 1) should be called
 		if m.Navigation.Cursor != 1 {
 			t.Errorf("expected cursor 1, got %d", m.Navigation.Cursor)
 		}
 	})
 
 	t.Run("Toggle Selection", func(t *testing.T) {
+		// ToggleSelection is mapped to "space"
 		nav.HandleNavKeys(m, tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{' '}})
 		if m.Navigation.SelectedCount != 1 {
 			t.Errorf("expected 1 selected, got %d", m.Navigation.SelectedCount)
@@ -88,6 +90,7 @@ func TestHandleNavKeys(t *testing.T) {
 	})
 
 	t.Run("Select All", func(t *testing.T) {
+		// SelectAll is mapped to "alt+a"
 		nav.HandleNavKeys(m, tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'a'}, Alt: true})
 		if m.Navigation.SelectedCount != 2 {
 			t.Errorf("expected 2 selected, got %d", m.Navigation.SelectedCount)

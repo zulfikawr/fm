@@ -185,6 +185,8 @@ type StatusMsg struct {
 	IsError bool
 }
 
+type ClearStatusMsg struct{}
+
 type WatchDirMsg struct{}
 
 type ReEnableMouseMsg struct{}

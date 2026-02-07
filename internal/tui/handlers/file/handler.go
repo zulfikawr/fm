@@ -42,20 +42,23 @@ func HandleFileKeys(m *tui_context.Model, msg tea.KeyMsg) tea.Cmd {
 		return nil
 	}
 
-	switch msg.String() {
-	case "c":
+	key := msg.String()
+	action := GetActionForKeyFromModel(m, key)
+
+	switch action {
+	case "copy":
 		return CopySelected(m)
-	case "x":
+	case "cut":
 		return CutSelected(m)
-	case "v":
+	case "paste":
 		return PerformPaste(m)
-	case "d":
+	case "delete":
 		return PerformDelete(m)
-	case "r":
+	case "rename":
 		return StartRename(m)
-	case "z":
+	case "zip":
 		return StartZip(m)
-	case "u":
+	case "unzip":
 		return StartUnzip(m)
 	}
 	return nil
@@ -292,6 +295,18 @@ func ListenToProgress(progChan chan core.Progress) tea.Cmd {
 			Channel: progChan,
 		}
 	}
+}
+
+// GetActionForKeyFromModel retrieves the action for a given key from the model's config
+func GetActionForKeyFromModel(m *tui_context.Model, key string) string {
+	for _, kb := range m.Config.Keybindings {
+		for _, bindKey := range kb.Keys {
+			if bindKey == key {
+				return kb.Action
+			}
+		}
+	}
+	return ""
 }
 
 func PasteItems(opts ops.BatchOptions, logID string) tea.Cmd {

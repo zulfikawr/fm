@@ -23,74 +23,140 @@ func HandleNavKeys(m *tui_context.Model, msg tea.KeyMsg) tea.Cmd {
 
 	key := msg.String()
 
+	// Check for matching action using custom keybindings
+	action := GetActionForKeyFromModel(m, key)
+
 	// Tab management shortcuts
 	if strings.HasPrefix(key, "alt+") {
 		if len(key) == 5 && key[4] >= '1' && key[4] <= '9' {
 			tabNum := int(key[4] - '0')
 			return SwitchTab(m, tabNum)
 		}
-		switch key {
-		case "alt+t":
+		// Check if alt+X combinations match any custom keybinding
+		switch action {
+		case "new_tab":
 			return CreateTab(m)
-		case "alt+w":
+		case "close_tab":
 			return CloseTab(m)
-		case "alt+n":
+		case "create":
 			if !m.UI.InputActive {
 				return func() tea.Msg { return messages.StartCreateMsg{} }
 			}
-		case "alt+m":
-			// reserved
 		}
 	}
 
-	switch key {
-	case "up", "k":
+	// Process actions based on custom keybindings
+	switch action {
+	case "move_up":
 		MoveCursor(m, -1)
 		m.Navigation.LastShiftIdx = -1
 		m.Display.InitialSelectedPaths = nil
-	case "down", "j":
+	case "move_down":
 		MoveCursor(m, 1)
 		m.Navigation.LastShiftIdx = -1
 		m.Display.InitialSelectedPaths = nil
-	case "shift+up", "shift+k":
-		return HandleShiftSelect(m, -1)
-	case "shift+down", "shift+j":
-		return HandleShiftSelect(m, 1)
-	case "enter", "right", "l":
-		return NavigateToSelected(m)
-	case "backspace", "left", "h":
-		return NavigateToParent(m)
-	case "esc":
-		m.ClearSelection()
-		return nil
-	case " ":
+	case "page_up":
+		// Implement page up navigation
+		pageSize := m.Display.ViewportHeight - 3 // Account for header/footer
+		if pageSize <= 0 {
+			pageSize = 5 // Default to 5 if viewport is small
+		}
+		MoveCursor(m, -pageSize)
+		m.Navigation.LastShiftIdx = -1
+		m.Display.InitialSelectedPaths = nil
+	case "page_down":
+		// Implement page down navigation
+		pageSize := m.Display.ViewportHeight - 3 // Account for header/footer
+		if pageSize <= 0 {
+			pageSize = 5 // Default to 5 if viewport is small
+		}
+		MoveCursor(m, pageSize)
+		m.Navigation.LastShiftIdx = -1
+		m.Display.InitialSelectedPaths = nil
+	case "toggle_selection":
 		ToggleSelection(m)
 		return nil
-	case "alt+a":
+	case "select_all":
 		SelectAll(m)
 		return nil
-	case "/":
+	case "clear_selection":
+		m.ClearSelection()
+		return nil
+	case "open":
+		return NavigateToSelected(m)
+	case "go_parent":
+		return NavigateToParent(m)
+	case "filter":
 		m.StartInput(tui_context.InputSearch)
 		utils.UpdateSearchSuggestion(m)
 		return m.Inputs.ActiveInput.FocusCmd()
-	case "s":
+	case "cycle_sort":
 		m.Display.SortMode = m.Display.SortMode.Next()
 		sorting.SortItems(m.Navigation.Items, m.Display.SortMode, true)
 		ApplyFilter(m)
 		return nil
-	case "g":
+	case "go_to_path":
 		m.Operations.ActionType = constants.ActionGoto
 		m.UI.StartConfirming()
 		return nil
-	case "alt+/":
+	case "fuzzy_search":
 		m.StartInput(tui_context.InputFuzzySearch)
 		return m.Inputs.ActiveInput.FocusCmd()
-	case "[":
+	case "history_back":
 		return NavigateBack(m)
-	case "]":
+	case "history_forward":
 		return NavigateForward(m)
 	}
+
+	// Handle shift+key combinations for range selection
+	if strings.HasPrefix(key, "shift+") {
+		switch {
+		case strings.HasSuffix(key, "+up") || strings.HasSuffix(key, "+k"):
+			if containsKeyForAction(m, key, "move_up") {
+				return HandleShiftSelect(m, -1)
+			}
+		case strings.HasSuffix(key, "+down") || strings.HasSuffix(key, "+j"):
+			if containsKeyForAction(m, key, "move_down") {
+				return HandleShiftSelect(m, 1)
+			}
+		}
+	}
+
+	// Check if the key matches any of the configured keys for these actions
+	// This handles the case where custom bindings might use different keys
+	if containsKeyForAction(m, key, "move_up") || containsKeyForAction(m, key, "move_down") ||
+		containsKeyForAction(m, key, "open") || containsKeyForAction(m, key, "go_parent") {
+		// Already handled above, but this catches any edge cases
+		return nil
+	}
+
 	return nil
+}
+
+// GetActionForKeyFromModel retrieves the action for a given key from the model's config
+func GetActionForKeyFromModel(m *tui_context.Model, key string) string {
+	for _, kb := range m.Config.Keybindings {
+		for _, bindKey := range kb.Keys {
+			if bindKey == key {
+				return kb.Action
+			}
+		}
+	}
+	return ""
+}
+
+// containsKeyForAction checks if the given key is mapped to the specified action
+func containsKeyForAction(m *tui_context.Model, key, action string) bool {
+	for _, kb := range m.Config.Keybindings {
+		if kb.Action == action {
+			for _, bindKey := range kb.Keys {
+				if bindKey == key {
+					return true
+				}
+			}
+		}
+	}
+	return false
 }
 
 func MoveCursor(m *tui_context.Model, delta int) {

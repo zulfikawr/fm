@@ -5,83 +5,169 @@ import (
 	"strings"
 
 	"github.com/charmbracelet/lipgloss"
+	"github.com/zulfikawr/fm/internal/config"
+	"github.com/zulfikawr/fm/internal/tui/components/messages"
 	"github.com/zulfikawr/fm/internal/tui/theme"
 )
 
 // PrintHelp displays the help information to the console
 func PrintHelp(styles theme.Stylesheet, themeName string) {
-	fmt.Println(styles.DirCol.Render("FM - Terminal File Manager"))
+	fmt.Println(styles.DirCol.Render("fm - Terminal File Manager"))
 
-	// Define keybindings first to determine max width
-	keys := []struct {
-		Key  string
-		Desc string
+	cfg := config.Load()
+	keybinds := cfg.Keybindings
+
+	// Helper to get formatted keys for an action
+	getKeys := func(action string) string {
+		for _, kb := range keybinds {
+			if kb.Action == action {
+				displayKeys := make([]string, len(kb.Keys))
+				for i, k := range kb.Keys {
+					if k == " " {
+						displayKeys[i] = "[space]"
+					} else {
+						displayKeys[i] = "[" + k + "]"
+					}
+				}
+				return strings.Join(displayKeys, ", ")
+			}
+		}
+		return ""
+	}
+
+	// Define keybindings sections
+	sections := []struct {
+		Title string
+		Items []struct {
+			Key  string
+			Desc string
+		}
 	}{
-		{"j/down, k/up", "Move cursor"},
-		{"Shift+j/k", "Range selection"},
-		{"l/enter", "Enter directory or open file"},
-		{"h/backspace", "Go to parent directory"},
-		{"[ / ]", "History Back / Forward"},
-		{"Space", "Toggle selection"},
-		{"alt+a", "Select all"},
-		{"alt+t", "Create new tab"},
-		{"alt+u", "Analyze disk usage"},
-		{"alt+n", "Create new file or folder"},
-		{"alt+1-9", "Switch to tab 1-9"},
-		{"alt+w", "Close current tab"},
-		{"alt+l", "Toggle operation logs"},
-		{"alt+c", "Toggle clipboard view"},
-		{"alt+/", "Fuzzy content search"},
-		{"alt+r", "Toggle regex search mode"},
-		{"/", "Filter directory (↑/↓ to navigate)"},
-		{"Tab", "Autocomplete name or path"},
-		{"g", "Go to path (Local [l] or Remote [r])"},
-		{"c", "Copy selected items"},
-		{"x", "Cut selected items"},
-		{"v", "Paste items from clipboard"},
-		{"d", "Delete selected items"},
-		{"r", "Rename selected item"},
-		{"z", "Zip selected items"},
-		{"u", "Unzip selected item"},
-		{".", "Toggle settings"},
-		{"Esc", "Back / Clear selection"},
-		{"ctrl+c", "Quit"},
+		{
+			Title: "General",
+			Items: []struct {
+				Key  string
+				Desc string
+			}{
+				{getKeys("quit"), "Quit"},
+				{getKeys("help"), "Toggle Help"},
+				{getKeys("settings"), "Toggle Settings"},
+				{getKeys("analyze"), "Analyze disk usage"},
+				{getKeys("clipboard_view"), "Toggle Clipboard"},
+				{getKeys("logs_view"), "Toggle Logs"},
+			},
+		},
+		{
+			Title: "Navigation",
+			Items: []struct {
+				Key  string
+				Desc string
+			}{
+				{getKeys("open"), "Open / Enter"},
+				{getKeys("go_parent"), "Go to Parent"},
+				{getKeys("move_down") + ", " + getKeys("move_up"), "Move cursor"},
+				{"[Shift+j/k]", "Range selection"},
+				{getKeys("go_to_path"), "Go to Path"},
+				{getKeys("history_back") + ", " + getKeys("history_forward"), "History Back / Forward"},
+				{getKeys("cycle_sort"), "Cycle Sort"},
+			},
+		},
+		{
+			Title: "File Operations",
+			Items: []struct {
+				Key  string
+				Desc string
+			}{
+				{getKeys("copy"), "Copy"},
+				{getKeys("cut"), "Cut"},
+				{getKeys("paste"), "Paste"},
+				{getKeys("rename"), "Rename"},
+				{getKeys("delete"), "Delete"},
+				{getKeys("create"), "Create New File/Folder"},
+				{getKeys("zip"), "Zip"},
+				{getKeys("unzip"), "Unzip"},
+			},
+		},
+		{
+			Title: "Selection",
+			Items: []struct {
+				Key  string
+				Desc string
+			}{
+				{getKeys("toggle_selection"), "Toggle Selection"},
+				{getKeys("select_all"), "Select All"},
+				{getKeys("clear_selection"), "Clear Selection"},
+			},
+		},
+		{
+			Title: "Search & Filter",
+			Items: []struct {
+				Key  string
+				Desc string
+			}{
+				{getKeys("filter"), "Filter Directory"},
+				{"[tab]", "Autocomplete Name/Path"},
+				{getKeys("fuzzy_search"), "Fuzzy Search"},
+				{getKeys("toggle_regex_search"), "Toggle Regex Search"},
+			},
+		},
+		{
+			Title: "Tabs",
+			Items: []struct {
+				Key  string
+				Desc string
+			}{
+				{getKeys("new_tab"), "New Tab"},
+				{getKeys("close_tab"), "Close Tab"},
+				{"[alt+1-9]", "Switch to Tab 1-9"},
+			},
+		},
 	}
 
 	// Determine max visible width for alignment
-	maxWidth := lipgloss.Width(styles.DirCol.Render("fm") + " " + styles.DimCol.Render("-r user@host[:path]"))
+	usageWidth := lipgloss.Width(styles.GitStaged.Render("fm")+" "+styles.GitConflict.Render("search")+" "+styles.DimCol.Render("[--regex]")+" "+styles.FileCol.Render("<query>")) + 3
 
-	// Check against keybindings
-	for _, k := range keys {
-		if w := lipgloss.Width(styles.KeyCol.Render(k.Key)); w > maxWidth {
-			maxWidth = w
+	keyWidth := 0
+	for _, s := range sections {
+		for _, k := range s.Items {
+			if w := lipgloss.Width(styles.DimCol.Render(k.Desc)); w > keyWidth {
+				keyWidth = w
+			}
 		}
 	}
-	maxWidth += 3
+	keyWidth += 3
 
 	fmt.Println()
 	fmt.Println(styles.DirCol.Render("Usage:"))
 	usage1Command := styles.GitStaged.Render("fm") + " " + styles.FileCol.Render("[path]")
-	fmt.Printf("  %s %s\n", padString(usage1Command, maxWidth), styles.DimCol.Render("Open fm in the specified directory"))
+	fmt.Printf("  %s %s\n", padString(usage1Command, usageWidth), styles.DimCol.Render("Open fm in the specified directory"))
 	usage2Command := styles.GitStaged.Render("fm") + " " + styles.FileCol.Render("-r user@host[:path]")
-	fmt.Printf("  %s %s\n", padString(usage2Command, maxWidth), styles.DimCol.Render("Open fm on a remote server via SFTP"))
+	fmt.Printf("  %s %s\n", padString(usage2Command, usageWidth), styles.DimCol.Render("Open fm on a remote server via SFTP"))
 	usage3Command := styles.GitStaged.Render("fm") + " " + styles.GitConflict.Render("search") + " " + styles.DimCol.Render("[--regex]") + " " + styles.FileCol.Render("<query>")
-	fmt.Printf("  %s %s\n", padString(usage3Command, maxWidth), styles.DimCol.Render("Perform fuzzy or regex search for files and content"))
+	fmt.Printf("  %s %s\n", padString(usage3Command, usageWidth), styles.DimCol.Render("Perform fuzzy or regex search for files and content"))
 	usage4Command := styles.GitStaged.Render("fm") + " " + styles.GitConflict.Render("info") + " " + styles.FileCol.Render("[path]")
-	fmt.Printf("  %s %s\n", padString(usage4Command, maxWidth), styles.DimCol.Render("Show file/directory information"))
+	fmt.Printf("  %s %s\n", padString(usage4Command, usageWidth), styles.DimCol.Render("Show file/directory information"))
 	usage5Command := styles.GitStaged.Render("fm") + " " + styles.GitConflict.Render("analyze") + " " + styles.FileCol.Render("[path]")
-	fmt.Printf("  %s %s\n", padString(usage5Command, maxWidth), styles.DimCol.Render("Analyze disk usage of a directory"))
+	fmt.Printf("  %s %s\n", padString(usage5Command, usageWidth), styles.DimCol.Render("Analyze disk usage of a directory"))
 	usage6Command := styles.GitStaged.Render("fm") + " " + styles.GitConflict.Render("config") + " " + styles.DimCol.Render("[--reset | init]")
-	fmt.Printf("  %s %s\n\n", padString(usage6Command, maxWidth), styles.DimCol.Render("Manage configuration (view, reset, or interactive init)"))
+	fmt.Printf("  %s %s\n\n", padString(usage6Command, usageWidth), styles.DimCol.Render("Manage configuration (view, reset, or interactive init)"))
 
-	fmt.Println(styles.DirCol.Render("Keybindings:"))
+	for _, s := range sections {
+		fmt.Println(styles.DirCol.Render(s.Title + ":"))
+		for _, k := range s.Items {
+			// Render the description first, then pad
+			renderedDesc := styles.DimCol.Render(k.Desc)
+			visibleWidth := lipgloss.Width(renderedDesc)
+			padding := strings.Repeat(" ", keyWidth-visibleWidth)
 
-	for _, k := range keys {
-		// Render the key, calculate its visible width, then pad with spaces
-		renderedKey := styles.GitStaged.Render(k.Key)
-		visibleWidth := lipgloss.Width(renderedKey)
-		padding := strings.Repeat(" ", maxWidth-visibleWidth)
-		fmt.Printf("  %s%s %s\n", renderedKey, padding, styles.DimCol.Render(k.Desc))
+			// Colorize keys in brackets using the same logic as the TUI
+			// Use an empty base style to avoid background inheritance in the CLI
+			props := messages.Props{Style: styles}
+			coloredKey := messages.ColorizeKeysWithStyle(props, k.Key, lipgloss.NewStyle())
+
+			fmt.Printf("  %s%s %s\n", renderedDesc, padding, coloredKey)
+		}
+		fmt.Println()
 	}
 }
 

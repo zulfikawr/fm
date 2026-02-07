@@ -16,9 +16,11 @@ import (
 
 // SettingItem represents a single setting or keybinding row
 type SettingItem struct {
-	Label    string
-	Value    string
-	Inactive bool
+	Label        string
+	Value        string
+	Inactive     bool
+	IsKeybinding bool   // Indicates if this is a keybinding setting
+	Action       string // The action this keybinding controls
 }
 
 // SettingGroup represents a categorized group of settings
@@ -108,6 +110,45 @@ func buildSettingGroups(props SettingsProps) []SettingGroup {
 			},
 		},
 	}
+
+	// Add Keybindings group
+	categories := []struct {
+		ID    string
+		Title string
+	}{
+		{"navigation", "Keybindings: Navigation"},
+		{"file_ops", "Keybindings: File Operations"},
+		{"tabs", "Keybindings: Tabs"},
+		{"selection", "Keybindings: Selection"},
+		{"search", "Keybindings: Search & Filter"},
+		{"general", "Keybindings: General"},
+	}
+
+	for _, cat := range categories {
+		group := SettingGroup{Title: cat.Title}
+		for _, kb := range s.Keybindings {
+			if kb.Category == cat.ID {
+				displayKeys := make([]string, len(kb.Keys))
+				for i, k := range kb.Keys {
+					if k == " " {
+						displayKeys[i] = "[space]"
+					} else {
+						displayKeys[i] = "[" + k + "]"
+					}
+				}
+				group.Settings = append(group.Settings, SettingItem{
+					Label:        kb.HumanLabel(),
+					Value:        strings.Join(displayKeys, ", "),
+					IsKeybinding: true,
+					Action:       kb.Action,
+				})
+			}
+		}
+		if len(group.Settings) > 0 {
+			groups = append(groups, group)
+		}
+	}
+
 	// Mark inactive settings
 	if !s.ShowSize {
 		groups[1].Settings[3].Inactive = true
@@ -140,10 +181,21 @@ func renderGroups(props SettingsProps, groups []SettingGroup) []string {
 	return rows
 }
 
+// renderSettingRow renders a single setting or keybinding row
 func renderSettingRow(props SettingsProps, sItem SettingItem, isCursor bool) string {
 	val := sItem.Value
 	if sItem.Inactive {
 		val = props.Style.MutedCol.Render(sItem.Value)
+	}
+
+	// For keybindings, color the shortcuts in [] with primary color
+	if sItem.IsKeybinding {
+		// Use SecondaryCol (usually primary/accent color) for the keys in brackets
+		rowStyle := props.Style.SettingsItem
+		if isCursor {
+			rowStyle = props.Style.SettingsSelectedItem
+		}
+		val = messages.ColorizeKeysWithStyle(messages.Props{Style: props.Style}, sItem.Value, rowStyle)
 	}
 
 	labelWidth := 35
