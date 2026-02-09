@@ -3,6 +3,8 @@ package messages
 import (
 	"strings"
 
+	"github.com/zulfikawr/fm/internal/tui/context"
+
 	"github.com/charmbracelet/lipgloss"
 )
 
@@ -18,41 +20,9 @@ func RenderInputPrompt(props Props) string {
 	// Do not override cursor style here, it's handled by the Input component
 
 	baseStyle := props.Style.Footer.UnsetPadding().UnsetWidth()
-	mutedStyle := props.Style.MutedCol.Inherit(props.Style.Footer).UnsetPadding().UnsetWidth()
 
 	// Update prompt dynamically
-	switch props.Mode {
-	case ModeGoto:
-		label := "Local"
-		if props.Input.AltMode {
-			label = "Remote"
-		}
-		input.Prompt = baseStyle.Render("Go to ") + mutedStyle.Render("("+label+")") + baseStyle.Render(": ")
-	case ModeAuth:
-		label := "Password"
-		if props.Input.AltMode {
-			label = "PEM Path"
-		}
-		input.Prompt = baseStyle.Render(label + ": ")
-	case ModeSearching:
-		input.Prompt = baseStyle.Render("Filter: ")
-	case ModeFuzzySearch:
-		input.Prompt = baseStyle.Render("Search: ")
-	case ModeRenaming:
-		input.Prompt = baseStyle.Render("Rename: ")
-	case ModeZip:
-		input.Prompt = baseStyle.Render("Zip name: ")
-	case ModeUnzip:
-		input.Prompt = baseStyle.Render("Unzip to: ")
-	case ModeCreate:
-		label := "File"
-		if props.Input.AltMode {
-			label = "Folder"
-		}
-		input.Prompt = baseStyle.Render("Create ") + mutedStyle.Render("("+label+")") + baseStyle.Render(": ")
-	case ModeConflictRename:
-		input.Prompt = baseStyle.Render("New name: ")
-	}
+	input.Prompt = baseStyle.Render(context.GetPromptText(context.InputMode(props.Mode), props.Input.AltMode))
 
 	// Calculate right part (Tab hint) if in FuzzySearch, or Create mode
 	rightPart := ""
