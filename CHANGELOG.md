@@ -5,6 +5,30 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.1.7] - 2026-02-09
+
+### Added
+- **RAM Usage Display**
+  - Added optional RAM usage indicator in footer (displays application memory usage in MB).
+  - New "Show RAM Usage" toggle in Settings.
+  - Real-time memory monitoring using Go's `runtime.MemStats`.
+  - RAM usage appears next to sort mode on the right side of the footer when enabled.
+
+### Changed
+- Refactored settings footer help text system to be dynamic instead of hardcoded.
+  - Help text now automatically updates when settings are added, removed, or reordered.
+  - Each setting item now carries its own help text, eliminating index-based mapping issues.
+
+### Fixed
+- **Paste/Move Confirmation Display**
+  - Fixed footer showing incorrect "Paste 0 items" message during copy/paste operations.
+  - Now displays filename when pasting a single item: "Paste 'filename'? [y] Yes | [n] No"
+  - Shows item count when pasting multiple items: "Paste N items? [y] Yes | [n] No"
+
+### Documentation
+- Updated `docs/configuration.md` with RAM usage setting documentation.
+- Added comprehensive custom keybindings documentation including file structure, available actions, key formats, and customization guide.
+
 ## [v1.1.6] - 2026-02-07
 
 ### Added
@@ -16,7 +40,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Settings menu now live-updates to reflect custom key mappings.
   - Implemented dynamic scrolling and group-aware indexing for settings.
   - Added support for Title Case in all UI labels and section headers.
-  - Enhanced color parsing for key indicators (e.g., correctly handling `[[]` and `[]]`).
 - **Professional Key Recording UX**
   - High-precision keybinding recorder with raw event capture (no manual typing needed).
   - Support for all modifiers (Control, Alt, Shift) and specialized keys (Space, Enter, etc.).

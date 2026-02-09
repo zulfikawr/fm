@@ -171,33 +171,34 @@ func ScrollSettings(m *tui_context.Model) int {
 	return offset
 }
 
-func buildFullSettingList(m *tui_context.Model) []SettingItem {
+func BuildFullSettingList(m *tui_context.Model) []SettingItem {
 	cfg := m.Config
 	var items []SettingItem
 
 	// Group 1: File Operations (6)
-	items = append(items, SettingItem{Label: "Show Hidden Files", Action: "toggle_hidden"})
-	items = append(items, SettingItem{Label: "Case-Sensitive Search", Action: "toggle_case"})
-	items = append(items, SettingItem{Label: "Confirm Operations", Action: "toggle_confirm"})
-	items = append(items, SettingItem{Label: "Wrap Navigation", Action: "toggle_wrap"})
-	items = append(items, SettingItem{Label: "Preferred Editor", Action: "pick_editor"})
-	items = append(items, SettingItem{Label: "Use Trash (Move to Trash)", Action: "toggle_trash"})
+	items = append(items, SettingItem{Label: "Show Hidden Files", Action: "toggle_hidden", HelpText: "Show/hide files starting with '.'"})
+	items = append(items, SettingItem{Label: "Case-Sensitive Search", Action: "toggle_case", HelpText: "Search respects capitalization"})
+	items = append(items, SettingItem{Label: "Confirm Operations", Action: "toggle_confirm", HelpText: "Ask before destructive actions"})
+	items = append(items, SettingItem{Label: "Wrap Navigation", Action: "toggle_wrap", HelpText: "Cursor loops at list boundaries"})
+	items = append(items, SettingItem{Label: "Preferred Editor", Action: "pick_editor", HelpText: "Choose default editor for opening files"})
+	items = append(items, SettingItem{Label: "Use Trash (Move to Trash)", Action: "toggle_trash", HelpText: "Move deleted items to trash (off = permanent delete)"})
 
-	// Group 2: Display Options (7)
-	items = append(items, SettingItem{Label: "Show Column Headers", Action: "toggle_header"})
-	items = append(items, SettingItem{Label: "Enable Git Status", Action: "toggle_git"})
-	items = append(items, SettingItem{Label: "Show File Size", Action: "toggle_size"})
-	items = append(items, SettingItem{Label: "Size Format", Action: "pick_size_format"})
-	items = append(items, SettingItem{Label: "Show Date Modified", Action: "toggle_date"})
-	items = append(items, SettingItem{Label: "Date Format", Action: "pick_date_format"})
-	items = append(items, SettingItem{Label: "Enable Mouse Support", Action: "toggle_mouse"})
+	// Group 2: Display Options (8)
+	items = append(items, SettingItem{Label: "Show Column Headers", Action: "toggle_header", HelpText: "Show/hide list column headers"})
+	items = append(items, SettingItem{Label: "Show RAM Usage", Action: "toggle_ram", HelpText: "Display RAM usage in footer"})
+	items = append(items, SettingItem{Label: "Enable Git Status", Action: "toggle_git", HelpText: "Enable git status markers"})
+	items = append(items, SettingItem{Label: "Show File Size", Action: "toggle_size", HelpText: "Show file size in list"})
+	items = append(items, SettingItem{Label: "Size Format", Action: "pick_size_format", HelpText: "Change the file size display unit"})
+	items = append(items, SettingItem{Label: "Show Date Modified", Action: "toggle_date", HelpText: "Show last modification time"})
+	items = append(items, SettingItem{Label: "Date Format", Action: "pick_date_format", HelpText: "Change the date and time format"})
+	items = append(items, SettingItem{Label: "Enable Mouse Support", Action: "toggle_mouse", HelpText: "Allow mouse interaction (clicks, scroll)"})
 
 	// Group 3: Search, Filtering & Inputs (1)
-	items = append(items, SettingItem{Label: "Enable Regex Search", Action: "toggle_regex"})
+	items = append(items, SettingItem{Label: "Enable Regex Search", Action: "toggle_regex", HelpText: "Use regular expressions for searching"})
 
 	// Group 4: Appearance (2)
-	items = append(items, SettingItem{Label: "Enable Nerd Font Icons", Action: "toggle_icons"})
-	items = append(items, SettingItem{Label: "Theme", Action: "pick_theme"})
+	items = append(items, SettingItem{Label: "Enable Nerd Font Icons", Action: "toggle_icons", HelpText: "Toggle Nerd Font icons (requires download)"})
+	items = append(items, SettingItem{Label: "Theme", Action: "pick_theme", HelpText: "Change the application color scheme"})
 
 	// Group 5+: Keybindings
 	categories := []string{"general", "navigation", "file_ops", "selection", "search", "tabs"}
@@ -217,15 +218,17 @@ func buildFullSettingList(m *tui_context.Model) []SettingItem {
 	return items
 }
 
+// SettingItem represents a single setting in the list
 type SettingItem struct {
 	Label        string
 	Action       string
+	HelpText     string
 	IsKeybinding bool
 	Keys         []string
 }
 
 func ToggleSetting(idx int, m *tui_context.Model) (bool, tea.Cmd) {
-	items := buildFullSettingList(m)
+	items := BuildFullSettingList(m)
 	if idx < 0 || idx >= len(items) {
 		return false, nil
 	}
@@ -289,6 +292,8 @@ func ToggleSetting(idx int, m *tui_context.Model) (bool, tea.Cmd) {
 		cfg.EnableMouse = !cfg.EnableMouse
 	case "toggle_regex":
 		cfg.EnableRegexSearch = !cfg.EnableRegexSearch
+	case "toggle_ram":
+		cfg.ShowRAMUsage = !cfg.ShowRAMUsage
 	case "toggle_icons":
 		if !cfg.EnableIcons {
 			if !theme.HasIconsDownloaded() {
@@ -320,7 +325,7 @@ func ToggleSetting(idx int, m *tui_context.Model) (bool, tea.Cmd) {
 }
 
 func ToggleSettingPrev(idx int, m *tui_context.Model) (bool, tea.Cmd) {
-	items := buildFullSettingList(m)
+	items := BuildFullSettingList(m)
 	if idx < 0 || idx >= len(items) {
 		return false, nil
 	}
@@ -367,7 +372,7 @@ func FinalizeKeybinding(m *tui_context.Model) tea.Cmd {
 	val := m.Inputs.ActiveInput.Value()
 	m.StopInput(true)
 
-	items := buildFullSettingList(m)
+	items := BuildFullSettingList(m)
 	idx := m.Settings.Cursor
 	if idx < 0 || idx >= len(items) || !items[idx].IsKeybinding {
 		return nil

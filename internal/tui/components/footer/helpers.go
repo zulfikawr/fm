@@ -2,6 +2,7 @@ package footer
 
 import (
 	"fmt"
+	"runtime"
 	"strings"
 
 	"github.com/zulfikawr/fm/internal/files/core"
@@ -125,6 +126,15 @@ func renderSortMode(sortMode sorting.SortMode, styles theme.Stylesheet) string {
 
 	infoStyle := styles.InfoCol.Inherit(styles.Footer).UnsetPadding().UnsetWidth()
 	return infoStyle.Render(sortStr)
+}
+
+func renderRAMUsage(styles theme.Stylesheet) string {
+	var m runtime.MemStats
+	runtime.ReadMemStats(&m)
+	ramMB := m.Alloc / 1024 / 1024
+
+	infoStyle := styles.InfoCol.Inherit(styles.Footer).UnsetPadding().UnsetWidth()
+	return infoStyle.Render(fmt.Sprintf("RAM: %dMB", ramMB))
 }
 
 func buildSelectedIndicator(props Props) string {

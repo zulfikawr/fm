@@ -35,7 +35,24 @@ func renderStatsFooter(props Props) string {
 		parts = append(parts, permission)
 	}
 
-	rightContent := renderSortMode(props.SortMode, props.Styles)
+	var rightParts []string
+	sortMode := renderSortMode(props.SortMode, props.Styles)
+	if sortMode != "" {
+		rightParts = append(rightParts, sortMode)
+	}
+	if props.ShowRAMUsage {
+		ramUsage := renderRAMUsage(props.Styles)
+		if ramUsage != "" {
+			rightParts = append(rightParts, ramUsage)
+		}
+	}
+
+	rightContent := ""
+	if len(rightParts) > 0 {
+		dimStyle := props.Styles.MutedCol.Inherit(props.Styles.Footer).UnsetPadding().UnsetWidth()
+		separator := dimStyle.Render(" | ")
+		rightContent = baseFooterStyle.Render(strings.Join(rightParts, separator))
+	}
 	rightWidth := calculateWidth(rightContent)
 
 	// Calculate available width for the left side (all except rightContent and padding)

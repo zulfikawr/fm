@@ -582,6 +582,7 @@ func handleFooterClick(m *context.Model, msg tea.MouseMsg) tea.Cmd {
 		props := msg_comp.Props{
 			ActionType:           m.Operations.ActionType,
 			ClipboardCount:       len(m.Operations.Clipboard.Paths),
+			ClipboardPaths:       m.Operations.Clipboard.Paths,
 			ConflictDst:          m.Operations.Conflict.Destination,
 			ConflictPendingCount: len(m.Operations.Conflict.PendingItems),
 			LatestVersion:        m.UI.LatestVersion,

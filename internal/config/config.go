@@ -27,6 +27,7 @@ type Config struct {
 	EnableMouse       bool         `json:"enable_mouse"`
 	EnableIcons       bool         `json:"enable_icons"`
 	EnableRegexSearch bool         `json:"enable_regex_search"`
+	ShowRAMUsage      bool         `json:"show_ram_usage"`
 	Keybindings       []Keybinding `json:"keybindings"`
 }
 
@@ -52,6 +53,7 @@ func DefaultConfig() Config {
 		EnableMouse:       true,
 		EnableIcons:       false,
 		EnableRegexSearch: false,
+		ShowRAMUsage:      false,
 		Keybindings:       DefaultKeybindings(),
 	}
 }

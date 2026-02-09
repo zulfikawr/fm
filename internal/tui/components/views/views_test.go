@@ -29,7 +29,8 @@ func TestRenderSettings(t *testing.T) {
 	})
 
 	t.Run("Footer", func(t *testing.T) {
-		output := RenderSettingsFooter(100, 0, styles)
+		items := []SettingHelpItem{{HelpText: "Test help text"}}
+		output := RenderSettingsFooter(100, 0, items, styles)
 		plain := testutil.StripANSI(output)
 		if !strings.Contains(plain, "Navigate") {
 			t.Errorf("Expected 'Navigate' in settings footer, got %q", plain)
@@ -130,22 +131,6 @@ func TestRenderClipboard(t *testing.T) {
 		}
 		if !strings.Contains(plain, "Back") {
 			t.Errorf("Expected 'Back' hint in empty clipboard footer, got %q", plain)
-		}
-	})
-}
-
-func TestGetSettingsHelp(t *testing.T) {
-	t.Run("Valid Index", func(t *testing.T) {
-		help := getSettingsHelp(0)
-		if !strings.Contains(help, "Show/hide") {
-			t.Errorf("Expected help text for index 0, got %q", help)
-		}
-	})
-
-	t.Run("Invalid Index", func(t *testing.T) {
-		help := getSettingsHelp(99)
-		if help != "" {
-			t.Errorf("Expected empty string for invalid index, got %q", help)
 		}
 	})
 }

@@ -43,6 +43,7 @@ type Props struct {
 	// Confirming
 	ActionType           constants.ActionType
 	ClipboardCount       int
+	ClipboardPaths       []string
 	ConflictDst          string
 	ConflictPendingCount int
 	HostConfirmReq       *ssh.HostConfirmRequest

@@ -54,6 +54,7 @@ type Props struct {
 	RemoteConnected bool
 	Message         string
 	SortMode        sorting.SortMode
+	ShowRAMUsage    bool
 	Cursor          int
 	TotalItems      int
 	SelectedCount   int
@@ -62,6 +63,7 @@ type Props struct {
 
 	// Settings
 	SettingsCursor int
+	SettingsItems  []views.SettingHelpItem
 
 	// Help
 	HelpOpen bool
@@ -72,6 +74,7 @@ type Props struct {
 	// Confirming
 	ActionType           constants.ActionType
 	ClipboardCount       int
+	ClipboardPaths       []string
 	ConflictDst          string
 	ConflictPendingCount int
 	HostConfirmReq       *ssh.HostConfirmRequest
@@ -93,7 +96,7 @@ func Render(props Props) string {
 	case ModeMessage:
 		return renderAlertFooter(props)
 	case ModeSettings:
-		return views.RenderSettingsFooter(props.Width, props.SettingsCursor, props.Styles)
+		return views.RenderSettingsFooter(props.Width, props.SettingsCursor, props.SettingsItems, props.Styles)
 	case ModeHelp:
 		return views.RenderHelpFooter(props.Width, props.Styles)
 	case ModeLog:
@@ -145,6 +148,7 @@ func renderPromptsFooter(props Props) string {
 		RemoteConnected:      props.RemoteConnected,
 		ActionType:           props.ActionType,
 		ClipboardCount:       props.ClipboardCount,
+		ClipboardPaths:       props.ClipboardPaths,
 		ConflictDst:          props.ConflictDst,
 		ConflictPendingCount: props.ConflictPendingCount,
 		HostConfirmReq:       props.HostConfirmReq,

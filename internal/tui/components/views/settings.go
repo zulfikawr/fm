@@ -88,6 +88,7 @@ func buildSettingGroups(props SettingsProps) []SettingGroup {
 			Title: "Display Options",
 			Settings: []SettingItem{
 				{Label: "Show Column Headers", Value: ui.Toggle(s.ShowHeader, styles)},
+				{Label: "Show RAM Usage", Value: ui.Toggle(s.ShowRAMUsage, styles)},
 				{Label: "Enable Git Status", Value: ui.Toggle(s.EnableGit, styles)},
 				{Label: "Show File Size", Value: ui.Toggle(s.ShowSize, styles)},
 				{Label: "Size Format", Value: ui.Picker(format.SizeFormats[s.SizeFormatIndex], styles)},
@@ -218,11 +219,16 @@ func renderSettingRow(props SettingsProps, sItem SettingItem, isCursor bool) str
 }
 
 // RenderSettingsFooter renders dynamic help text and hints for settings
-func RenderSettingsFooter(width int, cursor int, styles theme.Stylesheet) string {
+func RenderSettingsFooter(width int, cursor int, items []SettingHelpItem, styles theme.Stylesheet) string {
 	baseFooterStyle := styles.Footer.UnsetPadding().UnsetWidth()
 
 	leftPart := " [↑↓] Navigate | [⏎/Space] Toggle | [r] Reset | [Esc/.] Back"
-	rightPart := " " + getSettingsHelp(cursor) + " "
+
+	helpText := ""
+	if cursor >= 0 && cursor < len(items) {
+		helpText = items[cursor].HelpText
+	}
+	rightPart := " " + helpText + " "
 
 	// If width is small, hide shortcuts and show only help text
 	if width < 100 {
@@ -235,28 +241,7 @@ func RenderSettingsFooter(width int, cursor int, styles theme.Stylesheet) string
 	return styles.Footer.Width(width).Render(footerContent)
 }
 
-func getSettingsHelp(cursor int) string {
-	helpTexts := map[int]string{
-		0:  "Show/hide files starting with '.'",
-		1:  "Search respects capitalization",
-		2:  "Ask before destructive actions",
-		3:  "Cursor loops at list boundaries",
-		4:  "Choose default editor for opening files",
-		5:  "Move deleted items to trash (off = permanent delete)",
-		6:  "Show/hide list column headers",
-		7:  "Enable git status markers",
-		8:  "Show file size in list",
-		9:  "Change the file size display unit",
-		10: "Show last modification time",
-		11: "Change the date and time format",
-		12: "Allow mouse interaction (clicks, scroll)",
-		13: "Use regular expressions for searching",
-		14: "Toggle Nerd Font icons (requires download)",
-		15: "Change the application color scheme",
-	}
-
-	if help, ok := helpTexts[cursor]; ok {
-		return help
-	}
-	return ""
+// SettingHelpItem represents a setting for help text display
+type SettingHelpItem struct {
+	HelpText string
 }

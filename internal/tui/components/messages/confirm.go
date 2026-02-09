@@ -23,6 +23,14 @@ func BuildConfirmationPrompt(props Props) string {
 	case constants.ActionDelete:
 		return "Delete selected items? [y] Yes | [n] No"
 	case constants.ActionPaste:
+		if props.ClipboardCount == 1 && len(props.ClipboardPaths) > 0 {
+			// Extract filename from path
+			filename := props.ClipboardPaths[0]
+			if idx := strings.LastIndexAny(filename, "/\\"); idx >= 0 {
+				filename = filename[idx+1:]
+			}
+			return fmt.Sprintf("Paste '%s'? [y] Yes | [n] No", filename)
+		}
 		return fmt.Sprintf("Paste %d items? [y] Yes | [n] No", props.ClipboardCount)
 	case constants.ActionResetSettings:
 		return "Reset all settings to defaults? [y] Yes | [n] No"
