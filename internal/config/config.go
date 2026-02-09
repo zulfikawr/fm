@@ -88,6 +88,16 @@ func DefaultConfig() Config {
 
 var customConfigPath string
 
+func init() {
+	// Isolate config for tests automatically
+	if os.Getenv("GO_TEST") == "1" {
+		tempDir, err := os.MkdirTemp("", "fm-test-config-*")
+		if err == nil {
+			customConfigPath = filepath.Join(tempDir, "config.json")
+		}
+	}
+}
+
 // SetConfigPath overrides the default config path (useful for testing)
 func SetConfigPath(path string) {
 	customConfigPath = path

@@ -25,7 +25,7 @@ clean:
 
 ## Test: Run tests
 test:
-	go test ./...
+	GO_TEST=1 go test ./...
 
 ## Lint: Run golangci-lint and go fmt
 lint:
