@@ -39,7 +39,7 @@ func TestHandleMouse_DragSelect(t *testing.T) {
 		Action: tea.MouseActionMotion,
 	})
 
-	if m.Navigation.SelectedCount == 0 {
+	if m.Navigation.SelectedCount() == 0 {
 		t.Error("Expected items to be selected via drag")
 	}
 }
@@ -86,8 +86,8 @@ func TestHandleMouse_ShiftClick(t *testing.T) {
 	}
 	m.Navigation.Select("/file1")
 
-	if m.Navigation.SelectedCount != 1 {
-		t.Fatalf("Expected 1 item selected, got %d", m.Navigation.SelectedCount)
+	if m.Navigation.SelectedCount() != 1 {
+		t.Fatalf("Expected 1 item selected, got %d", m.Navigation.SelectedCount())
 	}
 
 	HandleMouse(m, tea.MouseMsg{
@@ -98,7 +98,7 @@ func TestHandleMouse_ShiftClick(t *testing.T) {
 		Shift:  true,
 	})
 
-	if m.Navigation.SelectedCount != 0 {
+	if m.Navigation.SelectedCount() != 0 {
 		t.Error("Expected Shift+Click to deselect")
 	}
 }

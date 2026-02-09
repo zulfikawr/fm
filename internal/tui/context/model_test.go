@@ -59,12 +59,12 @@ func TestModel_ClearSelection(t *testing.T) {
 	m := context.NewModel(fs, "/home")
 
 	m.Navigation.Select("/home/file1")
-	m.UI.SelectMode = true
+	m.Navigation.SelectMode = true
 
-	testutil.AssertEqual(t, 1, m.Navigation.SelectedCount, "Should have 1 selected item")
+	testutil.AssertEqual(t, 1, m.Navigation.SelectedCount(), "Should have 1 selected item")
 
 	m.ClearSelection()
 
-	testutil.AssertEqual(t, 0, m.Navigation.SelectedCount, "Should have 0 selected items after clear")
-	testutil.AssertEqual(t, false, m.UI.SelectMode, "SelectMode should be false")
+	testutil.AssertEqual(t, 0, m.Navigation.SelectedCount(), "Should have 0 selected items after clear")
+	testutil.AssertEqual(t, false, m.Navigation.SelectMode, "SelectMode should be false")
 }

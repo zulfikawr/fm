@@ -148,7 +148,7 @@ func handleInputs(m *tuictx.Model, msg tea.Msg) (tea.Cmd, bool) {
 			// Trigger search on change
 			if msg.String() != "enter" && msg.String() != "esc" {
 				query := m.Inputs.ActiveInput.Value()
-				if query != m.Search.Query {
+				if query != m.Navigation.Search.Query {
 					cmds = append(cmds, integration.TriggerSearch(m, query))
 				}
 			}
@@ -227,11 +227,11 @@ func finalizeInput(m *tuictx.Model) tea.Cmd {
 		m.StopInput(true)
 		return integration.HandleAuthFinalize(m, val)
 	case tuictx.InputFuzzySearch:
-		if len(m.Search.Results) > 0 {
-			res := m.Search.Results[m.Search.CursorFile]
+		if len(m.Navigation.Search.Results) > 0 {
+			res := m.Navigation.Search.Results[m.Navigation.Search.CursorFile]
 			line := 1
-			if m.Search.CursorMatch >= 0 && m.Search.CursorMatch < len(res.Matches) {
-				line = res.Matches[m.Search.CursorMatch].Line
+			if m.Navigation.Search.CursorMatch >= 0 && m.Navigation.Search.CursorMatch < len(res.Matches) {
+				line = res.Matches[m.Navigation.Search.CursorMatch].Line
 			}
 
 			m.StopInput(true)

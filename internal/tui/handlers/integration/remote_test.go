@@ -41,7 +41,7 @@ func TestRemote_Handlers(t *testing.T) {
 
 	t.Run("HandleHostConfirmKeys", func(t *testing.T) {
 		m.UI.HostConfirm = true
-		m.Remote.HostConfirmReq = &ssh.HostConfirmRequest{
+		m.Navigation.Remote.HostConfirmReq = &ssh.HostConfirmRequest{
 			Resolve: make(chan bool, 1),
 		}
 		integration.HandleRemote(m, tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("y")})

@@ -33,71 +33,71 @@ func handleSearchKeys(m *tui_context.Model, msg tea.KeyMsg) tea.Cmd {
 	switch key {
 	case "up", "alt+k":
 		moveSearchCursor(m, -1)
-		m.Search.Offset = ScrollSearch(m)
+		m.Navigation.Search.Offset = ScrollSearch(m)
 	case "down", "alt+j":
 		moveSearchCursor(m, 1)
-		m.Search.Offset = ScrollSearch(m)
+		m.Navigation.Search.Offset = ScrollSearch(m)
 	case "alt+m":
-		if m.Search.CursorFile > 0 {
-			m.Search.CursorFile--
-			m.Search.CursorMatch = -1
-			m.Search.Offset = ScrollSearch(m)
+		if m.Navigation.Search.CursorFile > 0 {
+			m.Navigation.Search.CursorFile--
+			m.Navigation.Search.CursorMatch = -1
+			m.Navigation.Search.Offset = ScrollSearch(m)
 		}
 	case "alt+n":
-		if m.Search.CursorFile < len(m.Search.Results)-1 {
-			m.Search.CursorFile++
-			m.Search.CursorMatch = -1
-			m.Search.Offset = ScrollSearch(m)
+		if m.Navigation.Search.CursorFile < len(m.Navigation.Search.Results)-1 {
+			m.Navigation.Search.CursorFile++
+			m.Navigation.Search.CursorMatch = -1
+			m.Navigation.Search.Offset = ScrollSearch(m)
 		}
 	case "tab":
-		if len(m.Search.Results) > 0 {
-			res := &m.Search.Results[m.Search.CursorFile]
+		if len(m.Navigation.Search.Results) > 0 {
+			res := &m.Navigation.Search.Results[m.Navigation.Search.CursorFile]
 			res.Collapsed = !res.Collapsed
-			m.Search.Offset = ScrollSearch(m)
+			m.Navigation.Search.Offset = ScrollSearch(m)
 		}
 	}
 	return nil
 }
 
 func moveSearchCursor(m *tui_context.Model, dir int) {
-	if len(m.Search.Results) == 0 {
+	if len(m.Navigation.Search.Results) == 0 {
 		return
 	}
 
-	if m.Search.CursorFile < 0 {
-		m.Search.CursorFile = 0
+	if m.Navigation.Search.CursorFile < 0 {
+		m.Navigation.Search.CursorFile = 0
 	}
-	if m.Search.CursorFile >= len(m.Search.Results) {
-		m.Search.CursorFile = len(m.Search.Results) - 1
+	if m.Navigation.Search.CursorFile >= len(m.Navigation.Search.Results) {
+		m.Navigation.Search.CursorFile = len(m.Navigation.Search.Results) - 1
 	}
 
 	if dir > 0 {
-		res := m.Search.Results[m.Search.CursorFile]
-		if m.Search.CursorMatch == -1 {
+		res := m.Navigation.Search.Results[m.Navigation.Search.CursorFile]
+		if m.Navigation.Search.CursorMatch == -1 {
 			if !res.Collapsed && len(res.Matches) > 0 {
-				m.Search.CursorMatch = 0
-			} else if m.Search.CursorFile < len(m.Search.Results)-1 {
-				m.Search.CursorFile++
-				m.Search.CursorMatch = -1
+				m.Navigation.Search.CursorMatch = 0
+			} else if m.Navigation.Search.CursorFile < len(m.Navigation.Search.Results)-1 {
+				m.Navigation.Search.CursorFile++
+				m.Navigation.Search.CursorMatch = -1
 			}
-		} else if m.Search.CursorMatch < len(res.Matches)-1 {
-			m.Search.CursorMatch++
-		} else if m.Search.CursorFile < len(m.Search.Results)-1 {
-			m.Search.CursorFile++
-			m.Search.CursorMatch = -1
+		} else if m.Navigation.Search.CursorMatch < len(res.Matches)-1 {
+			m.Navigation.Search.CursorMatch++
+		} else if m.Navigation.Search.CursorFile < len(m.Navigation.Search.Results)-1 {
+			m.Navigation.Search.CursorFile++
+			m.Navigation.Search.CursorMatch = -1
 		}
 	} else {
-		if m.Search.CursorMatch > 0 {
-			m.Search.CursorMatch--
-		} else if m.Search.CursorMatch == 0 {
-			m.Search.CursorMatch = -1
-		} else if m.Search.CursorFile > 0 {
-			m.Search.CursorFile--
-			res := m.Search.Results[m.Search.CursorFile]
+		if m.Navigation.Search.CursorMatch > 0 {
+			m.Navigation.Search.CursorMatch--
+		} else if m.Navigation.Search.CursorMatch == 0 {
+			m.Navigation.Search.CursorMatch = -1
+		} else if m.Navigation.Search.CursorFile > 0 {
+			m.Navigation.Search.CursorFile--
+			res := m.Navigation.Search.Results[m.Navigation.Search.CursorFile]
 			if res.Collapsed || len(res.Matches) == 0 {
-				m.Search.CursorMatch = -1
+				m.Navigation.Search.CursorMatch = -1
 			} else {
-				m.Search.CursorMatch = len(res.Matches) - 1
+				m.Navigation.Search.CursorMatch = len(res.Matches) - 1
 			}
 		}
 	}
@@ -115,7 +115,7 @@ func ScrollSearch(m *tui_context.Model) int {
 		effectiveHeight = 1
 	}
 
-	offset := m.Search.Offset
+	offset := m.Navigation.Search.Offset
 	if cursorLine < offset {
 		return cursorLine
 	}
@@ -126,19 +126,19 @@ func ScrollSearch(m *tui_context.Model) int {
 }
 
 func CalculateSearchCursorLine(m *tui_context.Model) int {
-	if len(m.Search.Results) == 0 {
+	if len(m.Navigation.Search.Results) == 0 {
 		return 0
 	}
 
 	line := 0
-	for fIdx, res := range m.Search.Results {
-		if fIdx == m.Search.CursorFile {
-			if m.Search.CursorMatch == -1 || res.Collapsed {
+	for fIdx, res := range m.Navigation.Search.Results {
+		if fIdx == m.Navigation.Search.CursorFile {
+			if m.Navigation.Search.CursorMatch == -1 || res.Collapsed {
 				return line
 			}
 			line++
 			for mIdx := range res.Matches {
-				if mIdx == m.Search.CursorMatch {
+				if mIdx == m.Navigation.Search.CursorMatch {
 					return line
 				}
 				line++
@@ -160,8 +160,8 @@ func TriggerSearch(m *tui_context.Model, query string) tea.Cmd {
 		return nil
 	}
 
-	m.Search.Query = query
-	m.Search.IsSearching = true
+	m.Navigation.Search.Query = query
+	m.Navigation.Search.IsSearching = true
 
 	return tea.Tick(SearchDebounceDuration, func(t time.Time) tea.Msg {
 		return messages.SearchMsg{
@@ -171,17 +171,17 @@ func TriggerSearch(m *tui_context.Model, query string) tea.Cmd {
 }
 
 func StopSearch(m *tui_context.Model) {
-	if m.Search.CancelFunc != nil {
-		m.Search.CancelFunc()
-		m.Search.CancelFunc = nil
+	if m.Navigation.Search.CancelFunc != nil {
+		m.Navigation.Search.CancelFunc()
+		m.Navigation.Search.CancelFunc = nil
 	}
-	m.Search.Results = nil
-	m.Search.IsSearching = false
-	m.Search.Query = ""
+	m.Navigation.Search.Results = nil
+	m.Navigation.Search.IsSearching = false
+	m.Navigation.Search.Query = ""
 }
 
 func finalizeSearch(m *tui_context.Model, msg messages.SearchMsg) tea.Cmd {
-	if msg.Query != m.Search.Query {
+	if msg.Query != m.Navigation.Search.Query {
 		return nil
 	}
 
@@ -189,30 +189,30 @@ func finalizeSearch(m *tui_context.Model, msg messages.SearchMsg) tea.Cmd {
 		return performSearch(m, msg.Query)
 	}
 
-	m.Search.IsSearching = false
-	if m.Search.CancelFunc != nil {
-		m.Search.CancelFunc = nil
+	m.Navigation.Search.IsSearching = false
+	if m.Navigation.Search.CancelFunc != nil {
+		m.Navigation.Search.CancelFunc = nil
 	}
 
 	if msg.Err != nil {
 		return utils.LogError(m, msg.Err, "Search failed")
 	}
 
-	m.Search.Results = msg.Results
-	m.Search.CursorFile = 0
-	m.Search.CursorMatch = 0
-	m.Search.Offset = 0
+	m.Navigation.Search.Results = msg.Results
+	m.Navigation.Search.CursorFile = 0
+	m.Navigation.Search.CursorMatch = 0
+	m.Navigation.Search.Offset = 0
 	return nil
 }
 
 func performSearch(m *tui_context.Model, query string) tea.Cmd {
 	if len(query) < 1 {
-		m.Search.IsSearching = false
+		m.Navigation.Search.IsSearching = false
 		return nil
 	}
 
-	if m.Search.CancelFunc != nil {
-		m.Search.CancelFunc()
+	if m.Navigation.Search.CancelFunc != nil {
+		m.Navigation.Search.CancelFunc()
 	}
 
 	fs := m.FS
@@ -221,7 +221,7 @@ func performSearch(m *tui_context.Model, query string) tea.Cmd {
 	isRegex := m.Config.Ops.EnableRegexSearch
 
 	ctx, cancel := context.WithTimeout(m.Context, 30*time.Second)
-	m.Search.CancelFunc = cancel
+	m.Navigation.Search.CancelFunc = cancel
 
 	return func() tea.Msg {
 		results, err := ops.Search(ops.SearchOptions{

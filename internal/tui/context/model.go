@@ -32,19 +32,16 @@ type Model struct {
 	ActiveTab int   // Index of active tab
 
 	// Grouped state
-	Navigation NavigationState // Navigation and items
+	Navigation NavigationState // Current active navigation and items
 	Display    DisplayState    // Display and UI configuration
 	UI         UIState         // UI mode and state flags
 	Operations OperationsState // File operations and actions
 	Inputs     InputState      // Text input models
 	Cache      CacheState      // Caching state
 	Watcher    WatcherState    // Filesystem watching
-	Git        GitState        // Git information
-	Remote     RemoteState     // Remote connection state
 	Settings   SettingsState   // Settings view state
 	Help       HelpState       // Help view state
 	Message    MessageState    // Status messages
-	Search     SearchState     // Fuzzy content search state
 	Logs       LogState        // Operation logs
 	Analyze    AnalyzeState    // Disk usage analysis state
 	Trash      TrashState      // Trash view state
@@ -113,9 +110,13 @@ func NewModel(fs core.FileSystem, startPath string) *Model {
 		Context: ctx,
 		Cancel:  cancel,
 		Navigation: NavigationState{
+			FS:            fs,
 			Path:          startPath,
 			SelectedPaths: make(map[string]bool),
 			LastShiftIdx:  -1,
+			Remote: RemoteState{
+				HostConfirmChan: make(chan *ssh.HostConfirmRequest),
+			},
 		},
 		Display: DisplayState{
 			SortMode:       sorting.SortDefault,
@@ -144,9 +145,6 @@ func NewModel(fs core.FileSystem, startPath string) *Model {
 		Operations: OperationsState{
 			ProcessingItems: make(map[string]bool),
 		},
-		Remote: RemoteState{
-			HostConfirmChan: make(chan *ssh.HostConfirmRequest),
-		},
 	}
 
 	m.Tabs = []Tab{NewTab(TabOptions{
@@ -162,7 +160,7 @@ func NewModel(fs core.FileSystem, startPath string) *Model {
 // ClearSelection clears selection state across navigation and UI
 func (m *Model) ClearSelection() {
 	m.Navigation.ClearSelection()
-	m.UI.SelectMode = false
+	m.Navigation.SelectMode = false
 }
 
 // AddTab creates and appends a new tab to the model
@@ -174,8 +172,8 @@ func (m *Model) AddTab(path string) {
 		FS:         m.FS,
 		Path:       path,
 		SortMode:   m.Display.SortMode,
-		RemoteUser: m.Remote.User,
-		RemoteHost: m.Remote.Host,
+		RemoteUser: m.Navigation.Remote.User,
+		RemoteHost: m.Navigation.Remote.Host,
 	}))
 }
 

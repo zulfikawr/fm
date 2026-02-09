@@ -263,7 +263,7 @@ func FinalizeOperation(m *tui_context.Model, msg messages.OperationFinishedMsg) 
 	for _, p := range msg.Paths {
 		m.Navigation.Deselect(p)
 	}
-	m.UI.SelectMode = m.Navigation.SelectedCount > 0
+	m.Navigation.SelectMode = m.Navigation.SelectedCount() > 0
 
 	return func() tea.Msg { return messages.OperationFinishedEventMsg{LogID: msg.LogID, Paths: msg.Paths} }
 }

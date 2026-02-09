@@ -53,8 +53,8 @@ func InitializeApp(remoteStr string, args []string) (*tui.App, error) {
 	app := tui.NewApp(tuictx.NewModel(fs, startPath))
 
 	if remoteStr != "" {
-		app.Model.Remote.Host = remoteInfo.Host
-		app.Model.Remote.User = remoteInfo.User
+		app.Model.Navigation.Remote.Host = remoteInfo.Host
+		app.Model.Navigation.Remote.User = remoteInfo.User
 	}
 
 	// Run trash cleanup in background if local filesystem

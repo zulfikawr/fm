@@ -69,8 +69,8 @@ func Reload(m *tui_context.Model, silent bool) tea.Cmd {
 		ApplyFilter(m)
 	}
 
-	if m.Git.CancelFunc != nil {
-		m.Git.CancelFunc()
+	if m.Navigation.Git.CancelFunc != nil {
+		m.Navigation.Git.CancelFunc()
 	}
 
 	loadSkeletonCmd := func() tea.Msg {
@@ -123,7 +123,7 @@ func Reload(m *tui_context.Model, silent bool) tea.Cmd {
 	}
 
 	_, gitCancel := context.WithCancel(ctx)
-	m.Git.CancelFunc = gitCancel
+	m.Navigation.Git.CancelFunc = gitCancel
 
 	return loadSkeletonCmd
 }
@@ -136,11 +136,11 @@ func HandlePartialItems(m *tui_context.Model, msg messages.PartialItemsMsg) tea.
 	m.UI.Loading = false
 	m.Navigation.Items = msg.Items
 	m.Navigation.FilteredItems = msg.Items
-	m.Git.Branch = msg.Branch
-	m.Git.Root = msg.GitRoot
-	m.Git.Modified = msg.Modified
-	m.Git.Staged = msg.Staged
-	m.Git.Untracked = msg.Untracked
+	m.Navigation.Git.Branch = msg.Branch
+	m.Navigation.Git.Root = msg.GitRoot
+	m.Navigation.Git.Modified = msg.Modified
+	m.Navigation.Git.Staged = msg.Staged
+	m.Navigation.Git.Untracked = msg.Untracked
 
 	if val, ok := m.Cache.CursorMemory.Get(m.Navigation.Path); ok {
 		m.Navigation.Cursor = val
@@ -168,11 +168,11 @@ func fetchMetadata(m *tui_context.Model) tea.Cmd {
 	dateFormatIdx := m.Config.UI.DateFormatIndex
 
 	// Capture current Git state to pass through
-	gitBranch := m.Git.Branch
-	gitRoot := m.Git.Root
-	gitMod := m.Git.Modified
-	gitStaged := m.Git.Staged
-	gitUntracked := m.Git.Untracked
+	gitBranch := m.Navigation.Git.Branch
+	gitRoot := m.Navigation.Git.Root
+	gitMod := m.Navigation.Git.Modified
+	gitStaged := m.Navigation.Git.Staged
+	gitUntracked := m.Navigation.Git.Untracked
 
 	return func() tea.Msg {
 		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
@@ -292,11 +292,11 @@ func FinalizeDirectoryLoad(m *tui_context.Model, msg messages.LoadedItemsMsg) te
 
 	m.Navigation.Items = msg.Items
 	ApplyFilter(m)
-	m.Git.Branch = msg.GitBranch
-	m.Git.Root = msg.GitRoot
-	m.Git.Modified = msg.Modified
-	m.Git.Staged = msg.Staged
-	m.Git.Untracked = msg.Untracked
+	m.Navigation.Git.Branch = msg.GitBranch
+	m.Navigation.Git.Root = msg.GitRoot
+	m.Navigation.Git.Modified = msg.Modified
+	m.Navigation.Git.Staged = msg.Staged
+	m.Navigation.Git.Untracked = msg.Untracked
 	m.Display.ReadOnly = msg.IsReadOnly
 
 	if !msg.Cached && msg.Err == nil {

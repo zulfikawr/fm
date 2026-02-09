@@ -66,7 +66,7 @@ func TestNavigationState_Extended(t *testing.T) {
 	t.Run("Selection Methods", func(t *testing.T) {
 		nav.Select("/f1")
 		testutil.AssertEqual(t, true, nav.IsSelected("/f1"), "Should be selected")
-		testutil.AssertEqual(t, 1, nav.SelectedCount, "Count should be 1")
+		testutil.AssertEqual(t, 1, nav.SelectedCount(), "Count should be 1")
 		testutil.AssertEqual(t, true, nav.FilteredItems[1].State.Selected, "FilteredItem should be visually selected")
 
 		nav.ToggleSelection("/f1")

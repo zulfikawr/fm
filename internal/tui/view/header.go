@@ -8,10 +8,10 @@ import (
 func renderHeader(m *context.Model, layout context.Layout) string {
 	styles := m.Display.Styles
 
-	gitBranch := m.Git.Branch
-	gitModified := m.Git.Modified
-	gitStaged := m.Git.Staged
-	gitUntracked := m.Git.Untracked
+	gitBranch := m.Navigation.Git.Branch
+	gitModified := m.Navigation.Git.Modified
+	gitStaged := m.Navigation.Git.Staged
+	gitUntracked := m.Navigation.Git.Untracked
 
 	// Hide git status when in analyze mode as requested
 	if m.UI.AnalyzeOpen {

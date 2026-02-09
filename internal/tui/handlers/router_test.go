@@ -111,13 +111,13 @@ func TestRouter_FinalizeInput(t *testing.T) {
 	t.Run("Finalize InputFuzzySearch", func(t *testing.T) {
 		m.UI.InputActive = true
 		m.Inputs.Mode = tuictx.InputFuzzySearch
-		m.Search.Results = []core.FileResult{{Path: "test", Matches: []core.Match{{Line: 1}}}}
+		m.Navigation.Search.Results = []core.FileResult{{Path: "test", Matches: []core.Match{{Line: 1}}}}
 		tm.Send(tea.KeyMsg{Type: tea.KeyEnter})
 		time.Sleep(10 * time.Millisecond)
 		if m.UI.InputActive {
 			t.Error("expected input to be inactive after Enter")
 		}
-		if m.Search.Results != nil {
+		if m.Navigation.Search.Results != nil {
 			t.Error("expected search results to be cleared after Enter")
 		}
 	})
@@ -235,13 +235,13 @@ func TestRouter_FinalizeInput(t *testing.T) {
 	t.Run("Esc InputFuzzySearch", func(t *testing.T) {
 		m.UI.InputActive = true
 		m.Inputs.Mode = tuictx.InputFuzzySearch
-		m.Search.Results = []core.FileResult{{Path: "test"}}
+		m.Navigation.Search.Results = []core.FileResult{{Path: "test"}}
 		tm.Send(tea.KeyMsg{Type: tea.KeyEsc})
 		time.Sleep(10 * time.Millisecond)
 		if m.UI.InputActive {
 			t.Error("expected input to be inactive after Esc")
 		}
-		if m.Search.Results != nil {
+		if m.Navigation.Search.Results != nil {
 			t.Error("expected search results to be cleared after Esc")
 		}
 	})

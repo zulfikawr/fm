@@ -9,7 +9,7 @@ import (
 
 func GetTargets(m *tui_context.Model) []string {
 	var targets []string
-	if m.Navigation.SelectedCount > 0 {
+	if m.Navigation.SelectedCount() > 0 {
 		for path, selected := range m.Navigation.SelectedPaths {
 			if selected {
 				targets = append(targets, path)
@@ -31,8 +31,8 @@ func FormatDisplayPath(m *tui_context.Model, fs core.FileSystem, path string) st
 	if fs.IsLocal() {
 		return path
 	}
-	host := m.Remote.Host
-	user := m.Remote.User
+	host := m.Navigation.Remote.Host
+	user := m.Navigation.Remote.User
 	if host != "" {
 		if user != "" {
 			return fmt.Sprintf("%s@%s:%s", user, host, path)

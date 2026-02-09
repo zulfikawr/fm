@@ -79,8 +79,8 @@ func finalizeRemoteConnect(m *tui_context.Model, msg messages.RemoteConnectMsg) 
 		}
 
 		// If we were trying key auth and it failed, show specific error
-		if m.Remote.TryKeyAuth {
-			m.Remote.TryKeyAuth = false
+		if m.Navigation.Remote.TryKeyAuth {
+			m.Navigation.Remote.TryKeyAuth = false
 			if strings.Contains(errStr, "failed to read key file") || strings.Contains(errStr, "failed to parse key file") {
 				return utils.LogError(m, msg.Err, "Key authentication failed")
 			}
@@ -99,7 +99,7 @@ func finalizeRemoteConnect(m *tui_context.Model, msg messages.RemoteConnectMsg) 
 		}
 
 		// Only offer password auth if we weren't just trying key auth
-		if !m.Remote.TryKeyAuth {
+		if !m.Navigation.Remote.TryKeyAuth {
 			m.UI.RemoteAuth = true
 			m.Operations.ActionType = "auth"
 			m.UI.StartConfirming()
@@ -112,11 +112,11 @@ func finalizeRemoteConnect(m *tui_context.Model, msg messages.RemoteConnectMsg) 
 
 	m.UI.RemoteAuth = false
 	m.FS = msg.FS
-	m.Remote.TryKeyAuth = false
+	m.Navigation.Remote.TryKeyAuth = false
 
 	authMethod := "password/key"
-	if m.Remote.KeyPath != "" {
-		authMethod = fmt.Sprintf("PEM: %s", m.Remote.KeyPath)
+	if m.Navigation.Remote.KeyPath != "" {
+		authMethod = fmt.Sprintf("PEM: %s", m.Navigation.Remote.KeyPath)
 	} else if m.Inputs.ActiveInput.Value() == "" {
 		authMethod = "agent/default keys"
 	}
@@ -125,7 +125,7 @@ func finalizeRemoteConnect(m *tui_context.Model, msg messages.RemoteConnectMsg) 
 		Type:    "Remote",
 		Level:   tui_context.LogSuccess,
 		Status:  tui_context.StatusSuccess,
-		Message: fmt.Sprintf("Connection established to %s@%s", m.Remote.User, m.Remote.Host),
+		Message: fmt.Sprintf("Connection established to %s@%s", m.Navigation.Remote.User, m.Navigation.Remote.Host),
 		Details: fmt.Sprintf("Authenticated via %s", authMethod),
 	})
 
@@ -135,32 +135,32 @@ func finalizeRemoteConnect(m *tui_context.Model, msg messages.RemoteConnectMsg) 
 func handleHostConfirm(m *tui_context.Model, msg messages.HostConfirmMsg) tea.Cmd {
 	m.UI.Loading = false
 	m.UI.HostConfirm = true
-	m.Remote.HostConfirmReq = msg.Request
+	m.Navigation.Remote.HostConfirmReq = msg.Request
 	return nil
 }
 
 func handleHostConfirmKeys(m *tui_context.Model, msg tea.KeyMsg) tea.Cmd {
 	switch msg.String() {
 	case "y", "Y":
-		if m.Remote.HostConfirmReq != nil && m.Remote.HostConfirmReq.Resolve != nil {
-			resolve := m.Remote.HostConfirmReq.Resolve
+		if m.Navigation.Remote.HostConfirmReq != nil && m.Navigation.Remote.HostConfirmReq.Resolve != nil {
+			resolve := m.Navigation.Remote.HostConfirmReq.Resolve
 			go func() {
 				resolve <- true
 			}()
 		}
 		m.UI.HostConfirm = false
-		m.Remote.HostConfirmReq = nil
+		m.Navigation.Remote.HostConfirmReq = nil
 		m.UI.Loading = true
 		return nil
 	case "n", "N":
-		if m.Remote.HostConfirmReq != nil && m.Remote.HostConfirmReq.Resolve != nil {
-			resolve := m.Remote.HostConfirmReq.Resolve
+		if m.Navigation.Remote.HostConfirmReq != nil && m.Navigation.Remote.HostConfirmReq.Resolve != nil {
+			resolve := m.Navigation.Remote.HostConfirmReq.Resolve
 			go func() {
 				resolve <- false
 			}()
 		}
 		m.UI.HostConfirm = false
-		m.Remote.HostConfirmReq = nil
+		m.Navigation.Remote.HostConfirmReq = nil
 		return utils.SetMsg(m, "Connection cancelled (host untrusted)")
 	}
 	return nil
@@ -187,10 +187,10 @@ func HandleRemoteGoto(m *tui_context.Model, input string) tea.Cmd {
 		host = parts[1]
 	}
 
-	m.Remote.Host = host
-	m.Remote.User = user
-	m.Remote.KeyPath = ""
-	m.Remote.TryKeyAuth = false
+	m.Navigation.Remote.Host = host
+	m.Navigation.Remote.User = user
+	m.Navigation.Remote.KeyPath = ""
+	m.Navigation.Remote.TryKeyAuth = false
 	m.UI.Loading = true
 	m.UI.RemoteAuth = false
 	m.Inputs.AltMode = false
@@ -200,8 +200,8 @@ func HandleRemoteGoto(m *tui_context.Model, input string) tea.Cmd {
 			Address: host,
 			User:    user,
 			KeyPath: keyPath,
-		}, m.Remote.HostConfirmChan),
-		ListenForHostConfirmation(m.Remote.HostConfirmChan),
+		}, m.Navigation.Remote.HostConfirmChan),
+		ListenForHostConfirmation(m.Navigation.Remote.HostConfirmChan),
 	)
 }
 
@@ -232,16 +232,16 @@ func HandleAuthFinalize(m *tui_context.Model, input string) tea.Cmd {
 	}
 
 	m.UI.Loading = true
-	m.Remote.KeyPath = keyPath
-	m.Remote.TryKeyAuth = tryKeyAuth
+	m.Navigation.Remote.KeyPath = keyPath
+	m.Navigation.Remote.TryKeyAuth = tryKeyAuth
 
 	return tea.Batch(
 		ConnectRemote(ssh.SSHConfig{
-			Address:  m.Remote.Host,
-			User:     m.Remote.User,
+			Address:  m.Navigation.Remote.Host,
+			User:     m.Navigation.Remote.User,
 			Password: password,
 			KeyPath:  keyPath,
-		}, m.Remote.HostConfirmChan),
-		ListenForHostConfirmation(m.Remote.HostConfirmChan),
+		}, m.Navigation.Remote.HostConfirmChan),
+		ListenForHostConfirmation(m.Navigation.Remote.HostConfirmChan),
 	)
 }

@@ -91,9 +91,9 @@ func handleScrollUp(m *context.Model) tea.Cmd {
 		}
 		return nil
 	}
-	if m.Inputs.Mode == context.InputFuzzySearch || len(m.Search.Results) > 0 {
-		if m.Search.Offset > 0 {
-			m.Search.Offset--
+	if m.Inputs.Mode == context.InputFuzzySearch || len(m.Navigation.Search.Results) > 0 {
+		if m.Navigation.Search.Offset > 0 {
+			m.Navigation.Search.Offset--
 		}
 		return nil
 	}
@@ -144,18 +144,18 @@ func handleScrollDown(m *context.Model) tea.Cmd {
 		}
 		return nil
 	}
-	if m.Inputs.Mode == context.InputFuzzySearch || len(m.Search.Results) > 0 {
+	if m.Inputs.Mode == context.InputFuzzySearch || len(m.Navigation.Search.Results) > 0 {
 		// Calculate total lines in search results
 		totalLines := 0
-		for _, res := range m.Search.Results {
+		for _, res := range m.Navigation.Search.Results {
 			totalLines++ // Header
 			if !res.Collapsed {
 				totalLines += len(res.Matches)
 			}
 			totalLines++ // Empty line after file
 		}
-		if m.Search.Offset < totalLines-m.Display.ViewportHeight {
-			m.Search.Offset++
+		if m.Navigation.Search.Offset < totalLines-m.Display.ViewportHeight {
+			m.Navigation.Search.Offset++
 		}
 		return nil
 	}
@@ -217,15 +217,15 @@ func handleMousePress(m *context.Model, msg tea.MouseMsg) tea.Cmd {
 				}
 				m.Navigation.Select(item.Path)
 			}
-			m.UI.SelectMode = m.Navigation.SelectedCount > 0
+			m.Navigation.SelectMode = m.Navigation.SelectedCount() > 0
 			return nil
 		}
 
 		// Handle selection marker click
-		if m.UI.SelectMode && msg.X <= 4 {
+		if m.Navigation.SelectMode && msg.X <= 4 {
 			if !item.State.IsUp {
 				m.Navigation.ToggleSelection(item.Path)
-				m.UI.SelectMode = m.Navigation.SelectedCount > 0
+				m.Navigation.SelectMode = m.Navigation.SelectedCount() > 0
 				return nil
 			}
 		}
@@ -339,7 +339,7 @@ func updateDragSelection(m *context.Model) {
 			m.Navigation.Select(item.Path)
 		}
 	}
-	m.UI.SelectMode = m.Navigation.SelectedCount > 0
+	m.Navigation.SelectMode = m.Navigation.SelectedCount() > 0
 }
 
 func handleMouseClick(m *context.Model, msg tea.MouseMsg) tea.Cmd {
@@ -408,7 +408,7 @@ func handleMouseClick(m *context.Model, msg tea.MouseMsg) tea.Cmd {
 		return handleAnalyzeClick(m, bodyY)
 	}
 
-	if m.Inputs.Mode == context.InputFuzzySearch || len(m.Search.Results) > 0 {
+	if m.Inputs.Mode == context.InputFuzzySearch || len(m.Navigation.Search.Results) > 0 {
 		return handleSearchClick(m, msg)
 	}
 
@@ -595,8 +595,8 @@ func handleFooterClick(m *context.Model, msg tea.MouseMsg) tea.Cmd {
 
 	case footer_comp.ModeHostConfirm:
 		hostname := ""
-		if m.Remote.HostConfirmReq != nil {
-			hostname = m.Remote.HostConfirmReq.Hostname
+		if m.Navigation.Remote.HostConfirmReq != nil {
+			hostname = m.Navigation.Remote.HostConfirmReq.Hostname
 		}
 		prompt := "Add host '" + hostname + "' to known_hosts? [y] Yes | [n] No"
 		action := findActionInPrompt(msg.X, prompt)
@@ -610,7 +610,7 @@ func handleFooterClick(m *context.Model, msg tea.MouseMsg) tea.Cmd {
 			SortMode:       m.Display.SortMode,
 			Cursor:         m.Navigation.Cursor,
 			TotalItems:     len(m.Navigation.FilteredItems),
-			SelectedCount:  m.Navigation.SelectedCount,
+			SelectedCount:  m.Navigation.SelectedCount(),
 			Items:          m.Navigation.Items,
 			FilteredItems:  m.Navigation.FilteredItems,
 			ClipboardCount: len(m.Operations.Clipboard.Paths),
@@ -755,14 +755,14 @@ func handleSearchClick(m *context.Model, msg tea.MouseMsg) tea.Cmd {
 		return nil
 	}
 
-	clickedLine := bodyY - 2 + m.Search.Offset
+	clickedLine := bodyY - 2 + m.Navigation.Search.Offset
 	if clickedLine < 0 {
 		return nil
 	}
 
 	currentLine := 0
-	for fIdx := range m.Search.Results {
-		res := &m.Search.Results[fIdx]
+	for fIdx := range m.Navigation.Search.Results {
+		res := &m.Navigation.Search.Results[fIdx]
 
 		// File header
 		if currentLine == clickedLine {
@@ -770,12 +770,12 @@ func handleSearchClick(m *context.Model, msg tea.MouseMsg) tea.Cmd {
 			if msg.X >= 0 && msg.X <= 2 {
 				// Clicked on arrow
 				res.Collapsed = !res.Collapsed
-				m.Search.Offset = integration.ScrollSearch(m)
+				m.Navigation.Search.Offset = integration.ScrollSearch(m)
 				return nil
 			}
-			m.Search.CursorFile = fIdx
-			m.Search.CursorMatch = -1
-			m.Search.Offset = integration.ScrollSearch(m)
+			m.Navigation.Search.CursorFile = fIdx
+			m.Navigation.Search.CursorMatch = -1
+			m.Navigation.Search.Offset = integration.ScrollSearch(m)
 			return nil
 		}
 		currentLine++
@@ -794,9 +794,9 @@ func handleSearchClick(m *context.Model, msg tea.MouseMsg) tea.Cmd {
 					m.Display.LastClickTime = now
 					m.Display.LastClickIdx = clickID
 
-					m.Search.CursorFile = fIdx
-					m.Search.CursorMatch = mIdx
-					m.Search.Offset = integration.ScrollSearch(m)
+					m.Navigation.Search.CursorFile = fIdx
+					m.Navigation.Search.CursorMatch = mIdx
+					m.Navigation.Search.Offset = integration.ScrollSearch(m)
 
 					if isDoubleClick {
 						// Open file at line

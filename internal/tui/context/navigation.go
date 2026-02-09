@@ -7,18 +7,25 @@ import (
 	"github.com/zulfikawr/fm/internal/files/sorting"
 )
 
-// --- Navigation State ---
-
-// NavigationState holds navigation-related state
+// NavigationState holds navigation-related state for a single view (Tab)
 type NavigationState struct {
-	Path           string      // Current directory path
-	PathGen        int         // Incremented on each navigation to detect stale messages
-	Cursor         int         // Current cursor position
-	Offset         int         // Scroll offset
-	Items          []core.Item // Original items
-	FilteredItems  []core.Item // Filtered items for display
-	SelectedCount  int         // Number of selected items
-	SelectedPaths  map[string]bool
+	FS            core.FileSystem
+	Path          string          // Current directory path
+	PathGen       int             // Incremented on each navigation to detect stale messages
+	Cursor        int             // Current cursor position
+	Offset        int             // Scroll offset
+	Items         []core.Item     // Original items
+	FilteredItems []core.Item     // Filtered items for display
+	SelectedPaths map[string]bool // Source of truth for selection
+	SortMode      sorting.SortMode
+	SelectMode    bool
+
+	// Integrated states
+	Git    GitState
+	Remote RemoteState
+	Search SearchState
+
+	FilterActive   bool            // Whether filter input is active
 	FilterTimer    *time.Timer     // Timer for debouncing filter
 	FilterGen      int             // Generation counter for filter
 	FilterQuery    string          // Current active filter query
@@ -29,6 +36,11 @@ type NavigationState struct {
 	LastShiftIdx   int             // Last index for shift-range selection
 }
 
+// SelectedCount returns the number of selected items
+func (n *NavigationState) SelectedCount() int {
+	return len(n.SelectedPaths)
+}
+
 // Select adds a path to the selection
 func (n *NavigationState) Select(path string) {
 	if n.SelectedPaths == nil {
@@ -36,7 +48,6 @@ func (n *NavigationState) Select(path string) {
 	}
 	if !n.SelectedPaths[path] {
 		n.SelectedPaths[path] = true
-		n.SelectedCount++
 
 		// Update visual state
 		for i := range n.Items {
@@ -56,7 +67,6 @@ func (n *NavigationState) Select(path string) {
 func (n *NavigationState) Deselect(path string) {
 	if n.SelectedPaths != nil && n.SelectedPaths[path] {
 		delete(n.SelectedPaths, path)
-		n.SelectedCount--
 
 		// Update visual state
 		for i := range n.Items {
@@ -93,7 +103,6 @@ func (n *NavigationState) SelectAll() {
 		}
 		if !n.SelectedPaths[item.Path] {
 			n.SelectedPaths[item.Path] = true
-			n.SelectedCount++
 		}
 		item.State.Selected = true
 	}
@@ -102,7 +111,6 @@ func (n *NavigationState) SelectAll() {
 // ClearSelection clears all selections
 func (n *NavigationState) ClearSelection() {
 	n.SelectedPaths = make(map[string]bool)
-	n.SelectedCount = 0
 	for i := range n.Items {
 		n.Items[i].State.Selected = false
 	}
@@ -123,25 +131,7 @@ func (n *NavigationState) IsSelected(path string) bool {
 
 // Tab represents a navigation context
 type Tab struct {
-	FS             core.FileSystem
-	Path           string
-	Items          []core.Item
-	FilteredItems  []core.Item
-	Cursor         int
-	Offset         int
-	SortMode       sorting.SortMode
-	GitBranch      string
-	GitRoot        string
-	SearchQuery    string
-	Searching      bool
-	SelectMode     bool
-	SelectedPaths  map[string]bool
-	RemoteUser     string
-	RemoteHost     string
-	BackHistory    []string
-	ForwardHistory []string
-	ParentFS       core.FileSystem // Previous FS before entering archive
-	ParentPath     string          // Previous path before entering archive
+	NavigationState
 }
 
 // TabOptions encapsulates data for creating a new tab
@@ -156,24 +146,15 @@ type TabOptions struct {
 // NewTab creates a new tab for the given path
 func NewTab(opts TabOptions) Tab {
 	return Tab{
-		FS:            opts.FS,
-		Path:          opts.Path,
-		SortMode:      opts.SortMode,
-		SelectedPaths: make(map[string]bool),
-		RemoteUser:    opts.RemoteUser,
-		RemoteHost:    opts.RemoteHost,
+		NavigationState: NavigationState{
+			FS:            opts.FS,
+			Path:          opts.Path,
+			SortMode:      opts.SortMode,
+			SelectedPaths: make(map[string]bool),
+			Remote: RemoteState{
+				User: opts.RemoteUser,
+				Host: opts.RemoteHost,
+			},
+		},
 	}
-}
-
-// SelectedCount returns the number of selected items
-func (t *Tab) SelectedCount() int {
-	return len(t.SelectedPaths)
-}
-
-// IsSelected returns true if the given path is selected
-func (t *Tab) IsSelected(path string) bool {
-	if t.SelectedPaths == nil {
-		return false
-	}
-	return t.SelectedPaths[path]
 }

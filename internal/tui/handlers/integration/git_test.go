@@ -33,7 +33,7 @@ func TestGit_Status(t *testing.T) {
 
 	}
 
-	if m.Git.Branch != "main" {
-		t.Errorf("expected branch main, got %s", m.Git.Branch)
+	if m.Navigation.Git.Branch != "main" {
+		t.Errorf("expected branch main, got %s", m.Navigation.Git.Branch)
 	}
 }

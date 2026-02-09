@@ -84,25 +84,25 @@ func TestHandleNavKeys(t *testing.T) {
 	t.Run("Toggle Selection", func(t *testing.T) {
 		// ToggleSelection is mapped to "space"
 		nav.HandleNavKeys(m, tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{' '}})
-		if m.Navigation.SelectedCount != 1 {
-			t.Errorf("expected 1 selected, got %d", m.Navigation.SelectedCount)
+		if m.Navigation.SelectedCount() != 1 {
+			t.Errorf("expected 1 selected, got %d", m.Navigation.SelectedCount())
 		}
 	})
 
 	t.Run("Select All", func(t *testing.T) {
 		// SelectAll is mapped to "alt+a"
 		nav.HandleNavKeys(m, tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'a'}, Alt: true})
-		if m.Navigation.SelectedCount != 2 {
-			t.Errorf("expected 2 selected, got %d", m.Navigation.SelectedCount)
+		if m.Navigation.SelectedCount() != 2 {
+			t.Errorf("expected 2 selected, got %d", m.Navigation.SelectedCount())
 		}
 	})
 
 	t.Run("Clear Selection with Esc", func(t *testing.T) {
 		nav.HandleNavKeys(m, tea.KeyMsg{Type: tea.KeyEsc})
-		if m.Navigation.SelectedCount != 0 {
-			t.Errorf("expected 0 selected, got %d", m.Navigation.SelectedCount)
+		if m.Navigation.SelectedCount() != 0 {
+			t.Errorf("expected 0 selected, got %d", m.Navigation.SelectedCount())
 		}
-		if m.UI.SelectMode {
+		if m.Navigation.SelectMode {
 			t.Errorf("expected select mode to be false")
 		}
 	})

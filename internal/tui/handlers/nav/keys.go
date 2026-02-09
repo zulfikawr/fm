@@ -203,7 +203,7 @@ func ToggleSelection(m *tui_context.Model) {
 	item.State.Selected = !item.State.Selected
 	m.Navigation.ToggleSelection(item.Path)
 
-	m.UI.SelectMode = m.Navigation.SelectedCount > 0
+	m.Navigation.SelectMode = m.Navigation.SelectedCount() > 0
 }
 
 func SelectAll(m *tui_context.Model) {
@@ -211,7 +211,7 @@ func SelectAll(m *tui_context.Model) {
 		return
 	}
 	m.Navigation.SelectAll()
-	m.UI.SelectMode = m.Navigation.SelectedCount > 0
+	m.Navigation.SelectMode = m.Navigation.SelectedCount() > 0
 }
 
 func NavigateToSelected(m *tui_context.Model) tea.Cmd {
@@ -291,6 +291,6 @@ func HandleShiftSelect(m *tui_context.Model, delta int) tea.Cmd {
 			m.Navigation.Select(item.Path)
 		}
 	}
-	m.UI.SelectMode = m.Navigation.SelectedCount > 0
+	m.Navigation.SelectMode = m.Navigation.SelectedCount() > 0
 	return nil
 }

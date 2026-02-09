@@ -21,10 +21,10 @@ func applyGitStatus(m *tui_context.Model, msg messages.GitStatusMsg) tea.Cmd {
 	if msg.Path != m.Navigation.Path {
 		return nil
 	}
-	m.Git.Branch = msg.Branch
-	m.Git.Modified = msg.Modified
-	m.Git.Staged = msg.Staged
-	m.Git.Untracked = msg.Untracked
+	m.Navigation.Git.Branch = msg.Branch
+	m.Navigation.Git.Modified = msg.Modified
+	m.Navigation.Git.Staged = msg.Staged
+	m.Navigation.Git.Untracked = msg.Untracked
 
 	// Cache git status for this directory
 	m.Cache.GitStatusCache.Put(msg.Path, msg.Statuses)

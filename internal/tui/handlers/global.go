@@ -123,7 +123,7 @@ func handleGlobal(m *tuictx.Model, msg tea.Msg) (tea.Cmd, bool) {
 			}
 			if m.UI.HostConfirm {
 				m.UI.HostConfirm = false
-				m.Remote.HostConfirmReq = nil
+				m.Navigation.Remote.HostConfirmReq = nil
 				return nil, true
 			}
 

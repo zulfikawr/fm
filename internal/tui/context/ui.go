@@ -15,7 +15,6 @@ type UIState struct {
 	ClipboardOpen   bool
 	TrashOpen       bool
 	Loading         bool
-	SelectMode      bool
 	InputActive     bool              // Consolidated flag for any text input (search, rename, etc)
 	RemoteAuth      bool              // Specific flag for remote auth (uses input)
 	HostConfirm     bool              // Waiting for known_hosts confirmation (uses y/n keys)
@@ -36,7 +35,6 @@ func (ui *UIState) Reset() {
 	ui.TrashOpen = false
 	ui.AnalyzeOpen = false
 	ui.Loading = false
-	ui.SelectMode = false
 	ui.InputActive = false
 	ui.RemoteAuth = false
 	ui.HostConfirm = false

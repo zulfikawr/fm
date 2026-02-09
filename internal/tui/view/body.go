@@ -97,16 +97,16 @@ func renderBody(m *context.Model, layout context.Layout) string {
 			Items:  trashItems,
 			Style:  styles,
 		})
-	} else if m.Inputs.Mode == context.InputFuzzySearch || len(m.Search.Results) > 0 {
+	} else if m.Inputs.Mode == context.InputFuzzySearch || len(m.Navigation.Search.Results) > 0 {
 		bodyStr = views.RenderSearch(views.SearchProps{
 			Width:       layout.Width,
 			Height:      layout.BodyHeight,
-			Query:       m.Search.Query,
-			Results:     m.Search.Results,
-			IsSearching: m.Search.IsSearching,
-			CursorFile:  m.Search.CursorFile,
-			CursorMatch: m.Search.CursorMatch,
-			Offset:      m.Search.Offset,
+			Query:       m.Navigation.Search.Query,
+			Results:     m.Navigation.Search.Results,
+			IsSearching: m.Navigation.Search.IsSearching,
+			CursorFile:  m.Navigation.Search.CursorFile,
+			CursorMatch: m.Navigation.Search.CursorMatch,
+			Offset:      m.Navigation.Search.Offset,
 			Spinner:     m.Display.LoadingSpinner,
 			Style:       styles,
 			EnableIcons: m.Config.UI.EnableIcons,
@@ -121,7 +121,7 @@ func renderBody(m *context.Model, layout context.Layout) string {
 			ShowHeader:       m.Config.UI.ShowHeader,
 			ShowSize:         m.Config.UI.ShowSize,
 			ShowDateModified: m.Config.UI.ShowDateModified,
-			SelectMode:       m.UI.SelectMode,
+			SelectMode:       m.Navigation.SelectMode,
 			SizeFormatIndex:  m.Config.UI.SizeFormatIndex,
 			DateFormatIndex:  m.Config.UI.DateFormatIndex,
 			Styles:           styles,
