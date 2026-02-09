@@ -17,7 +17,7 @@ import (
 
 func HandleNavKeys(m *tui_context.Model, msg tea.KeyMsg) tea.Cmd {
 	// Don't handle nav keys if an input is active or a modal view is open
-	if m.UI.InputActive || m.UI.SettingsOpen || m.UI.LogOpen || m.UI.ClipboardOpen || m.UI.TrashOpen {
+	if m.UI.InputActive || m.UI.ActiveView != tui_context.ViewMain {
 		return nil
 	}
 
@@ -50,11 +50,11 @@ func HandleNavKeys(m *tui_context.Model, msg tea.KeyMsg) tea.Cmd {
 	case "move_up":
 		MoveCursor(m, -1)
 		m.Navigation.LastShiftIdx = -1
-		m.Display.InitialSelectedPaths = nil
+		m.Display.Mouse.InitialSelection = nil
 	case "move_down":
 		MoveCursor(m, 1)
 		m.Navigation.LastShiftIdx = -1
-		m.Display.InitialSelectedPaths = nil
+		m.Display.Mouse.InitialSelection = nil
 	case "page_up":
 		// Implement page up navigation
 		pageSize := m.Display.ViewportHeight - 3 // Account for header/footer
@@ -63,7 +63,7 @@ func HandleNavKeys(m *tui_context.Model, msg tea.KeyMsg) tea.Cmd {
 		}
 		MoveCursor(m, -pageSize)
 		m.Navigation.LastShiftIdx = -1
-		m.Display.InitialSelectedPaths = nil
+		m.Display.Mouse.InitialSelection = nil
 	case "page_down":
 		// Implement page down navigation
 		pageSize := m.Display.ViewportHeight - 3 // Account for header/footer
@@ -72,7 +72,7 @@ func HandleNavKeys(m *tui_context.Model, msg tea.KeyMsg) tea.Cmd {
 		}
 		MoveCursor(m, pageSize)
 		m.Navigation.LastShiftIdx = -1
-		m.Display.InitialSelectedPaths = nil
+		m.Display.Mouse.InitialSelection = nil
 	case "toggle_selection":
 		ToggleSelection(m)
 		return nil
@@ -264,9 +264,9 @@ func HandleShiftSelect(m *tui_context.Model, delta int) tea.Cmd {
 		m.Navigation.LastShiftIdx = m.Navigation.Cursor
 
 		// Store initial state
-		m.Display.InitialSelectedPaths = make(map[string]bool)
+		m.Display.Mouse.InitialSelection = make(map[string]bool)
 		for k, v := range m.Navigation.SelectedPaths {
-			m.Display.InitialSelectedPaths[k] = v
+			m.Display.Mouse.InitialSelection[k] = v
 		}
 	}
 
@@ -279,8 +279,8 @@ func HandleShiftSelect(m *tui_context.Model, delta int) tea.Cmd {
 
 	// Reset to initial state before applying current range
 	m.Navigation.ClearSelection()
-	if m.Display.InitialSelectedPaths != nil {
-		for path := range m.Display.InitialSelectedPaths {
+	if m.Display.Mouse.InitialSelection != nil {
+		for path := range m.Display.Mouse.InitialSelection {
 			m.Navigation.Select(path)
 		}
 	}

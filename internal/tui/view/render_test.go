@@ -16,22 +16,22 @@ func TestRender_Modals(t *testing.T) {
 	m.Display.Height = 24
 
 	t.Run("Settings", func(t *testing.T) {
-		m.UI.SettingsOpen = true
+		m.UI.ActiveView = context.ViewSettings
 		v := view.Render(m)
 		if !strings.Contains(testutil.StripANSI(v), "Settings") {
 			t.Error("expected Settings in view")
 		}
-		m.UI.SettingsOpen = false
+		m.UI.ActiveView = context.ViewMain
 	})
 
 	t.Run("Logs", func(t *testing.T) {
-		m.UI.LogOpen = true
+		m.UI.ActiveView = context.ViewLogs
 		v := view.Render(m)
 		// Empty logs show "No operations logged yet."
 		if !strings.Contains(testutil.StripANSI(v), "logged yet") {
 			t.Error("expected empty logs message in view")
 		}
-		m.UI.LogOpen = false
+		m.UI.ActiveView = context.ViewMain
 	})
 
 	t.Run("Loading", func(t *testing.T) {

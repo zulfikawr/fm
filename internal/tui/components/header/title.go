@@ -1,36 +1,31 @@
 package header
 
 import (
+	"github.com/zulfikawr/fm/internal/tui/context"
 	"github.com/zulfikawr/fm/internal/tui/theme"
 )
 
 // TitleProps contains data for rendering the header title
 type TitleProps struct {
-	Path          string
-	SettingsOpen  bool
-	HelpOpen      bool
-	LogOpen       bool
-	ClipboardOpen bool
-	TrashOpen     bool
-	Style         theme.Stylesheet
+	Path       string
+	ActiveView context.ViewMode
+	Style      theme.Stylesheet
 }
 
 // GetTitle returns the appropriate title string based on the current UI state
 func GetTitle(props TitleProps) string {
-	if props.SettingsOpen {
+	switch props.ActiveView {
+	case context.ViewSettings:
 		return "Settings"
-	}
-	if props.HelpOpen {
+	case context.ViewHelp:
 		return "Help"
-	}
-	if props.LogOpen {
+	case context.ViewLogs:
 		return "Operation Log"
-	}
-	if props.ClipboardOpen {
+	case context.ViewClipboard:
 		return "Clipboard Contents"
-	}
-	if props.TrashOpen {
+	case context.ViewTrash:
 		return "Trash"
+	default:
+		return props.Path
 	}
-	return props.Path
 }

@@ -32,21 +32,24 @@ func TestUIState(t *testing.T) {
 	})
 
 	t.Run("ToggleSettings", func(t *testing.T) {
-		initial := ui.SettingsOpen
 		ui.ToggleSettings()
-		testutil.AssertEqual(t, !initial, ui.SettingsOpen, "SettingsOpen should be toggled")
+		testutil.AssertEqual(t, context.ViewSettings, ui.ActiveView, "ActiveView should be ViewSettings")
+		ui.ToggleSettings()
+		testutil.AssertEqual(t, context.ViewMain, ui.ActiveView, "ActiveView should return to ViewMain")
 	})
 
 	t.Run("ToggleLogs", func(t *testing.T) {
-		initial := ui.LogOpen
 		ui.ToggleLogs()
-		testutil.AssertEqual(t, !initial, ui.LogOpen, "LogOpen should be toggled")
+		testutil.AssertEqual(t, context.ViewLogs, ui.ActiveView, "ActiveView should be ViewLogs")
+		ui.ToggleLogs()
+		testutil.AssertEqual(t, context.ViewMain, ui.ActiveView, "ActiveView should return to ViewMain")
 	})
 
 	t.Run("ToggleClipboard", func(t *testing.T) {
-		initial := ui.ClipboardOpen
 		ui.ToggleClipboard()
-		testutil.AssertEqual(t, !initial, ui.ClipboardOpen, "ClipboardOpen should be toggled")
+		testutil.AssertEqual(t, context.ViewClipboard, ui.ActiveView, "ActiveView should be ViewClipboard")
+		ui.ToggleClipboard()
+		testutil.AssertEqual(t, context.ViewMain, ui.ActiveView, "ActiveView should return to ViewMain")
 	})
 
 	t.Run("Reset", func(t *testing.T) {

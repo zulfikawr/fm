@@ -20,7 +20,7 @@ func TestSettings_ToggleLogic(t *testing.T) {
 
 	fs := testutil.NewMockFileSystem()
 	m := tuictx.NewModel(fs, "/test")
-	m.UI.SettingsOpen = true
+	m.UI.ActiveView = tuictx.ViewSettings
 	m.Config.UI.ShowHidden = false
 
 	app.HandleSettings(m, tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{' '}})

@@ -7,6 +7,7 @@ import (
 	"github.com/zulfikawr/fm/internal/files/core"
 	"github.com/zulfikawr/fm/internal/testutil"
 	"github.com/zulfikawr/fm/internal/tui/components/ui"
+	"github.com/zulfikawr/fm/internal/tui/context"
 	"github.com/zulfikawr/fm/internal/tui/theme"
 )
 
@@ -39,8 +40,25 @@ func TestFooter_RenderModes(t *testing.T) {
 			}
 			ti.SetValue("test-input")
 
+			activeView := context.ViewMain
+			switch tt.mode {
+			case ModeSettings:
+				activeView = context.ViewSettings
+			case ModeHelp:
+				activeView = context.ViewHelp
+			case ModeLog:
+				activeView = context.ViewLogs
+			case ModeClipboard:
+				activeView = context.ViewClipboard
+			case ModeTrash:
+				activeView = context.ViewTrash
+			case ModeAnalyze:
+				activeView = context.ViewAnalyze
+			}
+
 			props := Props{
 				Mode:        tt.mode,
+				ActiveView:  activeView,
 				Width:       100,
 				Message:     "Alert",
 				Styles:      styles,

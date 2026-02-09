@@ -4,16 +4,25 @@ import (
 	"github.com/zulfikawr/fm/internal/tui/components/ui"
 )
 
+// ViewMode represents the currently active main view
+type ViewMode int
+
+const (
+	ViewMain ViewMode = iota
+	ViewSettings
+	ViewHelp
+	ViewLogs
+	ViewClipboard
+	ViewTrash
+	ViewAnalyze
+)
+
 // --- UI State ---
 
-// UIState holds UI mode flags
+// UIState holds UI mode flags and active view state
 type UIState struct {
+	ActiveView      ViewMode
 	Confirming      bool
-	SettingsOpen    bool
-	HelpOpen        bool
-	LogOpen         bool
-	ClipboardOpen   bool
-	TrashOpen       bool
 	Loading         bool
 	InputActive     bool              // Consolidated flag for any text input (search, rename, etc)
 	RemoteAuth      bool              // Specific flag for remote auth (uses input)
@@ -22,18 +31,12 @@ type UIState struct {
 	UpdateAvailable bool              // New version is available
 	LatestVersion   string            // Latest version string
 	PromptCache     map[string]string // Pre-calculated styled prompts
-	AnalyzeOpen     bool
 }
 
-// Reset resets all UI flags to false
+// Reset resets all UI flags and returns to main view
 func (ui *UIState) Reset() {
+	ui.ActiveView = ViewMain
 	ui.Confirming = false
-	ui.SettingsOpen = false
-	ui.HelpOpen = false
-	ui.LogOpen = false
-	ui.ClipboardOpen = false
-	ui.TrashOpen = false
-	ui.AnalyzeOpen = false
 	ui.Loading = false
 	ui.InputActive = false
 	ui.RemoteAuth = false
@@ -45,10 +48,6 @@ func (ui *UIState) Reset() {
 // StartInput enters an input mode
 func (ui *UIState) StartInput() {
 	ui.InputActive = true
-	ui.LogOpen = false
-	ui.HelpOpen = false
-	ui.ClipboardOpen = false
-	ui.TrashOpen = false
 	ui.Confirming = false
 }
 
@@ -61,10 +60,6 @@ func (ui *UIState) StopInput() {
 func (ui *UIState) StartConfirming() {
 	ui.Confirming = true
 	ui.InputActive = false
-	ui.HelpOpen = false
-	ui.LogOpen = false
-	ui.ClipboardOpen = false
-	ui.TrashOpen = false
 }
 
 // StopConfirming exits confirmation mode
@@ -72,68 +67,57 @@ func (ui *UIState) StopConfirming() {
 	ui.Confirming = false
 }
 
-// ToggleSettings toggles the settings view
-func (ui *UIState) ToggleSettings() {
-	ui.SettingsOpen = !ui.SettingsOpen
-	if ui.SettingsOpen {
+// SetView sets the active view, ensuring inputs/confirmations are cleared if switching away from main
+func (ui *UIState) SetView(view ViewMode) {
+	if view != ViewMain {
 		ui.InputActive = false
 		ui.Confirming = false
-		ui.HelpOpen = false
-		ui.LogOpen = false
-		ui.ClipboardOpen = false
-		ui.TrashOpen = false
+	}
+	ui.ActiveView = view
+}
+
+// ToggleSettings toggles the settings view
+func (ui *UIState) ToggleSettings() {
+	if ui.ActiveView == ViewSettings {
+		ui.ActiveView = ViewMain
+	} else {
+		ui.SetView(ViewSettings)
 	}
 }
 
 // ToggleHelp toggles the help view
 func (ui *UIState) ToggleHelp() {
-	ui.HelpOpen = !ui.HelpOpen
-	if ui.HelpOpen {
-		ui.InputActive = false
-		ui.Confirming = false
-		ui.SettingsOpen = false
-		ui.LogOpen = false
-		ui.ClipboardOpen = false
-		ui.TrashOpen = false
+	if ui.ActiveView == ViewHelp {
+		ui.ActiveView = ViewMain
+	} else {
+		ui.SetView(ViewHelp)
 	}
 }
 
 // ToggleLogs toggles the log view
 func (ui *UIState) ToggleLogs() {
-	ui.LogOpen = !ui.LogOpen
-	if ui.LogOpen {
-		ui.InputActive = false
-		ui.Confirming = false
-		ui.SettingsOpen = false
-		ui.HelpOpen = false
-		ui.ClipboardOpen = false
-		ui.TrashOpen = false
+	if ui.ActiveView == ViewLogs {
+		ui.ActiveView = ViewMain
+	} else {
+		ui.SetView(ViewLogs)
 	}
 }
 
 // ToggleClipboard toggles the clipboard view
 func (ui *UIState) ToggleClipboard() {
-	ui.ClipboardOpen = !ui.ClipboardOpen
-	if ui.ClipboardOpen {
-		ui.InputActive = false
-		ui.Confirming = false
-		ui.SettingsOpen = false
-		ui.HelpOpen = false
-		ui.LogOpen = false
-		ui.TrashOpen = false
+	if ui.ActiveView == ViewClipboard {
+		ui.ActiveView = ViewMain
+	} else {
+		ui.SetView(ViewClipboard)
 	}
 }
 
 // ToggleTrash toggles the trash view
 func (ui *UIState) ToggleTrash() {
-	ui.TrashOpen = !ui.TrashOpen
-	if ui.TrashOpen {
-		ui.InputActive = false
-		ui.Confirming = false
-		ui.SettingsOpen = false
-		ui.HelpOpen = false
-		ui.LogOpen = false
-		ui.ClipboardOpen = false
+	if ui.ActiveView == ViewTrash {
+		ui.ActiveView = ViewMain
+	} else {
+		ui.SetView(ViewTrash)
 	}
 }
 

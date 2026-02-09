@@ -44,7 +44,7 @@ func HandleUpdate(m *tuictx.Model, msg tea.Msg) tea.Cmd {
 	}
 
 	// 1.2 Analyze Handlers (Capture keys before other keybinds)
-	if m.UI.AnalyzeOpen {
+	if m.UI.ActiveView == tuictx.ViewAnalyze {
 		if cmd := HandleAnalyze(m, msg); cmd != nil {
 			return cmd
 		}

@@ -3,6 +3,7 @@ package header
 import (
 	"strings"
 
+	"github.com/zulfikawr/fm/internal/tui/context"
 	"github.com/zulfikawr/fm/internal/tui/theme"
 
 	"github.com/charmbracelet/lipgloss"
@@ -10,24 +11,20 @@ import (
 
 // Props contains data for rendering the header
 type Props struct {
-	Width         int
-	Path          string
-	Separator     string
-	RemoteStr     string
-	RootOverride  string
-	GitBranch     string
-	GitModified   int
-	GitStaged     int
-	GitUntracked  int
-	ReadOnly      bool
-	TabCount      int
-	ActiveTab     int
-	SettingsOpen  bool
-	HelpOpen      bool
-	LogOpen       bool
-	ClipboardOpen bool
-	TrashOpen     bool
-	Style         theme.Stylesheet
+	Width        int
+	Path         string
+	Separator    string
+	RemoteStr    string
+	RootOverride string
+	GitBranch    string
+	GitModified  int
+	GitStaged    int
+	GitUntracked int
+	ReadOnly     bool
+	TabCount     int
+	ActiveTab    int
+	ActiveView   context.ViewMode
+	Style        theme.Stylesheet
 }
 
 // Render renders the application header (Breadcrumbs + Tabs)
@@ -52,13 +49,9 @@ func Render(props Props) string {
 
 	// Determine title
 	title := GetTitle(TitleProps{
-		Path:          props.Path,
-		SettingsOpen:  props.SettingsOpen,
-		HelpOpen:      props.HelpOpen,
-		LogOpen:       props.LogOpen,
-		ClipboardOpen: props.ClipboardOpen,
-		TrashOpen:     props.TrashOpen,
-		Style:         props.Style,
+		Path:       props.Path,
+		ActiveView: props.ActiveView,
+		Style:      props.Style,
 	})
 
 	// Maximum width for breadcrumb is availableWidth - tabsWidth - gap(1)
@@ -72,7 +65,7 @@ func Render(props Props) string {
 
 	// Breadcrumb rendering
 	var breadcrumb string
-	if props.SettingsOpen || props.HelpOpen || props.LogOpen || props.ClipboardOpen || props.TrashOpen {
+	if props.ActiveView != context.ViewMain {
 		breadcrumb = props.Style.Header.UnsetPadding().UnsetWidth().Render(title)
 		if lipgloss.Width(breadcrumb) > maxBreadcrumbWidth {
 			breadcrumb = lipgloss.NewStyle().MaxWidth(maxBreadcrumbWidth).Render(breadcrumb)

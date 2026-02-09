@@ -29,7 +29,7 @@ func HandleMouse(m *context.Model, msg tea.MouseMsg) tea.Cmd {
 	}
 
 	// 2. Analyze Handlers (High Priority Modal)
-	if m.UI.AnalyzeOpen {
+	if m.UI.ActiveView == context.ViewAnalyze {
 		return HandleAnalyze(m, msg)
 	}
 
@@ -57,13 +57,13 @@ func HandleMouse(m *context.Model, msg tea.MouseMsg) tea.Cmd {
 }
 
 func handleScrollUp(m *context.Model) tea.Cmd {
-	if m.UI.SettingsOpen {
+	if m.UI.ActiveView == context.ViewSettings {
 		if m.Settings.Offset > 0 {
 			m.Settings.Offset--
 		}
 		return nil
 	}
-	if m.UI.HelpOpen {
+	if m.UI.ActiveView == context.ViewHelp {
 		if m.Help.Offset > 0 {
 			m.Help.Offset--
 		}
@@ -73,19 +73,19 @@ func handleScrollUp(m *context.Model) tea.Cmd {
 		}
 		return nil
 	}
-	if m.UI.LogOpen {
+	if m.UI.ActiveView == context.ViewLogs {
 		if m.Logs.Offset > 0 {
 			m.Logs.Offset--
 		}
 		return nil
 	}
-	if m.UI.ClipboardOpen {
+	if m.UI.ActiveView == context.ViewClipboard {
 		if m.Operations.Clipboard.Offset > 0 {
 			m.Operations.Clipboard.Offset--
 		}
 		return nil
 	}
-	if m.UI.AnalyzeOpen {
+	if m.UI.ActiveView == context.ViewAnalyze {
 		if m.Analyze.Offset > 0 {
 			m.Analyze.Offset--
 		}
@@ -105,7 +105,7 @@ func handleScrollUp(m *context.Model) tea.Cmd {
 }
 
 func handleScrollDown(m *context.Model) tea.Cmd {
-	if m.UI.SettingsOpen {
+	if m.UI.ActiveView == context.ViewSettings {
 		// Total settings rows = 1 (top empty) + 1 (header) + 6 (opts) + 1 (empty) + 1 (header) + 7 (opts) + 1 (empty) + 1 (header) + 1 (opt) + 1 (empty) + 1 (header) + 25 (keys) = 47
 		totalSettingsLines := 47
 		if m.Settings.Offset < totalSettingsLines-m.Display.ViewportHeight {
@@ -113,7 +113,7 @@ func handleScrollDown(m *context.Model) tea.Cmd {
 		}
 		return nil
 	}
-	if m.UI.HelpOpen {
+	if m.UI.ActiveView == context.ViewHelp {
 		// Total help rows = 1 (top) + (7+1 header) + 1 spacer + (4+1) + 1 + (3+1) + 1 + (8+1) + 1 + (4+1) + 1 + (6+1) = 43 approx
 		totalHelpLines := 43
 		if m.Help.Offset < totalHelpLines-m.Display.ViewportHeight {
@@ -125,19 +125,19 @@ func handleScrollDown(m *context.Model) tea.Cmd {
 		}
 		return nil
 	}
-	if m.UI.LogOpen {
+	if m.UI.ActiveView == context.ViewLogs {
 		if m.Logs.Offset < len(m.Logs.Entries)-m.Display.ViewportHeight {
 			m.Logs.Offset++
 		}
 		return nil
 	}
-	if m.UI.ClipboardOpen {
+	if m.UI.ActiveView == context.ViewClipboard {
 		if m.Operations.Clipboard.Offset < len(m.Operations.Clipboard.Paths)-m.Display.ViewportHeight {
 			m.Operations.Clipboard.Offset++
 		}
 		return nil
 	}
-	if m.UI.AnalyzeOpen {
+	if m.UI.ActiveView == context.ViewAnalyze {
 		items := getAnalyzeItems(m, m.Analyze.ActiveNode)
 		if m.Analyze.Offset < len(items)-m.Display.ViewportHeight {
 			m.Analyze.Offset++
@@ -167,17 +167,17 @@ func handleScrollDown(m *context.Model) tea.Cmd {
 }
 
 func handleMousePress(m *context.Model, msg tea.MouseMsg) tea.Cmd {
-	m.Display.IsDragging = true
-	m.Display.DragStartX = msg.X
-	m.Display.DragStartY = msg.Y
-	m.Display.DragEndX = msg.X
-	m.Display.DragEndY = msg.Y
-	m.Display.DragStartIdx = -1
+	m.Display.Mouse.IsDragging = true
+	m.Display.Mouse.DragStart.X = msg.X
+	m.Display.Mouse.DragStart.Y = msg.Y
+	m.Display.Mouse.DragEnd.X = msg.X
+	m.Display.Mouse.DragEnd.Y = msg.Y
+	m.Display.Mouse.DragStartIdx = -1
 
 	// Store initial selection state for dynamic selection
-	m.Display.InitialSelectedPaths = make(map[string]bool)
+	m.Display.Mouse.InitialSelection = make(map[string]bool)
 	for k, v := range m.Navigation.SelectedPaths {
-		m.Display.InitialSelectedPaths[k] = v
+		m.Display.Mouse.InitialSelection[k] = v
 	}
 
 	// App Header is 1 line (y=0)
@@ -203,7 +203,7 @@ func handleMousePress(m *context.Model, msg tea.MouseMsg) tea.Cmd {
 
 	itemIdx := bodyY - headerHeight + m.Navigation.Offset
 	if itemIdx >= 0 && itemIdx < len(m.Navigation.FilteredItems) {
-		m.Display.DragStartIdx = itemIdx
+		m.Display.Mouse.DragStartIdx = itemIdx
 		item := m.Navigation.FilteredItems[itemIdx]
 
 		// Shift+Click for range selection or toggle
@@ -235,15 +235,15 @@ func handleMousePress(m *context.Model, msg tea.MouseMsg) tea.Cmd {
 }
 
 func handleMouseDrag(m *context.Model, msg tea.MouseMsg) tea.Cmd {
-	if !m.Display.IsDragging {
+	if !m.Display.Mouse.IsDragging {
 		return nil
 	}
-	m.Display.DragEndX = msg.X
-	m.Display.DragEndY = msg.Y
+	m.Display.Mouse.DragEnd.X = msg.X
+	m.Display.Mouse.DragEnd.Y = msg.Y
 
 	// If we started on an empty area OR on an item but NOT moving it
 	// (for now, let's treat all drag as selection if startIdx was -1)
-	if m.Display.DragStartIdx == -1 {
+	if m.Display.Mouse.DragStartIdx == -1 {
 		updateDragSelection(m)
 	}
 
@@ -251,13 +251,13 @@ func handleMouseDrag(m *context.Model, msg tea.MouseMsg) tea.Cmd {
 }
 
 func handleMouseRelease(m *context.Model, msg tea.MouseMsg) tea.Cmd {
-	if !m.Display.IsDragging {
+	if !m.Display.Mouse.IsDragging {
 		return nil
 	}
 
-	startIdx := m.Display.DragStartIdx
-	m.Display.IsDragging = false
-	m.Display.InitialSelectedPaths = nil // Clear
+	startIdx := m.Display.Mouse.DragStartIdx
+	m.Display.Mouse.IsDragging = false
+	m.Display.Mouse.InitialSelection = nil // Clear
 
 	// Check for drag-to-move
 	if startIdx != -1 {
@@ -311,8 +311,8 @@ func updateDragSelection(m *context.Model) {
 		headerHeight += 3
 	}
 
-	startY := m.Display.DragStartY
-	endY := m.Display.DragEndY
+	startY := m.Display.Mouse.DragStart.Y
+	endY := m.Display.Mouse.DragEnd.Y
 
 	if startY > endY {
 		startY, endY = endY, startY
@@ -324,8 +324,8 @@ func updateDragSelection(m *context.Model) {
 
 	// Reset to initial state before applying current drag rectangle
 	m.Navigation.ClearSelection()
-	if m.Display.InitialSelectedPaths != nil {
-		for path := range m.Display.InitialSelectedPaths {
+	if m.Display.Mouse.InitialSelection != nil {
+		for path := range m.Display.Mouse.InitialSelection {
 			m.Navigation.Select(path)
 		}
 	}
@@ -346,7 +346,7 @@ func handleMouseClick(m *context.Model, msg tea.MouseMsg) tea.Cmd {
 	// App Header is 1 line (y=0)
 	if msg.Y == 0 {
 		// 1. Check for breadcrumb clicks (Left side)
-		if !m.UI.SettingsOpen && !m.UI.LogOpen && !m.UI.ClipboardOpen {
+		if m.UI.ActiveView == context.ViewMain {
 			cmd := handleBreadcrumbClick(m, msg.X)
 			if cmd != nil {
 				return cmd
@@ -388,23 +388,16 @@ func handleMouseClick(m *context.Model, msg tea.MouseMsg) tea.Cmd {
 	// Calculate which item was clicked
 	bodyY := msg.Y - 1
 
-	if m.UI.SettingsOpen {
+	switch m.UI.ActiveView {
+	case context.ViewSettings:
 		return handleSettingsClick(m, bodyY)
-	}
-
-	if m.UI.HelpOpen {
+	case context.ViewHelp:
 		return handleHelpClick(m, bodyY)
-	}
-
-	if m.UI.LogOpen {
+	case context.ViewLogs:
 		return handleLogClick(m, bodyY)
-	}
-
-	if m.UI.ClipboardOpen {
+	case context.ViewClipboard:
 		return handleClipboardClick(m, bodyY)
-	}
-
-	if m.UI.AnalyzeOpen {
+	case context.ViewAnalyze:
 		return handleAnalyzeClick(m, bodyY)
 	}
 
@@ -427,9 +420,9 @@ func handleMouseClick(m *context.Model, msg tea.MouseMsg) tea.Cmd {
 	if itemIdx >= len(m.Navigation.FilteredItems) {
 		// Double click on empty space -> Create
 		now := time.Now()
-		isDoubleClick := m.Display.LastClickIdx == -2 && now.Sub(m.Display.LastClickTime) < 500*time.Millisecond
-		m.Display.LastClickTime = now
-		m.Display.LastClickIdx = -2
+		isDoubleClick := m.Display.Mouse.LastClickIdx == -2 && now.Sub(m.Display.Mouse.LastClickTime) < 500*time.Millisecond
+		m.Display.Mouse.LastClickTime = now
+		m.Display.Mouse.LastClickIdx = -2
 		if isDoubleClick {
 			return file.StartCreate(m)
 		}
@@ -441,10 +434,10 @@ func handleMouseClick(m *context.Model, msg tea.MouseMsg) tea.Cmd {
 	}
 
 	now := time.Now()
-	isDoubleClick := itemIdx == m.Display.LastClickIdx && now.Sub(m.Display.LastClickTime) < 500*time.Millisecond
+	isDoubleClick := itemIdx == m.Display.Mouse.LastClickIdx && now.Sub(m.Display.Mouse.LastClickTime) < 500*time.Millisecond
 
-	m.Display.LastClickTime = now
-	m.Display.LastClickIdx = itemIdx
+	m.Display.Mouse.LastClickTime = now
+	m.Display.Mouse.LastClickIdx = itemIdx
 
 	if isDoubleClick {
 		// Double click -> Action (Navigate or Open)
@@ -545,10 +538,10 @@ func handleAnalyzeClick(m *context.Model, bodyY int) tea.Cmd {
 	now := time.Now()
 	// Use a high offset for analyze clicks
 	clickID := 0xAC1D0000 | idx
-	isDoubleClick := clickID == m.Display.LastClickIdx && now.Sub(m.Display.LastClickTime) < 500*time.Millisecond
+	isDoubleClick := clickID == m.Display.Mouse.LastClickIdx && now.Sub(m.Display.Mouse.LastClickTime) < 500*time.Millisecond
 
-	m.Display.LastClickTime = now
-	m.Display.LastClickIdx = clickID
+	m.Display.Mouse.LastClickTime = now
+	m.Display.Mouse.LastClickIdx = clickID
 
 	if isDoubleClick {
 		selected := items[idx]
@@ -730,10 +723,10 @@ func selectAndToggleSetting(m *context.Model, idx int) tea.Cmd {
 	now := time.Now()
 	// Using a high offset for settings click IDs to avoid collisions
 	clickID := 0x5E771000 | idx
-	isDoubleClick := clickID == m.Display.LastClickIdx && now.Sub(m.Display.LastClickTime) < 500*time.Millisecond
+	isDoubleClick := clickID == m.Display.Mouse.LastClickIdx && now.Sub(m.Display.Mouse.LastClickTime) < 500*time.Millisecond
 
-	m.Display.LastClickTime = now
-	m.Display.LastClickIdx = clickID
+	m.Display.Mouse.LastClickTime = now
+	m.Display.Mouse.LastClickIdx = clickID
 
 	m.Settings.Cursor = idx
 	m.Settings.Offset = app.ScrollSettings(m)
@@ -789,10 +782,10 @@ func handleSearchClick(m *context.Model, msg tea.MouseMsg) tea.Cmd {
 					// Use a unique encoding for search clicks to avoid interference with file list clicks.
 					// e.g. (fIdx << 16) | mIdx
 					clickID := (fIdx << 16) | mIdx
-					isDoubleClick := clickID == m.Display.LastClickIdx && now.Sub(m.Display.LastClickTime) < 500*time.Millisecond
+					isDoubleClick := clickID == m.Display.Mouse.LastClickIdx && now.Sub(m.Display.Mouse.LastClickTime) < 500*time.Millisecond
 
-					m.Display.LastClickTime = now
-					m.Display.LastClickIdx = clickID
+					m.Display.Mouse.LastClickTime = now
+					m.Display.Mouse.LastClickIdx = clickID
 
 					m.Navigation.Search.CursorFile = fIdx
 					m.Navigation.Search.CursorMatch = mIdx

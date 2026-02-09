@@ -24,7 +24,7 @@ func TestHandleMouse_DragSelect(t *testing.T) {
 	m.Config.UI.ShowHeader = true
 
 	// Let's test drag-to-select starting from empty area
-	m.Display.IsDragging = false
+	m.Display.Mouse.IsDragging = false
 	HandleMouse(m, tea.MouseMsg{
 		X:      10,
 		Y:      10, // Empty area

@@ -20,7 +20,7 @@ import (
 func HandleSettings(m *tui_context.Model, msg tea.Msg) tea.Cmd {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		if m.UI.SettingsOpen {
+		if m.UI.ActiveView == tui_context.ViewSettings {
 			return handleSettingsKeys(m, msg)
 		}
 	}

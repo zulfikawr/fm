@@ -13,7 +13,7 @@ import (
 )
 
 func HandleAnalyze(m *tuictx.Model, msg tea.Msg) tea.Cmd {
-	if !m.UI.AnalyzeOpen {
+	if m.UI.ActiveView != tuictx.ViewAnalyze {
 		return nil
 	}
 
@@ -56,7 +56,7 @@ func HandleAnalyze(m *tuictx.Model, msg tea.Msg) tea.Cmd {
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "esc", "q", "alt+u":
-			m.UI.AnalyzeOpen = false
+			m.UI.ActiveView = tuictx.ViewMain
 			return func() tea.Msg { return nil }
 
 		case "up", "k":
@@ -111,12 +111,12 @@ func HandleAnalyze(m *tuictx.Model, msg tea.Msg) tea.Cmd {
 				}
 				parentPath := m.FS.Dir(m.Analyze.ActiveNode.Path)
 				if parentPath == m.Analyze.ActiveNode.Path {
-					m.UI.AnalyzeOpen = false
+					m.UI.ActiveView = tuictx.ViewMain
 					return func() tea.Msg { return nil }
 				}
 				return StartAnalysisAtPath(m, parentPath)
 			}
-			m.UI.AnalyzeOpen = false
+			m.UI.ActiveView = tuictx.ViewMain
 			return func() tea.Msg { return nil }
 
 		case "d":
@@ -180,7 +180,7 @@ func StartAnalysis(m *tuictx.Model) tea.Cmd {
 }
 
 func StartAnalysisAtPath(m *tuictx.Model, path string) tea.Cmd {
-	m.UI.AnalyzeOpen = true
+	m.UI.ActiveView = tuictx.ViewAnalyze
 	m.UI.Loading = true
 	m.Navigation.Path = path
 

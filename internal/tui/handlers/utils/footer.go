@@ -50,24 +50,22 @@ func DetermineFooterMode(m *context.Model) footer.Mode {
 	if m.Message.Text != "" {
 		return footer.ModeMessage
 	}
-	if m.UI.SettingsOpen {
+
+	switch m.UI.ActiveView {
+	case context.ViewSettings:
 		return footer.ModeSettings
-	}
-	if m.UI.HelpOpen {
+	case context.ViewHelp:
 		return footer.ModeHelp
-	}
-	if m.UI.LogOpen {
+	case context.ViewLogs:
 		return footer.ModeLog
-	}
-	if m.UI.ClipboardOpen {
+	case context.ViewClipboard:
 		return footer.ModeClipboard
-	}
-	if m.UI.TrashOpen {
+	case context.ViewTrash:
 		return footer.ModeTrash
-	}
-	if m.UI.AnalyzeOpen {
+	case context.ViewAnalyze:
 		return footer.ModeAnalyze
 	}
+
 	return footer.ModeNormal
 }
 

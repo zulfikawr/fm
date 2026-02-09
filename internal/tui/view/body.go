@@ -15,15 +15,18 @@ func renderBody(m *context.Model, layout context.Layout) string {
 	styles := m.Display.Styles
 
 	// Skeleton-First logic: Only show full screen loading if we have NO items to show
-	if m.UI.Loading && len(m.Navigation.FilteredItems) == 0 {
-		bodyStr = loading.Render(loading.Props{
+	if m.UI.Loading && len(m.Navigation.FilteredItems) == 0 && m.UI.ActiveView == context.ViewMain {
+		return loading.Render(loading.Props{
 			Width:   layout.Width,
 			Height:  layout.BodyHeight,
 			Message: "Loading...",
 			Spinner: m.Display.LoadingSpinner,
 			Style:   styles,
 		})
-	} else if m.UI.SettingsOpen {
+	}
+
+	switch m.UI.ActiveView {
+	case context.ViewSettings:
 		bodyStr = views.RenderSettings(views.SettingsProps{
 			Width:  layout.Width,
 			Height: layout.BodyHeight,
@@ -32,7 +35,7 @@ func renderBody(m *context.Model, layout context.Layout) string {
 			Config: m.Config,
 			Style:  styles,
 		})
-	} else if m.UI.HelpOpen {
+	case context.ViewHelp:
 		bodyStr = views.RenderHelp(views.HelpProps{
 			Width:       layout.Width,
 			Height:      layout.BodyHeight,
@@ -41,7 +44,7 @@ func renderBody(m *context.Model, layout context.Layout) string {
 			Style:       styles,
 			Keybindings: m.Config.Keybindings,
 		})
-	} else if m.UI.LogOpen {
+	case context.ViewLogs:
 		bodyStr = views.RenderLogs(views.LogsProps{
 			Width:  layout.Width,
 			Height: layout.BodyHeight,
@@ -50,27 +53,29 @@ func renderBody(m *context.Model, layout context.Layout) string {
 			Logs:   m.Logs.Entries,
 			Style:  styles,
 		})
-	} else if m.UI.AnalyzeOpen && m.UI.Loading {
-		bodyStr = loading.Render(loading.Props{
-			Width:   layout.Width,
-			Height:  layout.BodyHeight,
-			Message: "Analyzing Disk Usage...",
-			Spinner: m.Display.LoadingSpinner,
-			Style:   styles,
-		})
-	} else if m.UI.AnalyzeOpen {
-		bodyStr = views.RenderAnalyze(views.AnalyzeProps{
-			Width:           layout.Width,
-			Height:          layout.BodyHeight,
-			ActiveNode:      m.Analyze.ActiveNode,
-			Cursor:          m.Analyze.Cursor,
-			Offset:          m.Analyze.Offset,
-			Style:           styles,
-			EnableIcons:     m.Config.UI.EnableIcons,
-			SizeFormatIndex: m.Config.UI.SizeFormatIndex,
-			IsRoot:          m.Analyze.ActiveNode != nil && m.FS.Dir(m.Analyze.ActiveNode.Path) == m.Analyze.ActiveNode.Path,
-		})
-	} else if m.UI.ClipboardOpen {
+	case context.ViewAnalyze:
+		if m.UI.Loading {
+			bodyStr = loading.Render(loading.Props{
+				Width:   layout.Width,
+				Height:  layout.BodyHeight,
+				Message: "Analyzing Disk Usage...",
+				Spinner: m.Display.LoadingSpinner,
+				Style:   styles,
+			})
+		} else {
+			bodyStr = views.RenderAnalyze(views.AnalyzeProps{
+				Width:           layout.Width,
+				Height:          layout.BodyHeight,
+				ActiveNode:      m.Analyze.ActiveNode,
+				Cursor:          m.Analyze.Cursor,
+				Offset:          m.Analyze.Offset,
+				Style:           styles,
+				EnableIcons:     m.Config.UI.EnableIcons,
+				SizeFormatIndex: m.Config.UI.SizeFormatIndex,
+				IsRoot:          m.Analyze.ActiveNode != nil && m.FS.Dir(m.Analyze.ActiveNode.Path) == m.Analyze.ActiveNode.Path,
+			})
+		}
+	case context.ViewClipboard:
 		bodyStr = views.RenderClipboard(views.ClipboardProps{
 			Width:    layout.Width,
 			Height:   layout.BodyHeight,
@@ -81,7 +86,7 @@ func renderBody(m *context.Model, layout context.Layout) string {
 			IsCut:    m.Operations.Clipboard.IsCut,
 			Style:    styles,
 		})
-	} else if m.UI.TrashOpen {
+	case context.ViewTrash:
 		// Convert interface{} items to trash.TrashItem
 		trashItems := make([]trash.TrashItem, 0, len(m.Trash.Items))
 		for _, item := range m.Trash.Items {
@@ -97,37 +102,39 @@ func renderBody(m *context.Model, layout context.Layout) string {
 			Items:  trashItems,
 			Style:  styles,
 		})
-	} else if m.Inputs.Mode == context.InputFuzzySearch || len(m.Navigation.Search.Results) > 0 {
-		bodyStr = views.RenderSearch(views.SearchProps{
-			Width:       layout.Width,
-			Height:      layout.BodyHeight,
-			Query:       m.Navigation.Search.Query,
-			Results:     m.Navigation.Search.Results,
-			IsSearching: m.Navigation.Search.IsSearching,
-			CursorFile:  m.Navigation.Search.CursorFile,
-			CursorMatch: m.Navigation.Search.CursorMatch,
-			Offset:      m.Navigation.Search.Offset,
-			Spinner:     m.Display.LoadingSpinner,
-			Style:       styles,
-			EnableIcons: m.Config.UI.EnableIcons,
-		})
-	} else {
-		bodyStr = file.Render(file.Props{
-			Width:            layout.Width,
-			Height:           layout.BodyHeight,
-			Cursor:           m.Navigation.Cursor,
-			Offset:           m.Navigation.Offset,
-			Items:            m.Navigation.FilteredItems,
-			ShowHeader:       m.Config.UI.ShowHeader,
-			ShowSize:         m.Config.UI.ShowSize,
-			ShowDateModified: m.Config.UI.ShowDateModified,
-			SelectMode:       m.Navigation.SelectMode,
-			SizeFormatIndex:  m.Config.UI.SizeFormatIndex,
-			DateFormatIndex:  m.Config.UI.DateFormatIndex,
-			Styles:           styles,
-			SelectedPaths:    m.Navigation.SelectedPaths,
-			EnableIcons:      m.Config.UI.EnableIcons,
-		})
+	default:
+		if m.Inputs.Mode == context.InputFuzzySearch || len(m.Navigation.Search.Results) > 0 {
+			bodyStr = views.RenderSearch(views.SearchProps{
+				Width:       layout.Width,
+				Height:      layout.BodyHeight,
+				Query:       m.Navigation.Search.Query,
+				Results:     m.Navigation.Search.Results,
+				IsSearching: m.Navigation.Search.IsSearching,
+				CursorFile:  m.Navigation.Search.CursorFile,
+				CursorMatch: m.Navigation.Search.CursorMatch,
+				Offset:      m.Navigation.Search.Offset,
+				Spinner:     m.Display.LoadingSpinner,
+				Style:       styles,
+				EnableIcons: m.Config.UI.EnableIcons,
+			})
+		} else {
+			bodyStr = file.Render(file.Props{
+				Width:            layout.Width,
+				Height:           layout.BodyHeight,
+				Cursor:           m.Navigation.Cursor,
+				Offset:           m.Navigation.Offset,
+				Items:            m.Navigation.FilteredItems,
+				ShowHeader:       m.Config.UI.ShowHeader,
+				ShowSize:         m.Config.UI.ShowSize,
+				ShowDateModified: m.Config.UI.ShowDateModified,
+				SelectMode:       m.Navigation.SelectMode,
+				SizeFormatIndex:  m.Config.UI.SizeFormatIndex,
+				DateFormatIndex:  m.Config.UI.DateFormatIndex,
+				Styles:           styles,
+				SelectedPaths:    m.Navigation.SelectedPaths,
+				EnableIcons:      m.Config.UI.EnableIcons,
+			})
+		}
 	}
 
 	// Ensure body takes full available height to push footer to bottom

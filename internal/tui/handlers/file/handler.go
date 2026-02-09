@@ -38,7 +38,7 @@ func HandleFileOps(m *tui_context.Model, msg tea.Msg) tea.Cmd {
 }
 
 func HandleFileKeys(m *tui_context.Model, msg tea.KeyMsg) tea.Cmd {
-	if m.UI.InputActive || m.UI.SettingsOpen || m.UI.LogOpen || m.UI.ClipboardOpen || m.UI.TrashOpen {
+	if m.UI.InputActive || m.UI.ActiveView != tui_context.ViewMain {
 		return nil
 	}
 

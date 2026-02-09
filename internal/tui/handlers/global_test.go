@@ -69,22 +69,22 @@ func TestGlobal_InputSafety(t *testing.T) {
 
 	t.Run("Dot key ignored during input", func(t *testing.T) {
 		m.StartInput(tuictx.InputSearch)
-		m.UI.SettingsOpen = false
+		m.UI.ActiveView = tuictx.ViewMain
 
 		handlers.HandleUpdate(m, tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune(".")})
 
-		if m.UI.SettingsOpen {
+		if m.UI.ActiveView != tuictx.ViewMain {
 			t.Error("Settings should NOT open when input is active")
 		}
 	})
 
 	t.Run("Question mark ignored during input", func(t *testing.T) {
 		m.StartInput(tuictx.InputSearch)
-		m.UI.HelpOpen = false
+		m.UI.ActiveView = tuictx.ViewMain
 
 		handlers.HandleUpdate(m, tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("?")})
 
-		if m.UI.HelpOpen {
+		if m.UI.ActiveView != tuictx.ViewMain {
 			t.Error("Help should NOT open when input is active")
 		}
 	})

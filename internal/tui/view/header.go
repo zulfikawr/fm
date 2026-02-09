@@ -13,8 +13,8 @@ func renderHeader(m *context.Model, layout context.Layout) string {
 	gitStaged := m.Navigation.Git.Staged
 	gitUntracked := m.Navigation.Git.Untracked
 
-	// Hide git status when in analyze mode as requested
-	if m.UI.AnalyzeOpen {
+	// Hide git status when in analyze mode
+	if m.UI.ActiveView == context.ViewAnalyze {
 		gitBranch = ""
 		gitModified = 0
 		gitStaged = 0
@@ -22,23 +22,19 @@ func renderHeader(m *context.Model, layout context.Layout) string {
 	}
 
 	return header.Render(header.Props{
-		Width:         layout.Width,
-		Path:          m.Navigation.Path,
-		Separator:     m.FS.Separator(),
-		RemoteStr:     formatRemoteStr(m),
-		RootOverride:  formatArchiveRoot(m),
-		GitBranch:     gitBranch,
-		GitModified:   gitModified,
-		GitStaged:     gitStaged,
-		GitUntracked:  gitUntracked,
-		ReadOnly:      m.Display.ReadOnly,
-		TabCount:      len(m.Tabs),
-		ActiveTab:     m.ActiveTab,
-		SettingsOpen:  m.UI.SettingsOpen,
-		HelpOpen:      m.UI.HelpOpen,
-		LogOpen:       m.UI.LogOpen,
-		ClipboardOpen: m.UI.ClipboardOpen,
-		TrashOpen:     m.UI.TrashOpen,
-		Style:         styles,
+		Width:        layout.Width,
+		Path:         m.Navigation.Path,
+		Separator:    m.FS.Separator(),
+		RemoteStr:    formatRemoteStr(m),
+		RootOverride: formatArchiveRoot(m),
+		GitBranch:    gitBranch,
+		GitModified:  gitModified,
+		GitStaged:    gitStaged,
+		GitUntracked: gitUntracked,
+		ReadOnly:     m.Display.ReadOnly,
+		TabCount:     len(m.Tabs),
+		ActiveTab:    m.ActiveTab,
+		ActiveView:   m.UI.ActiveView,
+		Style:        styles,
 	})
 }

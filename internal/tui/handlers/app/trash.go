@@ -12,7 +12,7 @@ import (
 func HandleTrash(m *tui_context.Model, msg tea.Msg) tea.Cmd {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		if m.UI.TrashOpen {
+		if m.UI.ActiveView == tui_context.ViewTrash {
 			return handleTrashKeys(m, msg)
 		}
 	case messages.TrashLoadedMsg:

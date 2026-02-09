@@ -8,6 +8,7 @@ import (
 	"github.com/zulfikawr/fm/internal/tui/components/messages"
 	"github.com/zulfikawr/fm/internal/tui/components/ui"
 	"github.com/zulfikawr/fm/internal/tui/components/views"
+	"github.com/zulfikawr/fm/internal/tui/context"
 	"github.com/zulfikawr/fm/internal/tui/theme"
 )
 
@@ -40,8 +41,9 @@ const (
 
 // Props contains all data needed to render the footer
 type Props struct {
-	Mode  Mode
-	Width int
+	Mode       Mode
+	ActiveView context.ViewMode
+	Width      int
 
 	// Progress
 	ProgressLabel   string
@@ -65,12 +67,6 @@ type Props struct {
 	// Settings
 	SettingsCursor int
 	SettingsItems  []views.SettingHelpItem
-
-	// Help
-	HelpOpen bool
-
-	// Clipboard
-	ClipboardOpen bool
 
 	// Confirming
 	ActionType           constants.ActionType
@@ -99,21 +95,22 @@ func Render(props Props) string {
 		return renderPromptsFooter(props)
 	case ModeMessage:
 		return renderAlertFooter(props)
-	case ModeSettings:
-		return views.RenderSettingsFooter(props.Width, props.SettingsCursor, props.SettingsItems, props.Styles)
-	case ModeHelp:
-		return views.RenderHelpFooter(props.Width, props.Styles)
-	case ModeLog:
-		return views.RenderLogsFooter(props.Width, props.Styles)
-	case ModeClipboard:
-		return views.RenderClipboardFooter(props.Width, props.ClipboardCount == 0, props.Styles)
-	case ModeTrash:
-		return views.RenderTrashFooter(props.Width, props.TrashItemCount == 0, props.Styles)
 	default:
-		if props.HelpOpen { // This is a bit hacky, but consistent with Render logic
+		// If NO prompt/progress mode is active, check active view
+		switch props.ActiveView {
+		case context.ViewSettings:
+			return views.RenderSettingsFooter(props.Width, props.SettingsCursor, props.SettingsItems, props.Styles)
+		case context.ViewHelp:
 			return views.RenderHelpFooter(props.Width, props.Styles)
+		case context.ViewLogs:
+			return views.RenderLogsFooter(props.Width, props.Styles)
+		case context.ViewClipboard:
+			return views.RenderClipboardFooter(props.Width, props.ClipboardCount == 0, props.Styles)
+		case context.ViewTrash:
+			return views.RenderTrashFooter(props.Width, props.TrashItemCount == 0, props.Styles)
+		default:
+			return renderStatsFooter(props)
 		}
-		return renderStatsFooter(props)
 	}
 }
 

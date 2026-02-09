@@ -13,7 +13,7 @@ import (
 func TestLogs_Keys(t *testing.T) {
 	fs := testutil.NewMockFileSystem()
 	m := tuictx.NewModel(fs, "/test")
-	m.UI.LogOpen = true
+	m.UI.ActiveView = tuictx.ViewLogs
 	m.Logs.Entries = []tuictx.LogEntry{
 		{Message: "Log 1"},
 		{Message: "Log 2"},

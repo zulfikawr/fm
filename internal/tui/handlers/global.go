@@ -62,16 +62,15 @@ func handleGlobal(m *tuictx.Model, msg tea.Msg) (tea.Cmd, bool) {
 				return messages.ClearStatusMsg{}
 			}, true
 		case "analyze":
-			if !m.UI.InputActive && !m.UI.SettingsOpen && !m.UI.HelpOpen {
-				if m.UI.AnalyzeOpen {
-					m.UI.AnalyzeOpen = false
-					return nil, true
-				}
+			if !m.UI.InputActive && m.UI.ActiveView == tuictx.ViewMain {
 				return func() tea.Msg { return messages.StartAnalyzeMsg{} }, true
+			} else if m.UI.ActiveView == tuictx.ViewAnalyze {
+				m.UI.ActiveView = tuictx.ViewMain
+				return nil, true
 			}
 			return nil, false
 		case "toggle_regex_search":
-			if !m.UI.InputActive && !m.UI.SettingsOpen && !m.UI.HelpOpen {
+			if !m.UI.InputActive && m.UI.ActiveView == tuictx.ViewMain {
 				m.Config.Ops.EnableRegexSearch = !m.Config.Ops.EnableRegexSearch
 				_ = m.Config.Save()
 				msg := "Regex Search enabled"
@@ -89,7 +88,7 @@ func handleGlobal(m *tuictx.Model, msg tea.Msg) (tea.Cmd, bool) {
 			return nil, true
 		case "trash_view":
 			m.UI.ToggleTrash()
-			if m.UI.TrashOpen {
+			if m.UI.ActiveView == tuictx.ViewTrash {
 				// Load trash items when opening
 				return func() tea.Msg {
 					return loadTrashItems(m)
@@ -97,13 +96,13 @@ func handleGlobal(m *tuictx.Model, msg tea.Msg) (tea.Cmd, bool) {
 			}
 			return nil, true
 		case "settings":
-			if m.UI.InputActive || m.UI.AnalyzeOpen {
+			if m.UI.InputActive || m.UI.ActiveView == tuictx.ViewAnalyze {
 				return nil, false
 			}
 			m.UI.ToggleSettings()
 			return nil, true
 		case "help":
-			if m.UI.InputActive || m.UI.AnalyzeOpen {
+			if m.UI.InputActive || m.UI.ActiveView == tuictx.ViewAnalyze {
 				return nil, false
 			}
 			m.UI.ToggleHelp()
@@ -128,28 +127,8 @@ func handleGlobal(m *tuictx.Model, msg tea.Msg) (tea.Cmd, bool) {
 			}
 
 			// 2. Handle closing modals next
-			if m.UI.SettingsOpen {
-				m.UI.ToggleSettings()
-				return nil, true
-			}
-			if m.UI.HelpOpen {
-				m.UI.ToggleHelp()
-				return nil, true
-			}
-			if m.UI.LogOpen {
-				m.UI.ToggleLogs()
-				return nil, true
-			}
-			if m.UI.ClipboardOpen {
-				m.UI.ToggleClipboard()
-				return nil, true
-			}
-			if m.UI.TrashOpen {
-				m.UI.ToggleTrash()
-				return nil, true
-			}
-			if m.UI.AnalyzeOpen {
-				m.UI.AnalyzeOpen = false
+			if m.UI.ActiveView != tuictx.ViewMain {
+				m.UI.ActiveView = tuictx.ViewMain
 				return nil, true
 			}
 		}

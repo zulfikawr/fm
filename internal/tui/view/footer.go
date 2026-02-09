@@ -13,7 +13,7 @@ func renderFooter(m *context.Model, layout context.Layout) string {
 
 	// Build settings items for footer help text
 	var settingsItems []views.SettingHelpItem
-	if m.UI.SettingsOpen {
+	if m.UI.ActiveView == context.ViewSettings {
 		items := app.BuildFullSettingList(m)
 		settingsItems = make([]views.SettingHelpItem, len(items))
 		for i, item := range items {
@@ -23,6 +23,7 @@ func renderFooter(m *context.Model, layout context.Layout) string {
 
 	return footer.Render(footer.Props{
 		Mode:                 utils.DetermineFooterMode(m),
+		ActiveView:           m.UI.ActiveView,
 		Width:                layout.Width,
 		ProgressLabel:        m.Operations.Progress.Label,
 		ProgressPercent:      m.Operations.Progress.Percent,
@@ -42,8 +43,6 @@ func renderFooter(m *context.Model, layout context.Layout) string {
 		ActionType:           m.Operations.ActionType,
 		ClipboardCount:       len(m.Operations.Clipboard.Paths),
 		ClipboardPaths:       m.Operations.Clipboard.Paths,
-		ClipboardOpen:        m.UI.ClipboardOpen,
-		HelpOpen:             m.UI.HelpOpen,
 		ConflictDst:          m.Operations.Conflict.Destination,
 		ConflictPendingCount: len(m.Operations.Conflict.PendingItems),
 		HostConfirmReq:       m.Navigation.Remote.HostConfirmReq,

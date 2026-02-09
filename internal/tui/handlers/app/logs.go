@@ -10,7 +10,7 @@ import (
 func HandleLogs(m *tui_context.Model, msg tea.Msg) tea.Cmd {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		if m.UI.LogOpen {
+		if m.UI.ActiveView == tui_context.ViewLogs {
 			return handleLogKeys(m, msg)
 		}
 	}

@@ -227,8 +227,7 @@ func (m *Model) SyncViewportHeight() {
 	h := m.Display.Height - 2
 
 	// If we are in the file list and showing the header, subtract its height
-	if !m.UI.SettingsOpen && !m.UI.HelpOpen && !m.UI.LogOpen && !m.UI.ClipboardOpen && !m.UI.TrashOpen &&
-		m.Inputs.Mode != InputFuzzySearch && m.Config.UI.ShowHeader {
+	if m.UI.ActiveView == ViewMain && m.Inputs.Mode != InputFuzzySearch && m.Config.UI.ShowHeader {
 		h -= 3 // List Header
 	}
 

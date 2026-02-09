@@ -74,16 +74,16 @@ func TestRouter_GlobalKeys(t *testing.T) {
 	t.Run("Toggle Logs (alt+l)", func(t *testing.T) {
 		tm.Send(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("l"), Alt: true})
 		time.Sleep(10 * time.Millisecond)
-		if !m.UI.LogOpen {
+		if m.UI.ActiveView != tuictx.ViewLogs {
 			t.Error("expected logs to be open")
 		}
 	})
 
 	t.Run("Global Esc", func(t *testing.T) {
-		m.UI.LogOpen = true
+		m.UI.ActiveView = tuictx.ViewLogs
 		tm.Send(tea.KeyMsg{Type: tea.KeyEsc})
 		time.Sleep(10 * time.Millisecond)
-		if m.UI.LogOpen {
+		if m.UI.ActiveView == tuictx.ViewLogs {
 			t.Error("expected logs closed on Esc")
 		}
 	})
@@ -249,12 +249,12 @@ func TestRouter_FinalizeInput(t *testing.T) {
 	t.Run("Dot key does not open settings during input", func(t *testing.T) {
 		m.StartInput(tuictx.InputSearch)
 		m.Inputs.ActiveInput.Focus()
-		m.UI.SettingsOpen = false
+		m.UI.ActiveView = tuictx.ViewMain
 
 		tm.Send(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune(".")})
 		time.Sleep(10 * time.Millisecond)
 
-		if m.UI.SettingsOpen {
+		if m.UI.ActiveView != tuictx.ViewMain {
 			t.Error("expected settings to remain closed when input is active")
 		}
 		if m.Inputs.ActiveInput.Value() != "." {
@@ -265,12 +265,12 @@ func TestRouter_FinalizeInput(t *testing.T) {
 	t.Run("Question mark does not open help during input", func(t *testing.T) {
 		m.StartInput(tuictx.InputSearch)
 		m.Inputs.ActiveInput.Focus()
-		m.UI.HelpOpen = false
+		m.UI.ActiveView = tuictx.ViewMain
 
 		tm.Send(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("?")})
 		time.Sleep(10 * time.Millisecond)
 
-		if m.UI.HelpOpen {
+		if m.UI.ActiveView != tuictx.ViewMain {
 			t.Error("expected help to remain closed when input is active")
 		}
 		if m.Inputs.ActiveInput.Value() != "?" {
@@ -280,22 +280,21 @@ func TestRouter_FinalizeInput(t *testing.T) {
 
 	t.Run("Dot and Question mark still work when input is NOT active", func(t *testing.T) {
 		m.StopInput(true)
-		m.UI.SettingsOpen = false
-		m.UI.HelpOpen = false
+		m.UI.ActiveView = tuictx.ViewMain
 
 		tm.Send(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune(".")})
 		time.Sleep(10 * time.Millisecond)
-		if !m.UI.SettingsOpen {
+		if m.UI.ActiveView != tuictx.ViewSettings {
 			t.Error("expected settings to open")
 		}
-		m.UI.SettingsOpen = false
+		m.UI.ActiveView = tuictx.ViewMain
 
 		tm.Send(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("?")})
 		time.Sleep(10 * time.Millisecond)
-		if !m.UI.HelpOpen {
+		if m.UI.ActiveView != tuictx.ViewHelp {
 			t.Error("expected help to open")
 		}
-		m.UI.HelpOpen = false
+		m.UI.ActiveView = tuictx.ViewMain
 	})
 
 	t.Run("Up and Down arrows navigate during filtering", func(t *testing.T) {

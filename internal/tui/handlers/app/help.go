@@ -10,7 +10,7 @@ import (
 func HandleHelp(m *tui_context.Model, msg tea.Msg) tea.Cmd {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		if m.UI.HelpOpen {
+		if m.UI.ActiveView == tui_context.ViewHelp {
 			return handleHelpKeys(m, msg)
 		}
 	}
