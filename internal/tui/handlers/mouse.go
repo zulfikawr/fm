@@ -573,12 +573,14 @@ func handleFooterClick(m *context.Model, msg tea.MouseMsg) tea.Cmd {
 	switch mode {
 	case footer_comp.ModeConfirming:
 		props := msg_comp.Props{
-			ActionType:           m.Operations.ActionType,
-			ClipboardCount:       len(m.Operations.Clipboard.Paths),
-			ClipboardPaths:       m.Operations.Clipboard.Paths,
-			ConflictDst:          m.Operations.Conflict.Destination,
-			ConflictPendingCount: len(m.Operations.Conflict.PendingItems),
-			LatestVersion:        m.UI.LatestVersion,
+			Confirm: msg_comp.ConfirmContext{
+				ActionType:     m.Operations.ActionType,
+				ClipboardCount: len(m.Operations.Clipboard.Paths),
+				ClipboardPaths: m.Operations.Clipboard.Paths,
+				ConflictDst:    m.Operations.Conflict.Destination,
+				ConflictCount:  len(m.Operations.Conflict.PendingItems),
+				LatestVersion:  m.UI.LatestVersion,
+			},
 		}
 		prompt := msg_comp.BuildConfirmationPrompt(props)
 		action := findActionInPrompt(msg.X, prompt)
@@ -599,15 +601,19 @@ func handleFooterClick(m *context.Model, msg tea.MouseMsg) tea.Cmd {
 
 	case footer_comp.ModeNormal:
 		action := footer_comp.GetActionAt(msg.X, footer_comp.Props{
-			Width:          m.Display.Width,
-			SortMode:       m.Display.SortMode,
-			Cursor:         m.Navigation.Cursor,
-			TotalItems:     len(m.Navigation.FilteredItems),
-			SelectedCount:  m.Navigation.SelectedCount(),
-			Items:          m.Navigation.Items,
-			FilteredItems:  m.Navigation.FilteredItems,
-			ClipboardCount: len(m.Operations.Clipboard.Paths),
-			Styles:         m.Display.Styles,
+			Width: m.Display.Width,
+			Status: footer_comp.StatusInfo{
+				SortMode:      m.Display.SortMode,
+				Cursor:        m.Navigation.Cursor,
+				TotalItems:    len(m.Navigation.FilteredItems),
+				SelectedCount: m.Navigation.SelectedCount(),
+				Items:         m.Navigation.Items,
+				FilteredItems: m.Navigation.FilteredItems,
+			},
+			Confirm: footer_comp.ConfirmContext{
+				ClipboardCount: len(m.Operations.Clipboard.Paths),
+			},
+			Styles: m.Display.Styles,
 		})
 
 		if action != "" {

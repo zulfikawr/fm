@@ -9,6 +9,20 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
+// TabInfo holds tab-related header data
+type TabInfo struct {
+	Count  int
+	Active int
+}
+
+// GitStatusInfo holds git-related header data
+type GitStatusInfo struct {
+	Branch    string
+	Modified  int
+	Staged    int
+	Untracked int
+}
+
 // Props contains data for rendering the header
 type Props struct {
 	Width        int
@@ -16,13 +30,9 @@ type Props struct {
 	Separator    string
 	RemoteStr    string
 	RootOverride string
-	GitBranch    string
-	GitModified  int
-	GitStaged    int
-	GitUntracked int
 	ReadOnly     bool
-	TabCount     int
-	ActiveTab    int
+	Tabs         TabInfo
+	Git          GitStatusInfo
 	ActiveView   context.ViewMode
 	Style        theme.Stylesheet
 }
@@ -36,10 +46,10 @@ func Render(props Props) string {
 	}
 
 	tabs := ""
-	if shouldShowTabs(props.TabCount) {
+	if shouldShowTabs(props.Tabs.Count) {
 		tabs = renderTabList(TabConfig{
-			TabCount:     props.TabCount,
-			ActiveIndex:  props.ActiveTab,
+			TabCount:     props.Tabs.Count,
+			ActiveIndex:  props.Tabs.Active,
 			ShowShortcut: true,
 			Width:        props.Width,
 		}, props.Style)
@@ -80,7 +90,7 @@ func Render(props Props) string {
 			Styles:       props.Style,
 			MaxWidth:     maxBreadcrumbWidth,
 		})
-		breadcrumb = addGitStatus(breadcrumb, props.GitBranch, props.GitModified, props.GitStaged, props.GitUntracked, props.Style)
+		breadcrumb = addGitStatus(breadcrumb, props.Git.Branch, props.Git.Modified, props.Git.Staged, props.Git.Untracked, props.Style)
 		breadcrumb = addReadOnlyIndicator(breadcrumb, props.ReadOnly, props.Style)
 	}
 

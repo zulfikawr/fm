@@ -9,9 +9,9 @@ func renderStatsFooter(props Props) string {
 	baseFooterStyle := props.Styles.Footer.UnsetPadding().UnsetWidth()
 
 	// Adjust for "↑ .."
-	total := props.TotalItems
-	current := props.Cursor
-	if len(props.FilteredItems) > 0 && props.FilteredItems[0].State.IsUp {
+	total := props.Status.TotalItems
+	current := props.Status.Cursor
+	if len(props.Status.FilteredItems) > 0 && props.Status.FilteredItems[0].State.IsUp {
 		total--
 		if current == 0 {
 			current = -1
@@ -30,17 +30,17 @@ func renderStatsFooter(props Props) string {
 		parts = append(parts, pagination)
 	}
 
-	permission := renderPermissionInfo(props.FilteredItems, props.Cursor, props.Styles)
+	permission := renderPermissionInfo(props.Status.FilteredItems, props.Status.Cursor, props.Styles)
 	if permission != "" {
 		parts = append(parts, permission)
 	}
 
 	var rightParts []string
-	sortMode := renderSortMode(props.SortMode, props.Styles)
+	sortMode := renderSortMode(props.Status.SortMode, props.Styles)
 	if sortMode != "" {
 		rightParts = append(rightParts, sortMode)
 	}
-	if props.ShowRAMUsage {
+	if props.Status.ShowRAM {
 		ramUsage := renderRAMUsage(props.Styles)
 		if ramUsage != "" {
 			rightParts = append(rightParts, ramUsage)
@@ -62,7 +62,7 @@ func renderStatsFooter(props Props) string {
 	}
 
 	indicator := ""
-	if props.SelectedCount > 0 {
+	if props.Status.SelectedCount > 0 {
 		indicator = buildSelectedIndicator(props)
 	}
 
@@ -78,7 +78,7 @@ func renderStatsFooter(props Props) string {
 
 	leftContent := assembleFooterContent(parts, partsWidthLimit, props.Styles)
 
-	if props.SelectedCount > 0 {
+	if props.Status.SelectedCount > 0 {
 		shortcuts := buildActionShortcuts(props)
 		spacer := baseFooterStyle.Render("  ")
 

@@ -15,8 +15,10 @@ func TestHeader_Render(t *testing.T) {
 		Width:     80,
 		Path:      "/test/path",
 		Separator: "/",
-		GitBranch: "main",
-		Style:     styles,
+		Git: GitStatusInfo{
+			Branch: "main",
+		},
+		Style: styles,
 	}
 
 	v := Render(props)

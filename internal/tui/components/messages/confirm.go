@@ -9,8 +9,8 @@ import (
 
 // RenderConfirmationPrompt renders confirmation prompts
 func RenderConfirmationPrompt(props Props) string {
-	key := fmt.Sprintf("confirm-%s-%d-%s", props.ActionType, props.ClipboardCount, props.ConflictDst)
-	if styled, ok := props.PromptCache[key]; ok {
+	key := fmt.Sprintf("confirm-%s-%d-%s", props.Confirm.ActionType, props.Confirm.ClipboardCount, props.Confirm.ConflictDst)
+	if styled, ok := props.Input.PromptCache[key]; ok {
 		return props.Style.Footer.Width(props.Width).Render(" " + styled)
 	}
 	prompt := BuildConfirmationPrompt(props)
@@ -19,31 +19,31 @@ func RenderConfirmationPrompt(props Props) string {
 
 // BuildConfirmationPrompt builds the appropriate confirmation prompt based on action type
 func BuildConfirmationPrompt(props Props) string {
-	switch props.ActionType {
+	switch props.Confirm.ActionType {
 	case constants.ActionDelete:
 		return "Delete selected items? [y] Yes | [n] No"
 	case constants.ActionPaste:
-		if props.ClipboardCount == 1 && len(props.ClipboardPaths) > 0 {
+		if props.Confirm.ClipboardCount == 1 && len(props.Confirm.ClipboardPaths) > 0 {
 			// Extract filename from path
-			filename := props.ClipboardPaths[0]
+			filename := props.Confirm.ClipboardPaths[0]
 			if idx := strings.LastIndexAny(filename, "/\\"); idx >= 0 {
 				filename = filename[idx+1:]
 			}
 			return fmt.Sprintf("Paste '%s'? [y] Yes | [n] No", filename)
 		}
-		return fmt.Sprintf("Paste %d items? [y] Yes | [n] No", props.ClipboardCount)
+		return fmt.Sprintf("Paste %d items? [y] Yes | [n] No", props.Confirm.ClipboardCount)
 	case constants.ActionResetSettings:
 		return "Reset all settings to defaults? [y] Yes | [n] No"
 	case constants.ActionConflict:
-		baseName := extractBaseName(props.ConflictDst)
-		if props.ConflictPendingCount > 1 {
+		baseName := extractBaseName(props.Confirm.ConflictDst)
+		if props.Confirm.ConflictCount > 1 {
 			return fmt.Sprintf("'%s' exists. [y/Y] Overwrite | [n/N] Skip | [r/R] Rename (Upper=All)", baseName)
 		}
 		return fmt.Sprintf("'%s' exists. [y] Overwrite | [n] Skip | [r] Rename", baseName)
 	case constants.ActionCancel:
 		return "Cancel ongoing operation? [y] Yes | [n] No"
 	case constants.ActionUpdate:
-		return fmt.Sprintf("A new version of fm (%s) is available. Update? [y] Yes | [n] No", props.LatestVersion)
+		return fmt.Sprintf("A new version of fm (%s) is available. Update? [y] Yes | [n] No", props.Confirm.LatestVersion)
 	case constants.ActionGoto:
 		return "Go to: [l] Local | [r] Remote"
 	case constants.ActionAuth:
@@ -58,12 +58,12 @@ func BuildConfirmationPrompt(props Props) string {
 // RenderHostConfirmPrompt renders host confirmation prompt
 func RenderHostConfirmPrompt(props Props) string {
 	hostname := ""
-	if props.HostConfirmReq != nil {
-		hostname = props.HostConfirmReq.Hostname
+	if props.Confirm.HostConfirmReq != nil {
+		hostname = props.Confirm.HostConfirmReq.Hostname
 	}
 
 	key := "hostconfirm-" + hostname
-	if styled, ok := props.PromptCache[key]; ok {
+	if styled, ok := props.Input.PromptCache[key]; ok {
 		return props.Style.Footer.Width(props.Width).Render(" " + styled)
 	}
 

@@ -8,7 +8,7 @@ import (
 
 // RenderInputPrompt renders a labeled text input for the footer area
 func RenderInputPrompt(props Props) string {
-	input := props.ActiveInput
+	input := props.Input.Active
 
 	// Ensure input styles match footer background
 	bg := props.Style.Footer.GetBackground()
@@ -24,13 +24,13 @@ func RenderInputPrompt(props Props) string {
 	switch props.Mode {
 	case ModeGoto:
 		label := "Local"
-		if props.AltMode {
+		if props.Input.AltMode {
 			label = "Remote"
 		}
 		input.Prompt = baseStyle.Render("Go to ") + mutedStyle.Render("("+label+")") + baseStyle.Render(": ")
 	case ModeAuth:
 		label := "Password"
-		if props.AltMode {
+		if props.Input.AltMode {
 			label = "PEM Path"
 		}
 		input.Prompt = baseStyle.Render(label + ": ")
@@ -46,7 +46,7 @@ func RenderInputPrompt(props Props) string {
 		input.Prompt = baseStyle.Render("Unzip to: ")
 	case ModeCreate:
 		label := "File"
-		if props.AltMode {
+		if props.Input.AltMode {
 			label = "Folder"
 		}
 		input.Prompt = baseStyle.Render("Create ") + mutedStyle.Render("("+label+")") + baseStyle.Render(": ")
@@ -63,7 +63,7 @@ func RenderInputPrompt(props Props) string {
 		switch props.Mode {
 		case ModeCreate:
 			target := "Folder"
-			if props.AltMode {
+			if props.Input.AltMode {
 				target = "File"
 			}
 			rightPart = mutedStyle.Render("[") + accentStyle.Render("Tab") + mutedStyle.Render("] ") + mutedStyle.Render(target) + baseStyle.Render(" ")

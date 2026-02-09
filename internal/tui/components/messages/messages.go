@@ -27,30 +27,37 @@ const (
 	ModeAlert
 )
 
+// InputContext holds text input state for messages
+type InputContext struct {
+	Active      ui.Input
+	AltMode     bool
+	PromptCache map[string]string
+}
+
+// ConfirmContext holds data for confirmation messages
+type ConfirmContext struct {
+	ActionType     constants.ActionType
+	ClipboardCount int
+	ClipboardPaths []string
+	ConflictDst    string
+	ConflictCount  int
+	HostConfirmReq *ssh.HostConfirmRequest
+	LatestVersion  string
+}
+
 // Props contains all data needed to render any message or prompt
 type Props struct {
 	Mode  Mode
 	Width int
+	Style theme.Stylesheet
 
-	// Inputs
-	ActiveInput ui.Input
-	AltMode     bool
+	// Categorized sub-props
+	Input   InputContext
+	Confirm ConfirmContext
 
-	// Status
+	// Single fields
 	RemoteConnected bool
 	Message         string
-
-	// Confirming
-	ActionType           constants.ActionType
-	ClipboardCount       int
-	ClipboardPaths       []string
-	ConflictDst          string
-	ConflictPendingCount int
-	HostConfirmReq       *ssh.HostConfirmRequest
-	LatestVersion        string
-
-	Style       theme.Stylesheet
-	PromptCache map[string]string
 }
 
 // Render renders the appropriate message or prompt based on mode

@@ -57,12 +57,16 @@ func TestFooter_RenderModes(t *testing.T) {
 			}
 
 			props := Props{
-				Mode:        tt.mode,
-				ActiveView:  activeView,
-				Width:       100,
-				Message:     "Alert",
-				Styles:      styles,
-				ActiveInput: ti,
+				Mode:       tt.mode,
+				ActiveView: activeView,
+				Width:      100,
+				Status: StatusInfo{
+					Message: "Alert",
+				},
+				Styles: styles,
+				Input: InputContext{
+					Active: ti,
+				},
 			}
 			v := Render(props)
 			stripped := testutil.StripANSI(v)
@@ -76,11 +80,13 @@ func TestFooter_RenderModes(t *testing.T) {
 func TestFooter_Stats(t *testing.T) {
 	styles := theme.GetStylesheet(0)
 	props := Props{
-		Mode:       ModeNormal,
-		Width:      80,
-		Cursor:     5,
-		TotalItems: 10,
-		Styles:     styles,
+		Mode:  ModeNormal,
+		Width: 80,
+		Status: StatusInfo{
+			Cursor:     5,
+			TotalItems: 10,
+		},
+		Styles: styles,
 	}
 
 	v := Render(props)
@@ -95,10 +101,12 @@ func TestFooter_Responsive(t *testing.T) {
 
 	t.Run("Wide width shows shortcuts", func(t *testing.T) {
 		props := Props{
-			Mode:          ModeNormal,
-			Width:         100,
-			SelectedCount: 1,
-			Styles:        styles,
+			Mode:  ModeNormal,
+			Width: 100,
+			Status: StatusInfo{
+				SelectedCount: 1,
+			},
+			Styles: styles,
 		}
 		v := Render(props)
 		stripped := testutil.StripANSI(v)
@@ -112,10 +120,12 @@ func TestFooter_Responsive(t *testing.T) {
 
 	t.Run("Narrow width hides shortcuts", func(t *testing.T) {
 		props := Props{
-			Mode:          ModeNormal,
-			Width:         20,
-			SelectedCount: 1,
-			Styles:        styles,
+			Mode:  ModeNormal,
+			Width: 20,
+			Status: StatusInfo{
+				SelectedCount: 1,
+			},
+			Styles: styles,
 		}
 		v := Render(props)
 		stripped := testutil.StripANSI(v)
@@ -133,14 +143,16 @@ func TestFooter_UpDirStats(t *testing.T) {
 
 	// Case 1: Cursor on "↑ .."
 	props := Props{
-		Mode:       ModeNormal,
-		Width:      80,
-		Cursor:     0,
-		TotalItems: 3, // ↑ .., file1, file2
-		FilteredItems: []core.Item{
-			{Name: "↑ ..", State: core.ItemState{IsUp: true}},
-			{Name: "file1"},
-			{Name: "file2"},
+		Mode:  ModeNormal,
+		Width: 80,
+		Status: StatusInfo{
+			Cursor:     0,
+			TotalItems: 3, // ↑ .., file1, file2
+			FilteredItems: []core.Item{
+				{Name: "↑ ..", State: core.ItemState{IsUp: true}},
+				{Name: "file1"},
+				{Name: "file2"},
+			},
 		},
 		Styles: styles,
 	}
@@ -152,7 +164,7 @@ func TestFooter_UpDirStats(t *testing.T) {
 	}
 
 	// Case 2: Cursor on "file1"
-	props.Cursor = 1
+	props.Status.Cursor = 1
 	v = Render(props)
 	stripped = testutil.StripANSI(v)
 	if !strings.Contains(stripped, "1/2") {

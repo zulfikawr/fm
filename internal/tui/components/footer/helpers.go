@@ -141,7 +141,7 @@ func buildSelectedIndicator(props Props) string {
 	mutedStyle := props.Styles.MutedCol.Inherit(props.Styles.Footer).UnsetPadding().UnsetWidth()
 	highlightStyle := props.Styles.HighlightCol.Inherit(props.Styles.Footer).UnsetPadding().UnsetWidth()
 
-	return mutedStyle.Render("[") + highlightStyle.Render(fmt.Sprintf("%d selected", props.SelectedCount)) + mutedStyle.Render("]")
+	return mutedStyle.Render("[") + highlightStyle.Render(fmt.Sprintf("%d selected", props.Status.SelectedCount)) + mutedStyle.Render("]")
 }
 
 func buildActionShortcuts(props Props) string {
@@ -157,15 +157,15 @@ func buildActionShortcuts(props Props) string {
 
 	// Check if a zip file is focused or selected to show Unzip hint
 	showUnzip := false
-	if props.SelectedCount > 0 {
-		for _, item := range props.Items {
+	if props.Status.SelectedCount > 0 {
+		for _, item := range props.Status.Items {
 			if item.State.Selected && strings.HasSuffix(strings.ToLower(item.Name), ".zip") {
 				showUnzip = true
 				break
 			}
 		}
-	} else if props.Cursor >= 0 && props.Cursor < len(props.FilteredItems) {
-		item := props.FilteredItems[props.Cursor]
+	} else if props.Status.Cursor >= 0 && props.Status.Cursor < len(props.Status.FilteredItems) {
+		item := props.Status.FilteredItems[props.Status.Cursor]
 		if !item.State.IsUp && strings.HasSuffix(strings.ToLower(item.Name), ".zip") {
 			showUnzip = true
 		}
@@ -180,7 +180,7 @@ func buildActionShortcuts(props Props) string {
 		mutedStyle.Render("[")+accentStyle.Render("d")+mutedStyle.Render("]")+normalStyle.Render(" Delete"),
 	)
 
-	if props.ClipboardCount > 0 {
+	if props.Confirm.ClipboardCount > 0 {
 		hints = append(hints, mutedStyle.Render("[")+accentStyle.Render("v")+mutedStyle.Render("]")+normalStyle.Render(" Paste"))
 	}
 
@@ -192,9 +192,9 @@ func GetActionAt(x int, props Props) string {
 	// Re-calculate exactly like renderStatsFooter
 	baseFooterStyle := props.Styles.Footer.UnsetPadding().UnsetWidth()
 
-	total := props.TotalItems
-	current := props.Cursor
-	if len(props.FilteredItems) > 0 && props.FilteredItems[0].State.IsUp {
+	total := props.Status.TotalItems
+	current := props.Status.Cursor
+	if len(props.Status.FilteredItems) > 0 && props.Status.FilteredItems[0].State.IsUp {
 		total--
 		if current == 0 {
 			current = -1
@@ -213,18 +213,18 @@ func GetActionAt(x int, props Props) string {
 		parts = append(parts, pagination)
 	}
 
-	permission := renderPermissionInfo(props.FilteredItems, props.Cursor, props.Styles)
+	permission := renderPermissionInfo(props.Status.FilteredItems, props.Status.Cursor, props.Styles)
 	if permission != "" {
 		parts = append(parts, permission)
 	}
 
-	rightContent := renderSortMode(props.SortMode, props.Styles)
+	rightContent := renderSortMode(props.Status.SortMode, props.Styles)
 	rightWidth := calculateWidth(rightContent)
 	availableWidth := props.Width - rightWidth - 2
 
 	partsWidthLimit := availableWidth
 	indicator := ""
-	if props.SelectedCount > 0 {
+	if props.Status.SelectedCount > 0 {
 		indicator = buildSelectedIndicator(props)
 		indicatorWidth := calculateWidth(indicator)
 		partsWidthLimit -= (indicatorWidth + 2)
@@ -234,7 +234,7 @@ func GetActionAt(x int, props Props) string {
 	leftWidth := calculateWidth(leftContent)
 
 	// Check if shortcuts are rendered
-	if props.SelectedCount > 0 {
+	if props.Status.SelectedCount > 0 {
 		shortcuts := buildActionShortcuts(props)
 		spacer := baseFooterStyle.Render("  ")
 		indicatorWidth := calculateWidth(indicator)
@@ -265,15 +265,15 @@ func GetActionAt(x int, props Props) string {
 			actions = append(actions, actionInfo{"c", "Copy"}, actionInfo{"x", "Cut"}, actionInfo{"z", "Zip"})
 
 			showUnzip := false
-			if props.SelectedCount > 0 {
-				for _, item := range props.Items {
+			if props.Status.SelectedCount > 0 {
+				for _, item := range props.Status.Items {
 					if item.State.Selected && strings.HasSuffix(strings.ToLower(item.Name), ".zip") {
 						showUnzip = true
 						break
 					}
 				}
-			} else if props.Cursor >= 0 && props.Cursor < len(props.FilteredItems) {
-				item := props.FilteredItems[props.Cursor]
+			} else if props.Status.Cursor >= 0 && props.Status.Cursor < len(props.Status.FilteredItems) {
+				item := props.Status.FilteredItems[props.Status.Cursor]
 				if !item.State.IsUp && strings.HasSuffix(strings.ToLower(item.Name), ".zip") {
 					showUnzip = true
 				}
@@ -284,7 +284,7 @@ func GetActionAt(x int, props Props) string {
 			}
 			actions = append(actions, actionInfo{"r", "Rename"}, actionInfo{"d", "Delete"})
 
-			if props.ClipboardCount > 0 {
+			if props.Confirm.ClipboardCount > 0 {
 				actions = append(actions, actionInfo{"v", "Paste"})
 			}
 

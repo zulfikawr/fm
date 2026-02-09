@@ -31,10 +31,12 @@ func TestMessages_Render(t *testing.T) {
 
 	t.Run("Confirm Delete", func(t *testing.T) {
 		props := Props{
-			Mode:       ModeConfirming,
-			ActionType: constants.ActionDelete,
-			Width:      80,
-			Style:      styles,
+			Mode: ModeConfirming,
+			Confirm: ConfirmContext{
+				ActionType: constants.ActionDelete,
+			},
+			Width: 80,
+			Style: styles,
 		}
 		v := Render(props)
 		stripped := testutil.StripANSI(v)
@@ -68,7 +70,7 @@ func TestMessages_Render(t *testing.T) {
 		}
 
 		props.Mode = ModeGoto
-		props.AltMode = true // Remote
+		props.Input.AltMode = true // Remote
 		v = Render(props)
 		if !strings.Contains(testutil.StripANSI(v), "Go to") {
 			t.Error("expected Goto prompt")

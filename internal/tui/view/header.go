@@ -27,14 +27,18 @@ func renderHeader(m *context.Model, layout context.Layout) string {
 		Separator:    m.FS.Separator(),
 		RemoteStr:    formatRemoteStr(m),
 		RootOverride: formatArchiveRoot(m),
-		GitBranch:    gitBranch,
-		GitModified:  gitModified,
-		GitStaged:    gitStaged,
-		GitUntracked: gitUntracked,
 		ReadOnly:     m.Display.ReadOnly,
-		TabCount:     len(m.Tabs),
-		ActiveTab:    m.ActiveTab,
-		ActiveView:   m.UI.ActiveView,
-		Style:        styles,
+		Tabs: header.TabInfo{
+			Count:  len(m.Tabs),
+			Active: m.ActiveTab,
+		},
+		Git: header.GitStatusInfo{
+			Branch:    gitBranch,
+			Modified:  gitModified,
+			Staged:    gitStaged,
+			Untracked: gitUntracked,
+		},
+		ActiveView: m.UI.ActiveView,
+		Style:      styles,
 	})
 }
