@@ -25,7 +25,7 @@ type HighlightStyles struct {
 // RunSearch performs the fuzzy search from the CLI
 func RunSearch(args *Args) error {
 	cfg := config.Load()
-	t := theme.Themes[cfg.ThemeIndex]
+	t := theme.Themes[cfg.UI.ThemeIndex]
 	styles := theme.NewStylesheet(t)
 
 	if args.SearchQuery == "" {

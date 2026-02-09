@@ -39,7 +39,7 @@ func PerformPaste(m *tui_context.Model) tea.Cmd {
 		return func() tea.Msg { return messages.ErrorMsg{Err: fmt.Errorf("clipboard is empty")} }
 	}
 
-	if m.Config.ConfirmOperations && m.Operations.ActionType != constants.ActionPaste {
+	if m.Config.Ops.ConfirmOperations && m.Operations.ActionType != constants.ActionPaste {
 		m.UI.StartConfirming()
 		m.Operations.ActionType = constants.ActionPaste
 		return nil

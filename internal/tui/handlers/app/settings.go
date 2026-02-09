@@ -251,51 +251,51 @@ func ToggleSetting(idx int, m *tui_context.Model) (bool, tea.Cmd) {
 
 	switch item.Action {
 	case "toggle_hidden":
-		cfg.ShowHidden = !cfg.ShowHidden
+		cfg.UI.ShowHidden = !cfg.UI.ShowHidden
 		reload = true
 	case "toggle_case":
-		cfg.CaseSensitive = !cfg.CaseSensitive
+		cfg.Ops.CaseSensitive = !cfg.Ops.CaseSensitive
 		reload = true
 	case "toggle_confirm":
-		cfg.ConfirmOperations = !cfg.ConfirmOperations
+		cfg.Ops.ConfirmOperations = !cfg.Ops.ConfirmOperations
 	case "toggle_wrap":
-		cfg.WrapNavigation = !cfg.WrapNavigation
+		cfg.Ops.WrapNavigation = !cfg.Ops.WrapNavigation
 	case "pick_editor":
-		cfg.EditorIndex = (cfg.EditorIndex + 1) % len(constants.Editors)
+		cfg.External.EditorIndex = (cfg.External.EditorIndex + 1) % len(constants.Editors)
 	case "toggle_trash":
-		cfg.UseTrash = !cfg.UseTrash
+		cfg.Trash.UseTrash = !cfg.Trash.UseTrash
 	case "toggle_header":
-		cfg.ShowHeader = !cfg.ShowHeader
+		cfg.UI.ShowHeader = !cfg.UI.ShowHeader
 		m.SyncViewportHeight()
 	case "toggle_git":
-		cfg.EnableGit = !cfg.EnableGit
+		cfg.External.EnableGit = !cfg.External.EnableGit
 		reload = true
 	case "toggle_size":
-		cfg.ShowSize = !cfg.ShowSize
+		cfg.UI.ShowSize = !cfg.UI.ShowSize
 		m.SyncViewportHeight()
 		reload = true
 	case "pick_size_format":
-		if cfg.ShowSize {
-			cfg.SizeFormatIndex = (cfg.SizeFormatIndex + 1) % len(format.SizeFormats)
+		if cfg.UI.ShowSize {
+			cfg.UI.SizeFormatIndex = (cfg.UI.SizeFormatIndex + 1) % len(format.SizeFormats)
 			reload = true
 		}
 	case "toggle_date":
-		cfg.ShowDateModified = !cfg.ShowDateModified
+		cfg.UI.ShowDateModified = !cfg.UI.ShowDateModified
 		m.SyncViewportHeight()
 		reload = true
 	case "pick_date_format":
-		if cfg.ShowDateModified {
-			cfg.DateFormatIndex = (cfg.DateFormatIndex + 1) % len(format.DateFormats)
+		if cfg.UI.ShowDateModified {
+			cfg.UI.DateFormatIndex = (cfg.UI.DateFormatIndex + 1) % len(format.DateFormats)
 			reload = true
 		}
 	case "toggle_mouse":
-		cfg.EnableMouse = !cfg.EnableMouse
+		cfg.UI.EnableMouse = !cfg.UI.EnableMouse
 	case "toggle_regex":
-		cfg.EnableRegexSearch = !cfg.EnableRegexSearch
+		cfg.Ops.EnableRegexSearch = !cfg.Ops.EnableRegexSearch
 	case "toggle_ram":
-		cfg.ShowRAMUsage = !cfg.ShowRAMUsage
+		cfg.UI.ShowRAMUsage = !cfg.UI.ShowRAMUsage
 	case "toggle_icons":
-		if !cfg.EnableIcons {
+		if !cfg.UI.EnableIcons {
 			if !theme.HasIconsDownloaded() {
 				m.UI.Loading = true
 				cmd = func() tea.Msg {
@@ -308,13 +308,13 @@ func ToggleSetting(idx int, m *tui_context.Model) (bool, tea.Cmd) {
 			m.Operations.ActionType = constants.ActionTestIcons
 			m.UI.StartConfirming()
 		} else {
-			cfg.EnableIcons = false
+			cfg.UI.EnableIcons = false
 			reload = true
 		}
 	case "pick_theme":
-		cfg.ThemeIndex = (cfg.ThemeIndex + 1) % len(theme.Themes)
-		m.Display.Styles = theme.GetStylesheet(cfg.ThemeIndex)
-		m.Display.LoadingSpinner.Style = m.Display.LoadingSpinner.Style.Foreground(theme.Themes[cfg.ThemeIndex].Dir)
+		cfg.UI.ThemeIndex = (cfg.UI.ThemeIndex + 1) % len(theme.Themes)
+		m.Display.Styles = theme.GetStylesheet(cfg.UI.ThemeIndex)
+		m.Display.LoadingSpinner.Style = m.Display.LoadingSpinner.Style.Foreground(theme.Themes[cfg.UI.ThemeIndex].Dir)
 	}
 
 	if err := cfg.Save(); err != nil {
@@ -341,21 +341,21 @@ func ToggleSettingPrev(idx int, m *tui_context.Model) (bool, tea.Cmd) {
 
 	switch item.Action {
 	case "pick_editor":
-		cfg.EditorIndex = (cfg.EditorIndex - 1 + len(constants.Editors)) % len(constants.Editors)
+		cfg.External.EditorIndex = (cfg.External.EditorIndex - 1 + len(constants.Editors)) % len(constants.Editors)
 	case "pick_size_format":
-		if cfg.ShowSize {
-			cfg.SizeFormatIndex = (cfg.SizeFormatIndex - 1 + len(format.SizeFormats)) % len(format.SizeFormats)
+		if cfg.UI.ShowSize {
+			cfg.UI.SizeFormatIndex = (cfg.UI.SizeFormatIndex - 1 + len(format.SizeFormats)) % len(format.SizeFormats)
 			reload = true
 		}
 	case "pick_date_format":
-		if cfg.ShowDateModified {
-			cfg.DateFormatIndex = (cfg.DateFormatIndex - 1 + len(format.DateFormats)) % len(format.DateFormats)
+		if cfg.UI.ShowDateModified {
+			cfg.UI.DateFormatIndex = (cfg.UI.DateFormatIndex - 1 + len(format.DateFormats)) % len(format.DateFormats)
 			reload = true
 		}
 	case "pick_theme":
-		cfg.ThemeIndex = (cfg.ThemeIndex - 1 + len(theme.Themes)) % len(theme.Themes)
-		m.Display.Styles = theme.GetStylesheet(cfg.ThemeIndex)
-		m.Display.LoadingSpinner.Style = m.Display.LoadingSpinner.Style.Foreground(theme.Themes[cfg.ThemeIndex].Dir)
+		cfg.UI.ThemeIndex = (cfg.UI.ThemeIndex - 1 + len(theme.Themes)) % len(theme.Themes)
+		m.Display.Styles = theme.GetStylesheet(cfg.UI.ThemeIndex)
+		m.Display.LoadingSpinner.Style = m.Display.LoadingSpinner.Style.Foreground(theme.Themes[cfg.UI.ThemeIndex].Dir)
 	default:
 		return ToggleSetting(idx, m)
 	}
@@ -424,7 +424,7 @@ func ConfirmSettingsReset(m *tui_context.Model) tea.Cmd {
 	}
 
 	m.Config = newCfg
-	m.Display.Styles = theme.GetStylesheet(m.Config.ThemeIndex)
+	m.Display.Styles = theme.GetStylesheet(m.Config.UI.ThemeIndex)
 	m.UI.StopConfirming()
 	m.Operations.ActionType = ""
 

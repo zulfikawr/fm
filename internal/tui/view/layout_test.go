@@ -11,7 +11,7 @@ import (
 func TestCalculateLayout(t *testing.T) {
 	fs := testutil.NewMockFileSystem()
 	m := context.NewModel(fs, "/test")
-	m.Config.ShowHeader = false
+	m.Config.UI.ShowHeader = false
 
 	m.Display.Width = 100
 	m.Display.Height = 20
@@ -27,7 +27,7 @@ func TestCalculateLayout(t *testing.T) {
 	testutil.AssertEqual(t, 18, view.GetViewportHeight(m), "Viewport height should match body height")
 
 	t.Run("Header enabled", func(t *testing.T) {
-		m.Config.ShowHeader = true
+		m.Config.UI.ShowHeader = true
 		m.SyncViewportHeight()
 		testutil.AssertEqual(t, 15, view.GetViewportHeight(m), "Viewport height should be 15 when header is enabled")
 	})

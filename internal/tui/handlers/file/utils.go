@@ -19,7 +19,7 @@ func GetTargets(m *tui_context.Model) []string {
 		cursor := m.Navigation.Cursor
 		if cursor < len(m.Navigation.FilteredItems) {
 			sel := m.Navigation.FilteredItems[cursor]
-			if !sel.IsUp {
+			if !sel.State.IsUp {
 				targets = append(targets, sel.Path)
 			}
 		}

@@ -81,9 +81,14 @@ type OpenOptions struct {
 	Line      int
 }
 
+// TrashOptions encapsulates trash-related configuration.
+type TrashOptions struct {
+	UseTrash bool
+}
+
 // DeleteOptions encapsulates parameters for deleting items.
 type DeleteOptions struct {
-	OpCtx    OpContext
-	Paths    []string
-	UseTrash bool
+	OpCtx OpContext
+	Paths []string
+	Trash TrashOptions
 }

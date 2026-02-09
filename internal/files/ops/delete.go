@@ -32,7 +32,7 @@ func Delete(opts DeleteOptions) error {
 	}
 
 	// Use trash if enabled
-	if opts.UseTrash {
+	if opts.Trash.UseTrash {
 		if err := MoveToTrash(opts.OpCtx.Context, opts.OpCtx.FS, path); err != nil {
 			return errors.WrapErrorWithPath(err, "Delete", path)
 		}

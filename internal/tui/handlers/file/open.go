@@ -18,7 +18,7 @@ func OpenFile(m *tui_context.Model, selected core.Item) tea.Cmd {
 	execCmd, isTerminal, err := ops.GetOpenCmd(ops.OpenOptions{
 		FS:        m.FS,
 		Path:      selected.Path,
-		EditorIdx: m.Config.EditorIndex,
+		EditorIdx: m.Config.External.EditorIndex,
 	})
 	if err != nil {
 		return utils.LogError(m, err, "Open")
@@ -33,7 +33,7 @@ func OpenFile(m *tui_context.Model, selected core.Item) tea.Cmd {
 				return nil
 			}),
 			func() tea.Msg {
-				if m.Config.EnableMouse {
+				if m.Config.UI.EnableMouse {
 					return messages.ReEnableMouseMsg{}
 				}
 				return nil
@@ -51,7 +51,7 @@ func OpenFileAtLine(m *tui_context.Model, path string, line int) tea.Cmd {
 	execCmd, isTerminal, err := ops.GetOpenAtLineCmd(ops.OpenOptions{
 		FS:        m.FS,
 		Path:      path,
-		EditorIdx: m.Config.EditorIndex,
+		EditorIdx: m.Config.External.EditorIndex,
 		Line:      line,
 	})
 	if err != nil {
@@ -67,7 +67,7 @@ func OpenFileAtLine(m *tui_context.Model, path string, line int) tea.Cmd {
 				return nil
 			}),
 			func() tea.Msg {
-				if m.Config.EnableMouse {
+				if m.Config.UI.EnableMouse {
 					return messages.ReEnableMouseMsg{}
 				}
 				return nil

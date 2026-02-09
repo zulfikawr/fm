@@ -51,7 +51,7 @@ func parse(f *flag.FlagSet, args []string) *Args {
 	// Custom Usage
 	f.Usage = func() {
 		cfg := config.Load()
-		t := theme.Themes[cfg.ThemeIndex]
+		t := theme.Themes[cfg.UI.ThemeIndex]
 		styles := theme.NewStylesheet(t)
 		PrintHelp(styles, t.Name)
 	}

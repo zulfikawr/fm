@@ -72,7 +72,7 @@ func Render(props Props) string {
 		item := props.Items[i]
 		// Use source of truth for selection
 		if props.SelectedPaths != nil {
-			item.Selected = props.SelectedPaths[item.Path]
+			item.State.Selected = props.SelectedPaths[item.Path]
 		}
 		rows = append(rows, renderRow(RowContext{
 			Props:    props,

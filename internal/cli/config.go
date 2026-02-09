@@ -27,7 +27,7 @@ func RunConfig(args *Args) error {
 
 func showConfig() error {
 	cfg := config.Load()
-	t := theme.Themes[cfg.ThemeIndex]
+	t := theme.Themes[cfg.UI.ThemeIndex]
 	styles := theme.NewStylesheet(t)
 
 	fmt.Println(styles.DirCol.Render("Current Configuration"))
@@ -53,30 +53,30 @@ func showConfig() error {
 
 	fmt.Println(styles.SettingsHeader.Render("Appearance"))
 	renderSetting("Theme", t.Name)
-	renderBool("Nerd Font Icons", cfg.EnableIcons)
+	renderBool("Nerd Font Icons", cfg.UI.EnableIcons)
 
 	fmt.Println()
 	fmt.Println(styles.SettingsHeader.Render("Display Options"))
-	renderBool("Show Column Headers", cfg.ShowHeader)
-	renderBool("Enable Git Status", cfg.EnableGit)
-	renderBool("Show File Size", cfg.ShowSize)
-	renderSetting("Size Format", format.SizeFormats[cfg.SizeFormatIndex])
-	renderBool("Show Date Modified", cfg.ShowDateModified)
-	renderSetting("Date Format", format.DateFormats[cfg.DateFormatIndex].Name)
-	renderBool("Enable Mouse Support", cfg.EnableMouse)
+	renderBool("Show Column Headers", cfg.UI.ShowHeader)
+	renderBool("Enable Git Status", cfg.External.EnableGit)
+	renderBool("Show File Size", cfg.UI.ShowSize)
+	renderSetting("Size Format", format.SizeFormats[cfg.UI.SizeFormatIndex])
+	renderBool("Show Date Modified", cfg.UI.ShowDateModified)
+	renderSetting("Date Format", format.DateFormats[cfg.UI.DateFormatIndex].Name)
+	renderBool("Enable Mouse Support", cfg.UI.EnableMouse)
 
 	fmt.Println()
 	fmt.Println(styles.SettingsHeader.Render("File Operations"))
-	renderBool("Show Hidden Files", cfg.ShowHidden)
-	renderBool("Case-Sensitive Search", cfg.CaseSensitive)
-	renderBool("Confirm Operations", cfg.ConfirmOperations)
-	renderBool("Wrap Navigation", cfg.WrapNavigation)
-	renderSetting("Preferred Editor", constants.Editors[cfg.EditorIndex])
-	renderBool("Use Trash", cfg.UseTrash)
+	renderBool("Show Hidden Files", cfg.UI.ShowHidden)
+	renderBool("Case-Sensitive Search", cfg.Ops.CaseSensitive)
+	renderBool("Confirm Operations", cfg.Ops.ConfirmOperations)
+	renderBool("Wrap Navigation", cfg.Ops.WrapNavigation)
+	renderSetting("Preferred Editor", constants.Editors[cfg.External.EditorIndex])
+	renderBool("Use Trash", cfg.Trash.UseTrash)
 
 	fmt.Println()
 	fmt.Println(styles.SettingsHeader.Render("Search & Filtering"))
-	renderBool("Enable Regex Search", cfg.EnableRegexSearch)
+	renderBool("Enable Regex Search", cfg.Ops.EnableRegexSearch)
 
 	fmt.Println()
 	return nil
@@ -150,19 +150,19 @@ func (m ConfigInitModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m ConfigInitModel) nextStep() (tea.Model, tea.Cmd) {
 	switch m.step {
 	case 0: // Theme
-		m.config.ThemeIndex = m.cursor
+		m.config.UI.ThemeIndex = m.cursor
 		m.step++
 		m.cursor = 0
 	case 1: // Icons
-		m.config.EnableIcons = m.cursor == 0
+		m.config.UI.EnableIcons = m.cursor == 0
 		m.step++
 		m.cursor = 0
 	case 2: // Mouse
-		m.config.EnableMouse = m.cursor == 0
+		m.config.UI.EnableMouse = m.cursor == 0
 		m.step++
 		m.cursor = 0
 	case 3: // Editor
-		m.config.EditorIndex = m.cursor
+		m.config.External.EditorIndex = m.cursor
 		m.step++
 	case 4: // Save
 		if err := m.config.Save(); err != nil {
@@ -182,7 +182,7 @@ func (m ConfigInitModel) View() string {
 		return "\nConfiguration cancelled.\n"
 	}
 
-	t := theme.Themes[m.config.ThemeIndex]
+	t := theme.Themes[m.config.UI.ThemeIndex]
 	styles := theme.NewStylesheet(t)
 
 	var s string

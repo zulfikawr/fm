@@ -71,12 +71,12 @@ func renderPermissionInfo(items []core.Item, cursor int, styles theme.Stylesheet
 	}
 
 	item := items[cursor]
-	if item.IsUp {
+	if item.State.IsUp {
 		return ""
 	}
 
 	secondaryStyle := styles.SecondaryCol.Inherit(styles.Footer).UnsetPadding().UnsetWidth()
-	permStr := formatPermissions(uint32(item.Mode.Perm()))
+	permStr := formatPermissions(uint32(item.Metadata.Mode.Perm()))
 
 	return secondaryStyle.Render(permStr)
 }
@@ -159,14 +159,14 @@ func buildActionShortcuts(props Props) string {
 	showUnzip := false
 	if props.SelectedCount > 0 {
 		for _, item := range props.Items {
-			if item.Selected && strings.HasSuffix(strings.ToLower(item.Name), ".zip") {
+			if item.State.Selected && strings.HasSuffix(strings.ToLower(item.Name), ".zip") {
 				showUnzip = true
 				break
 			}
 		}
 	} else if props.Cursor >= 0 && props.Cursor < len(props.FilteredItems) {
 		item := props.FilteredItems[props.Cursor]
-		if !item.IsUp && strings.HasSuffix(strings.ToLower(item.Name), ".zip") {
+		if !item.State.IsUp && strings.HasSuffix(strings.ToLower(item.Name), ".zip") {
 			showUnzip = true
 		}
 	}
@@ -194,7 +194,7 @@ func GetActionAt(x int, props Props) string {
 
 	total := props.TotalItems
 	current := props.Cursor
-	if len(props.FilteredItems) > 0 && props.FilteredItems[0].IsUp {
+	if len(props.FilteredItems) > 0 && props.FilteredItems[0].State.IsUp {
 		total--
 		if current == 0 {
 			current = -1
@@ -267,14 +267,14 @@ func GetActionAt(x int, props Props) string {
 			showUnzip := false
 			if props.SelectedCount > 0 {
 				for _, item := range props.Items {
-					if item.Selected && strings.HasSuffix(strings.ToLower(item.Name), ".zip") {
+					if item.State.Selected && strings.HasSuffix(strings.ToLower(item.Name), ".zip") {
 						showUnzip = true
 						break
 					}
 				}
 			} else if props.Cursor >= 0 && props.Cursor < len(props.FilteredItems) {
 				item := props.FilteredItems[props.Cursor]
-				if !item.IsUp && strings.HasSuffix(strings.ToLower(item.Name), ".zip") {
+				if !item.State.IsUp && strings.HasSuffix(strings.ToLower(item.Name), ".zip") {
 					showUnzip = true
 				}
 			}

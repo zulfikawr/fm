@@ -66,8 +66,8 @@ func renderBody(m *context.Model, layout context.Layout) string {
 			Cursor:          m.Analyze.Cursor,
 			Offset:          m.Analyze.Offset,
 			Style:           styles,
-			EnableIcons:     m.Config.EnableIcons,
-			SizeFormatIndex: m.Config.SizeFormatIndex,
+			EnableIcons:     m.Config.UI.EnableIcons,
+			SizeFormatIndex: m.Config.UI.SizeFormatIndex,
 			IsRoot:          m.Analyze.ActiveNode != nil && m.FS.Dir(m.Analyze.ActiveNode.Path) == m.Analyze.ActiveNode.Path,
 		})
 	} else if m.UI.ClipboardOpen {
@@ -109,7 +109,7 @@ func renderBody(m *context.Model, layout context.Layout) string {
 			Offset:      m.Search.Offset,
 			Spinner:     m.Display.LoadingSpinner,
 			Style:       styles,
-			EnableIcons: m.Config.EnableIcons,
+			EnableIcons: m.Config.UI.EnableIcons,
 		})
 	} else {
 		bodyStr = file.Render(file.Props{
@@ -118,15 +118,15 @@ func renderBody(m *context.Model, layout context.Layout) string {
 			Cursor:           m.Navigation.Cursor,
 			Offset:           m.Navigation.Offset,
 			Items:            m.Navigation.FilteredItems,
-			ShowHeader:       m.Config.ShowHeader,
-			ShowSize:         m.Config.ShowSize,
-			ShowDateModified: m.Config.ShowDateModified,
+			ShowHeader:       m.Config.UI.ShowHeader,
+			ShowSize:         m.Config.UI.ShowSize,
+			ShowDateModified: m.Config.UI.ShowDateModified,
 			SelectMode:       m.UI.SelectMode,
-			SizeFormatIndex:  m.Config.SizeFormatIndex,
-			DateFormatIndex:  m.Config.DateFormatIndex,
+			SizeFormatIndex:  m.Config.UI.SizeFormatIndex,
+			DateFormatIndex:  m.Config.UI.DateFormatIndex,
 			Styles:           styles,
 			SelectedPaths:    m.Navigation.SelectedPaths,
-			EnableIcons:      m.Config.EnableIcons,
+			EnableIcons:      m.Config.UI.EnableIcons,
 		})
 	}
 

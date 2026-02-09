@@ -13,7 +13,7 @@ import (
 
 // Initialize sets up the initial commands for the TUI
 func (a *App) Initialize() tea.Cmd {
-	if a.Model.Config.EnableIcons {
+	if a.Model.Config.UI.EnableIcons {
 		_ = theme.LoadIcons()
 	}
 	cmds := []tea.Cmd{

@@ -77,7 +77,7 @@ func TestRunAnalyze(t *testing.T) {
 
 func TestRenderCLIBar(t *testing.T) {
 	cfg := config.DefaultConfig()
-	th := theme.Themes[cfg.ThemeIndex]
+	th := theme.Themes[cfg.UI.ThemeIndex]
 	styles := theme.NewStylesheet(th)
 
 	tests := []struct {

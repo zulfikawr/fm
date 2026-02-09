@@ -41,10 +41,10 @@ func TestSortModes(t *testing.T) {
 func TestSortItems(t *testing.T) {
 	now := time.Now()
 	items := []core.Item{
-		{Name: "↑ ..", IsDir: true, IsUp: true},
-		{Name: "b.txt", IsDir: false, Size: 200, MTime: now.Add(-1 * time.Hour)},
-		{Name: "a.txt", IsDir: false, Size: 100, MTime: now},
-		{Name: "dir", IsDir: true, Size: 0, MTime: now.Add(-2 * time.Hour)},
+		{Name: "↑ ..", IsDir: true, State: core.ItemState{IsUp: true}},
+		{Name: "b.txt", IsDir: false, Metadata: core.ItemMetadata{Size: 200, MTime: now.Add(-1 * time.Hour)}},
+		{Name: "a.txt", IsDir: false, Metadata: core.ItemMetadata{Size: 100, MTime: now}},
+		{Name: "dir", IsDir: true, Metadata: core.ItemMetadata{Size: 0, MTime: now.Add(-2 * time.Hour)}},
 	}
 
 	t.Run("SortDefault (Directories first, then name)", func(t *testing.T) {
@@ -86,8 +86,8 @@ func TestSortItems(t *testing.T) {
 
 	t.Run("SortSizeDesc", func(t *testing.T) {
 		testItems := []core.Item{
-			{Name: "b.txt", Size: 200},
-			{Name: "a.txt", Size: 100},
+			{Name: "b.txt", Metadata: core.ItemMetadata{Size: 200}},
+			{Name: "a.txt", Metadata: core.ItemMetadata{Size: 100}},
 		}
 		SortItems(testItems, SortSizeDesc, false)
 
@@ -97,8 +97,8 @@ func TestSortItems(t *testing.T) {
 
 	t.Run("SortNewest", func(t *testing.T) {
 		testItems := []core.Item{
-			{Name: "old", MTime: now.Add(-1 * time.Hour)},
-			{Name: "new", MTime: now},
+			{Name: "old", Metadata: core.ItemMetadata{MTime: now.Add(-1 * time.Hour)}},
+			{Name: "new", Metadata: core.ItemMetadata{MTime: now}},
 		}
 		SortItems(testItems, SortNewest, false)
 
@@ -107,8 +107,8 @@ func TestSortItems(t *testing.T) {
 
 	t.Run("SortOldest", func(t *testing.T) {
 		testItems := []core.Item{
-			{Name: "old", MTime: now.Add(-1 * time.Hour)},
-			{Name: "new", MTime: now},
+			{Name: "old", Metadata: core.ItemMetadata{MTime: now.Add(-1 * time.Hour)}},
+			{Name: "new", Metadata: core.ItemMetadata{MTime: now}},
 		}
 		SortItems(testItems, SortOldest, false)
 

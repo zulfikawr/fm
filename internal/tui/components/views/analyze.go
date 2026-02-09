@@ -81,7 +81,7 @@ func RenderAnalyze(props AnalyzeProps) string {
 			icon := ""
 			// For "↑ ..", we don't show an extra Nerd Font icon, just the text
 			if child.Name != "↑ .." {
-				icon = theme.GetIcon(core.Item{IsDir: child.IsDirectory, Name: child.Name})
+				icon = theme.GetIcon(core.Item{IsDir: child.IsDirectory, Name: child.Name, State: core.ItemState{}})
 			}
 
 			if icon != "" {

@@ -12,7 +12,7 @@ import (
 func TestHandleMouse_DragSelect(t *testing.T) {
 	fs := testutil.NewMockFileSystem()
 	m := context.NewModel(fs, "/")
-	m.Config.EnableMouse = true
+	m.Config.UI.EnableMouse = true
 	m.Display.Height = 20
 	m.Display.Width = 80
 	m.Navigation.FilteredItems = []core.Item{
@@ -21,7 +21,7 @@ func TestHandleMouse_DragSelect(t *testing.T) {
 		{Name: "file3", Path: "/file3"},
 	}
 
-	m.Config.ShowHeader = true
+	m.Config.UI.ShowHeader = true
 
 	// Let's test drag-to-select starting from empty area
 	m.Display.IsDragging = false
@@ -47,9 +47,9 @@ func TestHandleMouse_DragSelect(t *testing.T) {
 func TestHandleMouse_DoubleClick(t *testing.T) {
 	fs := testutil.NewMockFileSystem()
 	m := context.NewModel(fs, "/")
-	m.Config.EnableMouse = true
+	m.Config.UI.EnableMouse = true
 	m.Display.Height = 20
-	m.Config.ShowHeader = true
+	m.Config.UI.ShowHeader = true
 	m.Navigation.FilteredItems = []core.Item{
 		{Name: "file1", Path: "/file1", IsDir: false},
 	}
@@ -78,9 +78,9 @@ func TestHandleMouse_DoubleClick(t *testing.T) {
 func TestHandleMouse_ShiftClick(t *testing.T) {
 	fs := testutil.NewMockFileSystem()
 	m := context.NewModel(fs, "/")
-	m.Config.EnableMouse = true
+	m.Config.UI.EnableMouse = true
 	m.Display.Height = 20
-	m.Config.ShowHeader = true
+	m.Config.UI.ShowHeader = true
 	m.Navigation.FilteredItems = []core.Item{
 		{Name: "file1", Path: "/file1"},
 	}

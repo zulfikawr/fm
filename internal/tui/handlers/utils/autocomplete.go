@@ -30,7 +30,7 @@ func UpdateSearchSuggestion(m *tuictx.Model) {
 
 	inputLower := strings.ToLower(input)
 	for _, item := range m.Navigation.Items {
-		if item.IsUp {
+		if item.State.IsUp {
 			continue
 		}
 		nameLower := strings.ToLower(item.Name)

@@ -17,7 +17,7 @@ import (
 // RunAnalyze executes the disk usage analysis from CLI
 func RunAnalyze(args *Args) error {
 	cfg := config.Load()
-	t := theme.Themes[cfg.ThemeIndex]
+	t := theme.Themes[cfg.UI.ThemeIndex]
 	styles := theme.NewStylesheet(t)
 
 	ctx := context.Background()
@@ -96,7 +96,7 @@ func RunAnalyze(args *Args) error {
 		bar := renderCLIBar(child.Percentage, barWidth, &styles)
 
 		// 3. Size Column
-		sizeStr := format.FormatSize(child.Size, cfg.SizeFormatIndex)
+		sizeStr := format.FormatSize(child.Size, cfg.UI.SizeFormatIndex)
 		sizeCell := styles.AccentCol.Width(sizeWidth).Align(lipgloss.Right).Render(sizeStr)
 
 		// 4. Percentage Column

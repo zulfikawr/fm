@@ -141,13 +141,13 @@ func HandleUpdate(m *tuictx.Model, msg tea.Msg) tea.Cmd {
 		m.UI.TestingIcons = false
 		m.Operations.ActionType = constants.ActionNone
 		if msg.Success {
-			m.Config.EnableIcons = true
+			m.Config.UI.EnableIcons = true
 			if err := m.Config.Save(); err != nil {
 				return utils.SetErrMsg(m, "Failed to save config: "+err.Error())
 			}
 			return utils.SetMsg(m, "Icons enabled successfully")
 		} else {
-			m.Config.EnableIcons = false
+			m.Config.UI.EnableIcons = false
 			return utils.SetMsg(m, "Icons disabled (Nerd Font required)")
 		}
 

@@ -50,8 +50,8 @@ func renderMarker(ctx RowContext) string {
 		return ""
 	}
 	return ui.Marker(ui.ListProps{
-		Selected: ctx.Item.Selected,
-		IsUp:     ctx.Item.IsUp,
+		Selected: ctx.Item.State.Selected,
+		IsUp:     ctx.Item.State.IsUp,
 		IsCursor: ctx.IsCursor,
 		Styles:   ctx.Props.Styles,
 	})
@@ -59,19 +59,19 @@ func renderMarker(ctx RowContext) string {
 
 func renderGitMarker(ctx RowContext) string {
 	gitMarker := " "
-	if ctx.Item.GitStatus != "" {
-		gitMarker = ctx.Item.GitStatus
+	if ctx.Item.Display.GitStatus != "" {
+		gitMarker = ctx.Item.Display.GitStatus
 	}
 
 	if ctx.IsCursor {
 		sStyle := ctx.Props.Styles.SelectedItem.UnsetPadding().UnsetWidth()
-		if style, ok := ctx.Props.Styles.GitStyles[ctx.Item.GitStatus]; ok {
+		if style, ok := ctx.Props.Styles.GitStyles[ctx.Item.Display.GitStatus]; ok {
 			return style.Inherit(sStyle).Render(gitMarker)
 		}
 		return sStyle.Render(gitMarker)
 	}
 
-	if style, ok := ctx.Props.Styles.GitStyles[ctx.Item.GitStatus]; ok {
+	if style, ok := ctx.Props.Styles.GitStyles[ctx.Item.Display.GitStatus]; ok {
 		return style.Render(gitMarker)
 	}
 	return gitMarker
@@ -79,7 +79,7 @@ func renderGitMarker(ctx RowContext) string {
 
 func renderPermIndicator(ctx RowContext) string {
 	indicator := " "
-	if !ctx.Item.CanWrite && !ctx.Item.IsUp && !ctx.Item.IsGhost {
+	if !ctx.Item.Metadata.CanWrite && !ctx.Item.State.IsUp && !ctx.Item.Display.IsGhost {
 		indicator = "!"
 	}
 
@@ -95,7 +95,7 @@ func renderPermIndicator(ctx RowContext) string {
 
 func renderNamePart(ctx RowContext) string {
 	var nameStr string
-	if ctx.Item.IsUp {
+	if ctx.Item.State.IsUp {
 		nameStr = ctx.Item.Name
 	} else if ctx.Item.IsDir {
 		nameStr = ctx.Item.Name + "/"
@@ -117,21 +117,21 @@ func renderNamePart(ctx RowContext) string {
 
 	// Git Status Coloring for Name
 	nameStyle := ctx.Props.Styles.FileCol
-	if ctx.Item.IsUp {
+	if ctx.Item.State.IsUp {
 		nameStyle = ctx.Props.Styles.DimCol
 	} else if ctx.Item.IsDir {
 		nameStyle = ctx.Props.Styles.DirCol
-	} else if ctx.Item.HasMetadata && ctx.Item.Mode&0o111 != 0 {
+	} else if ctx.Item.State.HasMetadata && ctx.Item.Metadata.Mode&0o111 != 0 {
 		nameStyle = ctx.Props.Styles.ExecCol
 	}
 
-	if ctx.Item.IsGhost {
+	if ctx.Item.Display.IsGhost {
 		nameStyle = ctx.Props.Styles.GitGhost
-	} else if style, ok := ctx.Props.Styles.GitStyles[ctx.Item.GitStatus]; ok {
+	} else if style, ok := ctx.Props.Styles.GitStyles[ctx.Item.Display.GitStatus]; ok {
 		nameStyle = style
 	}
 
-	if !ctx.Item.CanRead && !ctx.Item.IsUp {
+	if !ctx.Item.Metadata.CanRead && !ctx.Item.State.IsUp {
 		nameStyle = ctx.Props.Styles.DimCol
 	}
 
@@ -156,7 +156,7 @@ func renderNamePart(ctx RowContext) string {
 func renderMetaPart(ctx RowContext) string {
 	sStyle := ctx.Props.Styles.SelectedItem.UnsetPadding().UnsetWidth()
 
-	if !ctx.Item.HasMetadata && !ctx.Item.IsUp && !ctx.Item.IsGhost {
+	if !ctx.Item.State.HasMetadata && !ctx.Item.State.IsUp && !ctx.Item.Display.IsGhost {
 		metaWidth := 0
 		if ctx.Layout.ShowDate {
 			metaWidth += ctx.Layout.DateWidth + ctx.Layout.ColumnGap
@@ -178,7 +178,7 @@ func renderMetaPart(ctx RowContext) string {
 
 	datePart := ""
 	if ctx.Layout.ShowDate {
-		dateStr := ctx.Item.FormattedDate
+		dateStr := ctx.Item.Display.FormattedDate
 		content := fmt.Sprintf("%*s%*s", ctx.Layout.ColumnGap, "", ctx.Layout.DateWidth, dateStr)
 		if ctx.IsCursor {
 			datePart = ctx.Props.Styles.AccentCol.Inherit(sStyle).Render(content)
@@ -189,7 +189,7 @@ func renderMetaPart(ctx RowContext) string {
 
 	sizePart := ""
 	if ctx.Layout.ShowSize {
-		sizeStr := ctx.Item.FormattedSize
+		sizeStr := ctx.Item.Display.FormattedSize
 		content := fmt.Sprintf("%*s%*s", ctx.Layout.ColumnGap, "", ctx.Layout.SizeWidth, sizeStr)
 		if ctx.IsCursor {
 			sizePart = ctx.Props.Styles.MutedCol.Inherit(sStyle).Render(content)

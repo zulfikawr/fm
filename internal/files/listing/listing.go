@@ -20,11 +20,13 @@ func LoadSkeleton(ctx context.Context, opts LoadOptions) ([]core.Item, error) {
 
 	if !core.IsRoot(opts.FS, opts.Path) {
 		items = append(items, core.Item{
-			Name:      "↑ ..",
-			IsDir:     true,
-			IsUp:      true,
-			SearchKey: "..",
-			Path:      core.GetParent(opts.FS, opts.Path),
+			Name:  "↑ ..",
+			IsDir: true,
+			State: core.ItemState{
+				IsUp:      true,
+				SearchKey: "..",
+			},
+			Path: core.GetParent(opts.FS, opts.Path),
 		})
 	}
 
@@ -50,14 +52,20 @@ func LoadSkeleton(ctx context.Context, opts LoadOptions) ([]core.Item, error) {
 	for name, status := range opts.GitStatuses {
 		if !seenOnDisk[name] && status == "D" {
 			items = append(items, core.Item{
-				Name:        name,
-				Path:        opts.FS.Join(opts.Path, name),
-				IsDir:       false,
-				GitStatus:   "D",
-				IsGhost:     true,
-				Size:        0,
-				HasMetadata: true, // Ghost items don't have disk info, they are their own metadata
-				SearchKey:   strings.ToLower(name),
+				Name:  name,
+				Path:  opts.FS.Join(opts.Path, name),
+				IsDir: false,
+				Display: core.ItemDisplay{
+					GitStatus: "D",
+					IsGhost:   true,
+				},
+				Metadata: core.ItemMetadata{
+					Size: 0,
+				},
+				State: core.ItemState{
+					HasMetadata: true, // Ghost items don't have disk info, they are their own metadata
+					SearchKey:   strings.ToLower(name),
+				},
 			})
 		}
 	}
@@ -74,12 +82,12 @@ func Load(ctx context.Context, opts LoadOptions) ([]core.Item, error) {
 
 	// For standard Load, we still want full metadata for everything (backward compatibility)
 	for i := range items {
-		if items[i].IsUp || items[i].IsGhost || items[i].HasMetadata {
+		if items[i].State.IsUp || items[i].Display.IsGhost || items[i].State.HasMetadata {
 			continue
 		}
 		info, statErr := opts.FS.Stat(ctx, items[i].Path)
 		if statErr == nil {
-			items[i] = core.NewItem(info, items[i].Path, items[i].GitStatus)
+			items[i] = core.NewItem(info, items[i].Path, items[i].Display.GitStatus)
 		}
 	}
 
@@ -100,7 +108,7 @@ func EnrichMetadata(ctx context.Context, fs core.FileSystem, item *core.Item) {
 		return
 	}
 
-	maxMTime := item.MTime
+	maxMTime := item.Metadata.MTime
 	for _, entry := range entries {
 		info, err := entry.Info()
 		if err == nil {
@@ -109,5 +117,5 @@ func EnrichMetadata(ctx context.Context, fs core.FileSystem, item *core.Item) {
 			}
 		}
 	}
-	item.MTime = maxMTime
+	item.Metadata.MTime = maxMTime
 }

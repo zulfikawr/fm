@@ -25,9 +25,9 @@ func Reload(m *tui_context.Model, silent bool) tea.Cmd {
 	gs := m.GS
 	ctx := m.Context
 	mode := m.Display.SortMode
-	showHidden := m.Config.ShowHidden
-	sizeFormatIdx := m.Config.SizeFormatIndex
-	dateFormatIdx := m.Config.DateFormatIndex
+	showHidden := m.Config.UI.ShowHidden
+	sizeFormatIdx := m.Config.UI.SizeFormatIndex
+	dateFormatIdx := m.Config.UI.DateFormatIndex
 
 	if items, ok := m.Cache.ItemCache.Get(path); ok {
 		m.Navigation.Items = items
@@ -58,11 +58,13 @@ func Reload(m *tui_context.Model, silent bool) tea.Cmd {
 
 	if len(m.Navigation.Items) == 0 && !core.IsRoot(fs, path) {
 		m.Navigation.Items = []core.Item{{
-			Name:      "↑ ..",
-			IsDir:     true,
-			IsUp:      true,
-			SearchKey: "..",
-			Path:      core.GetParent(fs, path),
+			Name:  "↑ ..",
+			IsDir: true,
+			State: core.ItemState{
+				IsUp:      true,
+				SearchKey: "..",
+			},
+			Path: core.GetParent(fs, path),
 		}}
 		ApplyFilter(m)
 	}
@@ -162,8 +164,8 @@ func fetchMetadata(m *tui_context.Model) tea.Cmd {
 		height = 20
 	}
 
-	sizeFormatIdx := m.Config.SizeFormatIndex
-	dateFormatIdx := m.Config.DateFormatIndex
+	sizeFormatIdx := m.Config.UI.SizeFormatIndex
+	dateFormatIdx := m.Config.UI.DateFormatIndex
 
 	// Capture current Git state to pass through
 	gitBranch := m.Git.Branch
@@ -194,7 +196,7 @@ func fetchMetadata(m *tui_context.Model) tea.Cmd {
 
 		for i := range updatedItems {
 			idx := i
-			if updatedItems[idx].IsUp || updatedItems[idx].IsGhost || updatedItems[idx].HasMetadata {
+			if updatedItems[idx].State.IsUp || updatedItems[idx].Display.IsGhost || updatedItems[idx].State.HasMetadata {
 				continue
 			}
 
@@ -205,13 +207,13 @@ func fetchMetadata(m *tui_context.Model) tea.Cmd {
 			g.Go(func() error {
 				info, err := fs.Stat(ctx, updatedItems[idx].Path)
 				if err == nil {
-					updatedItems[idx] = core.NewItem(info, updatedItems[idx].Path, updatedItems[idx].GitStatus)
+					updatedItems[idx] = core.NewItem(info, updatedItems[idx].Path, updatedItems[idx].Display.GitStatus)
 					if updatedItems[idx].IsDir {
 						listing.EnrichMetadata(ctx, fs, &updatedItems[idx])
 					}
 					updatedItems[idx].UpdateFormatting(sizeFormatIdx, dateFormatIdx)
 				} else {
-					updatedItems[idx].HasMetadata = true
+					updatedItems[idx].State.HasMetadata = true
 				}
 				return nil
 			})
@@ -226,20 +228,20 @@ func fetchMetadata(m *tui_context.Model) tea.Cmd {
 
 		for i := range updatedItems {
 			idx := i
-			if updatedItems[idx].IsUp || updatedItems[idx].IsGhost || updatedItems[idx].HasMetadata {
+			if updatedItems[idx].State.IsUp || updatedItems[idx].Display.IsGhost || updatedItems[idx].State.HasMetadata {
 				continue
 			}
 
 			g.Go(func() error {
 				info, err := fs.Stat(ctx, updatedItems[idx].Path)
 				if err == nil {
-					updatedItems[idx] = core.NewItem(info, updatedItems[idx].Path, updatedItems[idx].GitStatus)
+					updatedItems[idx] = core.NewItem(info, updatedItems[idx].Path, updatedItems[idx].Display.GitStatus)
 					if updatedItems[idx].IsDir {
 						listing.EnrichMetadata(ctx, fs, &updatedItems[idx])
 					}
 					updatedItems[idx].UpdateFormatting(sizeFormatIdx, dateFormatIdx)
 				} else {
-					updatedItems[idx].HasMetadata = true
+					updatedItems[idx].State.HasMetadata = true
 				}
 				return nil
 			})

@@ -112,7 +112,7 @@ func RenderSearch(props SearchProps) string {
 
 		iconPart := ""
 		if props.EnableIcons {
-			icon := theme.GetIcon(core.Item{Name: res.FileName, Path: res.Path})
+			icon := theme.GetIcon(core.Item{Name: res.FileName, Path: res.Path, State: core.ItemState{}})
 			iconPart = icon + "  "
 		}
 

@@ -51,7 +51,7 @@ func (s SortMode) String() string {
 // This is the single source of truth for sorting logic
 func SortItems(items []core.Item, mode SortMode, skipFirst bool) {
 	startIdx := 0
-	if skipFirst && len(items) > 0 && items[0].IsUp {
+	if skipFirst && len(items) > 0 && items[0].State.IsUp {
 		startIdx = 1
 	}
 
@@ -72,13 +72,13 @@ func compareBySortMode(a, b core.Item, mode SortMode) bool {
 	case SortNameDesc:
 		return strings.ToLower(a.Name) > strings.ToLower(b.Name)
 	case SortNewest:
-		return a.MTime.After(b.MTime)
+		return a.Metadata.MTime.After(b.Metadata.MTime)
 	case SortOldest:
-		return a.MTime.Before(b.MTime)
+		return a.Metadata.MTime.Before(b.Metadata.MTime)
 	case SortSizeDesc:
-		return a.Size > b.Size
+		return a.Metadata.Size > b.Metadata.Size
 	case SortSizeAsc:
-		return a.Size < b.Size
+		return a.Metadata.Size < b.Metadata.Size
 	default: // SortDefault - Directories first, then alphabetical
 		if a.IsDir != b.IsDir {
 			return a.IsDir

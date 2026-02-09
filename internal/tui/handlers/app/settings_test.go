@@ -21,11 +21,11 @@ func TestSettings_ToggleLogic(t *testing.T) {
 	fs := testutil.NewMockFileSystem()
 	m := tuictx.NewModel(fs, "/test")
 	m.UI.SettingsOpen = true
-	m.Config.ShowHidden = false
+	m.Config.UI.ShowHidden = false
 
 	app.HandleSettings(m, tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{' '}})
 
-	if !m.Config.ShowHidden {
+	if !m.Config.UI.ShowHidden {
 		t.Error("Toggle failed in direct call")
 	}
 
@@ -44,9 +44,9 @@ func TestSettings_ToggleLogic(t *testing.T) {
 
 	t.Run("Toggle Prev", func(t *testing.T) {
 		m.Settings.Cursor = 4 // Editor
-		initial := m.Config.EditorIndex
+		initial := m.Config.External.EditorIndex
 		app.HandleSettings(m, tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'h'}})
-		if m.Config.EditorIndex == initial && len(constants.Editors) > 1 {
+		if m.Config.External.EditorIndex == initial && len(constants.Editors) > 1 {
 			t.Error("expected editor index change")
 		}
 	})
@@ -79,11 +79,11 @@ func TestSettings_ToggleLogic(t *testing.T) {
 func TestConfirmSettingsReset(t *testing.T) {
 	fs := testutil.NewMockFileSystem()
 	m := tuictx.NewModel(fs, "/test")
-	m.Config.ShowHidden = false
+	m.Config.UI.ShowHidden = false
 
 	app.ConfirmSettingsReset(m)
 	// Default is true in DefaultConfig()
-	if !m.Config.ShowHidden {
+	if !m.Config.UI.ShowHidden {
 		t.Error("expected ShowHidden to be reset to default (true)")
 	}
 }

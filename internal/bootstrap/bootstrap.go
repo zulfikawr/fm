@@ -58,7 +58,7 @@ func InitializeApp(remoteStr string, args []string) (*tui.App, error) {
 	}
 
 	// Run trash cleanup in background if local filesystem
-	if fs.IsLocal() && app.Model.Config.UseTrash {
+	if fs.IsLocal() && app.Model.Config.Trash.UseTrash {
 		go func() {
 			manager, err := trash.NewManager(fs)
 			if err != nil {
@@ -74,8 +74,8 @@ func InitializeApp(remoteStr string, args []string) (*tui.App, error) {
 			// Auto-cleanup based on config
 			if err := manager.AutoCleanup(
 				context.Background(),
-				app.Model.Config.TrashAutoCleanupDays,
-				int64(app.Model.Config.TrashMaxSizeMB),
+				app.Model.Config.Trash.TrashAutoCleanupDays,
+				int64(app.Model.Config.Trash.TrashMaxSizeMB),
 			); err != nil {
 				logger.Warnf("Failed to auto-cleanup trash: %v", err)
 			}

@@ -41,12 +41,12 @@ func (n *NavigationState) Select(path string) {
 		// Update visual state
 		for i := range n.Items {
 			if n.Items[i].Path == path {
-				n.Items[i].Selected = true
+				n.Items[i].State.Selected = true
 			}
 		}
 		for i := range n.FilteredItems {
 			if n.FilteredItems[i].Path == path {
-				n.FilteredItems[i].Selected = true
+				n.FilteredItems[i].State.Selected = true
 			}
 		}
 	}
@@ -61,12 +61,12 @@ func (n *NavigationState) Deselect(path string) {
 		// Update visual state
 		for i := range n.Items {
 			if n.Items[i].Path == path {
-				n.Items[i].Selected = false
+				n.Items[i].State.Selected = false
 			}
 		}
 		for i := range n.FilteredItems {
 			if n.FilteredItems[i].Path == path {
-				n.FilteredItems[i].Selected = false
+				n.FilteredItems[i].State.Selected = false
 			}
 		}
 	}
@@ -88,14 +88,14 @@ func (n *NavigationState) SelectAll() {
 	}
 	for i := range n.FilteredItems {
 		item := &n.FilteredItems[i]
-		if item.IsUp {
+		if item.State.IsUp {
 			continue
 		}
 		if !n.SelectedPaths[item.Path] {
 			n.SelectedPaths[item.Path] = true
 			n.SelectedCount++
 		}
-		item.Selected = true
+		item.State.Selected = true
 	}
 }
 
@@ -104,10 +104,10 @@ func (n *NavigationState) ClearSelection() {
 	n.SelectedPaths = make(map[string]bool)
 	n.SelectedCount = 0
 	for i := range n.Items {
-		n.Items[i].Selected = false
+		n.Items[i].State.Selected = false
 	}
 	for i := range n.FilteredItems {
-		n.FilteredItems[i].Selected = false
+		n.FilteredItems[i].State.Selected = false
 	}
 }
 

@@ -76,13 +76,13 @@ func StartUnzip(m *tui_context.Model) tea.Cmd {
 	targets := GetTargets(m)
 	var zipPath string
 	if len(targets) > 0 {
-		tempItem := core.Item{Name: targets[0], IsDir: false}
+		tempItem := core.Item{Name: targets[0], IsDir: false, State: core.ItemState{}}
 		if tempItem.IsArchive() {
 			zipPath = targets[0]
 		}
 	} else if len(m.Navigation.FilteredItems) > 0 {
 		selected := m.Navigation.FilteredItems[m.Navigation.Cursor]
-		if !selected.IsUp && selected.IsArchive() {
+		if !selected.State.IsUp && selected.IsArchive() {
 			zipPath = selected.Path
 		}
 	}

@@ -19,7 +19,7 @@ import (
 
 // HandleMouse handles mouse events
 func HandleMouse(m *context.Model, msg tea.MouseMsg) tea.Cmd {
-	if !m.Config.EnableMouse {
+	if !m.Config.UI.EnableMouse {
 		return nil
 	}
 
@@ -193,7 +193,7 @@ func handleMousePress(m *context.Model, msg tea.MouseMsg) tea.Cmd {
 	// Calculate item index
 	bodyY := msg.Y - 1
 	headerHeight := 0
-	if m.Config.ShowHeader {
+	if m.Config.UI.ShowHeader {
 		headerHeight = 3
 	}
 
@@ -223,7 +223,7 @@ func handleMousePress(m *context.Model, msg tea.MouseMsg) tea.Cmd {
 
 		// Handle selection marker click
 		if m.UI.SelectMode && msg.X <= 4 {
-			if !item.IsUp {
+			if !item.State.IsUp {
 				m.Navigation.ToggleSelection(item.Path)
 				m.UI.SelectMode = m.Navigation.SelectedCount > 0
 				return nil
@@ -264,14 +264,14 @@ func handleMouseRelease(m *context.Model, msg tea.MouseMsg) tea.Cmd {
 		// Calculate target index
 		bodyY := msg.Y - 1
 		headerHeight := 0
-		if m.Config.ShowHeader {
+		if m.Config.UI.ShowHeader {
 			headerHeight = 3
 		}
 		targetIdx := bodyY - headerHeight + m.Navigation.Offset
 
 		if targetIdx >= 0 && targetIdx < len(m.Navigation.FilteredItems) && targetIdx != startIdx {
 			targetItem := m.Navigation.FilteredItems[targetIdx]
-			if targetItem.IsDir && !targetItem.IsUp {
+			if targetItem.IsDir && !targetItem.State.IsUp {
 				// Dragged onto a directory -> Move
 				sourceItem := m.Navigation.FilteredItems[startIdx]
 				var sources []string
@@ -307,7 +307,7 @@ func handleMouseRelease(m *context.Model, msg tea.MouseMsg) tea.Cmd {
 
 func updateDragSelection(m *context.Model) {
 	headerHeight := 1 // Header row
-	if m.Config.ShowHeader {
+	if m.Config.UI.ShowHeader {
 		headerHeight += 3
 	}
 
@@ -332,7 +332,7 @@ func updateDragSelection(m *context.Model) {
 
 	for i := range m.Navigation.FilteredItems {
 		item := &m.Navigation.FilteredItems[i]
-		if item.IsUp {
+		if item.State.IsUp {
 			continue
 		}
 		if i >= minIdx && i <= maxIdx {
@@ -413,7 +413,7 @@ func handleMouseClick(m *context.Model, msg tea.MouseMsg) tea.Cmd {
 	}
 
 	headerHeight := 0
-	if m.Config.ShowHeader {
+	if m.Config.UI.ShowHeader {
 		headerHeight = 3
 	}
 

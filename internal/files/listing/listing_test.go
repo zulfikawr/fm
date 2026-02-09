@@ -31,7 +31,7 @@ func TestLoad(t *testing.T) {
 
 		foundUp := false
 		for _, item := range items {
-			if item.IsUp {
+			if item.State.IsUp {
 				foundUp = true
 				break
 			}
@@ -55,7 +55,7 @@ func TestLoad(t *testing.T) {
 		testutil.AssertNoError(t, err, "Load should not fail")
 
 		for _, item := range items {
-			if strings.HasPrefix(item.Name, ".") && !item.IsUp {
+			if strings.HasPrefix(item.Name, ".") && !item.State.IsUp {
 				t.Errorf("found hidden file %q when showHidden=false", item.Name)
 			}
 		}
@@ -82,7 +82,7 @@ func TestLoad(t *testing.T) {
 
 		foundGhost := false
 		for _, item := range items {
-			if item.Name == "deleted.txt" && item.IsGhost {
+			if item.Name == "deleted.txt" && item.Display.IsGhost {
 				foundGhost = true
 				break
 			}
@@ -138,7 +138,7 @@ func TestEnrichMetadata(t *testing.T) {
 			}, nil
 		}
 		// MockInfo for new.txt
-		item := core.Item{Path: "/dir", IsDir: true, MTime: now.Add(-1 * time.Hour)}
+		item := core.Item{Path: "/dir", IsDir: true, Metadata: core.ItemMetadata{MTime: now.Add(-1 * time.Hour)}}
 
 		// We need to mock the Info() call inside EnrichMetadata
 		// This is tricky because EnrichMetadata calls entry.Info()

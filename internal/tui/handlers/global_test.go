@@ -26,7 +26,7 @@ func TestResize_Handling(t *testing.T) {
 	})
 
 	t.Run("Viewport height recalculated on resize", func(t *testing.T) {
-		m.Config.ShowHeader = true
+		m.Config.UI.ShowHeader = true
 		msg := tea.WindowSizeMsg{Width: 80, Height: 24}
 		handlers.HandleUpdate(m, msg)
 

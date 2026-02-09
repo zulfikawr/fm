@@ -141,7 +141,7 @@ func TestPerformDelete(t *testing.T) {
 	m.Navigation.Select(item.Path)
 
 	t.Run("Immediate Delete", func(t *testing.T) {
-		m.Config.ConfirmOperations = false
+		m.Config.Ops.ConfirmOperations = false
 		cmd := file.PerformDelete(m)
 		if cmd == nil {
 			t.Fatal("expected non-nil command")
@@ -149,7 +149,7 @@ func TestPerformDelete(t *testing.T) {
 	})
 
 	t.Run("Confirm Delete", func(t *testing.T) {
-		m.Config.ConfirmOperations = true
+		m.Config.Ops.ConfirmOperations = true
 		file.PerformDelete(m)
 		if !m.UI.Confirming {
 			t.Error("expected Confirming to be true")
@@ -163,7 +163,7 @@ func TestPerformPaste(t *testing.T) {
 	m.Operations.Clipboard.SetCopy(fs, []string{"/src/file1.txt"})
 
 	t.Run("Immediate Paste", func(t *testing.T) {
-		m.Config.ConfirmOperations = false
+		m.Config.Ops.ConfirmOperations = false
 		cmd := file.PerformPaste(m)
 		if cmd == nil {
 			t.Fatal("expected non-nil command")

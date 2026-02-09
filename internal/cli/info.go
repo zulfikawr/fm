@@ -77,7 +77,7 @@ type TreeNode struct {
 // RunInfo executes the info command
 func RunInfo(opts InfoOptions) error {
 	cfg := config.Load()
-	t := theme.Themes[cfg.ThemeIndex]
+	t := theme.Themes[cfg.UI.ThemeIndex]
 	styles := theme.NewStylesheet(t)
 
 	ctx := context.Background()
@@ -127,7 +127,7 @@ func RunInfo(opts InfoOptions) error {
 		Path:          targetPath,
 		Type:          getTypeString(info),
 		Size:          info.Size(),
-		SizeFormatted: format.FormatSize(info.Size(), cfg.SizeFormatIndex),
+		SizeFormatted: format.FormatSize(info.Size(), cfg.UI.SizeFormatIndex),
 		Permissions:   info.Mode().String(),
 		Mode:          fmt.Sprintf("%04o", info.Mode().Perm()),
 		Modified:      info.ModTime(),
@@ -136,7 +136,7 @@ func RunInfo(opts InfoOptions) error {
 	}
 
 	// Initialize git service
-	gs := git.NewGitService(cfg.EnableGit)
+	gs := git.NewGitService(cfg.External.EnableGit)
 
 	// Get git information
 	if fs.IsLocal() && gs.IsEnabled() {
@@ -179,7 +179,7 @@ func RunInfo(opts InfoOptions) error {
 			result.FileCount = fc
 			result.DirectoryCount = dc
 			result.TotalSize = analysis.Size
-			result.TotalSizeFormatted = format.FormatSize(analysis.Size, cfg.SizeFormatIndex)
+			result.TotalSizeFormatted = format.FormatSize(analysis.Size, cfg.UI.SizeFormatIndex)
 
 			// Overwrite the base size with recursive size for directories
 			result.SizeFormatted = result.TotalSizeFormatted
@@ -198,7 +198,7 @@ func RunInfo(opts InfoOptions) error {
 	}
 
 	// Pretty print
-	printInfo(result, &styles, cfg.SizeFormatIndex, opts.Tree)
+	printInfo(result, &styles, cfg.UI.SizeFormatIndex, opts.Tree)
 	return nil
 }
 

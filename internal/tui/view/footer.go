@@ -31,7 +31,7 @@ func renderFooter(m *context.Model, layout context.Layout) string {
 		RemoteConnected:      !m.FS.IsLocal(),
 		Message:              m.Message.Text,
 		SortMode:             m.Display.SortMode,
-		ShowRAMUsage:         m.Config.ShowRAMUsage,
+		ShowRAMUsage:         m.Config.UI.ShowRAMUsage,
 		Cursor:               m.Navigation.Cursor,
 		TotalItems:           len(m.Navigation.FilteredItems),
 		SelectedCount:        m.Navigation.SelectedCount,

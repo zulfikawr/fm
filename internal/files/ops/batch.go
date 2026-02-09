@@ -21,7 +21,7 @@ func DeleteMultiple(opts DeleteOptions) error {
 		default:
 		}
 
-		if opts.OpCtx.Progress != nil && !opts.UseTrash {
+		if opts.OpCtx.Progress != nil && !opts.Trash.UseTrash {
 			select {
 			case opts.OpCtx.Progress <- core.Progress{
 				Percent: float64(i) / float64(len(opts.Paths)),
@@ -32,7 +32,7 @@ func DeleteMultiple(opts DeleteOptions) error {
 		}
 
 		var err error
-		if opts.UseTrash {
+		if opts.Trash.UseTrash {
 			err = MoveToTrash(opts.OpCtx.Context, opts.OpCtx.FS, path)
 		} else {
 			err = Delete(DeleteOptions{

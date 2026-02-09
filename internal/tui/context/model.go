@@ -96,7 +96,7 @@ func (s *AnalyzeState) GetRows() []AnalyzeRow {
 func NewModel(fs core.FileSystem, startPath string) *Model {
 	cfg := config.Load()
 	ctx, cancel := context.WithCancel(context.Background())
-	styles := theme.GetStylesheet(cfg.ThemeIndex)
+	styles := theme.GetStylesheet(cfg.UI.ThemeIndex)
 
 	ti := ui.NewInput(styles)
 	ti.CharLimit = 256
@@ -230,7 +230,7 @@ func (m *Model) SyncViewportHeight() {
 
 	// If we are in the file list and showing the header, subtract its height
 	if !m.UI.SettingsOpen && !m.UI.HelpOpen && !m.UI.LogOpen && !m.UI.ClipboardOpen && !m.UI.TrashOpen &&
-		m.Inputs.Mode != InputFuzzySearch && m.Config.ShowHeader {
+		m.Inputs.Mode != InputFuzzySearch && m.Config.UI.ShowHeader {
 		h -= 3 // List Header
 	}
 

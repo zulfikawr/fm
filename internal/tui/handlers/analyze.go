@@ -126,7 +126,7 @@ func HandleAnalyze(m *tuictx.Model, msg tea.Msg) tea.Cmd {
 				if selected.Name == "↑ .." {
 					return func() tea.Msg { return nil }
 				}
-				if m.Config.ConfirmOperations {
+				if m.Config.Ops.ConfirmOperations {
 					m.UI.StartConfirming()
 					m.Operations.ActionType = constants.ActionDelete
 					return func() tea.Msg { return nil }
@@ -204,9 +204,9 @@ func PerformDeleteFromAnalyze(m *tuictx.Model) tea.Cmd {
 
 	return func() tea.Msg {
 		err := ops.DeleteMultiple(ops.DeleteOptions{
-			OpCtx:    ops.OpContext{Context: context.Background(), FS: m.FS},
-			Paths:    []string{path},
-			UseTrash: m.Config.UseTrash,
+			OpCtx: ops.OpContext{Context: context.Background(), FS: m.FS},
+			Paths: []string{path},
+			Trash: ops.TrashOptions{UseTrash: m.Config.Trash.UseTrash},
 		})
 		if err != nil {
 			return messages.StatusMsg{Message: "Failed to delete: " + err.Error(), IsError: true}

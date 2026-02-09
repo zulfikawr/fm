@@ -167,13 +167,13 @@ func MoveCursor(m *tui_context.Model, delta int) {
 
 	newCursor := m.Navigation.Cursor + delta
 	if newCursor < 0 {
-		if m.Config.WrapNavigation {
+		if m.Config.Ops.WrapNavigation {
 			newCursor = len(items) - 1
 		} else {
 			newCursor = 0
 		}
 	} else if newCursor >= len(items) {
-		if m.Config.WrapNavigation {
+		if m.Config.Ops.WrapNavigation {
 			newCursor = 0
 		} else {
 			newCursor = len(items) - 1
@@ -196,11 +196,11 @@ func ToggleSelection(m *tui_context.Model) {
 		return
 	}
 	item := &m.Navigation.FilteredItems[cursor]
-	if item.IsUp {
+	if item.State.IsUp {
 		return
 	}
 
-	item.Selected = !item.Selected
+	item.State.Selected = !item.State.Selected
 	m.Navigation.ToggleSelection(item.Path)
 
 	m.UI.SelectMode = m.Navigation.SelectedCount > 0
@@ -220,7 +220,7 @@ func NavigateToSelected(m *tui_context.Model) tea.Cmd {
 	}
 	selected := m.Navigation.FilteredItems[m.Navigation.Cursor]
 
-	if selected.IsUp {
+	if selected.State.IsUp {
 		return NavigateToParent(m)
 	}
 
@@ -228,7 +228,7 @@ func NavigateToSelected(m *tui_context.Model) tea.Cmd {
 		if err := ops.ValidatePath(m.FS, m.Navigation.Path, selected.Name); err != nil {
 			return func() tea.Msg { return messages.ErrorMsg{Err: err} }
 		}
-		if !selected.CanRead {
+		if !selected.Metadata.CanRead {
 			return func() tea.Msg { return messages.ErrorMsg{Err: fmt.Errorf("access denied")} }
 		}
 		return NavigateToPath(m, m.FS.Join(m.Navigation.Path, selected.Name))
@@ -287,7 +287,7 @@ func HandleShiftSelect(m *tui_context.Model, delta int) tea.Cmd {
 
 	for i := start; i <= end; i++ {
 		item := items[i]
-		if !item.IsUp {
+		if !item.State.IsUp {
 			m.Navigation.Select(item.Path)
 		}
 	}

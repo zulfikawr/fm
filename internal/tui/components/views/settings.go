@@ -76,38 +76,38 @@ func buildSettingGroups(props SettingsProps) []SettingGroup {
 		{
 			Title: "File Operations",
 			Settings: []SettingItem{
-				{Label: "Show Hidden Files", Value: ui.Toggle(s.ShowHidden, styles)},
-				{Label: "Case-Sensitive Search", Value: ui.Toggle(s.CaseSensitive, styles)},
-				{Label: "Confirm Operations", Value: ui.Toggle(s.ConfirmOperations, styles)},
-				{Label: "Wrap Navigation", Value: ui.Toggle(s.WrapNavigation, styles)},
-				{Label: "Preferred Editor", Value: ui.Picker(constants.Editors[s.EditorIndex], styles)},
-				{Label: "Use Trash (Move to Trash)", Value: ui.Toggle(s.UseTrash, styles)},
+				{Label: "Show Hidden Files", Value: ui.Toggle(s.UI.ShowHidden, styles)},
+				{Label: "Case-Sensitive Search", Value: ui.Toggle(s.Ops.CaseSensitive, styles)},
+				{Label: "Confirm Operations", Value: ui.Toggle(s.Ops.ConfirmOperations, styles)},
+				{Label: "Wrap Navigation", Value: ui.Toggle(s.Ops.WrapNavigation, styles)},
+				{Label: "Preferred Editor", Value: ui.Picker(constants.Editors[s.External.EditorIndex], styles)},
+				{Label: "Use Trash (Move to Trash)", Value: ui.Toggle(s.Trash.UseTrash, styles)},
 			},
 		},
 		{
 			Title: "Display Options",
 			Settings: []SettingItem{
-				{Label: "Show Column Headers", Value: ui.Toggle(s.ShowHeader, styles)},
-				{Label: "Show RAM Usage", Value: ui.Toggle(s.ShowRAMUsage, styles)},
-				{Label: "Enable Git Status", Value: ui.Toggle(s.EnableGit, styles)},
-				{Label: "Show File Size", Value: ui.Toggle(s.ShowSize, styles)},
-				{Label: "Size Format", Value: ui.Picker(format.SizeFormats[s.SizeFormatIndex], styles)},
-				{Label: "Show Date Modified", Value: ui.Toggle(s.ShowDateModified, styles)},
-				{Label: "Date Format", Value: ui.Picker(format.DateFormats[s.DateFormatIndex].Name, styles)},
-				{Label: "Enable Mouse Support", Value: ui.Toggle(s.EnableMouse, styles)},
+				{Label: "Show Column Headers", Value: ui.Toggle(s.UI.ShowHeader, styles)},
+				{Label: "Show RAM Usage", Value: ui.Toggle(s.UI.ShowRAMUsage, styles)},
+				{Label: "Enable Git Status", Value: ui.Toggle(s.External.EnableGit, styles)},
+				{Label: "Show File Size", Value: ui.Toggle(s.UI.ShowSize, styles)},
+				{Label: "Size Format", Value: ui.Picker(format.SizeFormats[s.UI.SizeFormatIndex], styles)},
+				{Label: "Show Date Modified", Value: ui.Toggle(s.UI.ShowDateModified, styles)},
+				{Label: "Date Format", Value: ui.Picker(format.DateFormats[s.UI.DateFormatIndex].Name, styles)},
+				{Label: "Enable Mouse Support", Value: ui.Toggle(s.UI.EnableMouse, styles)},
 			},
 		},
 		{
 			Title: "Search, Filtering & Inputs",
 			Settings: []SettingItem{
-				{Label: "Enable Regex Search", Value: ui.Toggle(s.EnableRegexSearch, styles)},
+				{Label: "Enable Regex Search", Value: ui.Toggle(s.Ops.EnableRegexSearch, styles)},
 			},
 		},
 		{
 			Title: "Appearance",
 			Settings: []SettingItem{
-				{Label: "Enable Nerd Font Icons", Value: ui.Toggle(s.EnableIcons, styles)},
-				{Label: "Theme", Value: ui.Picker(theme.Themes[s.ThemeIndex].Name, styles)},
+				{Label: "Enable Nerd Font Icons", Value: ui.Toggle(s.UI.EnableIcons, styles)},
+				{Label: "Theme", Value: ui.Picker(theme.Themes[s.UI.ThemeIndex].Name, styles)},
 			},
 		},
 	}
@@ -151,10 +151,10 @@ func buildSettingGroups(props SettingsProps) []SettingGroup {
 	}
 
 	// Mark inactive settings
-	if !s.ShowSize {
+	if !s.UI.ShowSize {
 		groups[1].Settings[3].Inactive = true
 	}
-	if !s.ShowDateModified {
+	if !s.UI.ShowDateModified {
 		groups[1].Settings[5].Inactive = true
 	}
 

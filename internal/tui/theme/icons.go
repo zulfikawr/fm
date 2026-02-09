@@ -124,7 +124,7 @@ func DownloadIcons() error {
 
 // GetIcon returns the appropriate Nerd Font icon for the given item
 func GetIcon(item core.Item) string {
-	if item.IsUp {
+	if item.State.IsUp {
 		return ""
 	}
 

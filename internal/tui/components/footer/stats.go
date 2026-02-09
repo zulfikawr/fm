@@ -11,7 +11,7 @@ func renderStatsFooter(props Props) string {
 	// Adjust for "↑ .."
 	total := props.TotalItems
 	current := props.Cursor
-	if len(props.FilteredItems) > 0 && props.FilteredItems[0].IsUp {
+	if len(props.FilteredItems) > 0 && props.FilteredItems[0].State.IsUp {
 		total--
 		if current == 0 {
 			current = -1

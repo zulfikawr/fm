@@ -28,31 +28,31 @@ func GetValidationBounds() ValidationBounds {
 func (c *Config) Validate() error {
 	bounds := GetValidationBounds()
 
-	if c.ThemeIndex < 0 || c.ThemeIndex > bounds.MaxThemeIndex {
+	if c.UI.ThemeIndex < 0 || c.UI.ThemeIndex > bounds.MaxThemeIndex {
 		return &ValidationError{
 			Field:   "theme_index",
-			Value:   c.ThemeIndex,
+			Value:   c.UI.ThemeIndex,
 			Message: fmt.Sprintf("must be 0-%d", bounds.MaxThemeIndex),
 		}
 	}
-	if c.DateFormatIndex < 0 || c.DateFormatIndex > bounds.MaxDateFormatIndex {
+	if c.UI.DateFormatIndex < 0 || c.UI.DateFormatIndex > bounds.MaxDateFormatIndex {
 		return &ValidationError{
 			Field:   "date_format_index",
-			Value:   c.DateFormatIndex,
+			Value:   c.UI.DateFormatIndex,
 			Message: fmt.Sprintf("must be 0-%d", bounds.MaxDateFormatIndex),
 		}
 	}
-	if c.SizeFormatIndex < 0 || c.SizeFormatIndex > bounds.MaxSizeFormatIndex {
+	if c.UI.SizeFormatIndex < 0 || c.UI.SizeFormatIndex > bounds.MaxSizeFormatIndex {
 		return &ValidationError{
 			Field:   "size_format_index",
-			Value:   c.SizeFormatIndex,
+			Value:   c.UI.SizeFormatIndex,
 			Message: fmt.Sprintf("must be 0-%d", bounds.MaxSizeFormatIndex),
 		}
 	}
-	if c.EditorIndex < 0 || c.EditorIndex > bounds.MaxEditorIndex {
+	if c.External.EditorIndex < 0 || c.External.EditorIndex > bounds.MaxEditorIndex {
 		return &ValidationError{
 			Field:   "editor_index",
-			Value:   c.EditorIndex,
+			Value:   c.External.EditorIndex,
 			Message: fmt.Sprintf("must be 0-%d", bounds.MaxEditorIndex),
 		}
 	}

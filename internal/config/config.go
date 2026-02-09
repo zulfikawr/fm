@@ -10,27 +10,43 @@ import (
 
 // Config holds the user preferences.
 type Config struct {
-	ConfigVersion        int          `json:"config_version"`
-	ThemeIndex           int          `json:"theme_index"`
-	ShowHidden           bool         `json:"show_hidden"`
-	CaseSensitive        bool         `json:"case_sensitive"`
-	ConfirmOperations    bool         `json:"confirm_operations"`
-	WrapNavigation       bool         `json:"wrap_navigation"`
-	EnableGit            bool         `json:"enable_git"`
-	ShowSize             bool         `json:"show_size"`
-	ShowDateModified     bool         `json:"show_date_modified"`
-	ShowHeader           bool         `json:"show_header"`
-	DateFormatIndex      int          `json:"date_format_index"`
-	SizeFormatIndex      int          `json:"size_format_index"`
-	EditorIndex          int          `json:"editor_index"`
-	UseTrash             bool         `json:"use_trash"`
-	TrashAutoCleanupDays int          `json:"trash_auto_cleanup_days"`
-	TrashMaxSizeMB       int          `json:"trash_max_size_mb"`
-	EnableMouse          bool         `json:"enable_mouse"`
-	EnableIcons          bool         `json:"enable_icons"`
-	EnableRegexSearch    bool         `json:"enable_regex_search"`
-	ShowRAMUsage         bool         `json:"show_ram_usage"`
-	Keybindings          []Keybinding `json:"keybindings"`
+	ConfigVersion int            `json:"config_version"`
+	UI            UIConfig       `json:"ui"`
+	Ops           OpsConfig      `json:"ops"`
+	External      ExternalConfig `json:"external"`
+	Trash         TrashConfig    `json:"trash"`
+	Keybindings   []Keybinding   `json:"keybindings"`
+}
+
+type UIConfig struct {
+	ThemeIndex       int  `json:"theme_index"`
+	ShowHidden       bool `json:"show_hidden"`
+	ShowSize         bool `json:"show_size"`
+	ShowDateModified bool `json:"show_date_modified"`
+	ShowHeader       bool `json:"show_header"`
+	ShowRAMUsage     bool `json:"show_ram_usage"`
+	DateFormatIndex  int  `json:"date_format_index"`
+	SizeFormatIndex  int  `json:"size_format_index"`
+	EnableMouse      bool `json:"enable_mouse"`
+	EnableIcons      bool `json:"enable_icons"`
+}
+
+type OpsConfig struct {
+	ConfirmOperations bool `json:"confirm_operations"`
+	WrapNavigation    bool `json:"wrap_navigation"`
+	CaseSensitive     bool `json:"case_sensitive"`
+	EnableRegexSearch bool `json:"enable_regex_search"`
+}
+
+type ExternalConfig struct {
+	EnableGit   bool `json:"enable_git"`
+	EditorIndex int  `json:"editor_index"`
+}
+
+type TrashConfig struct {
+	UseTrash             bool `json:"use_trash"`
+	TrashAutoCleanupDays int  `json:"trash_auto_cleanup_days"`
+	TrashMaxSizeMB       int  `json:"trash_max_size_mb"`
 }
 
 const CurrentConfigVersion = 1
@@ -38,27 +54,35 @@ const CurrentConfigVersion = 1
 // DefaultConfig returns the initial configuration.
 func DefaultConfig() Config {
 	return Config{
-		ConfigVersion:        CurrentConfigVersion,
-		ThemeIndex:           0, // Gruvbox
-		ShowHidden:           true,
-		CaseSensitive:        false,
-		ConfirmOperations:    true,
-		WrapNavigation:       false,
-		EnableGit:            true,
-		ShowSize:             true,
-		ShowDateModified:     true,
-		ShowHeader:           false,
-		DateFormatIndex:      0, // Default
-		SizeFormatIndex:      0, // Full
-		EditorIndex:          0, // Vim
-		UseTrash:             false,
-		TrashAutoCleanupDays: 30,
-		TrashMaxSizeMB:       0, // Unlimited
-		EnableMouse:          true,
-		EnableIcons:          false,
-		EnableRegexSearch:    false,
-		ShowRAMUsage:         false,
-		Keybindings:          DefaultKeybindings(),
+		ConfigVersion: CurrentConfigVersion,
+		UI: UIConfig{
+			ThemeIndex:       0, // Gruvbox
+			ShowHidden:       true,
+			ShowSize:         true,
+			ShowDateModified: true,
+			ShowHeader:       false,
+			DateFormatIndex:  0, // Default
+			SizeFormatIndex:  0, // Full
+			EnableMouse:      true,
+			EnableIcons:      false,
+			ShowRAMUsage:     false,
+		},
+		Ops: OpsConfig{
+			ConfirmOperations: true,
+			WrapNavigation:    false,
+			CaseSensitive:     false,
+			EnableRegexSearch: false,
+		},
+		External: ExternalConfig{
+			EnableGit:   true,
+			EditorIndex: 0, // Vim
+		},
+		Trash: TrashConfig{
+			UseTrash:             false,
+			TrashAutoCleanupDays: 30,
+			TrashMaxSizeMB:       0, // Unlimited
+		},
+		Keybindings: DefaultKeybindings(),
 	}
 }
 

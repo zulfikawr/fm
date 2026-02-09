@@ -76,7 +76,7 @@ func PerformDelete(m *tui_context.Model) tea.Cmd {
 		return nil
 	}
 
-	if m.Config.ConfirmOperations && m.Operations.ActionType != constants.ActionDelete {
+	if m.Config.Ops.ConfirmOperations && m.Operations.ActionType != constants.ActionDelete {
 		m.UI.StartConfirming()
 		m.Operations.ActionType = constants.ActionDelete
 		return nil
@@ -108,7 +108,7 @@ func StartRename(m *tui_context.Model) tea.Cmd {
 		return nil
 	}
 	selected := m.Navigation.FilteredItems[m.Navigation.Cursor]
-	if selected.IsUp {
+	if selected.State.IsUp {
 		return nil
 	}
 

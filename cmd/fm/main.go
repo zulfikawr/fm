@@ -69,7 +69,7 @@ func run() error {
 	}()
 
 	pOpts := []tea.ProgramOption{tea.WithAltScreen()}
-	if a.Model.Config.EnableMouse {
+	if a.Model.Config.UI.EnableMouse {
 		pOpts = append(pOpts, tea.WithMouseCellMotion())
 	}
 

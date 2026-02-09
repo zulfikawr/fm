@@ -25,9 +25,9 @@ func handleBatch(m *tuictx.Model, msg tea.Msg) (tea.Cmd, bool) {
 			Message: msg.Message,
 		})
 		return file.DeleteItems(ops.DeleteOptions{
-			OpCtx:    ops.OpContext{Context: m.Context, FS: m.FS},
-			Paths:    msg.Targets,
-			UseTrash: m.Config.UseTrash,
+			OpCtx: ops.OpContext{Context: m.Context, FS: m.FS},
+			Paths: msg.Targets,
+			Trash: ops.TrashOptions{UseTrash: m.Config.Trash.UseTrash},
 		}, logID), true
 
 	case messages.PerformPasteMsg:

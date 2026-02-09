@@ -18,12 +18,12 @@ func ApplyFilter(m *tui_context.Model) {
 
 	m.Navigation.FilteredItems = nil
 	for _, item := range m.Navigation.Items {
-		if item.IsUp {
+		if item.State.IsUp {
 			m.Navigation.FilteredItems = append(m.Navigation.FilteredItems, item)
 			continue
 		}
 
-		if strings.Contains(item.SearchKey, query) {
+		if strings.Contains(item.State.SearchKey, query) {
 			m.Navigation.FilteredItems = append(m.Navigation.FilteredItems, item)
 		}
 	}

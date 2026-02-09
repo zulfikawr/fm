@@ -47,7 +47,7 @@ func TestNavigation_Deep(t *testing.T) {
 
 	m := tuictx.NewModel(fs, "/test")
 	m.Navigation.Items = []core.Item{
-		{Name: "subdir", Path: "/test/subdir", IsDir: true, CanRead: true},
+		{Name: "subdir", Path: "/test/subdir", IsDir: true, Metadata: core.ItemMetadata{CanRead: true}},
 	}
 	m.Navigation.FilteredItems = m.Navigation.Items
 

@@ -31,7 +31,7 @@ func applyGitStatus(m *tui_context.Model, msg messages.GitStatusMsg) tea.Cmd {
 
 	for i, item := range m.Navigation.Items {
 		if status, ok := msg.Statuses[item.Name]; ok {
-			m.Navigation.Items[i].GitStatus = status
+			m.Navigation.Items[i].Display.GitStatus = status
 		}
 	}
 
@@ -44,12 +44,16 @@ func applyGitStatus(m *tui_context.Model, msg messages.GitStatusMsg) tea.Cmd {
 	for name, status := range msg.Statuses {
 		if !seen[name] && status == "D" {
 			m.Navigation.Items = append(m.Navigation.Items, core.Item{
-				Name:      name,
-				Path:      m.FS.Join(m.Navigation.Path, name),
-				IsDir:     false,
-				GitStatus: "D",
-				IsGhost:   true,
-				Size:      0,
+				Name:  name,
+				Path:  m.FS.Join(m.Navigation.Path, name),
+				IsDir: false,
+				Display: core.ItemDisplay{
+					GitStatus: "D",
+					IsGhost:   true,
+				},
+				Metadata: core.ItemMetadata{
+					Size: 0,
+				},
 			})
 		}
 	}

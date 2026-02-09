@@ -72,8 +72,8 @@ func TestRunConfig(t *testing.T) {
 
 		// Verify it actually reset (vim is default editor)
 		cfg := config.Load()
-		if cfg.EditorIndex != 0 {
-			t.Errorf("Expected editor index 0, got %d", cfg.EditorIndex)
+		if cfg.External.EditorIndex != 0 {
+			t.Errorf("Expected editor index 0, got %d", cfg.External.EditorIndex)
 		}
 	})
 }

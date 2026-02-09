@@ -72,10 +72,10 @@ func handleGlobal(m *tuictx.Model, msg tea.Msg) (tea.Cmd, bool) {
 			return nil, false
 		case "toggle_regex_search":
 			if !m.UI.InputActive && !m.UI.SettingsOpen && !m.UI.HelpOpen {
-				m.Config.EnableRegexSearch = !m.Config.EnableRegexSearch
+				m.Config.Ops.EnableRegexSearch = !m.Config.Ops.EnableRegexSearch
 				_ = m.Config.Save()
 				msg := "Regex Search enabled"
-				if !m.Config.EnableRegexSearch {
+				if !m.Config.Ops.EnableRegexSearch {
 					msg = "Regex Search disabled"
 				}
 				return utils.SetMsg(m, msg), true

@@ -39,18 +39,18 @@ func TestConfig_SaveLoad(t *testing.T) {
 	defer SetConfigPath("")
 
 	cfg := DefaultConfig()
-	cfg.ThemeIndex = 5
-	cfg.ShowHidden = true
+	cfg.UI.ThemeIndex = 5
+	cfg.UI.ShowHidden = true
 
 	if err := cfg.Save(); err != nil {
 		t.Fatalf("Save failed: %v", err)
 	}
 
 	loaded := Load()
-	if loaded.ThemeIndex != 5 {
-		t.Errorf("Expected ThemeIndex 5, got %d", loaded.ThemeIndex)
+	if loaded.UI.ThemeIndex != 5 {
+		t.Errorf("Expected ThemeIndex 5, got %d", loaded.UI.ThemeIndex)
 	}
-	if !loaded.ShowHidden {
+	if !loaded.UI.ShowHidden {
 		t.Error("Expected ShowHidden true")
 	}
 }
@@ -67,7 +67,7 @@ func TestConfig_Validate(t *testing.T) {
 
 	t.Run("Invalid theme index", func(t *testing.T) {
 		invalidCfg := cfg
-		invalidCfg.ThemeIndex = 999
+		invalidCfg.UI.ThemeIndex = 999
 		err := invalidCfg.Validate()
 		if err == nil {
 			t.Error("Expected error for invalid theme index")
@@ -76,7 +76,7 @@ func TestConfig_Validate(t *testing.T) {
 
 	t.Run("Invalid date format", func(t *testing.T) {
 		invalidCfg := cfg
-		invalidCfg.DateFormatIndex = 999
+		invalidCfg.UI.DateFormatIndex = 999
 		err := invalidCfg.Validate()
 		if err == nil {
 			t.Error("Expected error for invalid date format")
@@ -85,7 +85,7 @@ func TestConfig_Validate(t *testing.T) {
 
 	t.Run("Invalid size format", func(t *testing.T) {
 		invalidCfg := cfg
-		invalidCfg.SizeFormatIndex = 999
+		invalidCfg.UI.SizeFormatIndex = 999
 		err := invalidCfg.Validate()
 		if err == nil {
 			t.Error("Expected error for invalid size format")
@@ -94,7 +94,7 @@ func TestConfig_Validate(t *testing.T) {
 
 	t.Run("Invalid editor", func(t *testing.T) {
 		invalidCfg := cfg
-		invalidCfg.EditorIndex = 999
+		invalidCfg.External.EditorIndex = 999
 		err := invalidCfg.Validate()
 		if err == nil {
 			t.Error("Expected error for invalid editor")
@@ -111,8 +111,8 @@ func TestConfig_LoadErrors(t *testing.T) {
 
 	t.Run("Non-existent file", func(t *testing.T) {
 		cfg := Load()
-		if cfg.ShowHidden != true { // Default is now true
-			t.Errorf("Expected default ShowHidden true, got %v", cfg.ShowHidden)
+		if cfg.UI.ShowHidden != true { // Default is now true
+			t.Errorf("Expected default ShowHidden true, got %v", cfg.UI.ShowHidden)
 		}
 	})
 
@@ -121,18 +121,18 @@ func TestConfig_LoadErrors(t *testing.T) {
 			t.Fatal(err)
 		}
 		cfg := Load()
-		if cfg.ShowHidden != true {
+		if cfg.UI.ShowHidden != true {
 			t.Error("Expected default config on malformed JSON")
 		}
 	})
 
 	t.Run("Invalid values in file", func(t *testing.T) {
-		if err := os.WriteFile(configPath, []byte(`{"theme_index": 999}`), 0644); err != nil {
+		if err := os.WriteFile(configPath, []byte(`{"ui": {"theme_index": 999}}`), 0644); err != nil {
 			t.Fatal(err)
 		}
 		cfg := Load()
-		if cfg.ThemeIndex != 0 {
-			t.Errorf("Expected default ThemeIndex 0 on validation error, got %d", cfg.ThemeIndex)
+		if cfg.UI.ThemeIndex != 0 {
+			t.Errorf("Expected default ThemeIndex 0 on validation error, got %d", cfg.UI.ThemeIndex)
 		}
 	})
 }
@@ -144,7 +144,7 @@ func TestConfig_Migration(t *testing.T) {
 	defer SetConfigPath("")
 
 	t.Run("v0 migration", func(t *testing.T) {
-		if err := os.WriteFile(configPath, []byte(`{"config_version": 0, "theme_index": 1}`), 0644); err != nil {
+		if err := os.WriteFile(configPath, []byte(`{"config_version": 0, "ui": {"theme_index": 1}}`), 0644); err != nil {
 			t.Fatal(err)
 		}
 		cfg := Load()
@@ -152,19 +152,19 @@ func TestConfig_Migration(t *testing.T) {
 			t.Errorf("Expected version %d, got %d", CurrentConfigVersion, cfg.ConfigVersion)
 		}
 		// v0 migration now preserves values
-		if cfg.ThemeIndex != 1 {
-			t.Errorf("Expected ThemeIndex 1 after v0 migration, got %d", cfg.ThemeIndex)
+		if cfg.UI.ThemeIndex != 1 {
+			t.Errorf("Expected ThemeIndex 1 after v0 migration, got %d", cfg.UI.ThemeIndex)
 		}
 	})
 
 	t.Run("Future version migration", func(t *testing.T) {
 		// Just ensure it doesn't crash and keeps values if version is higher or same
-		if err := os.WriteFile(configPath, []byte(`{"config_version": 1, "theme_index": 1}`), 0644); err != nil {
+		if err := os.WriteFile(configPath, []byte(`{"config_version": 1, "ui": {"theme_index": 1}}`), 0644); err != nil {
 			t.Fatal(err)
 		}
 		cfg := Load()
-		if cfg.ThemeIndex != 1 {
-			t.Errorf("Expected ThemeIndex 1, got %d", cfg.ThemeIndex)
+		if cfg.UI.ThemeIndex != 1 {
+			t.Errorf("Expected ThemeIndex 1, got %d", cfg.UI.ThemeIndex)
 		}
 	})
 }

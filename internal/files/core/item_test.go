@@ -22,28 +22,30 @@ func TestNewItem(t *testing.T) {
 	if item.Name != "test.txt" {
 		t.Errorf("Expected test.txt, got %s", item.Name)
 	}
-	if item.Size != 100 {
-		t.Errorf("Expected 100, got %d", item.Size)
+	if item.Metadata.Size != 100 {
+		t.Errorf("Expected 100, got %d", item.Metadata.Size)
 	}
-	if item.GitStatus != "M" {
-		t.Errorf("Expected M, got %s", item.GitStatus)
+	if item.Display.GitStatus != "M" {
+		t.Errorf("Expected M, got %s", item.Display.GitStatus)
 	}
-	if !item.HasMetadata {
+	if !item.State.HasMetadata {
 		t.Error("Expected HasMetadata to be true")
 	}
 }
 
 func TestItem_Formatting(t *testing.T) {
 	item := Item{
-		Size:  1024,
-		MTime: time.Date(2023, 1, 1, 12, 0, 0, 0, time.UTC),
+		Metadata: ItemMetadata{
+			Size:  1024,
+			MTime: time.Date(2023, 1, 1, 12, 0, 0, 0, time.UTC),
+		},
 	}
 
 	// 1024 bytes -> 1.0 KB (standard format)
 	item.UpdateFormatting(1, 0)
 
-	if item.FormattedSize != "1.0 KB" {
-		t.Errorf("Expected 1.0 KB, got %s", item.FormattedSize)
+	if item.Display.FormattedSize != "1.0 KB" {
+		t.Errorf("Expected 1.0 KB, got %s", item.Display.FormattedSize)
 	}
 }
 

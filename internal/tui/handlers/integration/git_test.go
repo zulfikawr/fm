@@ -27,9 +27,12 @@ func TestGit_Status(t *testing.T) {
 
 	integration.HandleGit(m, msg)
 
-	if m.Navigation.Items[0].GitStatus != "M" {
-		t.Errorf("expected GitStatus M, got %s", m.Navigation.Items[0].GitStatus)
+	if m.Navigation.Items[0].Display.GitStatus != "M" {
+
+		t.Errorf("expected GitStatus M, got %s", m.Navigation.Items[0].Display.GitStatus)
+
 	}
+
 	if m.Git.Branch != "main" {
 		t.Errorf("expected branch main, got %s", m.Git.Branch)
 	}

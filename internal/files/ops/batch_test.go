@@ -29,9 +29,9 @@ func TestDeleteMultiple(t *testing.T) {
 
 	paths := []string{"/test/a", "/test/b"}
 	err := DeleteMultiple(DeleteOptions{
-		OpCtx:    OpContext{Context: ctx, FS: fs},
-		Paths:    paths,
-		UseTrash: false,
+		OpCtx: OpContext{Context: ctx, FS: fs},
+		Paths: paths,
+		Trash: TrashOptions{UseTrash: false},
 	})
 	testutil.AssertNoError(t, err, "DeleteMultiple should succeed")
 
@@ -39,9 +39,9 @@ func TestDeleteMultiple(t *testing.T) {
 		progChan := make(chan core.Progress, 10)
 		paths := []string{"/a", "/b", "/c"}
 		err := DeleteMultiple(DeleteOptions{
-			OpCtx:    OpContext{Context: ctx, FS: fs, Progress: progChan},
-			Paths:    paths,
-			UseTrash: false,
+			OpCtx: OpContext{Context: ctx, FS: fs, Progress: progChan},
+			Paths: paths,
+			Trash: TrashOptions{UseTrash: false},
 		})
 		testutil.AssertNoError(t, err, "Should succeed")
 
@@ -57,9 +57,9 @@ func TestDeleteMultiple(t *testing.T) {
 
 	t.Run("Empty paths", func(t *testing.T) {
 		err := DeleteMultiple(DeleteOptions{
-			OpCtx:    OpContext{Context: ctx, FS: fs},
-			Paths:    []string{},
-			UseTrash: false,
+			OpCtx: OpContext{Context: ctx, FS: fs},
+			Paths: []string{},
+			Trash: TrashOptions{UseTrash: false},
 		})
 		testutil.AssertNoError(t, err, "Should not error on empty paths")
 	})
@@ -69,9 +69,9 @@ func TestDeleteMultiple(t *testing.T) {
 			return true, nil
 		}
 		err := DeleteMultiple(DeleteOptions{
-			OpCtx:    OpContext{Context: ctx, FS: fs},
-			Paths:    []string{"/test/a"},
-			UseTrash: false,
+			OpCtx: OpContext{Context: ctx, FS: fs},
+			Paths: []string{"/test/a"},
+			Trash: TrashOptions{UseTrash: false},
 		})
 		if err == nil {
 			t.Error("Expected error when filesystem is read-only")
@@ -82,9 +82,9 @@ func TestDeleteMultiple(t *testing.T) {
 		fs.IsReadOnlyFunc = func(ctx context.Context, path string) (bool, error) { return false, nil }
 		fs.IsLocalFunc = func() bool { return false }
 		err := DeleteMultiple(DeleteOptions{
-			OpCtx:    OpContext{Context: ctx, FS: fs},
-			Paths:    []string{"/test/a"},
-			UseTrash: true,
+			OpCtx: OpContext{Context: ctx, FS: fs},
+			Paths: []string{"/test/a"},
+			Trash: TrashOptions{UseTrash: true},
 		})
 		if err == nil {
 			t.Fatal("Expected error when trashing on remote")

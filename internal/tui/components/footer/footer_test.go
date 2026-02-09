@@ -120,7 +120,7 @@ func TestFooter_UpDirStats(t *testing.T) {
 		Cursor:     0,
 		TotalItems: 3, // ↑ .., file1, file2
 		FilteredItems: []core.Item{
-			{Name: "↑ ..", IsUp: true},
+			{Name: "↑ ..", State: core.ItemState{IsUp: true}},
 			{Name: "file1"},
 			{Name: "file2"},
 		},
