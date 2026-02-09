@@ -19,6 +19,10 @@ func handleGlobal(m *tuictx.Model, msg tea.Msg) (tea.Cmd, bool) {
 	case app.TickMsg:
 		return nil, true
 
+	case app.RAMUpdateMsg:
+		m.Display.RAMUsageMB = msg.RAMUsageMB
+		return app.StartRAMTicker(), true // Reschedule the RAM ticker
+
 	case tea.WindowSizeMsg:
 		m.Display.Width = msg.Width
 		m.Display.Height = msg.Height

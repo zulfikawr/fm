@@ -26,6 +26,7 @@ func renderFooter(m *context.Model, layout context.Layout) string {
 		ActiveView: m.UI.ActiveView,
 		Width:      layout.Width,
 		Styles:     styles,
+		Model:      m,
 		Progress: footer.ProgressProps{
 			Label:   m.Operations.Progress.Label,
 			Percent: m.Operations.Progress.Percent,

@@ -2,6 +2,7 @@ package context
 
 import (
 	"context"
+	"runtime"
 	"time"
 
 	"github.com/zulfikawr/fm/internal/config"
@@ -122,6 +123,7 @@ func NewModel(fs core.FileSystem, startPath string) *Model {
 			SortMode:       sorting.SortDefault,
 			LoadingSpinner: s,
 			Styles:         styles,
+			RAMUsageMB:     getInitialRAMUsage(), // Initialize with current RAM usage
 		},
 		UI: UIState{
 			PromptCache: make(map[string]string),
@@ -192,6 +194,13 @@ func (m *Model) CloseActiveTab() bool {
 		m.ActiveTab = len(m.Tabs) - 1
 	}
 	return true
+}
+
+// getInitialRAMUsage returns the current RAM usage in MB
+func getInitialRAMUsage() uint64 {
+	var m runtime.MemStats
+	runtime.ReadMemStats(&m)
+	return m.Alloc / 1024 / 1024
 }
 
 // SwitchTab switches to the specified tab number (1-based)

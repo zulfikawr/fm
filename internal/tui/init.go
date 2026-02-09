@@ -20,6 +20,7 @@ func (a *App) Initialize() tea.Cmd {
 		nav.Reload(a.Model, false),
 		app.CheckForUpdates(),
 		a.Model.Display.LoadingSpinner.Start(),
+		app.StartRAMTicker(), // Start RAM usage ticker
 	}
 	if a.Model.StartInAnalyzeMode {
 		cmds = append(cmds, func() tea.Msg { return messages.StartAnalyzeMsg{} })

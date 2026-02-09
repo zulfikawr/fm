@@ -41,7 +41,7 @@ func renderStatsFooter(props Props) string {
 		rightParts = append(rightParts, sortMode)
 	}
 	if props.Status.ShowRAM {
-		ramUsage := renderRAMUsage(props.Styles)
+		ramUsage := renderRAMUsage(props.Model, props.Styles)
 		if ramUsage != "" {
 			rightParts = append(rightParts, ramUsage)
 		}

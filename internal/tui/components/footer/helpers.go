@@ -2,11 +2,11 @@ package footer
 
 import (
 	"fmt"
-	"runtime"
 	"strings"
 
 	"github.com/zulfikawr/fm/internal/files/core"
 	"github.com/zulfikawr/fm/internal/files/sorting"
+	tuictx "github.com/zulfikawr/fm/internal/tui/context"
 	"github.com/zulfikawr/fm/internal/tui/theme"
 
 	"github.com/charmbracelet/lipgloss"
@@ -128,10 +128,8 @@ func renderSortMode(sortMode sorting.SortMode, styles theme.Stylesheet) string {
 	return infoStyle.Render(sortStr)
 }
 
-func renderRAMUsage(styles theme.Stylesheet) string {
-	var m runtime.MemStats
-	runtime.ReadMemStats(&m)
-	ramMB := m.Alloc / 1024 / 1024
+func renderRAMUsage(m *tuictx.Model, styles theme.Stylesheet) string {
+	ramMB := m.Display.RAMUsageMB
 
 	infoStyle := styles.InfoCol.Inherit(styles.Footer).UnsetPadding().UnsetWidth()
 	return infoStyle.Render(fmt.Sprintf("RAM: %dMB", ramMB))

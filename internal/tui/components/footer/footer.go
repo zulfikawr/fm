@@ -83,6 +83,7 @@ type Props struct {
 	ActiveView context.ViewMode
 	Width      int
 	Styles     theme.Stylesheet
+	Model      *context.Model
 
 	// Categorized sub-props
 	Progress ProgressProps

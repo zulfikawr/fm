@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.1.9] - 2026-02-09
+
+### Fixed
+- **Operation Log Screen**: Fixed critical bug where mouse dragging in the log screen would trigger unintended file operations. Dragging is now restricted to the main file view only, preventing accidental file movements when interacting with the log screen.
+- **Log Entry Alignment**: Fixed alignment inconsistencies between focused and unfocused log entries. Log entries now maintain consistent spacing and alignment regardless of selection state.
+
+### Changed
+- **RAM Usage Display**: RAM usage now updates at a constant rate of once per second, independent of user input or UI refresh cycles. Previously, RAM values would update only during UI refresh events, causing inconsistent display timing.
+
 ## [v1.1.8] - 2026-02-09
 
 ### Added

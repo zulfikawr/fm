@@ -46,4 +46,5 @@ type DisplayState struct {
 	Styles         theme.Stylesheet // Cached stylesheet
 	Layout         Layout           // Cached layout dimensions
 	Mouse          MouseState       // Mouse interaction state
+	RAMUsageMB     uint64           // Current RAM usage in MB
 }

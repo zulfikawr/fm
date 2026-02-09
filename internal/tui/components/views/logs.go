@@ -104,12 +104,13 @@ func renderLogEntry(props LogsProps, e tui_context.LogEntry, isCursor bool) stri
 		return props.Style.SelectedItem.Width(props.Width).Render(content)
 	}
 
-	// For normal rows, manually calculate padding for alignment
+	// For normal rows, use the same alignment as selected rows for consistency
 	timePart := timeStyle.Render(fmt.Sprintf("%-*s", timeWidth, timeStr))
 	typePart := typeStyle.Render(fmt.Sprintf("%-*s", typeWidth, typeText))
 	msgPart := msgStyle.Render(e.Message)
 
-	return " " + timePart + typePart + msgPart
+	// Consistent spacing with selected items
+	return " " + timePart + " " + typePart + " " + msgPart
 }
 
 func renderLogsEmpty(width, height int, styles theme.Stylesheet) string {

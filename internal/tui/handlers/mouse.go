@@ -45,11 +45,17 @@ func HandleMouse(m *context.Model, msg tea.MouseMsg) tea.Cmd {
 		}
 	case tea.MouseActionMotion:
 		if msg.Button == tea.MouseButtonLeft {
-			return handleMouseDrag(m, msg)
+			// Only allow dragging in the main file view, not in other views
+			if m.UI.ActiveView == context.ViewMain {
+				return handleMouseDrag(m, msg)
+			}
 		}
 	case tea.MouseActionRelease:
 		if msg.Button == tea.MouseButtonLeft {
-			return handleMouseRelease(m, msg)
+			// Only allow releasing drag in the main file view, not in other views
+			if m.UI.ActiveView == context.ViewMain {
+				return handleMouseRelease(m, msg)
+			}
 		}
 	}
 
