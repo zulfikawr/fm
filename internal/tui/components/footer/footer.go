@@ -29,6 +29,7 @@ const (
 	ModeHelp
 	ModeLog
 	ModeClipboard
+	ModeTrash
 	ModeZip
 	ModeUnzip
 	ModeCreate
@@ -80,6 +81,9 @@ type Props struct {
 	HostConfirmReq       *ssh.HostConfirmRequest
 	LatestVersion        string
 
+	// Trash
+	TrashItemCount int
+
 	Styles      theme.Stylesheet
 	PromptCache map[string]string
 }
@@ -103,6 +107,8 @@ func Render(props Props) string {
 		return views.RenderLogsFooter(props.Width, props.Styles)
 	case ModeClipboard:
 		return views.RenderClipboardFooter(props.Width, props.ClipboardCount == 0, props.Styles)
+	case ModeTrash:
+		return views.RenderTrashFooter(props.Width, props.TrashItemCount == 0, props.Styles)
 	default:
 		if props.HelpOpen { // This is a bit hacky, but consistent with Render logic
 			return views.RenderHelpFooter(props.Width, props.Styles)

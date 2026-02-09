@@ -33,7 +33,7 @@ func DeleteMultiple(opts DeleteOptions) error {
 
 		var err error
 		if opts.UseTrash {
-			err = Trash(opts.OpCtx.Context, opts.OpCtx.FS, path)
+			err = MoveToTrash(opts.OpCtx.Context, opts.OpCtx.FS, path)
 		} else {
 			err = Delete(DeleteOptions{
 				OpCtx: opts.OpCtx,

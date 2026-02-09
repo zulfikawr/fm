@@ -74,6 +74,7 @@ func DefaultKeybindings() []Keybinding {
 		{Action: "settings", Keys: []string{"."}, Category: "general"},
 		{Action: "help", Keys: []string{"?"}, Category: "general"},
 		{Action: "analyze", Keys: []string{"alt+u"}, Category: "general"},
+		{Action: "trash_view", Keys: []string{"t"}, Category: "general"},
 		{Action: "clipboard_view", Keys: []string{"alt+c"}, Category: "general"},
 		{Action: "logs_view", Keys: []string{"alt+l"}, Category: "general"},
 		{Action: "go_to_path", Keys: []string{"g"}, Category: "navigation"},

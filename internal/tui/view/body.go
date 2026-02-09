@@ -1,6 +1,7 @@
 package view
 
 import (
+	"github.com/zulfikawr/fm/internal/files/trash"
 	"github.com/zulfikawr/fm/internal/tui/components/file"
 	"github.com/zulfikawr/fm/internal/tui/components/loading"
 	"github.com/zulfikawr/fm/internal/tui/components/views"
@@ -79,6 +80,22 @@ func renderBody(m *context.Model, layout context.Layout) string {
 			SourceFS: m.Operations.Clipboard.SourceFS,
 			IsCut:    m.Operations.Clipboard.IsCut,
 			Style:    styles,
+		})
+	} else if m.UI.TrashOpen {
+		// Convert interface{} items to trash.TrashItem
+		trashItems := make([]trash.TrashItem, 0, len(m.Trash.Items))
+		for _, item := range m.Trash.Items {
+			if ti, ok := item.(trash.TrashItem); ok {
+				trashItems = append(trashItems, ti)
+			}
+		}
+		bodyStr = views.RenderTrash(views.TrashProps{
+			Width:  layout.Width,
+			Height: layout.BodyHeight,
+			Cursor: m.Trash.Cursor,
+			Offset: m.Trash.Offset,
+			Items:  trashItems,
+			Style:  styles,
 		})
 	} else if m.Inputs.Mode == context.InputFuzzySearch || len(m.Search.Results) > 0 {
 		bodyStr = views.RenderSearch(views.SearchProps{

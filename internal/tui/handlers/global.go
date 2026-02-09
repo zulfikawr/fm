@@ -6,6 +6,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/zulfikawr/fm/internal/config"
 	"github.com/zulfikawr/fm/internal/constants"
+	"github.com/zulfikawr/fm/internal/files/trash"
 	tuictx "github.com/zulfikawr/fm/internal/tui/context"
 	"github.com/zulfikawr/fm/internal/tui/handlers/app"
 	"github.com/zulfikawr/fm/internal/tui/handlers/utils"
@@ -86,6 +87,15 @@ func handleGlobal(m *tuictx.Model, msg tea.Msg) (tea.Cmd, bool) {
 		case "clipboard_view":
 			m.UI.ToggleClipboard()
 			return nil, true
+		case "trash_view":
+			m.UI.ToggleTrash()
+			if m.UI.TrashOpen {
+				// Load trash items when opening
+				return func() tea.Msg {
+					return loadTrashItems(m)
+				}, true
+			}
+			return nil, true
 		case "settings":
 			if m.UI.InputActive || m.UI.AnalyzeOpen {
 				return nil, false
@@ -134,6 +144,10 @@ func handleGlobal(m *tuictx.Model, msg tea.Msg) (tea.Cmd, bool) {
 				m.UI.ToggleClipboard()
 				return nil, true
 			}
+			if m.UI.TrashOpen {
+				m.UI.ToggleTrash()
+				return nil, true
+			}
 			if m.UI.AnalyzeOpen {
 				m.UI.AnalyzeOpen = false
 				return nil, true
@@ -141,4 +155,24 @@ func handleGlobal(m *tuictx.Model, msg tea.Msg) (tea.Cmd, bool) {
 		}
 	}
 	return nil, false
+}
+
+func loadTrashItems(m *tuictx.Model) tea.Msg {
+	manager, err := trash.NewManager(m.FS)
+	if err != nil {
+		return messages.ErrorMsg{Err: err}
+	}
+
+	items, err := manager.List()
+	if err != nil {
+		return messages.ErrorMsg{Err: err}
+	}
+
+	// Convert to interface{} slice
+	result := make([]interface{}, len(items))
+	for i, item := range items {
+		result[i] = item
+	}
+
+	return messages.TrashLoadedMsg{Items: result}
 }

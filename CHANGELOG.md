@@ -5,6 +5,30 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.1.8] - 2026-02-09
+
+### Added
+- **Trash Management System**
+  - Complete trash/recycle bin implementation with zero external dependencies.
+  - Move files to trash instead of permanent deletion (configurable in Settings).
+  - Trash view accessible with `t` key - browse, restore, or permanently delete items.
+  - Auto-cleanup: automatically removes items older than 30 days (configurable, 0 = unlimited).
+  - Size-based cleanup: optional trash size limit (deletes oldest items when exceeded).
+  - Conflict handling: automatically renames restored files if destination exists.
+  - Parent directory recreation: restores files even if original directory was deleted.
+  - Crash recovery: completes interrupted deletions on next startup.
+  - Metadata tracking: stores original path, deletion time, size, and permissions.
+  - Cross-platform: works on Linux, macOS, and Windows without external tools.
+  - Trash location: `~/.cache/fm/trash/` with separate `files/` and `info/` directories.
+  - Configuration options:
+    - `use_trash` - Enable/disable trash (default: false)
+    - `trash_auto_cleanup_days` - Auto-delete items older than N days (default: 30, 0 = unlimited)
+    - `trash_max_size_mb` - Maximum trash size in MB (default: 0 = unlimited)
+
+### Documentation
+- Added comprehensive trash documentation in `docs/trash.md`.
+- Updated README with trash feature information.
+
 ## [v1.1.7] - 2026-02-09
 
 ### Added

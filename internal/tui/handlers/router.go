@@ -156,6 +156,9 @@ func HandleUpdate(m *tuictx.Model, msg tea.Msg) tea.Cmd {
 
 	case messages.AnalyzeFinishedMsg:
 		return HandleAnalyze(m, msg)
+
+	case messages.TrashLoadedMsg, messages.TrashRestoreMsg, messages.TrashDeleteMsg, messages.TrashEmptyMsg, messages.TrashOperationFinishedMsg:
+		return app.HandleTrash(m, msg)
 	}
 
 	// Priority update for specialized messages
@@ -193,6 +196,10 @@ func HandleUpdate(m *tuictx.Model, msg tea.Msg) tea.Cmd {
 	}
 
 	if cmd := app.HandleLogs(m, msg); cmd != nil {
+		cmds = append(cmds, cmd)
+	}
+
+	if cmd := app.HandleTrash(m, msg); cmd != nil {
 		cmds = append(cmds, cmd)
 	}
 

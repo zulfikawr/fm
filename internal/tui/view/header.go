@@ -38,6 +38,7 @@ func renderHeader(m *context.Model, layout context.Layout) string {
 		HelpOpen:      m.UI.HelpOpen,
 		LogOpen:       m.UI.LogOpen,
 		ClipboardOpen: m.UI.ClipboardOpen,
+		TrashOpen:     m.UI.TrashOpen,
 		Style:         styles,
 	})
 }

@@ -19,6 +19,7 @@ For detailed guides, configuration options, and advanced usage, please see the [
 - [**Mouse Support**](./docs/mouse-support.md): Full guide to clicking, dragging, and scrolling.
 - [**Nerd Font Icons**](./docs/icons.md): How to install and enable file icons.
 - [**Features**](./docs/features.md): Deep dive into Git, Search, and Archive management.
+- [**Trash Management**](./docs/trash.md): Using the built-in trash/recycle bin system.
 - [**Remote Access**](./docs/remote-access.md): Managing files over SSH/SFTP.
 - [**Configuration**](./docs/configuration.md): Customizing `fm` to your needs.
 
@@ -62,6 +63,7 @@ See [**docs/getting-started.md**](./docs/getting-started.md) for other methods (
 | `Alt+/` | Fuzzy content search (Find in Files) |
 | `Tab` | Autocomplete name or path |
 | `g` | Go to path (Local or Remote) |
+| `t` | Open trash view |
 | `Alt+T` / `Alt+W` | New Tab / Close Tab |
 | `Alt+U` | Analyze Disk Usage |
 | `Alt+1`-`9` | Switch between tabs |
@@ -75,6 +77,7 @@ See [**keybindings.md**](./docs/keybindings.md) for the full list.
 
 - **Performance:** Fast navigation with a modular concurrent architecture.
 - **Mouse Support:** Modern interaction system with scrolling, drag-to-select, and clickable UI elements.
+- **Trash Management:** Built-in trash/recycle bin with auto-cleanup and conflict handling.
 - **Disk Usage Analyzer:** Interactive high-performance heat-map for identifying space-hogs.
 - **Nerd Font Icons:** Support for modern file and folder icons.
 - **Git Integration:** Real-time status markers and branch information.

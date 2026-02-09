@@ -26,6 +26,7 @@ type Props struct {
 	HelpOpen      bool
 	LogOpen       bool
 	ClipboardOpen bool
+	TrashOpen     bool
 	Style         theme.Stylesheet
 }
 
@@ -56,6 +57,7 @@ func Render(props Props) string {
 		HelpOpen:      props.HelpOpen,
 		LogOpen:       props.LogOpen,
 		ClipboardOpen: props.ClipboardOpen,
+		TrashOpen:     props.TrashOpen,
 		Style:         props.Style,
 	})
 
@@ -70,7 +72,7 @@ func Render(props Props) string {
 
 	// Breadcrumb rendering
 	var breadcrumb string
-	if props.SettingsOpen || props.HelpOpen || props.LogOpen || props.ClipboardOpen {
+	if props.SettingsOpen || props.HelpOpen || props.LogOpen || props.ClipboardOpen || props.TrashOpen {
 		breadcrumb = props.Style.Header.UnsetPadding().UnsetWidth().Render(title)
 		if lipgloss.Width(breadcrumb) > maxBreadcrumbWidth {
 			breadcrumb = lipgloss.NewStyle().MaxWidth(maxBreadcrumbWidth).Render(breadcrumb)

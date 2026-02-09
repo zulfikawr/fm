@@ -13,6 +13,7 @@ type UIState struct {
 	HelpOpen        bool
 	LogOpen         bool
 	ClipboardOpen   bool
+	TrashOpen       bool
 	Loading         bool
 	SelectMode      bool
 	InputActive     bool              // Consolidated flag for any text input (search, rename, etc)
@@ -32,6 +33,7 @@ func (ui *UIState) Reset() {
 	ui.HelpOpen = false
 	ui.LogOpen = false
 	ui.ClipboardOpen = false
+	ui.TrashOpen = false
 	ui.AnalyzeOpen = false
 	ui.Loading = false
 	ui.SelectMode = false
@@ -48,6 +50,7 @@ func (ui *UIState) StartInput() {
 	ui.LogOpen = false
 	ui.HelpOpen = false
 	ui.ClipboardOpen = false
+	ui.TrashOpen = false
 	ui.Confirming = false
 }
 
@@ -63,6 +66,7 @@ func (ui *UIState) StartConfirming() {
 	ui.HelpOpen = false
 	ui.LogOpen = false
 	ui.ClipboardOpen = false
+	ui.TrashOpen = false
 }
 
 // StopConfirming exits confirmation mode
@@ -79,6 +83,7 @@ func (ui *UIState) ToggleSettings() {
 		ui.HelpOpen = false
 		ui.LogOpen = false
 		ui.ClipboardOpen = false
+		ui.TrashOpen = false
 	}
 }
 
@@ -91,6 +96,7 @@ func (ui *UIState) ToggleHelp() {
 		ui.SettingsOpen = false
 		ui.LogOpen = false
 		ui.ClipboardOpen = false
+		ui.TrashOpen = false
 	}
 }
 
@@ -103,6 +109,7 @@ func (ui *UIState) ToggleLogs() {
 		ui.SettingsOpen = false
 		ui.HelpOpen = false
 		ui.ClipboardOpen = false
+		ui.TrashOpen = false
 	}
 }
 
@@ -115,6 +122,20 @@ func (ui *UIState) ToggleClipboard() {
 		ui.SettingsOpen = false
 		ui.HelpOpen = false
 		ui.LogOpen = false
+		ui.TrashOpen = false
+	}
+}
+
+// ToggleTrash toggles the trash view
+func (ui *UIState) ToggleTrash() {
+	ui.TrashOpen = !ui.TrashOpen
+	if ui.TrashOpen {
+		ui.InputActive = false
+		ui.Confirming = false
+		ui.SettingsOpen = false
+		ui.HelpOpen = false
+		ui.LogOpen = false
+		ui.ClipboardOpen = false
 	}
 }
 

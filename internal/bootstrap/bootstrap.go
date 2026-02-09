@@ -1,13 +1,16 @@
 package bootstrap
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"path/filepath"
 
 	"github.com/zulfikawr/fm/internal/files/factory"
+	"github.com/zulfikawr/fm/internal/files/trash"
+	"github.com/zulfikawr/fm/internal/logger"
 	"github.com/zulfikawr/fm/internal/tui"
-	"github.com/zulfikawr/fm/internal/tui/context"
+	tuictx "github.com/zulfikawr/fm/internal/tui/context"
 )
 
 // InitializeApp sets up the filesystem and creates the TUI app.
@@ -47,11 +50,36 @@ func InitializeApp(remoteStr string, args []string) (*tui.App, error) {
 		}
 	}
 
-	app := tui.NewApp(context.NewModel(fs, startPath))
+	app := tui.NewApp(tuictx.NewModel(fs, startPath))
 
 	if remoteStr != "" {
 		app.Model.Remote.Host = remoteInfo.Host
 		app.Model.Remote.User = remoteInfo.User
+	}
+
+	// Run trash cleanup in background if local filesystem
+	if fs.IsLocal() && app.Model.Config.UseTrash {
+		go func() {
+			manager, err := trash.NewManager(fs)
+			if err != nil {
+				logger.Warnf("Failed to create trash manager: %v", err)
+				return
+			}
+
+			// Recover interrupted deletions
+			if err := manager.RecoverInterruptedDeletions(context.Background()); err != nil {
+				logger.Warnf("Failed to recover interrupted deletions: %v", err)
+			}
+
+			// Auto-cleanup based on config
+			if err := manager.AutoCleanup(
+				context.Background(),
+				app.Model.Config.TrashAutoCleanupDays,
+				int64(app.Model.Config.TrashMaxSizeMB),
+			); err != nil {
+				logger.Warnf("Failed to auto-cleanup trash: %v", err)
+			}
+		}()
 	}
 
 	return app, nil

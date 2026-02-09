@@ -56,7 +56,7 @@ func TestDelete(t *testing.T) {
 	})
 }
 
-func TestTrash(t *testing.T) {
+func TestMoveToTrash(t *testing.T) {
 	ctx := context.Background()
 	fs := testutil.NewMockFileSystem()
 
@@ -64,14 +64,14 @@ func TestTrash(t *testing.T) {
 		fs.IsLocalFunc = func() bool {
 			return false
 		}
-		err := Trash(ctx, fs, "/path/to/trash")
+		err := MoveToTrash(ctx, fs, "/path/to/trash")
 		if err == nil {
 			t.Fatal("expected error for non-local filesystem")
 		}
 	})
 
 	t.Run("Empty Path", func(t *testing.T) {
-		err := Trash(ctx, fs, "")
+		err := MoveToTrash(ctx, fs, "")
 		if err == nil {
 			t.Error("Expected error for empty path")
 		}

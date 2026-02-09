@@ -48,6 +48,7 @@ func renderFooter(m *context.Model, layout context.Layout) string {
 		ConflictPendingCount: len(m.Operations.Conflict.PendingItems),
 		HostConfirmReq:       m.Remote.HostConfirmReq,
 		LatestVersion:        m.UI.LatestVersion,
+		TrashItemCount:       len(m.Trash.Items),
 		Styles:               styles,
 		PromptCache:          m.UI.PromptCache,
 	})

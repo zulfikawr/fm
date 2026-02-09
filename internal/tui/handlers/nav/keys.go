@@ -17,7 +17,7 @@ import (
 
 func HandleNavKeys(m *tui_context.Model, msg tea.KeyMsg) tea.Cmd {
 	// Don't handle nav keys if an input is active or a modal view is open
-	if m.UI.InputActive || m.UI.SettingsOpen || m.UI.LogOpen || m.UI.ClipboardOpen {
+	if m.UI.InputActive || m.UI.SettingsOpen || m.UI.LogOpen || m.UI.ClipboardOpen || m.UI.TrashOpen {
 		return nil
 	}
 

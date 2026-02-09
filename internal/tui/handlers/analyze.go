@@ -204,8 +204,9 @@ func PerformDeleteFromAnalyze(m *tuictx.Model) tea.Cmd {
 
 	return func() tea.Msg {
 		err := ops.DeleteMultiple(ops.DeleteOptions{
-			OpCtx: ops.OpContext{Context: context.Background(), FS: m.FS},
-			Paths: []string{path},
+			OpCtx:    ops.OpContext{Context: context.Background(), FS: m.FS},
+			Paths:    []string{path},
+			UseTrash: m.Config.UseTrash,
 		})
 		if err != nil {
 			return messages.StatusMsg{Message: "Failed to delete: " + err.Error(), IsError: true}

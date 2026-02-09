@@ -209,3 +209,22 @@ type AnalyzeFinishedMsg struct {
 	Result *core.AnalysisResult
 	Err    error
 }
+
+type TrashLoadedMsg struct {
+	Items []interface{} // []trash.TrashItem
+}
+
+type TrashRestoreMsg struct {
+	TrashedName string
+}
+
+type TrashDeleteMsg struct {
+	TrashedName string
+}
+
+type TrashEmptyMsg struct{}
+
+type TrashOperationFinishedMsg struct {
+	Success bool
+	Message string
+}

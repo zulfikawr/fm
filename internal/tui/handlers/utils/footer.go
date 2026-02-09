@@ -62,6 +62,9 @@ func DetermineFooterMode(m *context.Model) footer.Mode {
 	if m.UI.ClipboardOpen {
 		return footer.ModeClipboard
 	}
+	if m.UI.TrashOpen {
+		return footer.ModeTrash
+	}
 	if m.UI.AnalyzeOpen {
 		return footer.ModeAnalyze
 	}

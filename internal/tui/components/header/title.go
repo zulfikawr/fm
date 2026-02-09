@@ -11,6 +11,7 @@ type TitleProps struct {
 	HelpOpen      bool
 	LogOpen       bool
 	ClipboardOpen bool
+	TrashOpen     bool
 	Style         theme.Stylesheet
 }
 
@@ -27,6 +28,9 @@ func GetTitle(props TitleProps) string {
 	}
 	if props.ClipboardOpen {
 		return "Clipboard Contents"
+	}
+	if props.TrashOpen {
+		return "Trash"
 	}
 	return props.Path
 }

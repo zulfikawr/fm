@@ -42,3 +42,10 @@ type HelpState struct {
 	Cursor int
 	Offset int
 }
+
+// TrashState holds state for the trash view
+type TrashState struct {
+	Cursor int
+	Offset int
+	Items  []interface{} // Will hold trash.TrashItem
+}
