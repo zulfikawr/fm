@@ -6,7 +6,6 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
-	"syscall"
 	"time"
 )
 
@@ -54,14 +53,6 @@ func createTrashInfo(path, trashedName string, info os.FileInfo) *TrashInfo {
 		OwnerUID:     uid,
 		OwnerGID:     gid,
 	}
-}
-
-// getOwnership extracts UID and GID from FileInfo (Unix-specific).
-func getOwnership(info os.FileInfo) (uid, gid int) {
-	if stat, ok := info.Sys().(*syscall.Stat_t); ok {
-		return int(stat.Uid), int(stat.Gid)
-	}
-	return 0, 0
 }
 
 // generateTrashedName creates a unique name for a trashed item.
