@@ -65,9 +65,9 @@ func TestResolver(t *testing.T) {
 		fs.StatFunc = func(ctx context.Context, path string) (os.FileInfo, error) {
 			return &testutil.MockFileInfo{FName: "dst"}, nil
 		}
-		_, _, err := resolver.Resolve(ctx, fs, ResolveOptions{Src: "src", Dst: "dst", Policy: Ask})
+		dst, renamed, err := resolver.Resolve(ctx, fs, ResolveOptions{Src: "src", Dst: "dst", Policy: Ask})
 		if err == nil {
-			t.Fatal("expected conflict error")
+			t.Fatalf("expected conflict error (got dst: %q, renamed: %v)", dst, renamed)
 		}
 		var target *ConflictError
 		testutil.AssertErrorType(t, err, &target, "Should be ConflictError")
@@ -146,9 +146,9 @@ func TestValidateSecurePath(t *testing.T) {
 	})
 
 	t.Run("Outside path", func(t *testing.T) {
-		_, err := ValidateSecurePath(fs, "/base", "../outside.txt")
+		path, err := ValidateSecurePath(fs, "/base", "../outside.txt")
 		if err == nil {
-			t.Fatal("Expected error for outside path")
+			t.Fatalf("Expected error for outside path (got path: %q)", path)
 		}
 	})
 }

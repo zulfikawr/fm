@@ -53,8 +53,11 @@ func TestZipUnzip(t *testing.T) {
 		})
 		testutil.AssertNoError(t, err, "Zip operation")
 
-		_, err = os.Stat(zipFile)
+		info, err := os.Stat(zipFile)
 		testutil.AssertNoError(t, err, "Zip file should exist")
+		if info == nil {
+			t.Fatal("Expected non-nil FileInfo for zip file")
+		}
 
 		// Verify zip content
 		r, err := zip.OpenReader(zipFile)
@@ -130,8 +133,8 @@ func TestUnzip_ZipSlip(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create header: %v", err)
 	}
-	if _, err := io.WriteString(writer, "evil"); err != nil {
-		t.Errorf("failed to write string: %v", err)
+	if n, err := io.WriteString(writer, "evil"); err != nil {
+		t.Errorf("failed to write string (wrote %d bytes): %v", n, err)
 	}
 	if err := zw.Close(); err != nil {
 		t.Errorf("failed to close zip writer: %v", err)
@@ -149,9 +152,9 @@ func TestUnzip_ZipSlip(t *testing.T) {
 	testutil.AssertNoError(t, err, "Unzip should not fail but skip malicious paths")
 
 	outsidePath := filepath.Join(tmpDir, "outside.txt")
-	_, err2 := os.Stat(outsidePath)
+	info, err2 := os.Stat(outsidePath)
 	if !os.IsNotExist(err2) {
-		t.Error("Vulnerability: File was created outside the extraction directory!")
+		t.Errorf("Vulnerability: File was created outside the extraction directory! (info: %+v)", info)
 	}
 }
 
@@ -185,8 +188,8 @@ func TestUnzip_Remote(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create entry: %v", err)
 	}
-	if _, err := w.Write([]byte("content")); err != nil {
-		t.Errorf("failed to write content: %v", err)
+	if n, err := w.Write([]byte("content")); err != nil {
+		t.Errorf("failed to write content (wrote %d bytes): %v", n, err)
 	}
 	if err := zw.Close(); err != nil {
 		t.Errorf("failed to close zip writer: %v", err)
@@ -276,8 +279,8 @@ func TestUnzip_ConflictPolicies(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create entry: %v", err)
 	}
-	if _, err := w.Write([]byte("new content")); err != nil {
-		t.Errorf("failed to write content: %v", err)
+	if n, err := w.Write([]byte("new content")); err != nil {
+		t.Errorf("failed to write content (wrote %d bytes): %v", n, err)
 	}
 	if err := zw.Close(); err != nil {
 		t.Errorf("failed to close zip writer: %v", err)
@@ -362,8 +365,9 @@ func TestZip_Conflict(t *testing.T) {
 	if err == nil {
 		t.Fatal("Expected conflict error")
 	}
-	if _, ok := err.(*conflict.ConflictError); !ok {
-		t.Errorf("Expected ConflictError, got %T: %v", err, err)
+	conflictErr, ok := err.(*conflict.ConflictError)
+	if !ok {
+		t.Errorf("Expected ConflictError, got %T: %v (conflictErr: %+v)", err, err, conflictErr)
 	}
 }
 
@@ -387,8 +391,8 @@ func TestUnzip_ConflictError(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create entry: %v", err)
 	}
-	if _, err := w.Write([]byte("content")); err != nil {
-		t.Errorf("failed to write content: %v", err)
+	if n, err := w.Write([]byte("content")); err != nil {
+		t.Errorf("failed to write content (wrote %d bytes): %v", n, err)
 	}
 	if err := zw.Close(); err != nil {
 		t.Errorf("failed to close zip writer: %v", err)
@@ -412,8 +416,9 @@ func TestUnzip_ConflictError(t *testing.T) {
 	if err == nil {
 		t.Fatal("Expected conflict error")
 	}
-	if _, ok := err.(*conflict.ConflictError); !ok {
-		t.Errorf("Expected ConflictError, got %T", err)
+	conflictErr, ok := err.(*conflict.ConflictError)
+	if !ok {
+		t.Errorf("Expected ConflictError, got %T (conflictErr: %+v)", err, conflictErr)
 	}
 }
 
@@ -438,8 +443,8 @@ func TestUnzip_MultipleFiles(t *testing.T) {
 		if err != nil {
 			t.Fatalf("failed to create entry %d: %v", i, err)
 		}
-		if _, err := fmt.Fprintf(w, "content%d", i); err != nil {
-			t.Errorf("failed to write content %d: %v", i, err)
+		if n, err := fmt.Fprintf(w, "content%d", i); err != nil {
+			t.Errorf("failed to write content %d (wrote %d bytes): %v", i, n, err)
 		}
 	}
 	if err := zw.Close(); err != nil {

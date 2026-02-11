@@ -39,18 +39,22 @@ func setupTestTrash(t *testing.T) (*Manager, string, func()) {
 }
 
 func TestNewManager(t *testing.T) {
-	manager, _, cleanup := setupTestTrash(t)
+	manager, tmpDir, cleanup := setupTestTrash(t)
 	defer cleanup()
 
+	if tmpDir == "" {
+		t.Fatal("Expected non-empty tmpDir")
+	}
+
 	// Check directories were created
-	if _, err := os.Stat(manager.trashDir); os.IsNotExist(err) {
-		t.Error("trash dir not created")
+	if info, err := os.Stat(manager.trashDir); os.IsNotExist(err) {
+		t.Errorf("trash dir not created (info: %+v)", info)
 	}
-	if _, err := os.Stat(manager.filesDir); os.IsNotExist(err) {
-		t.Error("files dir not created")
+	if info, err := os.Stat(manager.filesDir); os.IsNotExist(err) {
+		t.Errorf("files dir not created (info: %+v)", info)
 	}
-	if _, err := os.Stat(manager.infoDir); os.IsNotExist(err) {
-		t.Error("info dir not created")
+	if info, err := os.Stat(manager.infoDir); os.IsNotExist(err) {
+		t.Errorf("info dir not created (info: %+v)", info)
 	}
 }
 
@@ -72,8 +76,8 @@ func TestMoveToTrash(t *testing.T) {
 	}
 
 	// Check original file is gone
-	if _, err := os.Stat(testFile); !os.IsNotExist(err) {
-		t.Error("original file still exists")
+	if info, err := os.Stat(testFile); !os.IsNotExist(err) {
+		t.Errorf("original file still exists (info: %+v, error: %v)", info, err)
 	}
 
 	// Check file exists in trash
@@ -110,8 +114,8 @@ func TestMoveToTrashDirectory(t *testing.T) {
 	}
 
 	// Check directory is gone
-	if _, err := os.Stat(testDir); !os.IsNotExist(err) {
-		t.Error("original directory still exists")
+	if info, err := os.Stat(testDir); !os.IsNotExist(err) {
+		t.Errorf("original directory still exists (info: %+v, error: %v)", info, err)
 	}
 
 	// Check metadata
@@ -214,8 +218,8 @@ func TestDelete(t *testing.T) {
 
 	// Check file doesn't exist in trash
 	trashedPath := filepath.Join(manager.filesDir, trashedName)
-	if _, err := os.Stat(trashedPath); !os.IsNotExist(err) {
-		t.Error("trashed file still exists")
+	if info, err := os.Stat(trashedPath); !os.IsNotExist(err) {
+		t.Errorf("trashed file still exists (info: %+v, error: %v)", info, err)
 	}
 }
 
@@ -336,8 +340,8 @@ func TestRecoverInterruptedDeletions(t *testing.T) {
 	}
 
 	// Check marker is gone
-	if _, err := os.Stat(markerPath); !os.IsNotExist(err) {
-		t.Error("marker still exists")
+	if info, err := os.Stat(markerPath); !os.IsNotExist(err) {
+		t.Errorf("marker still exists (info: %+v, error: %v)", info, err)
 	}
 
 	// Check trash is empty (item was deleted)

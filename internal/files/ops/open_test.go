@@ -90,13 +90,16 @@ func TestGetOpenCmd(t *testing.T) {
 	})
 
 	t.Run("Non-text file", func(t *testing.T) {
-		_, isTerm, err := GetOpenCmd(OpenOptions{
+		cmd, isTerm, err := GetOpenCmd(OpenOptions{
 			FS:        fs,
 			Path:      "image.png",
 			EditorIdx: 0,
 		})
 		testutil.AssertNoError(t, err, "Should get open cmd for image")
 		testutil.AssertEqual(t, true, isTerm, "Image should be opened in terminal editor if vim selected")
+		if cmd == nil {
+			t.Fatal("Expected non-nil command for image")
+		}
 	})
 }
 

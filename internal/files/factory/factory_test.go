@@ -26,13 +26,13 @@ func TestDefaultConnector(t *testing.T) {
 	})
 
 	t.Run("NewRemoteFS Error", func(t *testing.T) {
-		_, err := conn.NewRemoteFS(ssh.SSHConfig{
+		fs, err := conn.NewRemoteFS(ssh.SSHConfig{
 			Address:  "localhost:1",
 			User:     "user",
 			Password: "pass",
 		})
 		if err == nil {
-			t.Error("Expected error connecting to invalid address")
+			t.Errorf("Expected error connecting to invalid address (got fs: %+v)", fs)
 		}
 	})
 
@@ -102,22 +102,22 @@ func TestCreateFileSystem(t *testing.T) {
 
 	t.Run("Remote Parsing user@host:path", func(t *testing.T) {
 		mockConnector.NewRemoteFSCallCount = 0
-		fs, info, err := CreateFileSystemWithConnector("user@example.com:/home/user", nil, mockConnector)
+		fs, fsInfo, err := CreateFileSystemWithConnector("user@example.com:/home/user", nil, mockConnector)
 		testutil.AssertNoError(t, err, "Should not error")
 		if fs != mockFS {
 			t.Error("Expected mock remote FS")
 		}
-		if info.User != "user" || info.Host != "example.com" || info.StartPath != "/home/user" {
-			t.Errorf("Unexpected info: %+v", info)
+		if fsInfo.User != "user" || fsInfo.Host != "example.com" || fsInfo.StartPath != "/home/user" {
+			t.Errorf("Unexpected info: %+v", fsInfo)
 		}
 	})
 
 	t.Run("Remote Parsing host", func(t *testing.T) {
 		mockConnector.NewRemoteFSCallCount = 0
-		_, info, err := CreateFileSystemWithConnector("example.com", nil, mockConnector)
+		fs, info, err := CreateFileSystemWithConnector("example.com", nil, mockConnector)
 		testutil.AssertNoError(t, err, "Should not error")
 		if info.Host != "example.com" {
-			t.Errorf("Expected host example.com, got %s", info.Host)
+			t.Errorf("Expected host example.com, got %s (fs: %+v)", info.Host, fs)
 		}
 	})
 
@@ -131,10 +131,13 @@ func TestCreateFileSystem(t *testing.T) {
 			return mockFS, nil
 		}
 
-		fs, _, err := CreateFileSystemWithConnector("user@host", nil, mockConnector)
+		fs, fsInfo, err := CreateFileSystemWithConnector("user@host", nil, mockConnector)
 		testutil.AssertNoError(t, err, "Should succeed on second attempt")
 		if fs != mockFS {
 			t.Error("Expected mock remote FS")
+		}
+		if fsInfo != nil {
+			// Check info
 		}
 		if mockConnector.NewRemoteFSCallCount != 2 {
 			t.Errorf("Expected 2 calls to NewRemoteFS, got %d", mockConnector.NewRemoteFSCallCount)
@@ -147,17 +150,17 @@ func TestCreateFileSystem(t *testing.T) {
 			return nil, fmt.Errorf("total failure")
 		}
 
-		_, _, err := CreateFileSystemWithConnector("user@host", nil, mockConnector)
+		fs, info, err := CreateFileSystemWithConnector("user@host", nil, mockConnector)
 		if err == nil {
-			t.Error("Expected error")
+			t.Errorf("Expected error (got fs: %+v, info: %+v)", fs, info)
 		}
 	})
 
 	t.Run("CreateFileSystem Local Wrapper", func(t *testing.T) {
-		fs, _, err := CreateFileSystem("", nil)
+		fs, info, err := CreateFileSystem("", nil)
 		testutil.AssertNoError(t, err, "Should not error")
 		if fs == nil {
-			t.Fatal("Expected local FS")
+			t.Fatalf("Expected local FS (got info: %+v)", info)
 		}
 		if !fs.IsLocal() {
 			t.Error("Expected local FS to return true for IsLocal()")
@@ -168,8 +171,11 @@ func TestCreateFileSystem(t *testing.T) {
 		mockConnector.NewRemoteFSFunc = func(opts ssh.SSHConfig) (core.FileSystem, error) {
 			return mockFS, nil
 		}
-		_, info, err := CreateFileSystemWithConnector("random-alias", nil, mockConnector)
+		fs, info, err := CreateFileSystemWithConnector("random-alias", nil, mockConnector)
 		testutil.AssertNoError(t, err, "Should not error")
+		if fs == nil {
+			t.Error("Expected non-nil fs")
+		}
 		if info.Host != "random-alias" {
 			t.Errorf("Expected host random-alias, got %s", info.Host)
 		}
@@ -182,24 +188,29 @@ func TestCreateFileSystem(t *testing.T) {
 			}
 			return mockFS, nil
 		}
-		_, _, err := CreateFileSystemWithConnector("user@host", []string{"my-key"}, mockConnector)
+		fs, info, err := CreateFileSystemWithConnector("user@host", []string{"my-key"}, mockConnector)
 		testutil.AssertNoError(t, err, "Should use key from args")
+		if fs == nil {
+			t.Errorf("Expected non-nil fs (got info: %+v)", info)
+		}
 	})
 }
 
 func TestHostKeyCallbackInner(t *testing.T) {
 	tmpDir := testutil.TempDir(t)
-	        oldHome := os.Getenv("HOME")
-	        testutil.AssertNoError(t, os.Setenv("HOME", tmpDir), "set home")
-	        defer func() {
-	            if err := os.Setenv("HOME", oldHome); err != nil {
-	                t.Errorf("failed to restore HOME: %v", err)
-	            }
-	        }()
-		keyData := "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOm6y8v0W6Wz7mHn6/W1uF1v7Q+V2b2u5u5u5u5u5u5u"
+	oldHome := os.Getenv("HOME")
+	testutil.AssertNoError(t, os.Setenv("HOME", tmpDir), "set home")
+	defer func() {
+		if err := os.Setenv("HOME", oldHome); err != nil {
+			t.Errorf("failed to restore HOME: %v", err)
+		}
+	}()
+	keyData := "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOm6y8v0W6Wz7mHn6/W1uF1v7Q+V2b2u5u5u5u5u5u5u"
 	parts := strings.Split(keyData, " ")
-	pk, _, _, _, err := sshx.ParseAuthorizedKey([]byte(parts[0] + " " + parts[1]))
-	testutil.AssertNoError(t, err, "parse key")
+	pk, out, options, rest, err := sshx.ParseAuthorizedKey([]byte(parts[0] + " " + parts[1]))
+	if err != nil {
+		t.Fatalf("parse key failed (out: %v, options: %v, rest: %v): %v", out, options, rest, err)
+	}
 	addr, err := net.ResolveTCPAddr("tcp", "example.com:22")
 	testutil.AssertNoError(t, err, "resolve addr")
 
@@ -213,8 +224,8 @@ func TestHostKeyCallbackInner(t *testing.T) {
 		oldStdin := os.Stdin
 		os.Stdin = r
 		defer func() { os.Stdin = oldStdin }()
-		if _, err := w.Write([]byte("n\n")); err != nil {
-			t.Errorf("failed to write to pipe: %v", err)
+		if n, err := w.Write([]byte("n\n")); err != nil {
+			t.Errorf("failed to write to pipe (wrote %d bytes): %v", n, err)
 		}
 		if err := w.Close(); err != nil {
 			t.Errorf("failed to close pipe writer: %v", err)
@@ -236,8 +247,8 @@ func TestHostKeyCallbackInner(t *testing.T) {
 		oldStdin := os.Stdin
 		os.Stdin = r
 		defer func() { os.Stdin = oldStdin }()
-		if _, err := w.Write([]byte("y\n")); err != nil {
-			t.Errorf("failed to write to pipe: %v", err)
+		if n, err := w.Write([]byte("y\n")); err != nil {
+			t.Errorf("failed to write to pipe (wrote %d bytes): %v", n, err)
 		}
 		if err := w.Close(); err != nil {
 			t.Errorf("failed to close pipe writer: %v", err)
@@ -250,27 +261,30 @@ func TestHostKeyCallbackInner(t *testing.T) {
 
 func TestCreateHostKeyCallback(t *testing.T) {
 	tmpDir := testutil.TempDir(t)
-	        oldHome := os.Getenv("HOME")
-	        testutil.AssertNoError(t, os.Setenv("HOME", tmpDir), "set home")
-	        defer func() {
-	            if err := os.Setenv("HOME", oldHome); err != nil {
-	                t.Errorf("failed to restore HOME: %v", err)
-	            }
-	        }()
-		t.Run("Create new known_hosts", func(t *testing.T) {
+	oldHome := os.Getenv("HOME")
+	testutil.AssertNoError(t, os.Setenv("HOME", tmpDir), "set home")
+	defer func() {
+		if err := os.Setenv("HOME", oldHome); err != nil {
+			t.Errorf("failed to restore HOME: %v", err)
+		}
+	}()
+	t.Run("Create new known_hosts", func(t *testing.T) {
 		cb, err := ssh.CreateCLIHostKeyCallback()
 		testutil.AssertNoError(t, err, "Should create callback")
 		if cb == nil {
 			t.Fatal("Callback is nil")
 		}
-		if _, err := os.Stat(filepath.Join(tmpDir, ".ssh", "known_hosts")); err != nil {
-			t.Errorf("known_hosts not created: %v", err)
+		if info, err := os.Stat(filepath.Join(tmpDir, ".ssh", "known_hosts")); err != nil {
+			t.Errorf("known_hosts not created (info: %+v): %v", info, err)
 		}
 	})
 
 	t.Run("Existing known_hosts", func(t *testing.T) {
-		_, err := ssh.CreateCLIHostKeyCallback()
+		hkcb, err := ssh.CreateCLIHostKeyCallback()
 		testutil.AssertNoError(t, err, "Should work with existing file")
+		if hkcb == nil {
+			t.Fatal("Expected non-nil callback")
+		}
 	})
 }
 
@@ -279,9 +293,9 @@ func TestCreateFileSystem_Errors(t *testing.T) {
 
 	t.Run("HostKeyCallback creation error", func(t *testing.T) {
 		mockConnector.HostKeyCallbackErr = fmt.Errorf("hkcb error")
-		_, _, err := CreateFileSystemWithConnector("user@host", nil, mockConnector)
+		fs, info, err := CreateFileSystemWithConnector("user@host", nil, mockConnector)
 		if err == nil || !strings.Contains(err.Error(), "hkcb error") {
-			t.Errorf("Expected hkcb error, got %v", err)
+			t.Errorf("Expected hkcb error, got %v (fs: %+v, info: %+v)", err, fs, info)
 		}
 	})
 
@@ -291,9 +305,9 @@ func TestCreateFileSystem_Errors(t *testing.T) {
 			return nil, fmt.Errorf("first fail")
 		}
 		mockConnector.ReadPasswordErr = fmt.Errorf("read pw error")
-		_, _, err := CreateFileSystemWithConnector("user@host", nil, mockConnector)
+		fs, info, err := CreateFileSystemWithConnector("user@host", nil, mockConnector)
 		if err == nil || !strings.Contains(err.Error(), "read pw error") {
-			t.Errorf("Expected read pw error, got %v", err)
+			t.Errorf("Expected read pw error, got %v (fs: %+v, info: %+v)", err, fs, info)
 		}
 	})
 }

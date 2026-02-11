@@ -57,8 +57,9 @@ func TestGlobal_Quit(t *testing.T) {
 		if cmd == nil {
 			t.Fatal("expected quit command, got nil")
 		}
-		if _, ok := cmd().(tea.QuitMsg); !ok {
-			t.Errorf("expected tea.Quit command, got %T", cmd())
+		res := cmd()
+		if quitMsg, ok := res.(tea.QuitMsg); !ok {
+			t.Errorf("expected tea.Quit command, got %T (%+v)", res, quitMsg)
 		}
 	})
 }

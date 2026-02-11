@@ -76,17 +76,21 @@ func NewRemoteFS(opts ssh.SSHConfig) (*RemoteFS, error) {
 		knownHostsPath := filepath.Join(sshDir, "known_hosts")
 
 		// Ensure .ssh directory exists
-		if _, err := os.Stat(sshDir); os.IsNotExist(err) {
+		if info, err := os.Stat(sshDir); os.IsNotExist(err) {
 			if err := os.MkdirAll(sshDir, 0o700); err != nil {
 				return nil, fmt.Errorf("failed to create .ssh directory: %w", err)
 			}
+		} else if err != nil {
+			return nil, fmt.Errorf("failed to stat .ssh directory (info: %+v): %w", info, err)
 		}
 
 		// Create empty known_hosts if it doesn't exist to prevent knownhosts.New from failing
-		if _, err := os.Stat(knownHostsPath); os.IsNotExist(err) {
+		if info, err := os.Stat(knownHostsPath); os.IsNotExist(err) {
 			if err := os.WriteFile(knownHostsPath, []byte{}, 0o600); err != nil {
 				return nil, fmt.Errorf("failed to create empty known_hosts: %w", err)
 			}
+		} else if err != nil {
+			return nil, fmt.Errorf("failed to stat known_hosts (info: %+v): %w", info, err)
 		}
 
 		opts.HostKeyCallback, err = knownhosts.New(knownHostsPath)
@@ -104,7 +108,9 @@ func NewRemoteFS(opts ssh.SSHConfig) (*RemoteFS, error) {
 
 	// Ensure port is present
 	address := opts.Address
-	if _, _, err := net.SplitHostPort(address); err != nil {
+	if host, port, err := net.SplitHostPort(address); err != nil {
+		address = address + ":22"
+	} else if host == "" || port == "" {
 		address = address + ":22"
 	}
 

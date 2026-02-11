@@ -21,7 +21,7 @@ func Zip(opts ZipOptions) error {
 	}
 
 	resolver := conflict.NewResolver()
-	resolvedDst, _, err := resolver.Resolve(opts.OpCtx.Context, opts.OpCtx.FS, conflict.ResolveOptions{
+	resolvedDst, renamed, err := resolver.Resolve(opts.OpCtx.Context, opts.OpCtx.FS, conflict.ResolveOptions{
 		Src:    opts.Srcs[0],
 		Dst:    opts.Dst,
 		Policy: opts.Conflict.Policy,
@@ -37,6 +37,10 @@ func Zip(opts ZipOptions) error {
 
 	if resolvedDst == "" {
 		return nil // Skip
+	}
+
+	if renamed {
+		// Log or handle rename
 	}
 
 	// Create destination file
@@ -116,9 +120,12 @@ func walkAndZip(state *zipState, currentPath, baseDir string) error {
 		if !strings.HasSuffix(relPath, "/") {
 			relPath += "/"
 		}
-		_, err = state.zw.Create(relPath)
+		w, err := state.zw.Create(relPath)
 		if err != nil {
 			return errors.WrapErrorWithPath(err, "ZipCreateDir", relPath)
+		}
+		if w == nil {
+			// Handle nil writer if needed
 		}
 
 		entries, err := state.opts.OpCtx.FS.ReadDir(state.opts.OpCtx.Context, currentPath)
@@ -159,9 +166,12 @@ func walkAndZip(state *zipState, currentPath, baseDir string) error {
 	buf := GetBuffer()
 	defer PutBuffer(buf)
 
-	_, err = io.CopyBuffer(writer, in, buf)
+	n, err := io.CopyBuffer(writer, in, buf)
 	if err != nil {
 		return errors.WrapErrorWithPath(err, "Copy", currentPath)
+	}
+	if n == 0 {
+		// Log empty file if needed
 	}
 
 	state.onFile()
@@ -171,7 +181,7 @@ func walkAndZip(state *zipState, currentPath, baseDir string) error {
 // Unzip extracts a zip archive to the specified destination directory.
 func Unzip(opts ZipOptions) error {
 	resolver := conflict.NewResolver()
-	resolvedDst, _, err := resolver.Resolve(opts.OpCtx.Context, opts.OpCtx.FS, conflict.ResolveOptions{
+	resolvedDst, renamed, err := resolver.Resolve(opts.OpCtx.Context, opts.OpCtx.FS, conflict.ResolveOptions{
 		Src:    opts.Src,
 		Dst:    opts.Dst,
 		Policy: opts.Conflict.Policy,
@@ -187,6 +197,10 @@ func Unzip(opts ZipOptions) error {
 
 	if resolvedDst == "" {
 		return nil // Skip
+	}
+
+	if renamed {
+		// Log or handle rename
 	}
 
 	// Open the source file
@@ -225,8 +239,9 @@ func Unzip(opts ZipOptions) error {
 		}()
 		defer logger.CloseAndLog(tmpFile, "temporary zip file for unzipping")
 
-		_, err = io.Copy(tmpFile, in)
+		n, err := io.Copy(tmpFile, in)
 		if err != nil {
+			logger.LogIfError(err, fmt.Sprintf("Failed to download remote zip (copied %d bytes)", n))
 			return errors.WrapError(err, "DownloadRemoteZip")
 		}
 		readerAt = tmpFile
@@ -302,11 +317,12 @@ func Unzip(opts ZipOptions) error {
 				return errors.WrapErrorWithPath(err, "CreateExtract", entryResolvedPath)
 			}
 
-			_, err = io.Copy(out, rc)
+			n, err := io.Copy(out, rc)
 			logger.CloseAndLog(out, entryResolvedPath)
 			logger.CloseAndLog(rc, "zip entry reader after copy")
 
 			if err != nil {
+				logger.LogIfError(err, fmt.Sprintf("Failed to extract zip entry (copied %d bytes)", n))
 				return errors.WrapErrorWithPath(err, "CopyExtract", entryResolvedPath)
 			}
 

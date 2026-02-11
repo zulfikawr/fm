@@ -10,7 +10,7 @@ import (
 
 // Args contains the parsed command line arguments
 type Args struct {
-// ... (omitting fields for brevity in instruction, but keeping them in new_string)
+	// ... (omitting fields for brevity in instruction, but keeping them in new_string)
 	Remote      string
 	ShowVersion bool
 	IsSearch    bool

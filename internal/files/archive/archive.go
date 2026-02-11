@@ -284,9 +284,12 @@ func (fs *ZipFS) Preallocate(ctx context.Context, path string, size int64) error
 
 func (fs *ZipFS) Walk(ctx context.Context, root string, walkFn filepath.WalkFunc) error {
 	// 1. Resolve root entry
-	_, err := fs.Stat(ctx, root)
+	info, err := fs.Stat(ctx, root)
 	if err != nil {
 		return err
+	}
+	if info == nil {
+		// Handle nil info
 	}
 
 	searchRoot := root

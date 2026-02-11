@@ -28,10 +28,13 @@ func TestSimpleCache(t *testing.T) {
 		c.Put("b", 10)
 		c.Put("c", 20) // Should evict 'a'
 
-		_, ok := c.Get("a")
+		val, ok := c.Get("a")
 		testutil.AssertEqual(t, false, ok, "Should have evicted 'a'")
+		if ok {
+			t.Errorf("Expected eviction of 'a', but found value %v", val)
+		}
 
-		val, ok := c.Get("b")
+		val, ok = c.Get("b")
 		testutil.AssertEqual(t, true, ok, "Should find 'b'")
 		testutil.AssertEqual(t, 10, val, "Should still have 'b'")
 

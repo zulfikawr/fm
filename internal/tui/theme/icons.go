@@ -45,10 +45,12 @@ func LoadIcons() error {
 	cachePath := filepath.Join(config.GetCacheDir(), "icons.json")
 
 	// For development: if assets/icons.json exists locally, always sync it to cache
-	if _, err := os.Stat("assets/icons.json"); err == nil {
+	if info, err := os.Stat("assets/icons.json"); err == nil {
 		if data, err := os.ReadFile("assets/icons.json"); err == nil {
 			logger.LogIfError(os.MkdirAll(filepath.Dir(cachePath), 0o755), "icons: failed to create cache directory")
 			logger.LogIfError(os.WriteFile(cachePath, data, 0o644), "icons: failed to write cache file")
+		} else {
+			logger.LogIfError(err, fmt.Sprintf("icons: failed to read local assets (info: %+v)", info))
 		}
 	}
 
@@ -73,7 +75,7 @@ func LoadIcons() error {
 func DownloadIcons() error {
 	// For local development/testing, check if assets/icons.json exists
 	localPath := "assets/icons.json"
-	if _, err := os.Stat(localPath); err == nil {
+	if info, err := os.Stat(localPath); err == nil {
 		data, err := os.ReadFile(localPath)
 		if err == nil {
 			cacheDir := config.GetCacheDir()
@@ -86,6 +88,8 @@ func DownloadIcons() error {
 					return LoadIcons()
 				}
 			}
+		} else {
+			logger.LogIfError(err, fmt.Sprintf("icons: failed to read local path (info: %+v)", info))
 		}
 	}
 
@@ -111,7 +115,9 @@ func DownloadIcons() error {
 	}
 	defer logger.CloseAndLog(f, "icon cache file during download")
 
-	if _, err := io.Copy(f, resp.Body); err != nil {
+	n, err := io.Copy(f, resp.Body)
+	if err != nil {
+		logger.LogIfError(err, fmt.Sprintf("icons: failed to copy download (copied %d bytes)", n))
 		return err
 	}
 
@@ -165,6 +171,12 @@ func GetIcon(item core.Item) string {
 // HasIconsDownloaded checks if the icons mapping file exists
 func HasIconsDownloaded() bool {
 	cachePath := filepath.Join(config.GetCacheDir(), "icons.json")
-	_, err := os.Stat(cachePath)
-	return err == nil
+	info, err := os.Stat(cachePath)
+	if err != nil {
+		if !os.IsNotExist(err) {
+			logger.LogIfError(err, fmt.Sprintf("icons: failed to stat cache (info: %+v)", info))
+		}
+		return false
+	}
+	return true
 }

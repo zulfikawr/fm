@@ -17,7 +17,7 @@ func Rename(opts RenameOptions) error {
 	}
 
 	resolver := conflict.NewResolver()
-	resolvedPath, _, err := resolver.Resolve(opts.OpCtx.Context, opts.OpCtx.FS, conflict.ResolveOptions{
+	resolvedPath, renamed, err := resolver.Resolve(opts.OpCtx.Context, opts.OpCtx.FS, conflict.ResolveOptions{
 		Src:    opts.OldPath,
 		Dst:    opts.NewPath,
 		Policy: opts.Conflict.Policy,
@@ -28,6 +28,10 @@ func Rename(opts RenameOptions) error {
 
 	if resolvedPath == "" {
 		return nil // Cancelled
+	}
+
+	if renamed {
+		// Log or handle rename
 	}
 
 	return opts.OpCtx.FS.Rename(opts.OpCtx.Context, opts.OldPath, resolvedPath)

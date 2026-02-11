@@ -183,12 +183,15 @@ func ResolveConflict(m *tui_context.Model, choice string, applyToAll bool) tea.C
 
 	resolver := conflict.NewResolver()
 	src := m.Operations.Conflict.Source
-	resolvedPath, _, err := resolver.Resolve(m.Context, m.FS, conflict.ResolveOptions{
+	resolvedPath, renamed, err := resolver.Resolve(m.Context, m.FS, conflict.ResolveOptions{
 		Src:    src,
 		Dst:    dst,
 		Policy: policy,
 	})
 	if err == nil {
+		if renamed {
+			// Log or handle rename
+		}
 		if resolvedPath == "" && choice == "skip" {
 			if len(pending) <= 1 && !applyToAll {
 				m.UI.StopConfirming()

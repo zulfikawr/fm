@@ -137,10 +137,12 @@ func DownloadAndInstall(version string, progress chan float64) error {
 		OnUpdate: progress,
 	}
 
-	if _, err := io.Copy(tmpFile, reader); err != nil {
+	if n, err := io.Copy(tmpFile, reader); err != nil {
+		logger.LogIfError(err, fmt.Sprintf("Failed to copy update (copied %d bytes)", n))
 		logger.CloseAndLog(tmpFile, "temporary update file on copy error")
 		return err
 	}
+
 	if err := tmpFile.Close(); err != nil {
 		return err
 	}
@@ -192,7 +194,10 @@ func copyFile(src, dst string) error {
 	}
 	defer logger.CloseAndLog(d, "destination file during update copy")
 
-	_, err = io.Copy(d, s)
+	n, err := io.Copy(d, s)
+	if err != nil {
+		logger.LogIfError(err, fmt.Sprintf("Failed to copy file (copied %d bytes)", n))
+	}
 	return err
 }
 

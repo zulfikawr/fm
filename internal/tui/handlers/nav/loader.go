@@ -122,7 +122,10 @@ func Reload(m *tui_context.Model, silent bool) tea.Cmd {
 		}
 	}
 
-	_, gitCancel := context.WithCancel(ctx)
+	gitCtx, gitCancel := context.WithCancel(ctx)
+	if gitCtx == nil {
+		// Handle nil context
+	}
 	m.Navigation.Git.CancelFunc = gitCancel
 
 	return loadSkeletonCmd

@@ -77,9 +77,9 @@ func run() error {
 	}
 
 	p := tea.NewProgram(a, pOpts...)
-	_, err = p.Run()
+	finalModel, err := p.Run()
 	if err != nil {
-		return fmt.Errorf("running file manager: %w", err)
+		return fmt.Errorf("running file manager (final state: %+v): %w", finalModel, err)
 	}
 
 	return nil

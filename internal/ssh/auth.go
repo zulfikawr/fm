@@ -27,10 +27,12 @@ func GetHostKeyCallback(askChan chan<- *HostConfirmRequest) (sshx.HostKeyCallbac
 	if err := os.MkdirAll(sshDir, 0o700); err != nil {
 		logger.Warnf("Failed to create SSH directory: %v", err)
 	}
-	if _, err := os.Stat(knownHostsPath); os.IsNotExist(err) {
+	if info, err := os.Stat(knownHostsPath); os.IsNotExist(err) {
 		if err := os.WriteFile(knownHostsPath, []byte{}, 0o600); err != nil {
 			logger.Warnf("Failed to create known_hosts file: %v", err)
 		}
+	} else if err != nil {
+		logger.LogIfError(err, fmt.Sprintf("Failed to stat known_hosts (info: %+v)", info))
 	}
 
 	cb, err := knownhosts.New(knownHostsPath)
@@ -81,7 +83,10 @@ func AddToKnownHosts(hostname string, remote net.Addr, key sshx.PublicKey) error
 
 	// Use both hostname and remote address for known_hosts
 	entry := knownhosts.Line([]string{hostname, remote.String()}, key)
-	_, err = f.WriteString(entry + "\n")
+	n, err := f.WriteString(entry + "\n")
+	if err != nil {
+		logger.LogIfError(err, fmt.Sprintf("Failed to write to known_hosts (wrote %d bytes)", n))
+	}
 	return err
 }
 
@@ -98,10 +103,12 @@ func CreateCLIHostKeyCallback() (sshx.HostKeyCallback, error) {
 	if err := os.MkdirAll(sshDir, 0o700); err != nil {
 		logger.Warnf("Failed to create SSH directory: %v", err)
 	}
-	if _, err := os.Stat(knownHostsPath); os.IsNotExist(err) {
+	if info, err := os.Stat(knownHostsPath); os.IsNotExist(err) {
 		if err := os.WriteFile(knownHostsPath, []byte{}, 0o600); err != nil {
 			logger.Warnf("Failed to create known_hosts file: %v", err)
 		}
+	} else if err != nil {
+		logger.LogIfError(err, fmt.Sprintf("Failed to stat known_hosts (info: %+v)", info))
 	}
 
 	cb, err := knownhosts.New(knownHostsPath)
@@ -123,8 +130,10 @@ func CreateCLIHostKeyCallback() (sshx.HostKeyCallback, error) {
 			fmt.Print("Are you sure you want to continue connecting [y] Yes [n] No? ")
 
 			var response string
-			_, err := fmt.Scanln(&response)
-			logger.LogIfError(err, "ssh: failed to read user response for host authenticity")
+			n, err := fmt.Scanln(&response)
+			if err != nil {
+				logger.LogIfError(err, fmt.Sprintf("ssh: failed to read user response for host authenticity (read %d items)", n))
+			}
 			if strings.ToLower(response) == "y" || strings.ToLower(response) == "yes" {
 				// Add to known_hosts
 				return AddToKnownHosts(hostname, remote, key)

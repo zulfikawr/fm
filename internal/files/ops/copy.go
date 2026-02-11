@@ -150,9 +150,15 @@ func crossCopyFile(opts CopyOptions) error {
 			Label:    "Copying " + opts.SrcFS.Base(opts.Src),
 			progChan: opts.OpCtx.Progress,
 		}
-		_, err = io.CopyBuffer(pw, cin, buf)
+		n, err := io.CopyBuffer(pw, cin, buf)
+		if err != nil {
+			logger.LogIfError(err, fmt.Sprintf("Failed to copy with progress (copied %d bytes)", n))
+		}
 	} else {
-		_, err = io.CopyBuffer(cout, cin, buf)
+		n, err := io.CopyBuffer(cout, cin, buf)
+		if err != nil {
+			logger.LogIfError(err, fmt.Sprintf("Failed to copy without progress (copied %d bytes)", n))
+		}
 	}
 
 	if err != nil {

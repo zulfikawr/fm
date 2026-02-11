@@ -27,8 +27,9 @@ func TestPrintHelp(t *testing.T) {
 		t.Errorf("Failed to close pipe: %v", err)
 	}
 	var buf bytes.Buffer
-	if _, err := io.Copy(&buf, r); err != nil {
-		t.Errorf("failed to copy from pipe: %v", err)
+	n, err := io.Copy(&buf, r)
+	if err != nil {
+		t.Errorf("failed to copy from pipe (copied %d bytes): %v", n, err)
 	}
 	os.Stdout = oldStdout
 

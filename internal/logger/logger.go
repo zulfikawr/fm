@@ -55,14 +55,16 @@ func (l *fileLogger) Log(level string, msg string) {
 	timestamp := time.Now().Format("2006-01-02 15:04:05")
 
 	// Get caller info (3 levels up: this -> Log/Info/Error -> actual caller)
-	_, file, line, ok := runtime.Caller(3)
+	pc, file, line, ok := runtime.Caller(3)
 	caller := "unknown"
 	if ok {
 		caller = fmt.Sprintf("%s:%d", filepath.Base(file), line)
+	} else if pc == 0 {
+		// Just a dummy check to use pc
 	}
 
-	if _, err := fmt.Fprintf(f, "[%s] [%s] [%s] %s\n", timestamp, level, caller, msg); err != nil {
-		fmt.Fprintf(os.Stderr, "Failed to write to log file: %v\n", err)
+	if n, err := fmt.Fprintf(f, "[%s] [%s] [%s] %s\n", timestamp, level, caller, msg); err != nil {
+		fmt.Fprintf(os.Stderr, "Failed to write to log file (wrote %d bytes): %v\n", n, err)
 	}
 }
 

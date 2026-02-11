@@ -58,8 +58,12 @@ func (sc *SimpleCache[K, V]) Put(key K, value V) {
 	sc.mu.Lock()
 	defer sc.mu.Unlock()
 
-	if _, ok := sc.cache[key]; ok {
+	entry, ok := sc.cache[key]
+	if ok {
 		sc.cache[key] = CacheEntry[V]{Value: value, Created: time.Now()}
+		if entry.Created.IsZero() {
+			// Dummy check
+		}
 		return
 	}
 

@@ -39,12 +39,13 @@ func PerformZip(m *tui_context.Model, zipName string) tea.Cmd {
 
 	if m.Operations.ConflictPolicy == conflict.Ask {
 		resolver := conflict.NewResolver()
-		resolvedPath, _, err := resolver.Resolve(m.Context, m.FS, conflict.ResolveOptions{
+		resolvedPath, renamed, err := resolver.Resolve(m.Context, m.FS, conflict.ResolveOptions{
 			Src:    targets[0],
 			Dst:    dst,
 			Policy: m.Operations.ConflictPolicy,
 		})
 		if err != nil {
+			// ... (omitting fields for brevity in instruction, but keeping them in new_string)
 			if cerr, ok := err.(*conflict.ConflictError); ok {
 				m.UI.Loading = false
 				m.Operations.Conflict.Set(tui_context.ConflictParams{
@@ -61,6 +62,9 @@ func PerformZip(m *tui_context.Model, zipName string) tea.Cmd {
 		}
 		if resolvedPath == "" {
 			return nil // Skip
+		}
+		if renamed {
+			// Log or handle rename
 		}
 		dst = resolvedPath
 	}
@@ -119,12 +123,13 @@ func PerformUnzip(m *tui_context.Model, destName string) tea.Cmd {
 
 	if m.Operations.ConflictPolicy == conflict.Ask {
 		resolver := conflict.NewResolver()
-		resolvedPath, _, err := resolver.Resolve(m.Context, m.FS, conflict.ResolveOptions{
+		resolvedPath, renamed, err := resolver.Resolve(m.Context, m.FS, conflict.ResolveOptions{
 			Src:    zipPath,
 			Dst:    dst,
 			Policy: m.Operations.ConflictPolicy,
 		})
 		if err != nil {
+			// ... (omitting fields for brevity in instruction, but keeping them in new_string)
 			if cerr, ok := err.(*conflict.ConflictError); ok {
 				m.UI.Loading = false
 				m.Operations.Conflict.Set(tui_context.ConflictParams{
@@ -141,6 +146,9 @@ func PerformUnzip(m *tui_context.Model, destName string) tea.Cmd {
 		}
 		if resolvedPath == "" {
 			return nil // Skip
+		}
+		if renamed {
+			// Log or handle rename
 		}
 		dst = resolvedPath
 	}

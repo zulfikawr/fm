@@ -194,12 +194,14 @@ func (m *Manager) Restore(ctx context.Context, trashedName string) error {
 	originalPath := info.OriginalPath
 
 	// Check if original path exists
-	if _, err := os.Stat(originalPath); err == nil {
+	if info, err := os.Stat(originalPath); err == nil {
 		// File exists - conflict!
 		return &RestoreConflictError{
 			TrashedName:  trashedName,
 			OriginalPath: originalPath,
 		}
+	} else if !os.IsNotExist(err) {
+		return fmt.Errorf("failed to stat original path (info: %+v): %w", info, err)
 	}
 
 	// Try to create parent directories if they don't exist

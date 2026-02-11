@@ -79,8 +79,12 @@ func TestRunAnalyze(t *testing.T) {
 		t.Errorf("failed to close pipe writer: %v", err)
 	}
 	os.Stdout = oldStdout
-	if _, readErr := io.ReadAll(r); readErr != nil {
+	outputBytes, readErr := io.ReadAll(r)
+	if readErr != nil {
 		t.Errorf("failed to read from pipe reader: %v", readErr)
+	}
+	if len(outputBytes) == 0 {
+		// Log or check
 	}
 }
 

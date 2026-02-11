@@ -61,9 +61,12 @@ func TestRunConfig(t *testing.T) {
 	// Mock stdout
 	oldStdout := os.Stdout
 	defer func() { os.Stdout = oldStdout }()
-	_, w, err := os.Pipe()
+	r, w, err := os.Pipe()
 	if err != nil {
 		t.Fatalf("failed to create pipe: %v", err)
+	}
+	if r == nil {
+		t.Fatal("Expected non-nil pipe reader")
 	}
 	os.Stdout = w
 

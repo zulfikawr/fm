@@ -41,8 +41,8 @@ func TestLocalFS(t *testing.T) {
 		filePath := filepath.Join(tmpDir, "write_test.txt")
 		f, err := fs.Create(ctx, filePath)
 		testutil.AssertNoError(t, err, "Create should succeed")
-		if _, err := f.Write([]byte("data")); err != nil {
-			t.Errorf("failed to write: %v", err)
+		if n, err := f.Write([]byte("data")); err != nil {
+			t.Errorf("failed to write (wrote %d bytes): %v", n, err)
 		}
 		if err := f.Close(); err != nil {
 			t.Errorf("failed to close: %v", err)
@@ -129,8 +129,11 @@ func TestLocalFS(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		_, err := fs.Lstat(ctx, path)
+		info, err := fs.Lstat(ctx, path)
 		testutil.AssertNoError(t, err, "Lstat should succeed")
+		if info == nil {
+			t.Fatal("Expected non-nil FileInfo from Lstat")
+		}
 
 		abs, err := fs.Abs("some_file")
 		testutil.AssertNoError(t, err, "Abs should succeed")
@@ -151,8 +154,11 @@ func TestLocalFS(t *testing.T) {
 		testutil.AssertEqual(t, "", fs.User(), "User should be empty")
 		testutil.AssertEqual(t, string(os.PathSeparator), fs.Separator(), "Separator should match")
 
-		_, err := fs.GetHomeDir()
+		home, err := fs.GetHomeDir()
 		testutil.AssertNoError(t, err, "GetHomeDir should succeed")
+		if home == "" {
+			t.Error("Expected non-empty home directory")
+		}
 	})
 
 	t.Run("Walk", func(t *testing.T) {
@@ -211,13 +217,13 @@ func TestLocalFS(t *testing.T) {
 	t.Run("Context Cancellation", func(t *testing.T) {
 		ictx, cancel := context.WithCancel(context.Background())
 		cancel()
-		_, err := fs.Stat(ictx, tmpDir)
+		info, err := fs.Stat(ictx, tmpDir)
 		if err == nil {
-			t.Errorf("expected error on cancelled context")
+			t.Errorf("expected error on cancelled context (got info: %+v)", info)
 		}
-		_, err = fs.ReadDir(ictx, tmpDir)
+		entries, err := fs.ReadDir(ictx, tmpDir)
 		if err == nil {
-			t.Errorf("expected error on cancelled context")
+			t.Errorf("expected error on cancelled context (got entries: %v)", entries)
 		}
 	})
 

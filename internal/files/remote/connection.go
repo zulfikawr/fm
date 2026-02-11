@@ -26,8 +26,10 @@ func (fs *RemoteFS) keepAlive() {
 
 			if conn != nil {
 				// Send a global request as a keep-alive heartbeat
-				_, _, err := conn.SendRequest("keepalive@openssh.com", true, nil)
-				logger.LogIfError(err, "remote: keepalive failed")
+				ok, payload, err := conn.SendRequest("keepalive@openssh.com", true, nil)
+				if err != nil {
+					logger.LogIfError(err, fmt.Sprintf("remote: keepalive failed (ok: %v, payload: %v)", ok, payload))
+				}
 			}
 		}
 	}

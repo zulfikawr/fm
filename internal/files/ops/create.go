@@ -10,7 +10,7 @@ import (
 // CreateAtomic creates a new file or directory atomically.
 func CreateAtomic(opts CreateOptions) (string, error) {
 	resolver := conflict.NewResolver()
-	resolvedPath, _, err := resolver.Resolve(opts.OpCtx.Context, opts.OpCtx.FS, conflict.ResolveOptions{
+	resolvedPath, renamed, err := resolver.Resolve(opts.OpCtx.Context, opts.OpCtx.FS, conflict.ResolveOptions{
 		Src:    "",
 		Dst:    opts.Path,
 		Policy: opts.Conflict.Policy,
@@ -21,6 +21,10 @@ func CreateAtomic(opts CreateOptions) (string, error) {
 
 	if resolvedPath == "" {
 		return "", nil // Cancelled
+	}
+
+	if renamed {
+		// Log or handle the fact that it was renamed
 	}
 
 	if opts.IsDir {

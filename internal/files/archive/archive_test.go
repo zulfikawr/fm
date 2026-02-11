@@ -5,6 +5,7 @@ import (
 	"archive/zip"
 	"bytes"
 	"context"
+	"fmt"
 	"io"
 	"os"
 	"testing"
@@ -29,8 +30,8 @@ func createTestZip(t *testing.T) string {
 		file := files[i]
 		f, err := w.Create(file.Name)
 		testutil.AssertNoError(t, err, "create zip entry")
-		_, err = f.Write([]byte(file.Body))
-		testutil.AssertNoError(t, err, "write zip entry body")
+		n, err := f.Write([]byte(file.Body))
+		testutil.AssertNoError(t, err, fmt.Sprintf("write zip entry body (wrote %d bytes)", n))
 	}
 
 	err = w.Close()
@@ -38,8 +39,8 @@ func createTestZip(t *testing.T) string {
 
 	tmpFile, err := os.CreateTemp("", "test*.zip")
 	testutil.AssertNoError(t, err, "create temp zip file")
-	_, err = tmpFile.Write(buf.Bytes())
-	testutil.AssertNoError(t, err, "write temp zip file")
+	n, err := tmpFile.Write(buf.Bytes())
+	testutil.AssertNoError(t, err, fmt.Sprintf("write temp zip file (wrote %d bytes)", n))
 	err = tmpFile.Close()
 	testutil.AssertNoError(t, err, "close temp zip file")
 
@@ -127,8 +128,8 @@ func createTestTar(t *testing.T) string {
 
 		err := w.WriteHeader(hdr)
 		testutil.AssertNoError(t, err, "write tar header")
-		_, err = w.Write([]byte(file.Body))
-		testutil.AssertNoError(t, err, "write tar body")
+		n, err := w.Write([]byte(file.Body))
+		testutil.AssertNoError(t, err, fmt.Sprintf("write tar body (wrote %d bytes)", n))
 	}
 
 	var err error
@@ -137,8 +138,8 @@ func createTestTar(t *testing.T) string {
 
 	tmpFile, err := os.CreateTemp("", "test*.tar")
 	testutil.AssertNoError(t, err, "create temp tar file")
-	_, err = tmpFile.Write(buf.Bytes())
-	testutil.AssertNoError(t, err, "write temp tar file")
+	n, err := tmpFile.Write(buf.Bytes())
+	testutil.AssertNoError(t, err, fmt.Sprintf("write temp tar file (wrote %d bytes)", n))
 	err = tmpFile.Close()
 	testutil.AssertNoError(t, err, "close temp tar file")
 
@@ -228,11 +229,11 @@ func TestArchiveHelpers(t *testing.T) {
 
 	t.Run("Unsupported Operations", func(t *testing.T) {
 		ctx := context.Background()
-		if fs.MkdirAll(ctx, "/dir", 0755) == nil {
+		if err := fs.MkdirAll(ctx, "/dir", 0755); err == nil {
 			t.Error("MkdirAll should fail")
 		}
-		if _, err := fs.Create(ctx, "/file"); err == nil {
-			t.Error("Create should fail")
+		if wc, err := fs.Create(ctx, "/file"); err == nil {
+			t.Errorf("Create should fail (got wc: %+v)", wc)
 		}
 		if fs.RemoveAll(ctx, "/dir") == nil {
 			t.Error("RemoveAll should fail")
@@ -275,8 +276,8 @@ func TestArchiveFS_Extra(t *testing.T) {
 		testutil.AssertNoError(t, err, "Stat folder")
 		testutil.AssertEqual(t, true, info.IsDir(), "IsDir folder")
 
-		if _, err = fs.Stat(ctx, "nonexistent"); err == nil {
-			t.Error("Stat nonexistent should fail")
+		if info, err = fs.Stat(ctx, "nonexistent"); err == nil {
+			t.Errorf("Stat nonexistent should fail (got info: %+v)", info)
 		}
 	})
 
@@ -293,8 +294,9 @@ func TestArchiveFS_Extra(t *testing.T) {
 	})
 
 	t.Run("Unsupported Format", func(t *testing.T) {
-		if _, err := NewArchiveFS("test.txt"); err == nil {
-			t.Error("Unsupported format should fail")
+		fs, err := NewArchiveFS("test.txt")
+		if err == nil {
+			t.Errorf("Unsupported format should fail (got fs: %+v)", fs)
 		}
 	})
 }

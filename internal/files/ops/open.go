@@ -31,8 +31,8 @@ func GetOpenAtLineCmd(opts OpenOptions) (*exec.Cmd, bool, error) {
 	isTermEditor := isTerminalEditor(editor)
 
 	// Check if editor exists
-	if _, err := lookPath(editor); err != nil {
-		return nil, false, errors.WrapError(err, "OpenWithEditor")
+	if path, err := lookPath(editor); err != nil {
+		return nil, false, errors.WrapError(err, fmt.Sprintf("OpenWithEditor (found at: %q)", path))
 	}
 
 	var args []string
@@ -64,16 +64,16 @@ func GetSystemOpenCmd(fs core.FileSystem, path string) (*exec.Cmd, error) {
 	switch runtime.GOOS {
 	case "linux":
 		opener := "xdg-open"
-		if _, err := lookPath(opener); err != nil {
-			return nil, errors.WrapError(err, "OpenWithXdgOpen")
+		if path, err := lookPath(opener); err != nil {
+			return nil, errors.WrapError(err, fmt.Sprintf("OpenWithXdgOpen (found at: %q)", path))
 		}
-		cmd = exec.Command(opener, path)
+		cmd = exec.Command("xdg-open", path)
 	case "darwin":
 		opener := "open"
-		if _, err := lookPath(opener); err != nil {
-			return nil, errors.WrapError(err, "OpenWithMacOSOpen")
+		if path, err := lookPath(opener); err != nil {
+			return nil, errors.WrapError(err, fmt.Sprintf("OpenWithMacOSOpen (found at: %q)", path))
 		}
-		cmd = exec.Command(opener, path)
+		cmd = exec.Command("open", path)
 	case "windows":
 		cmd = exec.Command("rundll32", "url.dll,FileProtocolHandler", path)
 	default:

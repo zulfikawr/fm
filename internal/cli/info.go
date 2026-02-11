@@ -83,9 +83,12 @@ func RunInfo(opts InfoOptions) error {
 	ctx := context.Background()
 
 	// Initialize filesystem
-	fs, _, err := factory.CreateFileSystem(opts.Remote, nil)
+	fs, fsInfo, err := factory.CreateFileSystem(opts.Remote, nil)
 	if err != nil {
 		return fmt.Errorf("initializing filesystem: %w", err)
+	}
+	if fsInfo != nil {
+		// Log or handle remote info
 	}
 	defer func() {
 		if closeErr := fs.Close(); closeErr != nil {

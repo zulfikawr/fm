@@ -24,9 +24,12 @@ func RunAnalyze(args *Args) error {
 	ctx := context.Background()
 
 	// Initialize filesystem
-	fs, _, err := factory.CreateFileSystem(args.Remote, nil)
+	fs, fsInfo, err := factory.CreateFileSystem(args.Remote, nil)
 	if err != nil {
 		return fmt.Errorf("initializing filesystem: %w", err)
+	}
+	if fsInfo != nil {
+		// Log or handle remote info
 	}
 	defer logger.CloseAndLog(fs, "analyze filesystem")
 

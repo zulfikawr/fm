@@ -226,7 +226,7 @@ func HandleAuthFinalize(m *tui_context.Model, input string) tea.Cmd {
 		tryKeyAuth = true
 
 		// Check if key file exists first
-		if _, err := os.Stat(keyPath); os.IsNotExist(err) {
+		if info, err := os.Stat(keyPath); os.IsNotExist(err) {
 			errMsg := fmt.Sprintf("Key file not found: %s", keyPath)
 			utils.LogPush(m, tui_context.LogEntry{
 				Type:    "Remote",
@@ -237,6 +237,8 @@ func HandleAuthFinalize(m *tui_context.Model, input string) tea.Cmd {
 			})
 			utils.LogError(m, fmt.Errorf("%s", errMsg), "Key file not found")
 			return nil
+		} else if err != nil {
+			return utils.LogError(m, err, fmt.Sprintf("Failed to stat key file (info: %+v)", info))
 		}
 	} else {
 		password = input

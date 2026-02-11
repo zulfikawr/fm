@@ -81,8 +81,10 @@ func TestAddToKnownHosts(t *testing.T) {
 
 	keyData := "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOm6y8v0W6Wz7mHn6/W1uF1v7Q+V2b2u5u5u5u5u5u5u"
 	parts := strings.Split(keyData, " ")
-	pk, _, _, _, err := sshx.ParseAuthorizedKey([]byte(parts[0] + " " + parts[1]))
-	testutil.AssertNoError(t, err, "parse key")
+	pk, out, options, rest, err := sshx.ParseAuthorizedKey([]byte(parts[0] + " " + parts[1]))
+	if err != nil {
+		t.Fatalf("parse key failed (out: %v, options: %v, rest: %v): %v", out, options, rest, err)
+	}
 
 	addr, err := net.ResolveTCPAddr("tcp", "example.com:22")
 	testutil.AssertNoError(t, err, "resolve addr")
@@ -92,8 +94,8 @@ func TestAddToKnownHosts(t *testing.T) {
 
 	// Check if file was created
 	knownHostsPath := filepath.Join(tmpDir, ".ssh", "known_hosts")
-	if _, err := os.Stat(knownHostsPath); err != nil {
-		t.Errorf("known_hosts file not created: %v", err)
+	if info, err := os.Stat(knownHostsPath); err != nil {
+		t.Errorf("known_hosts file not created (info: %+v): %v", info, err)
 	}
 }
 
@@ -117,8 +119,10 @@ func TestGetHostKeyCallback(t *testing.T) {
 
 	keyData := "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOm6y8v0W6Wz7mHn6/W1uF1v7Q+V2b2u5u5u5u5u5u5u"
 	parts := strings.Split(keyData, " ")
-	pk, _, _, _, err := sshx.ParseAuthorizedKey([]byte(parts[0] + " " + parts[1]))
-	testutil.AssertNoError(t, err, "parse key")
+	pk, out, options, rest, err := sshx.ParseAuthorizedKey([]byte(parts[0] + " " + parts[1]))
+	if err != nil {
+		t.Fatalf("parse key failed (out: %v, options: %v, rest: %v): %v", out, options, rest, err)
+	}
 
 	addr, err := net.ResolveTCPAddr("tcp", "example.com:22")
 	testutil.AssertNoError(t, err, "resolve addr")

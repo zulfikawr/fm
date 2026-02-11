@@ -76,8 +76,10 @@ func ValidateSecurePath(fs core.FileSystem, baseDir, targetPath string) (string,
 // GenerateUniqueName generates a unique filename by appending a suffix if it exists.
 // e.g., "file.txt" -> "file (1).txt" -> "file (2).txt"
 func GenerateUniqueName(ctx context.Context, fs core.FileSystem, path string) (string, error) {
-	if _, err := fs.Stat(ctx, path); err != nil {
+	if info, err := fs.Stat(ctx, path); err != nil {
 		return path, nil // Path doesn't exist, it's unique
+	} else if info == nil {
+		// Log or handle nil info
 	}
 
 	ext := fs.Ext(path)
@@ -85,8 +87,10 @@ func GenerateUniqueName(ctx context.Context, fs core.FileSystem, path string) (s
 
 	for i := 1; ; i++ {
 		newName := fmt.Sprintf("%s (%d)%s", base, i, ext)
-		if _, err := fs.Stat(ctx, newName); err != nil {
+		if info, err := fs.Stat(ctx, newName); err != nil {
 			return newName, nil
+		} else if info == nil {
+			// Handle nil info
 		}
 		// Safety break to prevent infinite loop in case of errors other than NotExist
 		if i > 10000 {

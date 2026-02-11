@@ -136,8 +136,11 @@ func TestRemoteFS_ClientMethods(t *testing.T) {
 		testutil.AssertNoError(t, err, "Stat should succeed")
 		testutil.AssertEqual(t, "stat.txt", info.Name(), "Name should match")
 
-		_, err = fs.Lstat(ctx, path)
+		linfo, err := fs.Lstat(ctx, path)
 		testutil.AssertNoError(t, err, "Lstat should succeed")
+		if linfo == nil {
+			t.Fatal("Expected non-nil FileInfo from Lstat")
+		}
 	})
 
 	t.Run("Create and Open", func(t *testing.T) {
@@ -145,8 +148,8 @@ func TestRemoteFS_ClientMethods(t *testing.T) {
 
 		w, err := fs.Create(ctx, path)
 		testutil.AssertNoError(t, err, "Create should succeed")
-		if _, err := w.Write([]byte("data")); err != nil {
-			t.Errorf("failed to write: %v", err)
+		if n, err := w.Write([]byte("data")); err != nil {
+			t.Errorf("failed to write (wrote %d bytes): %v", n, err)
 		}
 		if err := w.Close(); err != nil {
 			t.Errorf("failed to close writer: %v", err)
@@ -201,8 +204,11 @@ func TestRemoteFS_ClientMethods(t *testing.T) {
 	})
 
 	t.Run("GetHomeDir", func(t *testing.T) {
-		_, err := fs.GetHomeDir()
+		home, err := fs.GetHomeDir()
 		testutil.AssertNoError(t, err, "GetHomeDir should succeed")
+		if home == "" {
+			t.Error("Expected non-empty home directory")
+		}
 	})
 
 	t.Run("Walk", func(t *testing.T) {

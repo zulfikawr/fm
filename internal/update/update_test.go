@@ -70,9 +70,9 @@ func TestCheckForUpdate_Error(t *testing.T) {
 	githubAPI = server.URL + "/%s/%s"
 	defer func() { githubAPI = oldAPI }()
 
-	_, err := CheckForUpdate()
+	version, err := CheckForUpdate()
 	if err == nil {
-		t.Error("CheckForUpdate() should have failed with 500 status")
+		t.Errorf("CheckForUpdate() should have failed with 500 status (got version %q)", version)
 	}
 }
 
@@ -145,8 +145,8 @@ func TestDownloadAndInstall(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/binary" {
 			w.WriteHeader(http.StatusOK)
-			if _, err := w.Write([]byte("fake binary content")); err != nil {
-				t.Errorf("failed to write response: %v", err)
+			if n, err := w.Write([]byte("fake binary content")); err != nil {
+				t.Errorf("failed to write response (wrote %d bytes): %v", n, err)
 			}
 			return
 		}

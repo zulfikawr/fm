@@ -50,9 +50,9 @@ func TestInitializeApp_Local(t *testing.T) {
 	})
 
 	t.Run("Non-existent directory", func(t *testing.T) {
-		_, err := InitializeApp("", []string{filepath.Join(tmpDir, "ghost")})
+		app, err := InitializeApp("", []string{filepath.Join(tmpDir, "ghost")})
 		if err == nil {
-			t.Error("Expected error for non-existent directory")
+			t.Errorf("Expected error for non-existent directory (got app: %+v)", app)
 		}
 	})
 
@@ -62,9 +62,9 @@ func TestInitializeApp_Local(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		_, err := InitializeApp("", []string{filePath})
+		app, err := InitializeApp("", []string{filePath})
 		if err == nil {
-			t.Error("Expected error for path being a file")
+			t.Errorf("Expected error for path being a file (got app: %+v)", app)
 		}
 	})
 }

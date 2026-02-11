@@ -39,10 +39,10 @@ type testModelWrapper struct {
 
 func NewTestModelWrapper(m *tuictx.Model) *testModelWrapper {
 	// Mock external actions to avoid hanging on tea.ExecProcess during tests
-	handlers.OpenFileAction = func(_ *tuictx.Model, _ core.Item) tea.Cmd {
+	handlers.OpenFileAction = func(model *tuictx.Model, item core.Item) tea.Cmd {
 		return nil
 	}
-	handlers.OpenFileAtLineAction = func(_ *tuictx.Model, _ string, _ int) tea.Cmd {
+	handlers.OpenFileAtLineAction = func(model *tuictx.Model, path string, line int) tea.Cmd {
 		return nil
 	}
 

@@ -106,9 +106,9 @@ func initConfig() error {
 	}
 
 	p := tea.NewProgram(m)
-	_, err := p.Run()
+	finalModel, err := p.Run()
 	if err != nil {
-		return fmt.Errorf("config init failed: %w", err)
+		return fmt.Errorf("config init failed (final state: %+v): %w", finalModel, err)
 	}
 
 	return nil

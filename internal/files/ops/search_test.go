@@ -187,13 +187,13 @@ func TestSearch(t *testing.T) {
 		fs.WalkFunc = func(ctx context.Context, root string, walkFn filepath.WalkFunc) error {
 			return os.ErrPermission
 		}
-		_, err := Search(SearchOptions{
+		results, err := Search(SearchOptions{
 			OpCtx: OpContext{Context: ctx, FS: fs},
 			Root:  "/",
 			Query: "match",
 		})
 		if err == nil {
-			t.Error("Expected error when Walk fails")
+			t.Fatalf("Expected error when Walk fails (got results: %v)", results)
 		}
 	})
 }
