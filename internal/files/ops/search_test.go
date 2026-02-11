@@ -27,8 +27,12 @@ func TestFuzzyMatch(t *testing.T) {
 		{"", "test", false},
 		{"anything", "", true},
 	}
-	for _, tt := range tests {
-		result, _ := FuzzyMatch(tt.s, tt.query)
+	for i := range tests {
+		tt := tests[i]
+		result, matchedIdx := FuzzyMatch(tt.s, tt.query)
+		if result && len(matchedIdx) == 0 && tt.query != "" {
+			t.Errorf("FuzzyMatch(%q, %q) returned true but no indices", tt.s, tt.query)
+		}
 		if result != tt.expected {
 			t.Errorf("FuzzyMatch(%q, %q) = %v, want %v", tt.s, tt.query, result, tt.expected)
 		}
@@ -36,7 +40,10 @@ func TestFuzzyMatch(t *testing.T) {
 }
 
 func TestRegexMatch(t *testing.T) {
-	re, _ := regexp.Compile("(?i)h.llo")
+	re, err := regexp.Compile("(?i)h.llo")
+	if err != nil {
+		t.Fatalf("Failed to compile regex: %v", err)
+	}
 	tests := []struct {
 		s        string
 		expected bool
@@ -47,8 +54,12 @@ func TestRegexMatch(t *testing.T) {
 		{"hxllo", true},
 		{"world", false},
 	}
-	for _, tt := range tests {
-		result, _ := matchStrings(tt.s, "", re)
+	for i := range tests {
+		tt := tests[i]
+		result, matchedIdx := matchStrings(tt.s, "", re)
+		if result && len(matchedIdx) == 0 {
+			t.Errorf("matchStrings(%q) returned true but no indices", tt.s)
+		}
 		if result != tt.expected {
 			t.Errorf("RegexMatch(%q) = %v, want %v", tt.s, result, tt.expected)
 		}

@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/pkg/sftp"
+	"github.com/zulfikawr/fm/internal/logger"
 	sshx "golang.org/x/crypto/ssh"
 )
 
@@ -25,7 +26,8 @@ func (fs *RemoteFS) keepAlive() {
 
 			if conn != nil {
 				// Send a global request as a keep-alive heartbeat
-				_, _, _ = conn.SendRequest("keepalive@openssh.com", true, nil)
+				_, _, err := conn.SendRequest("keepalive@openssh.com", true, nil)
+				logger.LogIfError(err, "remote: keepalive failed")
 			}
 		}
 	}
@@ -37,10 +39,10 @@ func (fs *RemoteFS) reconnect() error {
 
 	// Close old connection if still open
 	if fs.client != nil {
-		_ = fs.client.Close()
+		logger.CloseAndLog(fs.client, "sftp client during reconnect")
 	}
 	if fs.conn != nil {
-		_ = fs.conn.Close()
+		logger.CloseAndLog(fs.conn, "ssh connection during reconnect")
 	}
 
 	// Dial again
@@ -51,7 +53,7 @@ func (fs *RemoteFS) reconnect() error {
 
 	client, err := sftp.NewClient(conn, sftp.UseConcurrentWrites(true))
 	if err != nil {
-		_ = conn.Close()
+		logger.CloseAndLog(conn, "ssh connection after sftp failure")
 		return fmt.Errorf("reconnect sftp failed: %w", err)
 	}
 

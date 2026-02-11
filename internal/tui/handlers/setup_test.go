@@ -27,7 +27,9 @@ func TestMain(m *testing.M) {
 	code := m.Run()
 
 	// Clean up
-	_ = os.RemoveAll(tempDir)
+	if err := os.RemoveAll(tempDir); err != nil {
+		panic(err)
+	}
 	os.Exit(code)
 }
 

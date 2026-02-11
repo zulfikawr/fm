@@ -54,31 +54,37 @@ func TestGetOpenCmd(t *testing.T) {
 
 	t.Run("Open at line", func(t *testing.T) {
 		// Vim/Nano/Vi
-		cmd, _, _ := GetOpenAtLineCmd(OpenOptions{
+		cmd, isTerm, err := GetOpenAtLineCmd(OpenOptions{
 			FS:        fs,
 			Path:      "file.txt",
 			EditorIdx: 0,
 			Line:      10,
 		})
+		testutil.AssertNoError(t, err, "Should get vim cmd")
+		testutil.AssertEqual(t, true, isTerm, "Vim should be terminal")
 		testutil.AssertEqual(t, "+10", cmd.Args[1], "Vim should use +10")
 
 		// VS Code (at index 5 based on constants.Editors)
-		cmd, _, _ = GetOpenAtLineCmd(OpenOptions{
+		cmd, isTerm, err = GetOpenAtLineCmd(OpenOptions{
 			FS:        fs,
 			Path:      "file.txt",
 			EditorIdx: 5,
 			Line:      10,
 		})
+		testutil.AssertNoError(t, err, "Should get code cmd")
+		testutil.AssertEqual(t, false, isTerm, "Code should not be terminal")
 		testutil.AssertEqual(t, "--goto", cmd.Args[1], "VS Code should use --goto")
 		testutil.AssertEqual(t, "file.txt:10", cmd.Args[2], "VS Code should use path:line")
 
 		// Default (no line)
-		cmd, _, _ = GetOpenAtLineCmd(OpenOptions{
+		cmd, isTerm, err = GetOpenAtLineCmd(OpenOptions{
 			FS:        fs,
 			Path:      "file.txt",
 			EditorIdx: 0,
 			Line:      0,
 		})
+		testutil.AssertNoError(t, err, "Should get default cmd")
+		testutil.AssertEqual(t, true, isTerm, "Vim should be terminal")
 		testutil.AssertEqual(t, 2, len(cmd.Args), "Should have 2 args (cmd + path)")
 	})
 

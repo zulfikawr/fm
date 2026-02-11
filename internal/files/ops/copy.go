@@ -28,8 +28,14 @@ func CrossCopy(opts CopyOptions) error {
 	}
 
 	if opts.SrcFS == opts.OpCtx.FS {
-		sAbs, _ := opts.SrcFS.Abs(opts.Src)
-		dAbs, _ := opts.OpCtx.FS.Abs(opts.Dst)
+		sAbs, err := opts.SrcFS.Abs(opts.Src)
+		if err != nil {
+			return errors.WrapErrorWithPath(err, "Abs", opts.Src)
+		}
+		dAbs, err := opts.OpCtx.FS.Abs(opts.Dst)
+		if err != nil {
+			return errors.WrapErrorWithPath(err, "Abs", opts.Dst)
+		}
 		if sAbs == dAbs {
 			return errors.WrapErrorWithPath(fmt.Errorf("source and destination are the same"), "CrossCopy", opts.Src)
 		}
@@ -103,7 +109,7 @@ func crossCopyFile(opts CopyOptions) error {
 	if err != nil {
 		return errors.WrapErrorWithPath(err, "Create", opts.Dst)
 	}
-	defer func() { _ = out.Close() }()
+	defer logger.CloseAndLog(out, opts.Dst)
 
 	info, err := opts.SrcFS.Stat(opts.OpCtx.Context, opts.Src)
 	if err != nil {
@@ -119,13 +125,15 @@ func crossCopyFile(opts CopyOptions) error {
 
 	in, err := opts.SrcFS.Open(opts.OpCtx.Context, opts.Src)
 	if err != nil {
-		_ = out.Close()
+		if cerr := out.Close(); cerr != nil {
+			logger.Warnf("Failed to close partial file %s: %v", opts.Dst, cerr)
+		}
 		if err := opts.OpCtx.FS.RemoveAll(opts.OpCtx.Context, opts.Dst); err != nil {
 			logger.Warnf("Failed to clean up partial file %s: %v", opts.Dst, err)
 		}
 		return errors.WrapErrorWithPath(err, "Open", opts.Src)
 	}
-	defer func() { _ = in.Close() }()
+	defer logger.CloseAndLog(in, opts.Src)
 
 	// Wrap with cancellable I/O
 	cin := NewCancellableReader(opts.OpCtx.Context, in)
@@ -148,7 +156,9 @@ func crossCopyFile(opts CopyOptions) error {
 	}
 
 	if err != nil {
-		_ = out.Close()
+		if cerr := out.Close(); cerr != nil {
+			logger.Warnf("Failed to close partial file %s: %v", opts.Dst, cerr)
+		}
 		if err := opts.OpCtx.FS.RemoveAll(opts.OpCtx.Context, opts.Dst); err != nil {
 			logger.Warnf("Failed to clean up partial file %s: %v", opts.Dst, err)
 		}
@@ -159,7 +169,7 @@ func crossCopyFile(opts CopyOptions) error {
 }
 
 func crossCopyDir(opts CopyOptions) error {
-	g, _ := errgroup.WithContext(opts.OpCtx.Context)
+	g, ctx := errgroup.WithContext(opts.OpCtx.Context)
 	g.SetLimit(constants.MaxCopyWorkers)
 	var mu sync.Mutex
 	state := &copyState{
@@ -168,6 +178,8 @@ func crossCopyDir(opts CopyOptions) error {
 		mu:      &mu,
 		g:       g,
 	}
+	// Update context in opts to the derived one
+	state.opts.OpCtx.Context = ctx
 	err := crossCopyDirRecursive(state, opts.Src, opts.Dst)
 	if err != nil {
 		return err

@@ -87,8 +87,16 @@ func TestRemoteFS_ClientMethods(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	go func() { _ = server.Serve() }()
-	defer func() { _ = server.Close() }()
+	go func() {
+		if err := server.Serve(); err != nil && err != io.EOF {
+			// server.Serve() always returns an error when the connection is closed
+		}
+	}()
+	defer func() {
+		if err := server.Close(); err != nil {
+			t.Errorf("failed to close server: %v", err)
+		}
+	}()
 
 	// Create a client on the client end of the pipe
 	client, err := sftp.NewClientPipe(clientRWC, clientRWC)
@@ -136,13 +144,20 @@ func TestRemoteFS_ClientMethods(t *testing.T) {
 
 		w, err := fs.Create(ctx, path)
 		testutil.AssertNoError(t, err, "Create should succeed")
-		_, _ = w.Write([]byte("data"))
-		_ = w.Close()
+		if _, err := w.Write([]byte("data")); err != nil {
+			t.Errorf("failed to write: %v", err)
+		}
+		if err := w.Close(); err != nil {
+			t.Errorf("failed to close writer: %v", err)
+		}
 
 		r, err := fs.Open(ctx, path)
 		testutil.AssertNoError(t, err, "Open should succeed")
-		data, _ := io.ReadAll(r)
-		_ = r.Close()
+		data, err := io.ReadAll(r)
+		testutil.AssertNoError(t, err, "ReadAll should succeed")
+		if err := r.Close(); err != nil {
+			t.Errorf("failed to close reader: %v", err)
+		}
 		testutil.AssertEqual(t, "data", string(data), "Content should match")
 	})
 
@@ -166,7 +181,8 @@ func TestRemoteFS_ClientMethods(t *testing.T) {
 		testutil.AssertNoError(t, err, "RemoveAll file should succeed")
 
 		dir := filepath.Join(tmpDir, "dir_to_delete")
-		_ = fs.MkdirAll(ctx, dir, 0755)
+		err = fs.MkdirAll(ctx, dir, 0755)
+		testutil.AssertNoError(t, err, "MkdirAll should succeed")
 		if err := os.WriteFile(filepath.Join(dir, "file.txt"), []byte(""), 0644); err != nil {
 			t.Fatal(err)
 		}
@@ -252,7 +268,8 @@ func TestRemoteFS_ClientMethods(t *testing.T) {
 	})
 
 	t.Run("infoToDirEntry", func(t *testing.T) {
-		info, _ := os.Stat(os.Args[0])
+		info, err := os.Stat(os.Args[0])
+		testutil.AssertNoError(t, err, "Stat current executable")
 		entry := infoToDirEntry(info)
 		testutil.AssertEqual(t, info.Name(), entry.Name(), "Name should match")
 		testutil.AssertEqual(t, info.IsDir(), entry.IsDir(), "IsDir should match")

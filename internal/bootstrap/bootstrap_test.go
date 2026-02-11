@@ -20,7 +20,10 @@ func TestInitializeApp_Local(t *testing.T) {
 			t.Fatal("App is nil")
 		}
 
-		cwd, _ := os.Getwd()
+		cwd, err := os.Getwd()
+		if err != nil {
+			t.Fatal(err)
+		}
 		if app.Model.Navigation.Path != cwd {
 			t.Errorf("Expected start path %s, got %s", cwd, app.Model.Navigation.Path)
 		}
@@ -37,7 +40,10 @@ func TestInitializeApp_Local(t *testing.T) {
 			t.Fatalf("InitializeApp failed: %v", err)
 		}
 
-		absSubDir, _ := filepath.Abs(subDir)
+		absSubDir, err := filepath.Abs(subDir)
+		if err != nil {
+			t.Fatal(err)
+		}
 		if app.Model.Navigation.Path != absSubDir {
 			t.Errorf("Expected start path %s, got %s", absSubDir, app.Model.Navigation.Path)
 		}

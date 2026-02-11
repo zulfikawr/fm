@@ -39,11 +39,15 @@ func TestApp_Integration(t *testing.T) {
 	tm.Send("j")
 
 	// 5. Quit
-	_ = tm.Quit()
+	err := tm.Quit()
+	testutil.AssertNoError(t, err, "Quit operation")
 }
 
 func TestApp_Lifecycle(t *testing.T) {
-	app, _ := SetupTestApp("/test")
+	app, fs := SetupTestApp("/test")
+	if fs == nil {
+		t.Fatal("Expected non-nil mock filesystem")
+	}
 
 	t.Run("InitModel", func(t *testing.T) {
 		cmd := tui.InitModel(app.Model)

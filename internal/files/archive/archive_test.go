@@ -39,18 +39,27 @@ func createTestZip(t *testing.T) string {
 	testutil.AssertNoError(t, err, "create temp zip file")
 	_, err = tmpFile.Write(buf.Bytes())
 	testutil.AssertNoError(t, err, "write temp zip file")
-	_ = tmpFile.Close()
+	err = tmpFile.Close()
+	testutil.AssertNoError(t, err, "close temp zip file")
 
 	return tmpFile.Name()
 }
 
 func TestArchiveFS(t *testing.T) {
 	zipPath := createTestZip(t)
-	defer func() { _ = os.Remove(zipPath) }()
+	defer func() {
+		if err := os.Remove(zipPath); err != nil {
+			t.Errorf("failed to remove test zip %s: %v", zipPath, err)
+		}
+	}()
 
 	fs, err := NewArchiveFS(zipPath)
 	testutil.AssertNoError(t, err, "NewArchiveFS")
-	defer func() { _ = fs.Close() }()
+	defer func() {
+		if err := fs.Close(); err != nil {
+			t.Errorf("failed to close archive fs: %v", err)
+		}
+	}()
 
 	ctx := context.Background()
 
@@ -80,7 +89,11 @@ func TestArchiveFS(t *testing.T) {
 	t.Run("Zip Open and Read", func(t *testing.T) {
 		r, err := fs.Open(ctx, "gopher.txt")
 		testutil.AssertNoError(t, err, "Open gopher.txt")
-		defer func() { _ = r.Close() }()
+		defer func() {
+			if err := r.Close(); err != nil {
+				t.Errorf("failed to close reader: %v", err)
+			}
+		}()
 
 		data, err := io.ReadAll(r)
 		testutil.AssertNoError(t, err, "ReadAll gopher.txt")
@@ -123,18 +136,27 @@ func createTestTar(t *testing.T) string {
 	testutil.AssertNoError(t, err, "create temp tar file")
 	_, err = tmpFile.Write(buf.Bytes())
 	testutil.AssertNoError(t, err, "write temp tar file")
-	_ = tmpFile.Close()
+	err = tmpFile.Close()
+	testutil.AssertNoError(t, err, "close temp tar file")
 
 	return tmpFile.Name()
 }
 
 func TestTarFS(t *testing.T) {
 	tarPath := createTestTar(t)
-	defer func() { _ = os.Remove(tarPath) }()
+	defer func() {
+		if err := os.Remove(tarPath); err != nil {
+			t.Errorf("failed to remove test tar %s: %v", tarPath, err)
+		}
+	}()
 
 	fs, err := NewArchiveFS(tarPath)
 	testutil.AssertNoError(t, err, "NewArchiveFS tar")
-	defer func() { _ = fs.Close() }()
+	defer func() {
+		if err := fs.Close(); err != nil {
+			t.Errorf("failed to close tar archive fs: %v", err)
+		}
+	}()
 
 	ctx := context.Background()
 
@@ -157,7 +179,11 @@ func TestTarFS(t *testing.T) {
 	t.Run("Tar Open and Read", func(t *testing.T) {
 		r, err := fs.Open(ctx, "readme.txt")
 		testutil.AssertNoError(t, err, "Open readme.txt")
-		defer func() { _ = r.Close() }()
+		defer func() {
+			if err := r.Close(); err != nil {
+				t.Errorf("failed to close tar reader: %v", err)
+			}
+		}()
 
 		data, err := io.ReadAll(r)
 		testutil.AssertNoError(t, err, "ReadAll")
@@ -174,19 +200,22 @@ func TestArchiveHelpers(t *testing.T) {
 	t.Run("Path Helpers", func(t *testing.T) {
 		testutil.AssertEqual(t, "/", fs.Separator(), "Separator")
 		testutil.AssertEqual(t, "a/b", fs.Join("a", "b"), "Join")
-		abs, _ := fs.Abs("rel")
-		testutil.AssertEqual(t, "/rel", abs, "Abs")
+		abs, err := fs.Abs("rel")
+		testutil.AssertNoError(t, err, "Abs")
+		testutil.AssertEqual(t, "/rel", abs, "Abs path")
 		testutil.AssertEqual(t, "file.txt", fs.Base("/a/file.txt"), "Base")
 		testutil.AssertEqual(t, "/a", fs.Dir("/a/file.txt"), "Dir")
 		testutil.AssertEqual(t, ".txt", fs.Ext("file.txt"), "Ext")
 		testutil.AssertEqual(t, "/a/b", fs.Clean("//a/b/"), "Clean")
-		home, _ := fs.GetHomeDir()
+		home, err := fs.GetHomeDir()
+		testutil.AssertNoError(t, err, "GetHomeDir")
 		testutil.AssertEqual(t, "/", home, "HomeDir")
 		testutil.AssertEqual(t, false, fs.IsLocal(), "IsLocal")
 		testutil.AssertEqual(t, "test.zip", fs.Address(), "Address")
 		testutil.AssertEqual(t, "", fs.User(), "User")
-		ro, _ := fs.IsReadOnly(context.Background(), "/")
-		testutil.AssertEqual(t, true, ro, "IsReadOnly")
+		ro, err := fs.IsReadOnly(context.Background(), "/")
+		testutil.AssertNoError(t, err, "IsReadOnly")
+		testutil.AssertEqual(t, true, ro, "IsReadOnly result")
 	})
 
 	t.Run("GetDefaultExtractionPath", func(t *testing.T) {
@@ -219,9 +248,18 @@ func TestArchiveHelpers(t *testing.T) {
 
 func TestArchiveFS_Extra(t *testing.T) {
 	zipPath := createTestZip(t)
-	defer func() { _ = os.Remove(zipPath) }()
-	fs, _ := NewArchiveFS(zipPath)
-	defer func() { _ = fs.Close() }()
+	defer func() {
+		if err := os.Remove(zipPath); err != nil {
+			t.Errorf("failed to remove test zip %s: %v", zipPath, err)
+		}
+	}()
+	fs, err := NewArchiveFS(zipPath)
+	testutil.AssertNoError(t, err, "NewArchiveFS")
+	defer func() {
+		if err := fs.Close(); err != nil {
+			t.Errorf("failed to close archive fs: %v", err)
+		}
+	}()
 	ctx := context.Background()
 
 	t.Run("Stat", func(t *testing.T) {

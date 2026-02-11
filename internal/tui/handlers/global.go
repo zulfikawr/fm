@@ -7,6 +7,7 @@ import (
 	"github.com/zulfikawr/fm/internal/config"
 	"github.com/zulfikawr/fm/internal/constants"
 	"github.com/zulfikawr/fm/internal/files/trash"
+	"github.com/zulfikawr/fm/internal/logger"
 	tuictx "github.com/zulfikawr/fm/internal/tui/context"
 	"github.com/zulfikawr/fm/internal/tui/handlers/app"
 	"github.com/zulfikawr/fm/internal/tui/handlers/utils"
@@ -55,7 +56,7 @@ func handleGlobal(m *tuictx.Model, msg tea.Msg) (tea.Cmd, bool) {
 
 			if m.Message.Text == msg {
 				if m.FS.IsLocal() && m.Watcher.Watcher != nil {
-					_ = m.Watcher.Watcher.Close()
+					logger.CloseAndLog(m.Watcher.Watcher, "local filesystem watcher during quit")
 				}
 				return tea.Quit, true
 			}
@@ -76,7 +77,9 @@ func handleGlobal(m *tuictx.Model, msg tea.Msg) (tea.Cmd, bool) {
 		case "toggle_regex_search":
 			if !m.UI.InputActive && m.UI.ActiveView == tuictx.ViewMain {
 				m.Config.Ops.EnableRegexSearch = !m.Config.Ops.EnableRegexSearch
-				_ = m.Config.Save()
+				if err := m.Config.Save(); err != nil {
+					m.HandleError("Failed to save configuration", err)
+				}
 				msg := "Regex Search enabled"
 				if !m.Config.Ops.EnableRegexSearch {
 					msg = "Regex Search disabled"

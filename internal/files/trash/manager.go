@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/zulfikawr/fm/internal/files/core"
+	"github.com/zulfikawr/fm/internal/logger"
 )
 
 // Manager handles trash operations.
@@ -76,7 +77,7 @@ func (m *Manager) MoveToTrash(ctx context.Context, path string) error {
 	// Move file to trash (atomic if same filesystem)
 	if err := os.Rename(path, trashedPath); err != nil {
 		// Cleanup metadata on failure
-		_ = m.deleteMetadata(trashedName)
+		logger.LogIfError(m.deleteMetadata(trashedName), "trash: failed to cleanup metadata after failed move")
 		return fmt.Errorf("move to trash: %w", err)
 	}
 
@@ -136,7 +137,7 @@ func (m *Manager) Delete(ctx context.Context, trashedName string) error {
 	}
 
 	defer func() {
-		_ = os.Remove(markerPath)
+		logger.LogIfError(os.Remove(markerPath), "trash: failed to remove deletion marker")
 	}()
 
 	// Delete file
@@ -227,7 +228,7 @@ func (m *Manager) RestoreWithOverwrite(ctx context.Context, trashedName string) 
 	}
 
 	// Remove existing file if present
-	_ = os.RemoveAll(info.OriginalPath)
+	logger.LogIfError(os.RemoveAll(info.OriginalPath), "trash: failed to remove existing item for overwrite")
 
 	return m.Restore(ctx, trashedName)
 }
@@ -271,7 +272,7 @@ func (m *Manager) RecoverInterruptedDeletions(ctx context.Context) error {
 	for _, entry := range entries {
 		if filepath.Ext(entry.Name()) == ".deleting" {
 			trashedName := entry.Name()[:len(entry.Name())-9] // Remove .deleting
-			_ = m.Delete(ctx, trashedName)                    // Best effort
+			logger.LogIfError(m.Delete(ctx, trashedName), "trash: failed to complete interrupted deletion")
 		}
 	}
 
@@ -300,14 +301,17 @@ func (m *Manager) AutoCleanup(ctx context.Context, maxAgeDays int, maxSizeMB int
 		cutoff := time.Now().Add(-time.Duration(maxAgeDays) * 24 * time.Hour)
 		for _, item := range items {
 			if item.DeletionTime.Before(cutoff) {
-				_ = m.Delete(ctx, item.TrashedName) // Best effort
+				logger.LogIfError(m.Delete(ctx, item.TrashedName), "trash: failed to delete old item")
 			}
 		}
 	}
 
 	// Delete oldest items if size limit exceeded
 	if maxSizeMB > 0 {
-		items, _ = m.List() // Refresh list
+		items, err = m.List() // Refresh list
+		if err != nil {
+			logger.Errorf("trash: failed to list items during auto-cleanup: %v", err)
+		}
 		totalSize := int64(0)
 		for _, item := range items {
 			totalSize += item.SizeBytes
@@ -329,14 +333,14 @@ func (m *Manager) AutoCleanup(ctx context.Context, maxAgeDays int, maxSizeMB int
 				if totalSize <= maxBytes {
 					break
 				}
-				_ = m.Delete(ctx, item.TrashedName)
+				logger.LogIfError(m.Delete(ctx, item.TrashedName), "trash: failed to delete item exceeding size limit")
 				totalSize -= item.SizeBytes
 			}
 		}
 	}
 
 	// Update last cleanup time
-	_ = os.WriteFile(lastCleanupPath, []byte(time.Now().Format(time.RFC3339)), 0644)
+	logger.LogIfError(os.WriteFile(lastCleanupPath, []byte(time.Now().Format(time.RFC3339)), 0644), "trash: failed to update last cleanup time")
 
 	return nil
 }

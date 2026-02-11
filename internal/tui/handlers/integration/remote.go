@@ -45,7 +45,11 @@ func ConnectRemote(opts ssh.SSHConfig, askChan chan *ssh.HostConfirmRequest) tea
 			return messages.RemoteConnectMsg{Err: err}
 		}
 
-		home, _ := fs.GetHomeDir()
+		home, err := fs.GetHomeDir()
+		if err != nil {
+			// Fallback to root or just empty if home can't be found
+			home = "/"
+		}
 		return messages.RemoteConnectMsg{FS: fs, Path: home}
 	}
 }
@@ -172,16 +176,23 @@ func HandleRemoteGoto(m *tui_context.Model, input string) tea.Cmd {
 	keyPath := ""
 
 	// 1. Resolve alias from ~/.ssh/config
-	sshConfigs, _ := ssh.ParseSSHConfig()
-	if cfg, ok := sshConfigs[input]; ok {
-		host = cfg.HostName
-		if host == "" {
-			host = input
+	sshConfigs, err := ssh.ParseSSHConfig()
+	if err == nil {
+		if cfg, ok := sshConfigs[input]; ok {
+			host = cfg.HostName
+			if host == "" {
+				host = input
+			}
+			user = cfg.User
+			keyPath = cfg.IdentityFile
+		} else if strings.Contains(input, "@") {
+			// 2. Parse user@host
+			parts := strings.SplitN(input, "@", 2)
+			user = parts[0]
+			host = parts[1]
 		}
-		user = cfg.User
-		keyPath = cfg.IdentityFile
 	} else if strings.Contains(input, "@") {
-		// 2. Parse user@host
+		// 2. Parse user@host (fallback if config parse failed)
 		parts := strings.SplitN(input, "@", 2)
 		user = parts[0]
 		host = parts[1]

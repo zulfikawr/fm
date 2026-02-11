@@ -10,6 +10,7 @@ import (
 
 // Args contains the parsed command line arguments
 type Args struct {
+// ... (omitting fields for brevity in instruction, but keeping them in new_string)
 	Remote      string
 	ShowVersion bool
 	IsSearch    bool
@@ -27,11 +28,11 @@ type Args struct {
 }
 
 // Parse handles command line flag parsing
-func Parse() *Args {
+func Parse() (*Args, error) {
 	return parse(flag.CommandLine, os.Args[1:])
 }
 
-func parse(f *flag.FlagSet, args []string) *Args {
+func parse(f *flag.FlagSet, args []string) (*Args, error) {
 	var remoteStr string
 	var showVersion bool
 	var searchStr string
@@ -56,7 +57,9 @@ func parse(f *flag.FlagSet, args []string) *Args {
 		PrintHelp(styles, t.Name)
 	}
 
-	_ = f.Parse(args)
+	if err := f.Parse(args); err != nil {
+		return nil, err
+	}
 
 	isSearch := searchStr != ""
 	isInfo := false
@@ -76,7 +79,9 @@ func parse(f *flag.FlagSet, args []string) *Args {
 		searchFlags.BoolVar(&isRegex, "regex", false, "Use regular expressions")
 		searchFlags.BoolVar(&isRegex, "e", false, "Use regular expressions")
 
-		_ = searchFlags.Parse(remainingArgs)
+		if err := searchFlags.Parse(remainingArgs); err != nil {
+			return nil, err
+		}
 		remainingArgs = searchFlags.Args()
 
 		if len(remainingArgs) > 0 {
@@ -96,7 +101,9 @@ func parse(f *flag.FlagSet, args []string) *Args {
 		infoFlags.BoolVar(&infoTree, "tree", false, "Display directory tree")
 		infoFlags.IntVar(&infoDepth, "depth", 2, "Tree depth (0 for unlimited)")
 
-		_ = infoFlags.Parse(remainingArgs)
+		if err := infoFlags.Parse(remainingArgs); err != nil {
+			return nil, err
+		}
 		remainingArgs = infoFlags.Args()
 	}
 
@@ -118,7 +125,9 @@ func parse(f *flag.FlagSet, args []string) *Args {
 			configFlags := flag.NewFlagSet("config", flag.ContinueOnError)
 			configFlags.BoolVar(&configReset, "reset", false, "Reset configuration to default")
 
-			_ = configFlags.Parse(remainingArgs)
+			if err := configFlags.Parse(remainingArgs); err != nil {
+				return nil, err
+			}
 			remainingArgs = configFlags.Args()
 		}
 	}
@@ -138,5 +147,5 @@ func parse(f *flag.FlagSet, args []string) *Args {
 		ConfigReset: configReset,
 		ConfigInit:  configInit,
 		Args:        remainingArgs,
-	}
+	}, nil
 }

@@ -59,7 +59,11 @@ func TestZipUnzip(t *testing.T) {
 		// Verify zip content
 		r, err := zip.OpenReader(zipFile)
 		testutil.AssertNoError(t, err, "Open zip reader")
-		defer func() { _ = r.Close() }()
+		defer func() {
+			if err := r.Close(); err != nil {
+				t.Errorf("failed to close zip reader: %v", err)
+			}
+		}()
 
 		found := make(map[string]bool)
 		for _, f := range r.File {
@@ -111,7 +115,10 @@ func TestUnzip_ZipSlip(t *testing.T) {
 	}
 
 	// Create a zip with a traversal path
-	f, _ := os.Create(zipFile)
+	f, err := os.Create(zipFile)
+	if err != nil {
+		t.Fatalf("failed to create zip: %v", err)
+	}
 	zw := zip.NewWriter(f)
 
 	maliciousPath := "../../outside.txt"
@@ -119,12 +126,21 @@ func TestUnzip_ZipSlip(t *testing.T) {
 		Name:   maliciousPath,
 		Method: zip.Deflate,
 	}
-	writer, _ := zw.CreateHeader(header)
-	_, _ = io.WriteString(writer, "evil")
-	_ = zw.Close()
-	_ = f.Close()
+	writer, err := zw.CreateHeader(header)
+	if err != nil {
+		t.Fatalf("failed to create header: %v", err)
+	}
+	if _, err := io.WriteString(writer, "evil"); err != nil {
+		t.Errorf("failed to write string: %v", err)
+	}
+	if err := zw.Close(); err != nil {
+		t.Errorf("failed to close zip writer: %v", err)
+	}
+	if err := f.Close(); err != nil {
+		t.Errorf("failed to close file: %v", err)
+	}
 
-	err := Unzip(ZipOptions{
+	err = Unzip(ZipOptions{
 		OpCtx:    OpContext{Context: ctx, FS: fs},
 		Src:      zipFile,
 		Dst:      extractDir,
@@ -160,12 +176,24 @@ func TestUnzip_Remote(t *testing.T) {
 
 	tmpDir := testutil.TempDir(t)
 	realZip := filepath.Join(tmpDir, "source.zip")
-	f, _ := os.Create(realZip)
+	f, err := os.Create(realZip)
+	if err != nil {
+		t.Fatalf("failed to create zip: %v", err)
+	}
 	zw := zip.NewWriter(f)
-	w, _ := zw.Create("test.txt")
-	_, _ = w.Write([]byte("content"))
-	_ = zw.Close()
-	_ = f.Close()
+	w, err := zw.Create("test.txt")
+	if err != nil {
+		t.Fatalf("failed to create entry: %v", err)
+	}
+	if _, err := w.Write([]byte("content")); err != nil {
+		t.Errorf("failed to write content: %v", err)
+	}
+	if err := zw.Close(); err != nil {
+		t.Errorf("failed to close zip writer: %v", err)
+	}
+	if err := f.Close(); err != nil {
+		t.Errorf("failed to close file: %v", err)
+	}
 
 	fs.StatFunc = func(ctx context.Context, path string) (os.FileInfo, error) {
 		return os.Stat(realZip)
@@ -183,7 +211,7 @@ func TestUnzip_Remote(t *testing.T) {
 	}
 	fs.ChmodFunc = func(ctx context.Context, path string, mode os.FileMode) error { return nil }
 
-	err := Unzip(ZipOptions{
+	err = Unzip(ZipOptions{
 		OpCtx:    OpContext{Context: ctx, FS: fs},
 		Src:      "remote.zip",
 		Dst:      tmpDir,
@@ -239,12 +267,24 @@ func TestUnzip_ConflictPolicies(t *testing.T) {
 	}
 
 	// Create a zip
-	f, _ := os.Create(zipFile)
+	f, err := os.Create(zipFile)
+	if err != nil {
+		t.Fatalf("failed to create zip: %v", err)
+	}
 	zw := zip.NewWriter(f)
-	w, _ := zw.Create("file1.txt")
-	_, _ = w.Write([]byte("new content"))
-	_ = zw.Close()
-	_ = f.Close()
+	w, err := zw.Create("file1.txt")
+	if err != nil {
+		t.Fatalf("failed to create entry: %v", err)
+	}
+	if _, err := w.Write([]byte("new content")); err != nil {
+		t.Errorf("failed to write content: %v", err)
+	}
+	if err := zw.Close(); err != nil {
+		t.Errorf("failed to close zip writer: %v", err)
+	}
+	if err := f.Close(); err != nil {
+		t.Errorf("failed to close file: %v", err)
+	}
 
 	// Pre-create file1.txt
 	if err := os.WriteFile(filepath.Join(extractDir, "file1.txt"), []byte("old content"), 0644); err != nil {
@@ -259,7 +299,8 @@ func TestUnzip_ConflictPolicies(t *testing.T) {
 			Conflict: ConflictOptions{Policy: conflict.Skip},
 		})
 		testutil.AssertNoError(t, err, "Unzip Skip")
-		content, _ := os.ReadFile(filepath.Join(extractDir, "file1.txt"))
+		content, err := os.ReadFile(filepath.Join(extractDir, "file1.txt"))
+		testutil.AssertNoError(t, err, "ReadFile")
 		testutil.AssertEqual(t, "old content", string(content), "Should not overwrite")
 	})
 
@@ -271,7 +312,8 @@ func TestUnzip_ConflictPolicies(t *testing.T) {
 			Conflict: ConflictOptions{Policy: conflict.Overwrite},
 		})
 		testutil.AssertNoError(t, err, "Unzip Overwrite")
-		content, _ := os.ReadFile(filepath.Join(extractDir, "file1.txt"))
+		content, err := os.ReadFile(filepath.Join(extractDir, "file1.txt"))
+		testutil.AssertNoError(t, err, "ReadFile")
 		testutil.AssertEqual(t, "new content", string(content), "Should overwrite")
 	})
 }
@@ -336,12 +378,24 @@ func TestUnzip_ConflictError(t *testing.T) {
 	}
 
 	// Create a zip
-	f, _ := os.Create(zipFile)
+	f, err := os.Create(zipFile)
+	if err != nil {
+		t.Fatalf("failed to create zip: %v", err)
+	}
 	zw := zip.NewWriter(f)
-	w, _ := zw.Create("file1.txt")
-	_, _ = w.Write([]byte("content"))
-	_ = zw.Close()
-	_ = f.Close()
+	w, err := zw.Create("file1.txt")
+	if err != nil {
+		t.Fatalf("failed to create entry: %v", err)
+	}
+	if _, err := w.Write([]byte("content")); err != nil {
+		t.Errorf("failed to write content: %v", err)
+	}
+	if err := zw.Close(); err != nil {
+		t.Errorf("failed to close zip writer: %v", err)
+	}
+	if err := f.Close(); err != nil {
+		t.Errorf("failed to close file: %v", err)
+	}
 
 	// Pre-create file1.txt
 	if err := os.WriteFile(filepath.Join(extractDir, "file1.txt"), []byte("existing"), 0644); err != nil {
@@ -349,7 +403,7 @@ func TestUnzip_ConflictError(t *testing.T) {
 	}
 
 	// Unzip with Ask policy should return ConflictError
-	err := Unzip(ZipOptions{
+	err = Unzip(ZipOptions{
 		OpCtx:    OpContext{Context: ctx, FS: fs},
 		Src:      zipFile,
 		Dst:      extractDir,
@@ -374,17 +428,29 @@ func TestUnzip_MultipleFiles(t *testing.T) {
 	}
 
 	// Create a zip with 3 files
-	f, _ := os.Create(zipFile)
+	f, err := os.Create(zipFile)
+	if err != nil {
+		t.Fatalf("failed to create zip: %v", err)
+	}
 	zw := zip.NewWriter(f)
 	for i := 1; i <= 3; i++ {
-		w, _ := zw.Create(fmt.Sprintf("file%d.txt", i))
-		_, _ = fmt.Fprintf(w, "content%d", i)
+		w, err := zw.Create(fmt.Sprintf("file%d.txt", i))
+		if err != nil {
+			t.Fatalf("failed to create entry %d: %v", i, err)
+		}
+		if _, err := fmt.Fprintf(w, "content%d", i); err != nil {
+			t.Errorf("failed to write content %d: %v", i, err)
+		}
 	}
-	_ = zw.Close()
-	_ = f.Close()
+	if err := zw.Close(); err != nil {
+		t.Errorf("failed to close zip writer: %v", err)
+	}
+	if err := f.Close(); err != nil {
+		t.Errorf("failed to close file: %v", err)
+	}
 
 	progChan := make(chan core.Progress, 10)
-	err := Unzip(ZipOptions{
+	err = Unzip(ZipOptions{
 		OpCtx: OpContext{
 			Context:  ctx,
 			FS:       fs,

@@ -20,7 +20,9 @@ func TestMain(m *testing.M) {
 
 	code := m.Run()
 
-	_ = os.RemoveAll(tempDir)
+	if err := os.RemoveAll(tempDir); err != nil {
+		panic(err)
+	}
 	os.Exit(code)
 }
 
@@ -198,7 +200,11 @@ func TestConfig_SaveError(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer func() { _ = os.Remove(tempFile.Name()) }()
+	defer func() {
+		if err := os.Remove(tempFile.Name()); err != nil {
+			t.Errorf("failed to remove temp file: %v", err)
+		}
+	}()
 
 	// Setting config path to something under a file should make MkdirAll fail
 	configPath := filepath.Join(tempFile.Name(), "config.json")
@@ -238,18 +244,24 @@ func TestConfig_PathsError(t *testing.T) {
 	oldXDGCache := os.Getenv("XDG_CACHE_HOME")
 
 	// Unset variables that os.UserConfigDir/os.UserCacheDir use
-	_ = os.Unsetenv("HOME")
-	_ = os.Unsetenv("XDG_CONFIG_HOME")
-	_ = os.Unsetenv("XDG_CACHE_HOME")
+	testutil.AssertNoError(t, os.Unsetenv("HOME"), "unset HOME")
+	testutil.AssertNoError(t, os.Unsetenv("XDG_CONFIG_HOME"), "unset XDG_CONFIG_HOME")
+	testutil.AssertNoError(t, os.Unsetenv("XDG_CACHE_HOME"), "unset XDG_CACHE_HOME")
 
 	defer func() {
-		_ = os.Setenv("HOME", oldHome)
-		_ = os.Setenv("XDG_CONFIG_HOME", oldXDGConfig)
-		_ = os.Setenv("XDG_CACHE_HOME", oldXDGCache)
+		testutil.AssertNoError(t, os.Setenv("HOME", oldHome), "restore HOME")
+		testutil.AssertNoError(t, os.Setenv("XDG_CONFIG_HOME", oldXDGConfig), "restore XDG_CONFIG_HOME")
+		testutil.AssertNoError(t, os.Setenv("XDG_CACHE_HOME", oldXDGCache), "restore XDG_CACHE_HOME")
 	}()
 
-	_ = GetConfigPath()
-	_ = GetCacheDir()
+	path := GetConfigPath()
+	if path == "" {
+		t.Error("Config path should not be empty even on error")
+	}
+	dir := GetCacheDir()
+	if dir == "" {
+		t.Error("Cache dir should not be empty even on error")
+	}
 }
 
 func TestConfig_LoadValidVersion(t *testing.T) {

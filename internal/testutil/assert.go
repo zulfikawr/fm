@@ -2,6 +2,7 @@ package testutil
 
 import (
 	"reflect"
+	"strings"
 	"testing"
 )
 
@@ -18,6 +19,34 @@ func AssertNoError(t *testing.T, err error, msg string) {
 	t.Helper()
 	if err != nil {
 		t.Errorf("%s: unexpected error: %v", msg, err)
+	}
+}
+
+// AssertFatalError verifies that an error is nil, failing fatally if not.
+func AssertFatalError(t *testing.T, err error, msg string) {
+	t.Helper()
+	if err != nil {
+		t.Fatalf("%s: unexpected fatal error: %v", msg, err)
+	}
+}
+
+// AssertError verifies that an error is NOT nil.
+func AssertError(t *testing.T, err error, msg string) {
+	t.Helper()
+	if err == nil {
+		t.Errorf("%s: expected error, got nil", msg)
+	}
+}
+
+// AssertErrorContains verifies that an error message contains a specific substring.
+func AssertErrorContains(t *testing.T, err error, substr string, msg string) {
+	t.Helper()
+	if err == nil {
+		t.Errorf("%s: expected error containing %q, got nil", msg, substr)
+		return
+	}
+	if !strings.Contains(err.Error(), substr) {
+		t.Errorf("%s: error %q does not contain %q", msg, err.Error(), substr)
 	}
 }
 

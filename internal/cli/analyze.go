@@ -11,6 +11,7 @@ import (
 	"github.com/zulfikawr/fm/internal/files"
 	"github.com/zulfikawr/fm/internal/files/factory"
 	"github.com/zulfikawr/fm/internal/files/format"
+	"github.com/zulfikawr/fm/internal/logger"
 	"github.com/zulfikawr/fm/internal/tui/theme"
 )
 
@@ -27,9 +28,7 @@ func RunAnalyze(args *Args) error {
 	if err != nil {
 		return fmt.Errorf("initializing filesystem: %w", err)
 	}
-	defer func() {
-		_ = fs.Close()
-	}()
+	defer logger.CloseAndLog(fs, "analyze filesystem")
 
 	// Resolve path
 	targetPath := "."
@@ -39,9 +38,13 @@ func RunAnalyze(args *Args) error {
 
 	if fs.IsLocal() {
 		if targetPath == "." {
-			targetPath, _ = os.Getwd()
+			if cwd, err := os.Getwd(); err == nil {
+				targetPath = cwd
+			}
 		}
-		targetPath, _ = fs.Abs(targetPath)
+		if absPath, err := fs.Abs(targetPath); err == nil {
+			targetPath = absPath
+		}
 	} else {
 		targetPath = fs.Clean(targetPath)
 	}

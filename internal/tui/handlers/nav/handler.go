@@ -103,7 +103,7 @@ func SwitchToLocal(m *tui_context.Model, path string) tea.Cmd {
 	}
 
 	if !isShared {
-		_ = m.FS.Close()
+		logger.CloseAndLog(m.FS, "remote/archive filesystem during switch to local")
 	}
 
 	m.FS = local.NewLocalFS()
@@ -177,7 +177,7 @@ func ExitArchive(m *tui_context.Model) tea.Cmd {
 
 	m.Navigation.ParentPath = ""
 
-	_ = oldFS.Close()
+	logger.CloseAndLog(oldFS, "archive filesystem during exit")
 
 	return NavigateToPath(m, targetPath)
 

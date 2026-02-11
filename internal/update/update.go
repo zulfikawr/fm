@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/zulfikawr/fm/internal/constants"
+	"github.com/zulfikawr/fm/internal/logger"
 	"golang.org/x/mod/semver"
 )
 
@@ -49,7 +50,7 @@ func CheckForUpdate() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	defer func() { _ = resp.Body.Close() }()
+	defer logger.CloseAndLog(resp.Body, "update check response body")
 
 	if resp.StatusCode != http.StatusOK {
 		return "", fmt.Errorf("unexpected status code: %d", resp.StatusCode)
@@ -83,7 +84,7 @@ func DownloadAndInstall(version string, progress chan float64) error {
 	if err != nil {
 		return err
 	}
-	defer func() { _ = resp.Body.Close() }()
+	defer logger.CloseAndLog(resp.Body, "update download metadata response body")
 
 	var release Release
 	if err := json.NewDecoder(resp.Body).Decode(&release); err != nil {
@@ -112,7 +113,7 @@ func DownloadAndInstall(version string, progress chan float64) error {
 	if err != nil {
 		return err
 	}
-	defer func() { _ = resp.Body.Close() }()
+	defer logger.CloseAndLog(resp.Body, "update binary download response body")
 
 	if resp.StatusCode != http.StatusOK {
 		return fmt.Errorf("failed to download asset: %d", resp.StatusCode)
@@ -124,7 +125,9 @@ func DownloadAndInstall(version string, progress chan float64) error {
 		return err
 	}
 	tmpPath := tmpFile.Name()
-	defer func() { _ = os.Remove(tmpPath) }()
+	defer func() {
+		logger.LogIfError(os.Remove(tmpPath), "update: failed to remove temporary file")
+	}()
 
 	// Wrap response body for progress
 	reader := &progressReader{
@@ -134,7 +137,7 @@ func DownloadAndInstall(version string, progress chan float64) error {
 	}
 
 	if _, err := io.Copy(tmpFile, reader); err != nil {
-		_ = tmpFile.Close()
+		logger.CloseAndLog(tmpFile, "temporary update file on copy error")
 		return err
 	}
 	if err := tmpFile.Close(); err != nil {
@@ -155,7 +158,7 @@ func DownloadAndInstall(version string, progress chan float64) error {
 	// On Unix, we can just rename. On Windows, it's more complex.
 	if runtime.GOOS == "windows" {
 		oldPath := selfPath + ".old"
-		_ = os.Remove(oldPath)
+		logger.LogIfError(os.Remove(oldPath), "update: failed to remove old executable")
 		if err := os.Rename(selfPath, oldPath); err != nil {
 			return err
 		}
@@ -180,13 +183,13 @@ func copyFile(src, dst string) error {
 	if err != nil {
 		return err
 	}
-	defer func() { _ = s.Close() }()
+	defer logger.CloseAndLog(s, "source file during update copy")
 
 	d, err := os.OpenFile(dst, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0755)
 	if err != nil {
 		return err
 	}
-	defer func() { _ = d.Close() }()
+	defer logger.CloseAndLog(d, "destination file during update copy")
 
 	_, err = io.Copy(d, s)
 	return err
@@ -233,7 +236,7 @@ func CanUpdate() bool {
 	// 1. Check if the file itself is writable
 	f, err := os.OpenFile(selfPath, os.O_WRONLY, 0)
 	if err == nil {
-		_ = f.Close()
+		logger.CloseAndLog(f, "self executable during update check")
 		return true
 	}
 
@@ -245,8 +248,8 @@ func CanUpdate() bool {
 	if err != nil {
 		return false
 	}
-	_ = tmpFile.Close()
-	_ = os.Remove(tmpFile.Name())
+	logger.CloseAndLog(tmpFile, "temporary check file during update check")
+	logger.LogIfError(os.Remove(tmpFile.Name()), "update: failed to remove temporary check file")
 
 	return true
 }

@@ -224,8 +224,19 @@ func saveAnalyzeState(m *tuictx.Model) {
 
 func restoreAnalyzeState(m *tuictx.Model) {
 	if m.Analyze.ActiveNode != nil {
-		m.Analyze.Cursor, _ = m.Cache.AnalyzeCursorMemory.Get(m.Analyze.ActiveNode.Path)
-		m.Analyze.Offset, _ = m.Cache.AnalyzeOffsetMemory.Get(m.Analyze.ActiveNode.Path)
+		cursor, ok := m.Cache.AnalyzeCursorMemory.Get(m.Analyze.ActiveNode.Path)
+		if ok {
+			m.Analyze.Cursor = cursor
+		} else {
+			m.Analyze.Cursor = 0
+		}
+
+		offset, ok := m.Cache.AnalyzeOffsetMemory.Get(m.Analyze.ActiveNode.Path)
+		if ok {
+			m.Analyze.Offset = offset
+		} else {
+			m.Analyze.Offset = 0
+		}
 
 		// Bounds check
 		items := getAnalyzeItems(m, m.Analyze.ActiveNode)

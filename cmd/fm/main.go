@@ -20,7 +20,10 @@ func main() {
 }
 
 func run() error {
-	args := cli.Parse()
+	args, err := cli.Parse()
+	if err != nil {
+		return fmt.Errorf("parsing arguments: %w", err)
+	}
 
 	if args.ShowVersion {
 		fmt.Printf("fm version %s\n", constants.AppVersion)

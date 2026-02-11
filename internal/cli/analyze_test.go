@@ -8,18 +8,13 @@ import (
 	"testing"
 
 	"github.com/zulfikawr/fm/internal/config"
+	"github.com/zulfikawr/fm/internal/testutil"
 	"github.com/zulfikawr/fm/internal/tui/theme"
 )
 
 func TestRunAnalyze(t *testing.T) {
 	// Create a temporary directory for testing
-	tempDir, err := os.MkdirTemp("", "fm-analyze-test-*")
-	if err != nil {
-		t.Fatalf("failed to create temp dir: %v", err)
-	}
-	defer func() {
-		_ = os.RemoveAll(tempDir)
-	}()
+	tempDir := testutil.TempDir(t)
 
 	// Create some files and directories
 	dir1 := filepath.Join(tempDir, "dir1")
@@ -37,7 +32,10 @@ func TestRunAnalyze(t *testing.T) {
 
 	// Capture stdout
 	oldStdout := os.Stdout
-	r, w, _ := os.Pipe()
+	r, w, err := os.Pipe()
+	if err != nil {
+		t.Fatalf("failed to create pipe: %v", err)
+	}
 	os.Stdout = w
 
 	t.Run("Analyze specific path", func(t *testing.T) {
@@ -54,25 +52,36 @@ func TestRunAnalyze(t *testing.T) {
 
 	t.Run("Analyze current directory", func(t *testing.T) {
 		// Change to tempDir to test "." behavior
-		oldWd, _ := os.Getwd()
-		_ = os.Chdir(tempDir)
+		oldWd, err := os.Getwd()
+		if err != nil {
+			t.Fatalf("failed to get working directory: %v", err)
+		}
+		if err := os.Chdir(tempDir); err != nil {
+			t.Fatalf("failed to change directory: %v", err)
+		}
 		defer func() {
-			_ = os.Chdir(oldWd)
+			if err := os.Chdir(oldWd); err != nil {
+				t.Errorf("failed to restore working directory: %v", err)
+			}
 		}()
 
 		args := &Args{
 			Args: []string{"."},
 		}
-		err := RunAnalyze(args)
+		err = RunAnalyze(args)
 		if err != nil {
 			t.Errorf("RunAnalyze failed: %v", err)
 		}
 	})
 
 	// Restore stdout
-	_ = w.Close()
+	if err := w.Close(); err != nil {
+		t.Errorf("failed to close pipe writer: %v", err)
+	}
 	os.Stdout = oldStdout
-	_, _ = io.ReadAll(r)
+	if _, readErr := io.ReadAll(r); readErr != nil {
+		t.Errorf("failed to read from pipe reader: %v", readErr)
+	}
 }
 
 func TestRenderCLIBar(t *testing.T) {

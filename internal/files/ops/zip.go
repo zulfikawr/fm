@@ -44,10 +44,10 @@ func Zip(opts ZipOptions) error {
 	if err != nil {
 		return errors.WrapErrorWithPath(err, "Create", resolvedDst)
 	}
-	defer func() { _ = out.Close() }()
+	defer logger.CloseAndLog(out, resolvedDst)
 
 	zw := zip.NewWriter(out)
-	defer func() { _ = zw.Close() }()
+	defer logger.CloseAndLog(zw, "zip writer")
 
 	// For simplicity, we'll increment progress per file processed
 	processedFiles := 0
@@ -151,7 +151,7 @@ func walkAndZip(state *zipState, currentPath, baseDir string) error {
 	if err != nil {
 		return errors.WrapErrorWithPath(err, "Open", currentPath)
 	}
-	defer func() { _ = in.Close() }()
+	defer logger.CloseAndLog(in, currentPath)
 
 	// Use a buffer for copying
 	buf := GetBuffer()
@@ -192,7 +192,7 @@ func Unzip(opts ZipOptions) error {
 	if err != nil {
 		return errors.WrapErrorWithPath(err, "Open", opts.Src)
 	}
-	defer func() { _ = in.Close() }()
+	defer logger.CloseAndLog(in, opts.Src)
 
 	// zip.NewReader needs a ReaderAt and the size.
 	// We'll get the size first.
@@ -209,7 +209,7 @@ func Unzip(opts ZipOptions) error {
 		if err != nil {
 			return errors.WrapErrorWithPath(err, "OpenLocal", opts.Src)
 		}
-		defer func() { _ = f.Close() }()
+		defer logger.CloseAndLog(f, "local zip file for unzipping")
 		readerAt = f
 	} else {
 		// For remote files, we'll download to a temporary file first
@@ -218,8 +218,10 @@ func Unzip(opts ZipOptions) error {
 		if err != nil {
 			return errors.WrapError(err, "CreateTemp")
 		}
-		defer func() { _ = os.Remove(tmpFile.Name()) }()
-		defer func() { _ = tmpFile.Close() }()
+		defer func() {
+			logger.LogIfError(os.Remove(tmpFile.Name()), "unzip: failed to remove temporary zip")
+		}()
+		defer logger.CloseAndLog(tmpFile, "temporary zip file for unzipping")
 
 		_, err = io.Copy(tmpFile, in)
 		if err != nil {
@@ -293,13 +295,13 @@ func Unzip(opts ZipOptions) error {
 
 			out, err := opts.OpCtx.FS.Create(opts.OpCtx.Context, entryResolvedPath)
 			if err != nil {
-				_ = rc.Close()
+				logger.CloseAndLog(rc, "zip entry reader on create error")
 				return errors.WrapErrorWithPath(err, "CreateExtract", entryResolvedPath)
 			}
 
 			_, err = io.Copy(out, rc)
-			_ = out.Close()
-			_ = rc.Close()
+			logger.CloseAndLog(out, entryResolvedPath)
+			logger.CloseAndLog(rc, "zip entry reader after copy")
 
 			if err != nil {
 				return errors.WrapErrorWithPath(err, "CopyExtract", entryResolvedPath)

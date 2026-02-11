@@ -7,7 +7,6 @@ import (
 	"github.com/zulfikawr/fm/internal/config"
 	"github.com/zulfikawr/fm/internal/constants"
 	"github.com/zulfikawr/fm/internal/files/format"
-	"github.com/zulfikawr/fm/internal/logger"
 	tui_context "github.com/zulfikawr/fm/internal/tui/context"
 	"github.com/zulfikawr/fm/internal/tui/handlers/utils"
 	"github.com/zulfikawr/fm/internal/tui/messages"
@@ -318,7 +317,7 @@ func ToggleSetting(idx int, m *tui_context.Model) (bool, tea.Cmd) {
 	}
 
 	if err := cfg.Save(); err != nil {
-		logger.Errorf("Failed to save config: %v", err)
+		m.HandleError("Failed to save configuration", err)
 	}
 	m.Config = cfg
 	return reload, cmd
@@ -361,7 +360,7 @@ func ToggleSettingPrev(idx int, m *tui_context.Model) (bool, tea.Cmd) {
 	}
 
 	if err := cfg.Save(); err != nil {
-		logger.Errorf("Failed to save config: %v", err)
+		m.HandleError("Failed to save configuration", err)
 	}
 	m.Config = cfg
 	return reload, cmd
@@ -420,7 +419,7 @@ func FinalizeKeybinding(m *tui_context.Model) tea.Cmd {
 func ConfirmSettingsReset(m *tui_context.Model) tea.Cmd {
 	newCfg := config.DefaultConfig()
 	if err := newCfg.Save(); err != nil {
-		logger.Errorf("Failed to save config: %v", err)
+		m.HandleError("Failed to reset settings", err)
 	}
 
 	m.Config = newCfg

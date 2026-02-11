@@ -114,7 +114,8 @@ func TestCreateFileSystem(t *testing.T) {
 
 	t.Run("Remote Parsing host", func(t *testing.T) {
 		mockConnector.NewRemoteFSCallCount = 0
-		_, info, _ := CreateFileSystemWithConnector("example.com", nil, mockConnector)
+		_, info, err := CreateFileSystemWithConnector("example.com", nil, mockConnector)
+		testutil.AssertNoError(t, err, "Should not error")
 		if info.Host != "example.com" {
 			t.Errorf("Expected host example.com, got %s", info.Host)
 		}
@@ -167,7 +168,8 @@ func TestCreateFileSystem(t *testing.T) {
 		mockConnector.NewRemoteFSFunc = func(opts ssh.SSHConfig) (core.FileSystem, error) {
 			return mockFS, nil
 		}
-		_, info, _ := CreateFileSystemWithConnector("random-alias", nil, mockConnector)
+		_, info, err := CreateFileSystemWithConnector("random-alias", nil, mockConnector)
+		testutil.AssertNoError(t, err, "Should not error")
 		if info.Host != "random-alias" {
 			t.Errorf("Expected host random-alias, got %s", info.Host)
 		}
@@ -187,50 +189,75 @@ func TestCreateFileSystem(t *testing.T) {
 
 func TestHostKeyCallbackInner(t *testing.T) {
 	tmpDir := testutil.TempDir(t)
-	oldHome := os.Getenv("HOME")
-	_ = os.Setenv("HOME", tmpDir)
-	defer func() { _ = os.Setenv("HOME", oldHome) }()
-
-	keyData := "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOm6y8v0W6Wz7mHn6/W1uF1v7Q+V2b2u5u5u5u5u5u5u"
+	        oldHome := os.Getenv("HOME")
+	        testutil.AssertNoError(t, os.Setenv("HOME", tmpDir), "set home")
+	        defer func() {
+	            if err := os.Setenv("HOME", oldHome); err != nil {
+	                t.Errorf("failed to restore HOME: %v", err)
+	            }
+	        }()
+		keyData := "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOm6y8v0W6Wz7mHn6/W1uF1v7Q+V2b2u5u5u5u5u5u5u"
 	parts := strings.Split(keyData, " ")
-	pk, _, _, _, _ := sshx.ParseAuthorizedKey([]byte(parts[0] + " " + parts[1]))
-	addr, _ := net.ResolveTCPAddr("tcp", "example.com:22")
+	pk, _, _, _, err := sshx.ParseAuthorizedKey([]byte(parts[0] + " " + parts[1]))
+	testutil.AssertNoError(t, err, "parse key")
+	addr, err := net.ResolveTCPAddr("tcp", "example.com:22")
+	testutil.AssertNoError(t, err, "resolve addr")
 
 	t.Run("Response No", func(t *testing.T) {
-		cb, _ := ssh.CreateCLIHostKeyCallback()
-		r, w, _ := os.Pipe()
+		cb, err := ssh.CreateCLIHostKeyCallback()
+		testutil.AssertNoError(t, err, "create callback")
+		r, w, err := os.Pipe()
+		if err != nil {
+			t.Fatalf("failed to create pipe: %v", err)
+		}
 		oldStdin := os.Stdin
 		os.Stdin = r
 		defer func() { os.Stdin = oldStdin }()
-		_, _ = w.Write([]byte("n\n"))
-		_ = w.Close()
+		if _, err := w.Write([]byte("n\n")); err != nil {
+			t.Errorf("failed to write to pipe: %v", err)
+		}
+		if err := w.Close(); err != nil {
+			t.Errorf("failed to close pipe writer: %v", err)
+		}
 
-		err := cb("example.com:22", addr, pk)
+		err = cb("example.com:22", addr, pk)
 		if err == nil {
 			t.Error("Expected error for unknown host with 'no' response")
 		}
 	})
 
 	t.Run("Response Yes", func(t *testing.T) {
-		cb, _ := ssh.CreateCLIHostKeyCallback()
-		r, w, _ := os.Pipe()
+		cb, err := ssh.CreateCLIHostKeyCallback()
+		testutil.AssertNoError(t, err, "create callback")
+		r, w, err := os.Pipe()
+		if err != nil {
+			t.Fatalf("failed to create pipe: %v", err)
+		}
 		oldStdin := os.Stdin
 		os.Stdin = r
 		defer func() { os.Stdin = oldStdin }()
-		_, _ = w.Write([]byte("y\n"))
-		_ = w.Close()
+		if _, err := w.Write([]byte("y\n")); err != nil {
+			t.Errorf("failed to write to pipe: %v", err)
+		}
+		if err := w.Close(); err != nil {
+			t.Errorf("failed to close pipe writer: %v", err)
+		}
 
-		_ = cb("example.com:22", addr, pk)
+		err = cb("example.com:22", addr, pk)
+		testutil.AssertNoError(t, err, "Callback should succeed with 'yes' response")
 	})
 }
 
 func TestCreateHostKeyCallback(t *testing.T) {
 	tmpDir := testutil.TempDir(t)
-	oldHome := os.Getenv("HOME")
-	_ = os.Setenv("HOME", tmpDir)
-	defer func() { _ = os.Setenv("HOME", oldHome) }()
-
-	t.Run("Create new known_hosts", func(t *testing.T) {
+	        oldHome := os.Getenv("HOME")
+	        testutil.AssertNoError(t, os.Setenv("HOME", tmpDir), "set home")
+	        defer func() {
+	            if err := os.Setenv("HOME", oldHome); err != nil {
+	                t.Errorf("failed to restore HOME: %v", err)
+	            }
+	        }()
+		t.Run("Create new known_hosts", func(t *testing.T) {
 		cb, err := ssh.CreateCLIHostKeyCallback()
 		testutil.AssertNoError(t, err, "Should create callback")
 		if cb == nil {

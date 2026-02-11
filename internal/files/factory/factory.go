@@ -91,7 +91,12 @@ func CreateFileSystemWithConnector(remoteStr string, args []string, conn FileSys
 	}
 
 	if startPath == "." || startPath == "" {
-		startPath, _ = fs.GetHomeDir()
+		cwd, err := fs.GetHomeDir()
+		if err != nil {
+			startPath = "/"
+		} else {
+			startPath = cwd
+		}
 	}
 
 	return fs, &RemoteInfo{

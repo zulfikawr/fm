@@ -8,6 +8,7 @@ import (
 	"sync/atomic"
 
 	"github.com/zulfikawr/fm/internal/files/core"
+	"github.com/zulfikawr/fm/internal/logger"
 	"golang.org/x/sync/semaphore"
 )
 
@@ -124,7 +125,10 @@ func (a *Analyzer) scanConcurrent(ctx context.Context, path string, track func(i
 
 		go func(p string) {
 			defer wg.Done()
-			child, _ := a.scanConcurrent(ctx, p, track, sem, rootDev)
+			child, err := a.scanConcurrent(ctx, p, track, sem, rootDev)
+			if err != nil {
+				logger.LogIfError(err, "Recursive scan failed for "+p)
+			}
 			if child != nil {
 				results <- child
 			}

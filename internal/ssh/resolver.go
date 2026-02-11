@@ -2,6 +2,8 @@ package ssh
 
 import (
 	"strings"
+
+	"github.com/zulfikawr/fm/internal/logger"
 )
 
 // ResolveRemote parses a remote string and returns connection details.
@@ -12,7 +14,11 @@ func ResolveRemote(remoteStr string) *RemoteConnectionDetails {
 	}
 
 	// Check SSH config first
-	sshConfigs, _ := ParseSSHConfig()
+	sshConfigs, err := ParseSSHConfig()
+	if err != nil {
+		logger.LogIfError(err, "Failed to parse SSH config")
+		sshConfigs = make(map[string]*SSHConfig)
+	}
 	if cfg, ok := sshConfigs[remoteStr]; ok {
 		if cfg.HostName != "" {
 			details.Host = cfg.HostName

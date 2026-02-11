@@ -41,8 +41,12 @@ func TestLocalFS(t *testing.T) {
 		filePath := filepath.Join(tmpDir, "write_test.txt")
 		f, err := fs.Create(ctx, filePath)
 		testutil.AssertNoError(t, err, "Create should succeed")
-		_, _ = f.Write([]byte("data"))
-		_ = f.Close()
+		if _, err := f.Write([]byte("data")); err != nil {
+			t.Errorf("failed to write: %v", err)
+		}
+		if err := f.Close(); err != nil {
+			t.Errorf("failed to close: %v", err)
+		}
 
 		err = fs.RemoveAll(ctx, filePath)
 		testutil.AssertNoError(t, err, "RemoveAll should succeed")
@@ -74,9 +78,14 @@ func TestLocalFS(t *testing.T) {
 
 		f, err := fs.Open(ctx, path)
 		testutil.AssertNoError(t, err, "Open should succeed")
-		defer func() { _ = f.Close() }()
+		defer func() {
+			if err := f.Close(); err != nil {
+				t.Errorf("failed to close reader: %v", err)
+			}
+		}()
 
-		data, _ := io.ReadAll(f)
+		data, err := io.ReadAll(f)
+		testutil.AssertNoError(t, err, "ReadAll should succeed")
 		testutil.AssertEqual(t, "hello", string(data), "Content should match")
 	})
 
@@ -89,7 +98,8 @@ func TestLocalFS(t *testing.T) {
 		err := fs.Chmod(ctx, path, 0600)
 		testutil.AssertNoError(t, err, "Chmod should succeed")
 
-		info, _ := fs.Stat(ctx, path)
+		info, err := fs.Stat(ctx, path)
+		testutil.AssertNoError(t, err, "Stat should succeed")
 		if info.Mode().Perm() != 0600 && runtime.GOOS != "windows" {
 			t.Errorf("expected 0600, got %o", info.Mode().Perm())
 		}
@@ -191,8 +201,11 @@ func TestLocalFS(t *testing.T) {
 
 	t.Run("Preallocate", func(t *testing.T) {
 		path := filepath.Join(tmpDir, "prealloc.txt")
+		// Just ensure it doesn't crash; error is okay if not supported
 		err := fs.Preallocate(ctx, path, 1024)
-		_ = err
+		if err != nil {
+			t.Logf("Preallocate (expectedly) failed: %v", err)
+		}
 	})
 
 	t.Run("Context Cancellation", func(t *testing.T) {
@@ -218,12 +231,17 @@ func TestLocalFS(t *testing.T) {
 			res := getStatInfo(nil)
 			testutil.AssertEqual(t, (*statInfo)(nil), res, "should be nil on windows")
 		} else {
-			info, _ := os.Stat(tmpDir)
+			info, err := os.Stat(tmpDir)
+			if err != nil {
+				t.Fatalf("failed to stat temp dir: %v", err)
+			}
 			res := getStatInfo(info.Sys())
 			if res == nil {
 				t.Errorf("expected non-nil statInfo on unix")
 			}
-			getStatInfo(nil) // Cover nil case
+			if nilStat := getStatInfo(nil); nilStat != nil {
+				t.Errorf("expected nil result for nil input, got %+v", nilStat)
+			}
 		}
 	})
 }

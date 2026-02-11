@@ -5,6 +5,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/zulfikawr/fm/internal/logger"
 )
 
 // ParseSSHConfig parses the ~/.ssh/config file.
@@ -22,7 +24,7 @@ func ParseSSHConfig() (map[string]*SSHConfig, error) {
 		}
 		return nil, err
 	}
-	defer func() { _ = file.Close() }()
+	defer logger.CloseAndLog(file, "SSH config file")
 
 	configs := make(map[string]*SSHConfig)
 	var currentHost []string

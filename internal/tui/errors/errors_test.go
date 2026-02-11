@@ -107,7 +107,9 @@ func TestHandler(t *testing.T) {
 	}
 
 	err := UserError("Op", "msg")
-	_ = h.Handle(err)
+	if handleErr := h.Handle(err); handleErr != err {
+		t.Errorf("expected %v, got %v", err, handleErr)
+	}
 	testutil.AssertEqual(t, true, called, "OnUser handler should be called")
 
 	// Test default wrap
@@ -118,7 +120,9 @@ func TestHandler(t *testing.T) {
 		},
 	}
 	called = false
-	_ = h2.Handle(errors.New("raw"))
+	if handleErr2 := h2.Handle(errors.New("raw")); handleErr2 == nil || handleErr2.Error() != "unknown operation: raw" {
+		t.Errorf("expected system error wrapping 'raw', got %v", handleErr2)
+	}
 	if !called {
 		t.Error("Handler should wrap raw errors as System")
 	}

@@ -14,7 +14,10 @@ func TestParseConfig(t *testing.T) {
 	t.Run("config subcommand", func(t *testing.T) {
 		fs := flag.NewFlagSet("test", flag.ContinueOnError)
 		fs.SetOutput(io.Discard)
-		args := parse(fs, []string{"config"})
+		args, err := parse(fs, []string{"config"})
+		if err != nil {
+			t.Fatalf("Unexpected error: %v", err)
+		}
 		if !args.IsConfig {
 			t.Error("Expected IsConfig to be true")
 		}
@@ -26,7 +29,10 @@ func TestParseConfig(t *testing.T) {
 	t.Run("config --reset", func(t *testing.T) {
 		fs := flag.NewFlagSet("test", flag.ContinueOnError)
 		fs.SetOutput(io.Discard)
-		args := parse(fs, []string{"config", "--reset"})
+		args, err := parse(fs, []string{"config", "--reset"})
+		if err != nil {
+			t.Fatalf("Unexpected error: %v", err)
+		}
 		if !args.IsConfig {
 			t.Error("Expected IsConfig to be true")
 		}
@@ -38,7 +44,10 @@ func TestParseConfig(t *testing.T) {
 	t.Run("config init", func(t *testing.T) {
 		fs := flag.NewFlagSet("test", flag.ContinueOnError)
 		fs.SetOutput(io.Discard)
-		args := parse(fs, []string{"config", "init"})
+		args, err := parse(fs, []string{"config", "init"})
+		if err != nil {
+			t.Fatalf("Unexpected error: %v", err)
+		}
 		if !args.IsConfig {
 			t.Error("Expected IsConfig to be true")
 		}
@@ -52,7 +61,10 @@ func TestRunConfig(t *testing.T) {
 	// Mock stdout
 	oldStdout := os.Stdout
 	defer func() { os.Stdout = oldStdout }()
-	_, w, _ := os.Pipe()
+	_, w, err := os.Pipe()
+	if err != nil {
+		t.Fatalf("failed to create pipe: %v", err)
+	}
 	os.Stdout = w
 
 	t.Run("showConfig", func(t *testing.T) {
@@ -88,13 +100,19 @@ func TestConfigInitModel(t *testing.T) {
 	m.step = 0 // Theme selection
 
 	// Test update "down"
-	m, _ = updateModel(m, "down")
+	m, cmd := updateModel(m, "down")
+	if cmd != nil {
+		t.Error("Expected nil cmd for down movement")
+	}
 	if m.cursor != 1 {
 		t.Errorf("Expected cursor 1, got %d", m.cursor)
 	}
 
 	// Test update "enter" to next step
-	m, _ = updateModel(m, "enter")
+	m, cmd = updateModel(m, "enter")
+	if cmd != nil {
+		t.Error("Expected nil cmd for step transition")
+	}
 	if m.step != 1 {
 		t.Errorf("Expected step 1, got %d", m.step)
 	}
@@ -103,17 +121,26 @@ func TestConfigInitModel(t *testing.T) {
 	}
 
 	// Test through all steps
-	m, _ = updateModel(m, "enter") // Icons
+	m, cmd = updateModel(m, "enter") // Icons
+	if cmd != nil {
+		t.Error("Expected nil cmd for step transition")
+	}
 	if m.step != 2 {
 		t.Errorf("Expected step 2, got %d", m.step)
 	}
 
-	m, _ = updateModel(m, "enter") // Mouse
+	m, cmd = updateModel(m, "enter") // Mouse
+	if cmd != nil {
+		t.Error("Expected nil cmd for step transition")
+	}
 	if m.step != 3 {
 		t.Errorf("Expected step 3, got %d", m.step)
 	}
 
-	m, _ = updateModel(m, "enter") // Editor
+	m, cmd = updateModel(m, "enter") // Editor
+	if cmd != nil {
+		t.Error("Expected nil cmd for step transition")
+	}
 	if m.step != 4 {
 		t.Errorf("Expected step 4, got %d", m.step)
 	}
@@ -122,7 +149,10 @@ func TestConfigInitModel(t *testing.T) {
 		t.Error("Should not be quitting before final enter")
 	}
 
-	m, _ = updateModel(m, "enter") // Save & Quit
+	m, cmd = updateModel(m, "enter") // Save & Quit
+	if cmd == nil {
+		t.Error("Expected non-nil cmd for save operation")
+	}
 	if !m.quitting {
 		t.Error("Expected quitting to be true after final enter")
 	}

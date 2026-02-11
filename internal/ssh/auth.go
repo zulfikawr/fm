@@ -77,7 +77,7 @@ func AddToKnownHosts(hostname string, remote net.Addr, key sshx.PublicKey) error
 	if err != nil {
 		return err
 	}
-	defer func() { _ = f.Close() }()
+	defer logger.CloseAndLog(f, "known_hosts file during append")
 
 	// Use both hostname and remote address for known_hosts
 	entry := knownhosts.Line([]string{hostname, remote.String()}, key)
@@ -123,7 +123,8 @@ func CreateCLIHostKeyCallback() (sshx.HostKeyCallback, error) {
 			fmt.Print("Are you sure you want to continue connecting [y] Yes [n] No? ")
 
 			var response string
-			_, _ = fmt.Scanln(&response)
+			_, err := fmt.Scanln(&response)
+			logger.LogIfError(err, "ssh: failed to read user response for host authenticity")
 			if strings.ToLower(response) == "y" || strings.ToLower(response) == "yes" {
 				// Add to known_hosts
 				return AddToKnownHosts(hostname, remote, key)

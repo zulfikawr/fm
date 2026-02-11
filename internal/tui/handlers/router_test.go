@@ -88,7 +88,7 @@ func TestRouter_GlobalKeys(t *testing.T) {
 		}
 	})
 
-	_ = tm.Quit()
+	testutil.AssertNoError(t, tm.Quit(), "Quit operation")
 }
 
 func TestRouter_FinalizeInput(t *testing.T) {
@@ -364,7 +364,7 @@ func TestRouter_FinalizeInput(t *testing.T) {
 		}
 	})
 
-	_ = tm.Quit()
+	testutil.AssertNoError(t, tm.Quit(), "Quit operation")
 }
 
 func TestRouter_BatchOperations(t *testing.T) {

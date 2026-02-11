@@ -12,6 +12,7 @@ import (
 
 	"github.com/zulfikawr/fm/internal/config"
 	"github.com/zulfikawr/fm/internal/files/core"
+	"github.com/zulfikawr/fm/internal/logger"
 )
 
 // IconMapping holds the map of file/folder names and extensions to Nerd Font glyphs
@@ -46,8 +47,8 @@ func LoadIcons() error {
 	// For development: if assets/icons.json exists locally, always sync it to cache
 	if _, err := os.Stat("assets/icons.json"); err == nil {
 		if data, err := os.ReadFile("assets/icons.json"); err == nil {
-			_ = os.MkdirAll(filepath.Dir(cachePath), 0o755)
-			_ = os.WriteFile(cachePath, data, 0o644)
+			logger.LogIfError(os.MkdirAll(filepath.Dir(cachePath), 0o755), "icons: failed to create cache directory")
+			logger.LogIfError(os.WriteFile(cachePath, data, 0o644), "icons: failed to write cache file")
 		}
 	}
 
@@ -92,7 +93,7 @@ func DownloadIcons() error {
 	if err != nil {
 		return err
 	}
-	defer func() { _ = resp.Body.Close() }()
+	defer logger.CloseAndLog(resp.Body, "icon download response body")
 
 	if resp.StatusCode != http.StatusOK {
 		return fmt.Errorf("failed to download icons: status %d", resp.StatusCode)
@@ -108,7 +109,7 @@ func DownloadIcons() error {
 	if err != nil {
 		return err
 	}
-	defer func() { _ = f.Close() }()
+	defer logger.CloseAndLog(f, "icon cache file during download")
 
 	if _, err := io.Copy(f, resp.Body); err != nil {
 		return err

@@ -110,7 +110,10 @@ func GetConfigPath() string {
 	}
 	configDir, err := os.UserConfigDir()
 	if err != nil {
-		home, _ := os.UserHomeDir()
+		home, err := os.UserHomeDir()
+		if err != nil {
+			return filepath.Join(".", "config.json")
+		}
 		return filepath.Join(home, ".config", "fm", "config.json")
 	}
 	return filepath.Join(configDir, "fm", "config.json")
@@ -120,7 +123,10 @@ func GetConfigPath() string {
 func GetCacheDir() string {
 	cacheDir, err := os.UserCacheDir()
 	if err != nil {
-		home, _ := os.UserHomeDir()
+		home, err := os.UserHomeDir()
+		if err != nil {
+			return filepath.Join(".", ".cache")
+		}
 		return filepath.Join(home, ".cache", "fm")
 	}
 	return filepath.Join(cacheDir, "fm")

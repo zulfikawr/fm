@@ -41,7 +41,9 @@ func TestCheckForUpdate(t *testing.T) {
 		release := Release{
 			TagName: "v99.99.99",
 		}
-		_ = json.NewEncoder(w).Encode(release)
+		if err := json.NewEncoder(w).Encode(release); err != nil {
+			t.Errorf("failed to encode release: %v", err)
+		}
 	}))
 	defer server.Close()
 
@@ -142,7 +144,9 @@ func TestDownloadAndInstall(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/binary" {
 			w.WriteHeader(http.StatusOK)
-			_, _ = w.Write([]byte("fake binary content"))
+			if _, err := w.Write([]byte("fake binary content")); err != nil {
+				t.Errorf("failed to write response: %v", err)
+			}
 			return
 		}
 		release := Release{
@@ -155,7 +159,9 @@ func TestDownloadAndInstall(t *testing.T) {
 				},
 			},
 		}
-		_ = json.NewEncoder(w).Encode(release)
+		if err := json.NewEncoder(w).Encode(release); err != nil {
+			t.Errorf("failed to encode release: %v", err)
+		}
 	}))
 	defer server.Close()
 

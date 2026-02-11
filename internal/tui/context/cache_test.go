@@ -31,10 +31,12 @@ func TestSimpleCache(t *testing.T) {
 		_, ok := c.Get("a")
 		testutil.AssertEqual(t, false, ok, "Should have evicted 'a'")
 
-		val, _ := c.Get("b")
+		val, ok := c.Get("b")
+		testutil.AssertEqual(t, true, ok, "Should find 'b'")
 		testutil.AssertEqual(t, 10, val, "Should still have 'b'")
 
-		val, _ = c.Get("c")
+		val, ok = c.Get("c")
+		testutil.AssertEqual(t, true, ok, "Should find 'c'")
 		testutil.AssertEqual(t, 20, val, "Should have 'c'")
 	})
 }

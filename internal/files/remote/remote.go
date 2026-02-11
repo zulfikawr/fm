@@ -12,6 +12,7 @@ import (
 	"github.com/zulfikawr/fm/internal/constants"
 	"github.com/zulfikawr/fm/internal/files/core"
 	"github.com/zulfikawr/fm/internal/files/errors"
+	"github.com/zulfikawr/fm/internal/logger"
 	"github.com/zulfikawr/fm/internal/ssh"
 
 	"github.com/pkg/sftp"
@@ -116,7 +117,7 @@ func NewRemoteFS(opts ssh.SSHConfig) (*RemoteFS, error) {
 		sftp.UseConcurrentWrites(true),
 	)
 	if err != nil {
-		_ = conn.Close()
+		logger.CloseAndLog(conn, "ssh connection on sftp client creation failure")
 		return nil, errors.WrapError(err, "create sftp client failed: "+address)
 	}
 

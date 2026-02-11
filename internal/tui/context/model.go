@@ -2,6 +2,7 @@ package context
 
 import (
 	"context"
+	"fmt"
 	"runtime"
 	"time"
 
@@ -10,6 +11,7 @@ import (
 	"github.com/zulfikawr/fm/internal/files/core"
 	"github.com/zulfikawr/fm/internal/files/sorting"
 	"github.com/zulfikawr/fm/internal/git"
+	"github.com/zulfikawr/fm/internal/logger"
 	"github.com/zulfikawr/fm/internal/ssh"
 	"github.com/zulfikawr/fm/internal/tui/components/ui"
 	"github.com/zulfikawr/fm/internal/tui/theme"
@@ -100,7 +102,10 @@ func NewModel(fs core.FileSystem, startPath string) *Model {
 	ti.CharLimit = 256
 	ti.Width = 30
 
-	watcher, _ := fsnotify.NewWatcher()
+	watcher, err := fsnotify.NewWatcher()
+	if err != nil {
+		logger.LogIfError(err, "Failed to initialize filesystem watcher")
+	}
 
 	s := ui.NewSpinner(styles)
 
@@ -244,4 +249,14 @@ func (m *Model) SyncViewportHeight() {
 		h = 1
 	}
 	m.Display.ViewportHeight = h
+}
+
+// HandleError logs an error and pushes it to the message state.
+func (m *Model) HandleError(msg string, err error) {
+	if err == nil {
+		return
+	}
+	logger.Errorf("%s: %v", msg, err)
+	m.Message.Error = err
+	m.Message.Push(fmt.Sprintf("%s: %v", msg, err), true)
 }

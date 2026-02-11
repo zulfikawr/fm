@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/zulfikawr/fm/internal/files/errors"
+	"github.com/zulfikawr/fm/internal/logger"
 )
 
 // TarFS implements FileSystem for a tar archive.
@@ -28,9 +29,7 @@ func NewTarFS(path string) (*TarFS, error) {
 	if err != nil {
 		return nil, errors.WrapErrorWithPath(err, "OpenArchive", path)
 	}
-	defer func() {
-		_ = f.Close() // Errors on defer Close in read-only operations are typically not critical
-	}()
+	defer logger.CloseAndLog(f, "tar archive file for initialization")
 
 	var tr *tar.Reader
 	if strings.HasSuffix(path, ".gz") || strings.HasSuffix(path, ".tgz") {
@@ -38,9 +37,7 @@ func NewTarFS(path string) (*TarFS, error) {
 		if err != nil {
 			return nil, errors.WrapErrorWithPath(err, "OpenArchive", path)
 		}
-		defer func() {
-			_ = gzr.Close() // Errors on defer Close in read-only operations are typically not critical
-		}()
+		defer logger.CloseAndLog(gzr, "gzip reader for tar archive")
 		tr = tar.NewReader(gzr)
 	} else {
 		tr = tar.NewReader(f)
@@ -200,10 +197,12 @@ func (fs *TarFS) Open(ctx context.Context, path string) (io.ReadCloser, error) {
 	}
 
 	var tr *tar.Reader
+	var gzr *gzip.Reader
 	if strings.HasSuffix(fs.archivePath, ".gz") || strings.HasSuffix(fs.archivePath, ".tgz") {
-		gzr, err := gzip.NewReader(f)
+		var err error
+		gzr, err = gzip.NewReader(f)
 		if err != nil {
-			_ = f.Close()
+			logger.CloseAndLog(f, "tar archive file on gzr error")
 			return nil, errors.WrapErrorWithPath(err, "OpenArchive", fs.archivePath)
 		}
 		tr = tar.NewReader(gzr)
@@ -218,7 +217,10 @@ func (fs *TarFS) Open(ctx context.Context, path string) (io.ReadCloser, error) {
 			break
 		}
 		if err != nil {
-			_ = f.Close()
+			if gzr != nil {
+				logger.CloseAndLog(gzr, "gzip reader on read error")
+			}
+			logger.CloseAndLog(f, "tar archive file on read error")
 			return nil, errors.WrapErrorWithPath(err, "ReadArchive", fs.archivePath)
 		}
 
@@ -226,11 +228,15 @@ func (fs *TarFS) Open(ctx context.Context, path string) (io.ReadCloser, error) {
 			return &tarFileReadCloser{
 				Reader: tr,
 				f:      f,
+				gzr:    gzr,
 			}, nil
 		}
 	}
 
-	_ = f.Close()
+	if gzr != nil {
+		logger.CloseAndLog(gzr, "gzip reader on path not found")
+	}
+	logger.CloseAndLog(f, "tar archive file on path not found")
 	return nil, errors.WrapErrorWithPath(os.ErrNotExist, "Open", path)
 }
 
@@ -298,9 +304,13 @@ func (e *tarDirEntry) Info() (os.FileInfo, error) { return e.entry.header.FileIn
 
 type tarFileReadCloser struct {
 	io.Reader
-	f *os.File
+	f   *os.File
+	gzr *gzip.Reader
 }
 
 func (rc *tarFileReadCloser) Close() error {
+	if rc.gzr != nil {
+		logger.LogIfError(rc.gzr.Close(), "failed to close gzip reader in tarFileReadCloser")
+	}
 	return rc.f.Close()
 }

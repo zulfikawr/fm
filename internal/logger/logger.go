@@ -2,6 +2,7 @@ package logger
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -45,7 +46,11 @@ func (l *fileLogger) Log(level string, msg string) {
 	if err != nil {
 		return
 	}
-	defer func() { _ = f.Close() }()
+	defer func() {
+		if err := f.Close(); err != nil {
+			fmt.Fprintf(os.Stderr, "Failed to close log file: %v\n", err)
+		}
+	}()
 
 	timestamp := time.Now().Format("2006-01-02 15:04:05")
 
@@ -56,7 +61,9 @@ func (l *fileLogger) Log(level string, msg string) {
 		caller = fmt.Sprintf("%s:%d", filepath.Base(file), line)
 	}
 
-	_, _ = fmt.Fprintf(f, "[%s] [%s] [%s] %s\n", timestamp, level, caller, msg)
+	if _, err := fmt.Fprintf(f, "[%s] [%s] [%s] %s\n", timestamp, level, caller, msg); err != nil {
+		fmt.Fprintf(os.Stderr, "Failed to write to log file: %v\n", err)
+	}
 }
 
 // SetLogger overrides the global logger (useful for testing)
@@ -80,7 +87,10 @@ func GetLogPath() string {
 	}
 	configDir, err := os.UserConfigDir()
 	if err != nil {
-		home, _ := os.UserHomeDir()
+		home, err := os.UserHomeDir()
+		if err != nil {
+			return "fm.log"
+		}
 		return filepath.Join(home, ".fm.log")
 	}
 	return filepath.Join(configDir, "fm", "fm.log")
@@ -148,4 +158,18 @@ func Fatal(msg string) {
 func Fatalf(format string, args ...any) {
 	Logf(LevelFatal, format, args...)
 	os.Exit(1)
+}
+
+// LogIfError logs an error if it's not nil.
+func LogIfError(err error, msg string) {
+	if err != nil {
+		Errorf("%s: %v", msg, err)
+	}
+}
+
+// CloseAndLog closes an io.Closer and logs any error.
+func CloseAndLog(c io.Closer, name string) {
+	if err := c.Close(); err != nil {
+		Warnf("failed to close %s: %v", name, err)
+	}
 }

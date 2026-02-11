@@ -34,7 +34,9 @@ func TestProgressWriter(t *testing.T) {
 
 	// Write more to reach total
 	data2 := []byte("67890")
-	_, _ = pw.Write(data2)
+	n2, err := pw.Write(data2)
+	testutil.AssertNoError(t, err, "Write more should succeed")
+	testutil.AssertEqual(t, 5, n2, "Write more count")
 
 	// Final progress should definitely be sent because Current == Total
 	var lastPercent float64

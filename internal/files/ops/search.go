@@ -12,6 +12,7 @@ import (
 
 	"github.com/zulfikawr/fm/internal/constants"
 	"github.com/zulfikawr/fm/internal/files/core"
+	"github.com/zulfikawr/fm/internal/logger"
 
 	"golang.org/x/sync/errgroup"
 )
@@ -125,7 +126,7 @@ func searchInFile(opts SearchOptions, re *regexp.Regexp) (core.FileResult, bool)
 		}
 		return core.FileResult{}, false
 	}
-	defer func() { _ = f.Close() }()
+	defer logger.CloseAndLog(f, "file during search")
 
 	reader := bufio.NewReader(f)
 	if isBinary(reader) {

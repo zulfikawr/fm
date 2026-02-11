@@ -13,6 +13,7 @@ import (
 	"github.com/zulfikawr/fm/internal/files/factory"
 	"github.com/zulfikawr/fm/internal/files/ops"
 	"github.com/zulfikawr/fm/internal/git"
+	"github.com/zulfikawr/fm/internal/logger"
 	"github.com/zulfikawr/fm/internal/tui/theme"
 )
 
@@ -46,15 +47,17 @@ func RunSearch(args *Args) error {
 	if err != nil {
 		return fmt.Errorf("initializing filesystem: %w", err)
 	}
-	defer func() {
-		_ = fs.Close()
-	}()
+	defer logger.CloseAndLog(fs, "search filesystem")
 
 	if fs.IsLocal() {
 		if searchPath == "." {
-			searchPath, _ = os.Getwd()
+			if cwd, err := os.Getwd(); err == nil {
+				searchPath = cwd
+			}
 		}
-		searchPath, _ = fs.Abs(searchPath)
+		if absPath, err := fs.Abs(searchPath); err == nil {
+			searchPath = absPath
+		}
 	} else {
 		searchPath = fs.Clean(searchPath)
 	}
@@ -91,8 +94,8 @@ func RunSearch(args *Args) error {
 		Bold(true)
 
 	for _, res := range results {
-		relPath, _ := filepath.Rel(searchPath, res.Path)
-		if relPath == "." || relPath == "" {
+		relPath, err := filepath.Rel(searchPath, res.Path)
+		if err != nil || relPath == "." || relPath == "" {
 			relPath = res.Path
 		}
 

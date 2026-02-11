@@ -118,7 +118,10 @@ func performTrashRestore(m *tui_context.Model, trashedName string) tea.Msg {
 		if conflictErr, ok := err.(*trash.RestoreConflictError); ok {
 			// TODO: Show conflict dialog - for now just use "Keep Both" strategy
 			// Generate a new name
-			info, _ := manager.GetInfo(trashedName)
+			info, err := manager.GetInfo(trashedName)
+			if err != nil {
+				return messages.StatusMsg{Message: "Restore conflict: " + conflictErr.Error(), IsError: true}
+			}
 			if info != nil {
 				base := m.FS.Base(info.OriginalPath)
 				ext := ""

@@ -101,7 +101,7 @@ func WatchRemoteDir() tea.Cmd {
 func RestartWatcherAction(m *tui_context.Model) tea.Cmd {
 	return func() tea.Msg {
 		if m.Watcher.Watcher != nil {
-			_ = m.Watcher.Watcher.Close()
+			logger.CloseAndLog(m.Watcher.Watcher, "local filesystem watcher during restart")
 		}
 
 		watcher, err := fsnotify.NewWatcher()

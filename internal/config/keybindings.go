@@ -171,7 +171,10 @@ func (kb Keybinding) HumanLabel() string {
 func GetKeybindingPath() string {
 	configDir, err := os.UserConfigDir()
 	if err != nil {
-		home, _ := os.UserHomeDir()
+		home, err := os.UserHomeDir()
+		if err != nil {
+			return filepath.Join(".", "keybindings.json")
+		}
 		return filepath.Join(home, ".config", "fm", "keybindings.json")
 	}
 	return filepath.Join(configDir, "fm", "keybindings.json")

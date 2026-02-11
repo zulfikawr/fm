@@ -131,7 +131,10 @@ func (gs *gitService) GetIgnoredFiles(ctx context.Context, repoRoot string) ([]s
 // ParseGitStatusPorcelain is a shared helper to parse git status --porcelain output.
 func ParseGitStatusPorcelain(output, repoRoot, dirPath string) map[string]string {
 	statuses := make(map[string]string)
-	relDir, _ := filepath.Rel(repoRoot, dirPath)
+	relDir, err := filepath.Rel(repoRoot, dirPath)
+	if err != nil {
+		relDir = ""
+	}
 	if relDir == "." {
 		relDir = ""
 	}

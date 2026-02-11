@@ -22,7 +22,9 @@ func TestMain(m *testing.M) {
 	code := m.Run()
 
 	// Clean up
-	_ = os.RemoveAll(tempDir)
+	if err := os.RemoveAll(tempDir); err != nil {
+		panic(err)
+	}
 	os.Exit(code)
 }
 
@@ -30,7 +32,10 @@ func TestParse(t *testing.T) {
 	t.Run("Remote flag long", func(t *testing.T) {
 		fs := flag.NewFlagSet("test", flag.ContinueOnError)
 		fs.SetOutput(io.Discard)
-		args := parse(fs, []string{"--remote", "user@host"})
+		args, err := parse(fs, []string{"--remote", "user@host"})
+		if err != nil {
+			t.Fatalf("Unexpected error: %v", err)
+		}
 		if args.Remote != "user@host" {
 			t.Errorf("Expected user@host, got %s", args.Remote)
 		}
@@ -39,7 +44,10 @@ func TestParse(t *testing.T) {
 	t.Run("Remote flag short", func(t *testing.T) {
 		fs := flag.NewFlagSet("test", flag.ContinueOnError)
 		fs.SetOutput(io.Discard)
-		args := parse(fs, []string{"-r", "user@host"})
+		args, err := parse(fs, []string{"-r", "user@host"})
+		if err != nil {
+			t.Fatalf("Unexpected error: %v", err)
+		}
 		if args.Remote != "user@host" {
 			t.Errorf("Expected user@host, got %s", args.Remote)
 		}
@@ -48,7 +56,10 @@ func TestParse(t *testing.T) {
 	t.Run("Positional args", func(t *testing.T) {
 		fs := flag.NewFlagSet("test", flag.ContinueOnError)
 		fs.SetOutput(io.Discard)
-		args := parse(fs, []string{"/tmp", "extra"})
+		args, err := parse(fs, []string{"/tmp", "extra"})
+		if err != nil {
+			t.Fatalf("Unexpected error: %v", err)
+		}
 		if len(args.Args) != 2 {
 			t.Errorf("Expected 2 args, got %d", len(args.Args))
 		}
@@ -60,7 +71,13 @@ func TestParse(t *testing.T) {
 	t.Run("Usage function", func(t *testing.T) {
 		fs := flag.NewFlagSet("test", flag.ContinueOnError)
 		fs.SetOutput(io.Discard)
-		_ = parse(fs, []string{})
+		args, err := parse(fs, []string{})
+		if err != nil {
+			t.Fatalf("Unexpected error: %v", err)
+		}
+		if args == nil {
+			t.Error("Expected non-nil args")
+		}
 		if fs.Usage == nil {
 			t.Error("Expected Usage function to be set")
 		}

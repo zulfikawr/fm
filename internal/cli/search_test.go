@@ -80,7 +80,10 @@ func TestRunSearch(t *testing.T) {
 	t.Run("Successful search", func(t *testing.T) {
 		// Capture stdout
 		old := os.Stdout
-		r, w, _ := os.Pipe()
+		r, w, err := os.Pipe()
+		if err != nil {
+			t.Fatalf("failed to create pipe: %v", err)
+		}
 		os.Stdout = w
 
 		args := &Args{
@@ -88,7 +91,7 @@ func TestRunSearch(t *testing.T) {
 			Args:        []string{tmpDir},
 			IsSearch:    true,
 		}
-		err := RunSearch(args)
+		runErr := RunSearch(args)
 
 		if err := w.Close(); err != nil {
 			t.Errorf("Failed to close pipe: %v", err)
@@ -96,11 +99,13 @@ func TestRunSearch(t *testing.T) {
 		os.Stdout = old
 
 		var buf bytes.Buffer
-		_, _ = io.Copy(&buf, r)
+		if _, err := io.Copy(&buf, r); err != nil {
+			t.Errorf("failed to copy from pipe: %v", err)
+		}
 		output := testutil.StripANSI(buf.String())
 
-		if err != nil {
-			t.Errorf("RunSearch failed: %v", err)
+		if runErr != nil {
+			t.Errorf("RunSearch failed: %v", runErr)
 		}
 		if !strings.Contains(output, "test.txt") {
 			t.Error("expected filename in output")
@@ -112,7 +117,10 @@ func TestRunSearch(t *testing.T) {
 
 	t.Run("No matches", func(t *testing.T) {
 		old := os.Stdout
-		r, w, _ := os.Pipe()
+		r, w, err := os.Pipe()
+		if err != nil {
+			t.Fatalf("failed to create pipe: %v", err)
+		}
 		os.Stdout = w
 
 		args := &Args{
@@ -120,7 +128,9 @@ func TestRunSearch(t *testing.T) {
 			Args:        []string{tmpDir},
 			IsSearch:    true,
 		}
-		_ = RunSearch(args)
+		if err := RunSearch(args); err != nil {
+			t.Errorf("RunSearch failed: %v", err)
+		}
 
 		if err := w.Close(); err != nil {
 			t.Errorf("Failed to close pipe: %v", err)
@@ -128,7 +138,9 @@ func TestRunSearch(t *testing.T) {
 		os.Stdout = old
 
 		var buf bytes.Buffer
-		_, _ = io.Copy(&buf, r)
+		if _, err := io.Copy(&buf, r); err != nil {
+			t.Errorf("failed to copy from pipe: %v", err)
+		}
 		output := testutil.StripANSI(buf.String())
 
 		if !strings.Contains(output, "No matches found") {

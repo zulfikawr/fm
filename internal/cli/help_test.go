@@ -14,7 +14,10 @@ import (
 func TestPrintHelp(t *testing.T) {
 	// Capture stdout
 	oldStdout := os.Stdout
-	r, w, _ := os.Pipe()
+	r, w, err := os.Pipe()
+	if err != nil {
+		t.Fatalf("failed to create pipe: %v", err)
+	}
 	os.Stdout = w
 
 	styles := theme.GetStylesheet(0)
@@ -24,7 +27,9 @@ func TestPrintHelp(t *testing.T) {
 		t.Errorf("Failed to close pipe: %v", err)
 	}
 	var buf bytes.Buffer
-	_, _ = io.Copy(&buf, r)
+	if _, err := io.Copy(&buf, r); err != nil {
+		t.Errorf("failed to copy from pipe: %v", err)
+	}
 	os.Stdout = oldStdout
 
 	// Strip ANSI codes for easier comparison

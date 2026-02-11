@@ -5,6 +5,7 @@ package local
 import (
 	"os"
 
+	"github.com/zulfikawr/fm/internal/logger"
 	"golang.org/x/sys/unix"
 )
 
@@ -17,7 +18,7 @@ func preallocate(path string, size int64) error {
 	if err != nil {
 		return err
 	}
-	defer func() { _ = f.Close() }()
+	defer logger.CloseAndLog(f, "file during preallocate")
 
 	// Mode 0 is the default allocation
 	return unix.Fallocate(int(f.Fd()), 0, 0, size)

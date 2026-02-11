@@ -4,6 +4,7 @@ import (
 	"io"
 
 	"github.com/zulfikawr/fm/internal/files/conflict"
+	"github.com/zulfikawr/fm/internal/logger"
 )
 
 // CreateAtomic creates a new file or directory atomically.
@@ -28,7 +29,7 @@ func CreateAtomic(opts CreateOptions) (string, error) {
 		var f io.WriteCloser
 		f, err = opts.OpCtx.FS.Create(opts.OpCtx.Context, resolvedPath)
 		if err == nil {
-			_ = f.Close()
+			logger.CloseAndLog(f, "newly created file")
 		}
 	}
 

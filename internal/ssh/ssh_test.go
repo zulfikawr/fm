@@ -35,20 +35,20 @@ func TestResolveRemote(t *testing.T) {
 
 	t.Run("SSH config alias", func(t *testing.T) {
 		// Mock .ssh/config
-		home, _ := os.UserHomeDir()
-		sshDir := filepath.Join(home, ".ssh")
+		tmpHome := testutil.TempDir(t)
+		oldHome := os.Getenv("HOME")
+		testutil.AssertNoError(t, os.Setenv("HOME", tmpHome), "set home")
+		defer func() {
+			if err := os.Setenv("HOME", oldHome); err != nil {
+				t.Errorf("failed to restore HOME: %v", err)
+			}
+		}()
+
+		sshDir := filepath.Join(tmpHome, ".ssh")
 		configPath := filepath.Join(sshDir, "config")
 
 		err := os.MkdirAll(sshDir, 0700)
-		if err != nil {
-			t.Skip("Failed to create .ssh dir for test")
-		}
-
-		// Backup existing config if any
-		var backup []byte
-		if _, err := os.Stat(configPath); err == nil {
-			backup, _ = os.ReadFile(configPath)
-		}
+		testutil.AssertFatalError(t, err, "create .ssh dir")
 
 		content := `Host myalias
   HostName realhost.com
@@ -56,16 +56,7 @@ func TestResolveRemote(t *testing.T) {
   IdentityFile ~/.ssh/id_rsa
 `
 		err = os.WriteFile(configPath, []byte(content), 0600)
-		if err != nil {
-			t.Skip("Failed to write mock config")
-		}
-		defer func() {
-			if backup != nil {
-				_ = os.WriteFile(configPath, backup, 0600)
-			} else {
-				_ = os.Remove(configPath)
-			}
-		}()
+		testutil.AssertFatalError(t, err, "write mock config")
 
 		details := ResolveRemote("myalias")
 		if details.User != "dev" || details.Host != "realhost.com" || details.KeyPath == "" {
@@ -77,18 +68,26 @@ func TestResolveRemote(t *testing.T) {
 func TestAddToKnownHosts(t *testing.T) {
 	tmpDir := testutil.TempDir(t)
 	oldHome := os.Getenv("HOME")
-	_ = os.Setenv("HOME", tmpDir)
-	defer func() { _ = os.Setenv("HOME", oldHome) }()
+	testutil.AssertNoError(t, os.Setenv("HOME", tmpDir), "set home")
+	defer func() {
+		if err := os.Setenv("HOME", oldHome); err != nil {
+			t.Errorf("failed to restore HOME: %v", err)
+		}
+	}()
 
 	// Ensure .ssh dir exists
-	_ = os.MkdirAll(filepath.Join(tmpDir, ".ssh"), 0700)
+	err := os.MkdirAll(filepath.Join(tmpDir, ".ssh"), 0700)
+	testutil.AssertNoError(t, err, "create .ssh dir")
 
 	keyData := "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOm6y8v0W6Wz7mHn6/W1uF1v7Q+V2b2u5u5u5u5u5u5u"
 	parts := strings.Split(keyData, " ")
-	pk, _, _, _, _ := sshx.ParseAuthorizedKey([]byte(parts[0] + " " + parts[1]))
-	addr, _ := net.ResolveTCPAddr("tcp", "example.com:22")
+	pk, _, _, _, err := sshx.ParseAuthorizedKey([]byte(parts[0] + " " + parts[1]))
+	testutil.AssertNoError(t, err, "parse key")
 
-	err := AddToKnownHosts("example.com", addr, pk)
+	addr, err := net.ResolveTCPAddr("tcp", "example.com:22")
+	testutil.AssertNoError(t, err, "resolve addr")
+
+	err = AddToKnownHosts("example.com", addr, pk)
 	testutil.AssertNoError(t, err, "AddToKnownHosts should succeed")
 
 	// Check if file was created
@@ -100,10 +99,17 @@ func TestAddToKnownHosts(t *testing.T) {
 
 func TestGetHostKeyCallback(t *testing.T) {
 	tmpDir := testutil.TempDir(t)
-	_ = os.Setenv("HOME", tmpDir)
+	oldHome := os.Getenv("HOME")
+	testutil.AssertNoError(t, os.Setenv("HOME", tmpDir), "set home")
+	defer func() {
+		if err := os.Setenv("HOME", oldHome); err != nil {
+			t.Errorf("failed to restore HOME: %v", err)
+		}
+	}()
 
 	// Ensure .ssh dir exists
-	_ = os.MkdirAll(filepath.Join(tmpDir, ".ssh"), 0700)
+	err := os.MkdirAll(filepath.Join(tmpDir, ".ssh"), 0700)
+	testutil.AssertNoError(t, err, "create .ssh dir")
 
 	askChan := make(chan *HostConfirmRequest, 1)
 	cb, err := GetHostKeyCallback(askChan)
@@ -111,8 +117,11 @@ func TestGetHostKeyCallback(t *testing.T) {
 
 	keyData := "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOm6y8v0W6Wz7mHn6/W1uF1v7Q+V2b2u5u5u5u5u5u5u"
 	parts := strings.Split(keyData, " ")
-	pk, _, _, _, _ := sshx.ParseAuthorizedKey([]byte(parts[0] + " " + parts[1]))
-	addr, _ := net.ResolveTCPAddr("tcp", "example.com:22")
+	pk, _, _, _, err := sshx.ParseAuthorizedKey([]byte(parts[0] + " " + parts[1]))
+	testutil.AssertNoError(t, err, "parse key")
+
+	addr, err := net.ResolveTCPAddr("tcp", "example.com:22")
+	testutil.AssertNoError(t, err, "resolve addr")
 
 	// Test new host
 	go func() {
