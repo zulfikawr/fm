@@ -3,6 +3,7 @@ package archive
 import (
 	"archive/zip"
 	"context"
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -289,7 +290,7 @@ func (fs *ZipFS) Walk(ctx context.Context, root string, walkFn filepath.WalkFunc
 		return err
 	}
 	if info == nil {
-		// Handle nil info
+		return fmt.Errorf("root path %q not found", root)
 	}
 
 	searchRoot := root

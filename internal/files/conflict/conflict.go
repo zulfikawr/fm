@@ -7,6 +7,7 @@ import (
 
 	"github.com/zulfikawr/fm/internal/files/core"
 	"github.com/zulfikawr/fm/internal/files/errors"
+	"github.com/zulfikawr/fm/internal/logger"
 )
 
 // Policy defines how to handle existing destination files
@@ -79,7 +80,7 @@ func GenerateUniqueName(ctx context.Context, fs core.FileSystem, path string) (s
 	if info, err := fs.Stat(ctx, path); err != nil {
 		return path, nil // Path doesn't exist, it's unique
 	} else if info == nil {
-		// Log or handle nil info
+		logger.Warnf("GenerateUniqueName: stat returned nil info for path %q", path)
 	}
 
 	ext := fs.Ext(path)
@@ -90,7 +91,7 @@ func GenerateUniqueName(ctx context.Context, fs core.FileSystem, path string) (s
 		if info, err := fs.Stat(ctx, newName); err != nil {
 			return newName, nil
 		} else if info == nil {
-			// Handle nil info
+			logger.Warnf("GenerateUniqueName: stat returned nil info for candidate name %q", newName)
 		}
 		// Safety break to prevent infinite loop in case of errors other than NotExist
 		if i > 10000 {

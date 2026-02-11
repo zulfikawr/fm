@@ -5,6 +5,7 @@ import (
 
 	"github.com/zulfikawr/fm/internal/files/conflict"
 	"github.com/zulfikawr/fm/internal/files/errors"
+	"github.com/zulfikawr/fm/internal/logger"
 )
 
 // Rename renames a file or directory.
@@ -31,7 +32,7 @@ func Rename(opts RenameOptions) error {
 	}
 
 	if renamed {
-		// Log or handle rename
+		logger.Debugf("Rename target changed due to conflict: %s", resolvedPath)
 	}
 
 	return opts.OpCtx.FS.Rename(opts.OpCtx.Context, opts.OldPath, resolvedPath)

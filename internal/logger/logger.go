@@ -59,8 +59,8 @@ func (l *fileLogger) Log(level string, msg string) {
 	caller := "unknown"
 	if ok {
 		caller = fmt.Sprintf("%s:%d", filepath.Base(file), line)
-	} else if pc == 0 {
-		// Just a dummy check to use pc
+	} else if pc != 0 {
+		caller = fmt.Sprintf("pc:%d", pc)
 	}
 
 	if n, err := fmt.Fprintf(f, "[%s] [%s] [%s] %s\n", timestamp, level, caller, msg); err != nil {

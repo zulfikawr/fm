@@ -47,8 +47,10 @@ func RunSearch(args *Args) error {
 	if err != nil {
 		return fmt.Errorf("initializing filesystem: %w", err)
 	}
+
+	// Log or handle remote filesystem info if present
 	if fsInfo != nil {
-		// Log or handle remote info
+		logger.Debugf("remote filesystem info: user=%s, host=%s, path=%s", fsInfo.User, fsInfo.Host, fsInfo.StartPath)
 	}
 	defer logger.CloseAndLog(fs, "search filesystem")
 

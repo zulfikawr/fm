@@ -9,6 +9,7 @@ import (
 	"github.com/zulfikawr/fm/internal/files/conflict"
 	"github.com/zulfikawr/fm/internal/files/core"
 	"github.com/zulfikawr/fm/internal/files/ops"
+	"github.com/zulfikawr/fm/internal/logger"
 	"github.com/zulfikawr/fm/internal/tui/components/ui"
 	tui_context "github.com/zulfikawr/fm/internal/tui/context"
 	"github.com/zulfikawr/fm/internal/tui/messages"
@@ -190,7 +191,7 @@ func ResolveConflict(m *tui_context.Model, choice string, applyToAll bool) tea.C
 	})
 	if err == nil {
 		if renamed {
-			// Log or handle rename
+			logger.Debugf("File renamed during conflict resolution: %s -> %s", src, resolvedPath)
 		}
 		if resolvedPath == "" && choice == "skip" {
 			if len(pending) <= 1 && !applyToAll {

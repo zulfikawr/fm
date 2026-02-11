@@ -24,7 +24,7 @@ func CreateAtomic(opts CreateOptions) (string, error) {
 	}
 
 	if renamed {
-		// Log or handle the fact that it was renamed
+		logger.Debugf("Target path renamed due to conflict: %s", resolvedPath)
 	}
 
 	if opts.IsDir {

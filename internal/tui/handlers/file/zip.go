@@ -7,6 +7,7 @@ import (
 	"github.com/zulfikawr/fm/internal/files/archive"
 	"github.com/zulfikawr/fm/internal/files/conflict"
 	"github.com/zulfikawr/fm/internal/files/core"
+	"github.com/zulfikawr/fm/internal/logger"
 	tui_context "github.com/zulfikawr/fm/internal/tui/context"
 	"github.com/zulfikawr/fm/internal/tui/messages"
 
@@ -64,7 +65,7 @@ func PerformZip(m *tui_context.Model, zipName string) tea.Cmd {
 			return nil // Skip
 		}
 		if renamed {
-			// Log or handle rename
+			logger.Debugf("Operation destination renamed due to conflict: %s", resolvedPath)
 		}
 		dst = resolvedPath
 	}
@@ -148,7 +149,7 @@ func PerformUnzip(m *tui_context.Model, destName string) tea.Cmd {
 			return nil // Skip
 		}
 		if renamed {
-			// Log or handle rename
+			logger.Debugf("Operation destination renamed due to conflict: %s", resolvedPath)
 		}
 		dst = resolvedPath
 	}

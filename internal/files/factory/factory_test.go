@@ -136,8 +136,8 @@ func TestCreateFileSystem(t *testing.T) {
 		if fs != mockFS {
 			t.Error("Expected mock remote FS")
 		}
-		if fsInfo != nil {
-			// Check info
+		if fsInfo == nil {
+			t.Error("Expected non-nil fsInfo")
 		}
 		if mockConnector.NewRemoteFSCallCount != 2 {
 			t.Errorf("Expected 2 calls to NewRemoteFS, got %d", mockConnector.NewRemoteFSCallCount)

@@ -40,7 +40,7 @@ func Zip(opts ZipOptions) error {
 	}
 
 	if renamed {
-		// Log or handle rename
+		logger.Debugf("Target renamed due to conflict: %s", resolvedDst)
 	}
 
 	// Create destination file
@@ -125,7 +125,7 @@ func walkAndZip(state *zipState, currentPath, baseDir string) error {
 			return errors.WrapErrorWithPath(err, "ZipCreateDir", relPath)
 		}
 		if w == nil {
-			// Handle nil writer if needed
+			logger.Debugf("No writer returned for directory entry: %s", relPath)
 		}
 
 		entries, err := state.opts.OpCtx.FS.ReadDir(state.opts.OpCtx.Context, currentPath)
@@ -171,7 +171,7 @@ func walkAndZip(state *zipState, currentPath, baseDir string) error {
 		return errors.WrapErrorWithPath(err, "Copy", currentPath)
 	}
 	if n == 0 {
-		// Log empty file if needed
+		logger.Debugf("Copied zero-byte file: %s", currentPath)
 	}
 
 	state.onFile()
@@ -200,7 +200,7 @@ func Unzip(opts ZipOptions) error {
 	}
 
 	if renamed {
-		// Log or handle rename
+		logger.Debugf("Target renamed due to conflict: %s", resolvedDst)
 	}
 
 	// Open the source file

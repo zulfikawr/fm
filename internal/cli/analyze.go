@@ -29,7 +29,7 @@ func RunAnalyze(args *Args) error {
 		return fmt.Errorf("initializing filesystem: %w", err)
 	}
 	if fsInfo != nil {
-		// Log or handle remote info
+		logger.Debugf("Connected to remote for analysis: %s@%s", fsInfo.User, fsInfo.Host)
 	}
 	defer logger.CloseAndLog(fs, "analyze filesystem")
 

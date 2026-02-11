@@ -123,8 +123,8 @@ func Reload(m *tui_context.Model, silent bool) tea.Cmd {
 	}
 
 	gitCtx, gitCancel := context.WithCancel(ctx)
-	if gitCtx == nil {
-		// Handle nil context
+	if err := gitCtx.Err(); err != nil {
+		logger.Debugf("Immediate context cancellation: %v", err)
 	}
 	m.Navigation.Git.CancelFunc = gitCancel
 

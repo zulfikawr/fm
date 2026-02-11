@@ -83,8 +83,9 @@ func TestRunAnalyze(t *testing.T) {
 	if readErr != nil {
 		t.Errorf("failed to read from pipe reader: %v", readErr)
 	}
+	// Check if output was generated during testing
 	if len(outputBytes) == 0 {
-		// Log or check
+		t.Log("Warning: no output was produced during the test")
 	}
 }
 

@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/zulfikawr/fm/internal/logger"
 	"github.com/zulfikawr/fm/internal/ssh"
 	"github.com/zulfikawr/fm/internal/testutil"
 
@@ -90,7 +91,7 @@ func TestRemoteFS_ClientMethods(t *testing.T) {
 	}
 	go func() {
 		if err := server.Serve(); err != nil && err != io.EOF {
-			// server.Serve() always returns an error when the connection is closed
+			logger.Warnf("server.Serve() error (connection may be closed): %v", err)
 		}
 	}()
 	defer func() {
