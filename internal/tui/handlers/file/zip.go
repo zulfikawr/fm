@@ -8,25 +8,25 @@ import (
 	"github.com/zulfikawr/fm/internal/files/conflict"
 	"github.com/zulfikawr/fm/internal/files/core"
 	"github.com/zulfikawr/fm/internal/logger"
-	tui_context "github.com/zulfikawr/fm/internal/tui/context"
+	tuictx "github.com/zulfikawr/fm/internal/tui/context"
 	"github.com/zulfikawr/fm/internal/tui/messages"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-func StartZip(m *tui_context.Model) tea.Cmd {
+func StartZip(m *tuictx.Model) tea.Cmd {
 	targets := GetTargets(m)
 	if len(targets) == 0 {
 		return nil
 	}
 
-	m.StartInput(tui_context.InputZip)
+	m.StartInput(tuictx.InputZip)
 	m.Inputs.ActiveInput.SetValue("archive.zip")
 	m.Inputs.ActiveInput.SetCursor(len("archive"))
 	return m.Inputs.ActiveInput.FocusCmd()
 }
 
-func PerformZipWithTargets(m *tui_context.Model, zipName string, targets []string) tea.Cmd {
+func PerformZipWithTargets(m *tuictx.Model, zipName string, targets []string) tea.Cmd {
 	if zipName == "" {
 		return nil
 	}
@@ -47,7 +47,7 @@ func PerformZipWithTargets(m *tui_context.Model, zipName string, targets []strin
 		if err != nil {
 			if cerr, ok := err.(*conflict.ConflictError); ok {
 				m.UI.Loading = false
-				m.Operations.Conflict.Set(tui_context.ConflictParams{
+				m.Operations.Conflict.Set(tuictx.ConflictParams{
 					Source:       cerr.Source,
 					Destination:  cerr.Destination,
 					PendingItems: targets,
@@ -75,7 +75,7 @@ func PerformZipWithTargets(m *tui_context.Model, zipName string, targets []strin
 	return func() tea.Msg { return messages.PerformZipMsg{Targets: targets, Dst: dst, Message: msg} }
 }
 
-func PerformZip(m *tui_context.Model, zipName string) tea.Cmd {
+func PerformZip(m *tuictx.Model, zipName string) tea.Cmd {
 	if zipName == "" {
 		return nil
 	}
@@ -98,7 +98,7 @@ func PerformZip(m *tui_context.Model, zipName string) tea.Cmd {
 			// ... (omitting fields for brevity in instruction, but keeping them in new_string)
 			if cerr, ok := err.(*conflict.ConflictError); ok {
 				m.UI.Loading = false
-				m.Operations.Conflict.Set(tui_context.ConflictParams{
+				m.Operations.Conflict.Set(tuictx.ConflictParams{
 					Source:       cerr.Source,
 					Destination:  cerr.Destination,
 					PendingItems: targets,
@@ -126,7 +126,7 @@ func PerformZip(m *tui_context.Model, zipName string) tea.Cmd {
 	return func() tea.Msg { return messages.PerformZipMsg{Targets: targets, Dst: dst, Message: msg} }
 }
 
-func StartUnzip(m *tui_context.Model) tea.Cmd {
+func StartUnzip(m *tuictx.Model) tea.Cmd {
 	targets := GetTargets(m)
 	var zipPath string
 	if len(targets) > 0 {
@@ -147,7 +147,7 @@ func StartUnzip(m *tui_context.Model) tea.Cmd {
 		}
 	}
 
-	m.StartInput(tui_context.InputUnzip)
+	m.StartInput(tuictx.InputUnzip)
 
 	extractPath := archive.GetDefaultExtractionPath(m.FS, zipPath)
 	folderName := m.FS.Base(extractPath)
@@ -155,7 +155,7 @@ func StartUnzip(m *tui_context.Model) tea.Cmd {
 	return m.Inputs.ActiveInput.FocusCmd()
 }
 
-func PerformUnzipWithTargets(m *tui_context.Model, destName string, targets []string) tea.Cmd {
+func PerformUnzipWithTargets(m *tuictx.Model, destName string, targets []string) tea.Cmd {
 	if destName == "" {
 		return nil
 	}
@@ -180,7 +180,7 @@ func PerformUnzipWithTargets(m *tui_context.Model, destName string, targets []st
 		if err != nil {
 			if cerr, ok := err.(*conflict.ConflictError); ok {
 				m.UI.Loading = false
-				m.Operations.Conflict.Set(tui_context.ConflictParams{
+				m.Operations.Conflict.Set(tuictx.ConflictParams{
 					Source:       cerr.Source,
 					Destination:  cerr.Destination,
 					PendingItems: []string{zipPath},
@@ -206,7 +206,7 @@ func PerformUnzipWithTargets(m *tui_context.Model, destName string, targets []st
 	return func() tea.Msg { return messages.PerformUnzipMsg{ZipPath: zipPath, Dst: dst, Message: msg} }
 }
 
-func PerformUnzip(m *tui_context.Model, destName string) tea.Cmd {
+func PerformUnzip(m *tuictx.Model, destName string) tea.Cmd {
 	if destName == "" {
 		return nil
 	}
@@ -233,7 +233,7 @@ func PerformUnzip(m *tui_context.Model, destName string) tea.Cmd {
 			// ... (omitting fields for brevity in instruction, but keeping them in new_string)
 			if cerr, ok := err.(*conflict.ConflictError); ok {
 				m.UI.Loading = false
-				m.Operations.Conflict.Set(tui_context.ConflictParams{
+				m.Operations.Conflict.Set(tuictx.ConflictParams{
 					Source:       cerr.Source,
 					Destination:  cerr.Destination,
 					PendingItems: []string{zipPath},

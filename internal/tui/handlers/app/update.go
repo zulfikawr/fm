@@ -2,7 +2,7 @@ package app
 
 import (
 	"github.com/zulfikawr/fm/internal/constants"
-	tui_context "github.com/zulfikawr/fm/internal/tui/context"
+	tuictx "github.com/zulfikawr/fm/internal/tui/context"
 	"github.com/zulfikawr/fm/internal/tui/handlers/utils"
 	"github.com/zulfikawr/fm/internal/tui/messages"
 	"github.com/zulfikawr/fm/internal/update"
@@ -11,7 +11,7 @@ import (
 )
 
 // HandleUpdateMessages handles update-related messages
-func HandleUpdateMessages(m *tui_context.Model, msg tea.Msg) tea.Cmd {
+func HandleUpdateMessages(m *tuictx.Model, msg tea.Msg) tea.Cmd {
 	switch msg := msg.(type) {
 	case messages.UpdateAvailableMsg:
 		m.UI.UpdateAvailable = true

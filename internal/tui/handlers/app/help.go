@@ -1,23 +1,23 @@
 package app
 
 import (
-	tui_context "github.com/zulfikawr/fm/internal/tui/context"
+	tuictx "github.com/zulfikawr/fm/internal/tui/context"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
 
 // HandleHelp handles help-related messages
-func HandleHelp(m *tui_context.Model, msg tea.Msg) tea.Cmd {
+func HandleHelp(m *tuictx.Model, msg tea.Msg) tea.Cmd {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		if m.UI.ActiveView == tui_context.ViewHelp {
+		if m.UI.ActiveView == tuictx.ViewHelp {
 			return handleHelpKeys(m, msg)
 		}
 	}
 	return nil
 }
 
-func handleHelpKeys(m *tui_context.Model, msg tea.KeyMsg) tea.Cmd {
+func handleHelpKeys(m *tuictx.Model, msg tea.KeyMsg) tea.Cmd {
 	totalItems := 34 // Total items across all sections
 
 	switch msg.String() {
@@ -51,7 +51,7 @@ func handleHelpKeys(m *tui_context.Model, msg tea.KeyMsg) tea.Cmd {
 }
 
 // ScrollHelp recalculates the help view offset
-func ScrollHelp(m *tui_context.Model) int {
+func ScrollHelp(m *tuictx.Model) int {
 	cursor := m.Help.Cursor
 	offset := m.Help.Offset
 	height := m.Display.ViewportHeight

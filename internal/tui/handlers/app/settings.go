@@ -7,7 +7,7 @@ import (
 	"github.com/zulfikawr/fm/internal/config"
 	"github.com/zulfikawr/fm/internal/constants"
 	"github.com/zulfikawr/fm/internal/files/format"
-	tui_context "github.com/zulfikawr/fm/internal/tui/context"
+	tuictx "github.com/zulfikawr/fm/internal/tui/context"
 	"github.com/zulfikawr/fm/internal/tui/handlers/utils"
 	"github.com/zulfikawr/fm/internal/tui/messages"
 	"github.com/zulfikawr/fm/internal/tui/theme"
@@ -16,17 +16,17 @@ import (
 )
 
 // handleSettingsKeys handles settings-related messages
-func HandleSettings(m *tui_context.Model, msg tea.Msg) tea.Cmd {
+func HandleSettings(m *tuictx.Model, msg tea.Msg) tea.Cmd {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		if m.UI.ActiveView == tui_context.ViewSettings {
+		if m.UI.ActiveView == tuictx.ViewSettings {
 			return handleSettingsKeys(m, msg)
 		}
 	}
 	return nil
 }
 
-func handleSettingsKeys(m *tui_context.Model, msg tea.KeyMsg) tea.Cmd {
+func handleSettingsKeys(m *tuictx.Model, msg tea.KeyMsg) tea.Cmd {
 	groups := buildSettingGroups(m)
 	totalItems := 0
 	for i := range groups {
@@ -46,7 +46,7 @@ func handleSettingsKeys(m *tui_context.Model, msg tea.KeyMsg) tea.Cmd {
 			m.Settings.Cursor++
 		}
 	case "enter", "right", "l", " ":
-		if m.UI.InputActive && m.Inputs.Mode == tui_context.InputKeybinding {
+		if m.UI.InputActive && m.Inputs.Mode == tuictx.InputKeybinding {
 			return FinalizeKeybinding(m)
 		}
 		reload, cmd = ToggleSetting(m.Settings.Cursor, m)
@@ -56,7 +56,7 @@ func handleSettingsKeys(m *tui_context.Model, msg tea.KeyMsg) tea.Cmd {
 		m.Operations.ActionType = constants.ActionResetSettings
 		m.UI.StartConfirming()
 	case "esc", "q":
-		if m.UI.InputActive && m.Inputs.Mode == tui_context.InputKeybinding {
+		if m.UI.InputActive && m.Inputs.Mode == tuictx.InputKeybinding {
 			m.StopInput(true)
 			return nil
 		}
@@ -71,7 +71,7 @@ func handleSettingsKeys(m *tui_context.Model, msg tea.KeyMsg) tea.Cmd {
 	return cmd
 }
 
-func buildSettingGroups(m *tui_context.Model) []struct {
+func buildSettingGroups(m *tuictx.Model) []struct {
 	Title    string
 	Settings []struct{ Label string }
 } {
@@ -115,7 +115,7 @@ func buildSettingGroups(m *tui_context.Model) []struct {
 	return groups
 }
 
-func GetSettingGroups(m *tui_context.Model) []struct {
+func GetSettingGroups(m *tuictx.Model) []struct {
 	Title    string
 	Settings []struct {
 		Label    string
@@ -129,7 +129,7 @@ func GetSettingGroups(m *tui_context.Model) []struct {
 }
 
 // ScrollSettings recalculates the settings view offset
-func ScrollSettings(m *tui_context.Model) int {
+func ScrollSettings(m *tuictx.Model) int {
 	cursor := m.Settings.Cursor
 	offset := m.Settings.Offset
 	height := m.Display.ViewportHeight
@@ -171,7 +171,7 @@ func ScrollSettings(m *tui_context.Model) int {
 	return offset
 }
 
-func BuildFullSettingList(m *tui_context.Model) []SettingItem {
+func BuildFullSettingList(m *tuictx.Model) []SettingItem {
 	cfg := m.Config
 	var items []SettingItem
 
@@ -229,7 +229,7 @@ type SettingItem struct {
 	Keys         []string
 }
 
-func ToggleSetting(idx int, m *tui_context.Model) (bool, tea.Cmd) {
+func ToggleSetting(idx int, m *tuictx.Model) (bool, tea.Cmd) {
 	items := BuildFullSettingList(m)
 	if idx < 0 || idx >= len(items) {
 		return false, nil
@@ -241,7 +241,7 @@ func ToggleSetting(idx int, m *tui_context.Model) (bool, tea.Cmd) {
 	var cmd tea.Cmd
 
 	if item.IsKeybinding {
-		m.StartInput(tui_context.InputKeybinding)
+		m.StartInput(tuictx.InputKeybinding)
 		m.Inputs.ActiveInput.SetValue(strings.Join(item.Keys, ", "))
 
 		// Find the human label
@@ -326,7 +326,7 @@ func ToggleSetting(idx int, m *tui_context.Model) (bool, tea.Cmd) {
 	return reload, cmd
 }
 
-func ToggleSettingPrev(idx int, m *tui_context.Model) (bool, tea.Cmd) {
+func ToggleSettingPrev(idx int, m *tuictx.Model) (bool, tea.Cmd) {
 	items := BuildFullSettingList(m)
 	if idx < 0 || idx >= len(items) {
 		return false, nil
@@ -370,7 +370,7 @@ func ToggleSettingPrev(idx int, m *tui_context.Model) (bool, tea.Cmd) {
 }
 
 // FinalizeKeybinding saves the new keybinding for an action
-func FinalizeKeybinding(m *tui_context.Model) tea.Cmd {
+func FinalizeKeybinding(m *tuictx.Model) tea.Cmd {
 	val := m.Inputs.ActiveInput.Value()
 	m.StopInput(true)
 
@@ -419,7 +419,7 @@ func FinalizeKeybinding(m *tui_context.Model) tea.Cmd {
 }
 
 // ConfirmSettingsReset resets all settings to defaults
-func ConfirmSettingsReset(m *tui_context.Model) tea.Cmd {
+func ConfirmSettingsReset(m *tuictx.Model) tea.Cmd {
 	newCfg := config.DefaultConfig()
 	if err := newCfg.Save(); err != nil {
 		m.HandleError("Failed to reset settings", err)

@@ -4,11 +4,11 @@ import (
 	"strings"
 
 	"github.com/zulfikawr/fm/internal/files/core"
-	tui_context "github.com/zulfikawr/fm/internal/tui/context"
+	tuictx "github.com/zulfikawr/fm/internal/tui/context"
 )
 
 // ApplyFilter filters the items based on the search query in the model
-func ApplyFilter(m *tui_context.Model) {
+func ApplyFilter(m *tuictx.Model) {
 	query := m.Navigation.FilterQuery
 	if query == "" {
 		m.Navigation.FilteredItems = make([]core.Item, len(m.Navigation.Items))

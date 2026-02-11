@@ -8,16 +8,16 @@ import (
 	"github.com/zulfikawr/fm/internal/files/core"
 	"github.com/zulfikawr/fm/internal/files/ops"
 	"github.com/zulfikawr/fm/internal/files/sorting"
-	tui_context "github.com/zulfikawr/fm/internal/tui/context"
+	tuictx "github.com/zulfikawr/fm/internal/tui/context"
 	"github.com/zulfikawr/fm/internal/tui/handlers/utils"
 	"github.com/zulfikawr/fm/internal/tui/messages"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-func HandleNavKeys(m *tui_context.Model, msg tea.KeyMsg) tea.Cmd {
+func HandleNavKeys(m *tuictx.Model, msg tea.KeyMsg) tea.Cmd {
 	// Don't handle nav keys if an input is active or a modal view is open
-	if m.UI.InputActive || m.UI.ActiveView != tui_context.ViewMain {
+	if m.UI.InputActive || m.UI.ActiveView != tuictx.ViewMain {
 		return nil
 	}
 
@@ -87,7 +87,7 @@ func HandleNavKeys(m *tui_context.Model, msg tea.KeyMsg) tea.Cmd {
 	case "go_parent":
 		return NavigateToParent(m)
 	case "filter":
-		m.StartInput(tui_context.InputSearch)
+		m.StartInput(tuictx.InputSearch)
 		utils.UpdateSearchSuggestion(m)
 		return m.Inputs.ActiveInput.FocusCmd()
 	case "cycle_sort":
@@ -100,7 +100,7 @@ func HandleNavKeys(m *tui_context.Model, msg tea.KeyMsg) tea.Cmd {
 		m.UI.StartConfirming()
 		return nil
 	case "fuzzy_search":
-		m.StartInput(tui_context.InputFuzzySearch)
+		m.StartInput(tuictx.InputFuzzySearch)
 		return m.Inputs.ActiveInput.FocusCmd()
 	case "history_back":
 		return NavigateBack(m)
@@ -134,7 +134,7 @@ func HandleNavKeys(m *tui_context.Model, msg tea.KeyMsg) tea.Cmd {
 }
 
 // GetActionForKeyFromModel retrieves the action for a given key from the model's config
-func GetActionForKeyFromModel(m *tui_context.Model, key string) string {
+func GetActionForKeyFromModel(m *tuictx.Model, key string) string {
 	for i := range m.Config.Keybindings {
 		kb := m.Config.Keybindings[i]
 		for j := range kb.Keys {
@@ -147,7 +147,7 @@ func GetActionForKeyFromModel(m *tui_context.Model, key string) string {
 }
 
 // containsKeyForAction checks if the given key is mapped to the specified action
-func containsKeyForAction(m *tui_context.Model, key, action string) bool {
+func containsKeyForAction(m *tuictx.Model, key, action string) bool {
 	for i := range m.Config.Keybindings {
 		kb := m.Config.Keybindings[i]
 		if kb.Action == action {
@@ -161,7 +161,7 @@ func containsKeyForAction(m *tui_context.Model, key, action string) bool {
 	return false
 }
 
-func MoveCursor(m *tui_context.Model, delta int) {
+func MoveCursor(m *tuictx.Model, delta int) {
 	items := m.Navigation.FilteredItems
 	if len(items) == 0 {
 		return
@@ -189,7 +189,7 @@ func MoveCursor(m *tui_context.Model, delta int) {
 	m.Cache.OffsetMemory.Put(m.Navigation.Path, m.Navigation.Offset)
 }
 
-func ToggleSelection(m *tui_context.Model) {
+func ToggleSelection(m *tuictx.Model) {
 	if len(m.Navigation.FilteredItems) == 0 {
 		return
 	}
@@ -208,7 +208,7 @@ func ToggleSelection(m *tui_context.Model) {
 	m.Navigation.SelectMode = m.Navigation.SelectedCount() > 0
 }
 
-func SelectAll(m *tui_context.Model) {
+func SelectAll(m *tuictx.Model) {
 	if len(m.Navigation.FilteredItems) == 0 {
 		return
 	}
@@ -216,7 +216,7 @@ func SelectAll(m *tui_context.Model) {
 	m.Navigation.SelectMode = m.Navigation.SelectedCount() > 0
 }
 
-func NavigateToSelected(m *tui_context.Model) tea.Cmd {
+func NavigateToSelected(m *tuictx.Model) tea.Cmd {
 	if len(m.Navigation.FilteredItems) == 0 {
 		return nil
 	}
@@ -243,7 +243,7 @@ func NavigateToSelected(m *tui_context.Model) tea.Cmd {
 	return func() tea.Msg { return messages.OpenFileMsg{Item: selected} }
 }
 
-func NavigateToParent(m *tui_context.Model) tea.Cmd {
+func NavigateToParent(m *tuictx.Model) tea.Cmd {
 	if m.Navigation.ParentFS != nil && core.IsRoot(m.FS, m.Navigation.Path) {
 		return ExitArchive(m)
 	}
@@ -255,7 +255,7 @@ func NavigateToParent(m *tui_context.Model) tea.Cmd {
 	return NavigateToPath(m, core.GetParent(m.FS, m.Navigation.Path))
 }
 
-func HandleShiftSelect(m *tui_context.Model, delta int) tea.Cmd {
+func HandleShiftSelect(m *tuictx.Model, delta int) tea.Cmd {
 	items := m.Navigation.FilteredItems
 
 	if len(items) == 0 {

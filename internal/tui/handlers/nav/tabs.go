@@ -1,13 +1,13 @@
 package nav
 
 import (
-	tui_context "github.com/zulfikawr/fm/internal/tui/context"
+	tuictx "github.com/zulfikawr/fm/internal/tui/context"
 	"github.com/zulfikawr/fm/internal/tui/messages"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-func CreateTab(m *tui_context.Model) tea.Cmd {
+func CreateTab(m *tuictx.Model) tea.Cmd {
 	if len(m.Tabs) >= 9 {
 		return func() tea.Msg { return messages.TabLimitMsg{} }
 	}
@@ -18,7 +18,7 @@ func CreateTab(m *tui_context.Model) tea.Cmd {
 	return tea.Batch(cmd, Reload(m, false))
 }
 
-func SwitchTab(m *tui_context.Model, tabNum int) tea.Cmd {
+func SwitchTab(m *tuictx.Model, tabNum int) tea.Cmd {
 	if tabNum > 0 && tabNum <= len(m.Tabs) {
 		SaveTabState(m)
 		m.ActiveTab = tabNum - 1
@@ -28,7 +28,7 @@ func SwitchTab(m *tui_context.Model, tabNum int) tea.Cmd {
 	return nil
 }
 
-func CloseTab(m *tui_context.Model) tea.Cmd {
+func CloseTab(m *tuictx.Model) tea.Cmd {
 	if m.CloseActiveTab() {
 		cmd := SyncTabToModel(m)
 		return tea.Batch(cmd, Reload(m, false))
@@ -36,14 +36,14 @@ func CloseTab(m *tui_context.Model) tea.Cmd {
 	return nil
 }
 
-func SaveTabState(m *tui_context.Model) {
+func SaveTabState(m *tuictx.Model) {
 	if m.ActiveTab >= 0 && m.ActiveTab < len(m.Tabs) {
-		m.Navigation.FilterActive = m.UI.InputActive && m.Inputs.Mode == tui_context.InputSearch
+		m.Navigation.FilterActive = m.UI.InputActive && m.Inputs.Mode == tuictx.InputSearch
 		m.Tabs[m.ActiveTab].NavigationState = m.Navigation
 	}
 }
 
-func SyncTabToModel(m *tui_context.Model) tea.Cmd {
+func SyncTabToModel(m *tuictx.Model) tea.Cmd {
 	if m.ActiveTab >= 0 && m.ActiveTab < len(m.Tabs) {
 		m.Navigation = m.Tabs[m.ActiveTab].NavigationState
 		m.FS = m.Navigation.FS
@@ -51,11 +51,11 @@ func SyncTabToModel(m *tui_context.Model) tea.Cmd {
 		var cmd tea.Cmd
 		if m.Navigation.FilterActive {
 			m.UI.InputActive = true
-			m.Inputs.Mode = tui_context.InputSearch
+			m.Inputs.Mode = tuictx.InputSearch
 			cmd = m.Inputs.ActiveInput.FocusCmd()
 		} else {
 			m.UI.InputActive = false
-			m.Inputs.Mode = tui_context.InputNone
+			m.Inputs.Mode = tuictx.InputNone
 			m.Inputs.ActiveInput.Blur()
 		}
 

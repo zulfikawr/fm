@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/zulfikawr/fm/internal/tui/components/messages"
-	tui_context "github.com/zulfikawr/fm/internal/tui/context"
+	tuictx "github.com/zulfikawr/fm/internal/tui/context"
 	"github.com/zulfikawr/fm/internal/tui/theme"
 
 	"github.com/charmbracelet/lipgloss"
@@ -17,7 +17,7 @@ type LogsProps struct {
 	Height int
 	Cursor int
 	Offset int
-	Logs   []tui_context.LogEntry
+	Logs   []tuictx.LogEntry
 	Style  theme.Stylesheet
 }
 
@@ -58,17 +58,17 @@ func RenderLogs(props LogsProps) string {
 	return strings.Join(rows, "\n")
 }
 
-func renderLogEntry(props LogsProps, e tui_context.LogEntry, isCursor bool) string {
+func renderLogEntry(props LogsProps, e tuictx.LogEntry, isCursor bool) string {
 	levelColor := props.Style.FileCol.GetForeground()
 
 	switch e.Level {
-	case tui_context.LogSuccess:
+	case tuictx.LogSuccess:
 		levelColor = lipgloss.Color("#50FA7B") // Greenish
-	case tui_context.LogWarn:
+	case tuictx.LogWarn:
 		levelColor = lipgloss.Color("#F1FA8C") // Yellowish
-	case tui_context.LogError:
+	case tuictx.LogError:
 		levelColor = lipgloss.Color("#FF5555") // Reddish
-	case tui_context.LogInfo:
+	case tuictx.LogInfo:
 		levelColor = props.Style.DirCol.GetForeground()
 	}
 

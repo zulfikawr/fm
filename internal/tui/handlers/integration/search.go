@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/zulfikawr/fm/internal/files/ops"
-	tui_context "github.com/zulfikawr/fm/internal/tui/context"
+	tuictx "github.com/zulfikawr/fm/internal/tui/context"
 	"github.com/zulfikawr/fm/internal/tui/handlers/utils"
 	"github.com/zulfikawr/fm/internal/tui/messages"
 
@@ -16,19 +16,19 @@ import (
 const SearchDebounceDuration = 300 * time.Millisecond
 
 // HandleSearch handles search-related messages
-func HandleSearch(m *tui_context.Model, msg tea.Msg) tea.Cmd {
+func HandleSearch(m *tuictx.Model, msg tea.Msg) tea.Cmd {
 	switch msg := msg.(type) {
 	case messages.SearchMsg:
 		return finalizeSearch(m, msg)
 	case tea.KeyMsg:
-		if m.Inputs.Mode == tui_context.InputFuzzySearch {
+		if m.Inputs.Mode == tuictx.InputFuzzySearch {
 			return handleSearchKeys(m, msg)
 		}
 	}
 	return nil
 }
 
-func handleSearchKeys(m *tui_context.Model, msg tea.KeyMsg) tea.Cmd {
+func handleSearchKeys(m *tuictx.Model, msg tea.KeyMsg) tea.Cmd {
 	key := msg.String()
 	switch key {
 	case "up", "alt+k":
@@ -59,7 +59,7 @@ func handleSearchKeys(m *tui_context.Model, msg tea.KeyMsg) tea.Cmd {
 	return nil
 }
 
-func moveSearchCursor(m *tui_context.Model, dir int) {
+func moveSearchCursor(m *tuictx.Model, dir int) {
 	if len(m.Navigation.Search.Results) == 0 {
 		return
 	}
@@ -103,7 +103,7 @@ func moveSearchCursor(m *tui_context.Model, dir int) {
 	}
 }
 
-func ScrollSearch(m *tui_context.Model) int {
+func ScrollSearch(m *tuictx.Model) int {
 	cursorLine := CalculateSearchCursorLine(m)
 	viewportHeight := m.Display.ViewportHeight
 	if viewportHeight <= 0 {
@@ -125,7 +125,7 @@ func ScrollSearch(m *tui_context.Model) int {
 	return offset
 }
 
-func CalculateSearchCursorLine(m *tui_context.Model) int {
+func CalculateSearchCursorLine(m *tuictx.Model) int {
 	if len(m.Navigation.Search.Results) == 0 {
 		return 0
 	}
@@ -154,7 +154,7 @@ func CalculateSearchCursorLine(m *tui_context.Model) int {
 	return line
 }
 
-func TriggerSearch(m *tui_context.Model, query string) tea.Cmd {
+func TriggerSearch(m *tuictx.Model, query string) tea.Cmd {
 	if query == "" {
 		StopSearch(m)
 		return nil
@@ -170,7 +170,7 @@ func TriggerSearch(m *tui_context.Model, query string) tea.Cmd {
 	})
 }
 
-func StopSearch(m *tui_context.Model) {
+func StopSearch(m *tuictx.Model) {
 	if m.Navigation.Search.CancelFunc != nil {
 		m.Navigation.Search.CancelFunc()
 		m.Navigation.Search.CancelFunc = nil
@@ -180,7 +180,7 @@ func StopSearch(m *tui_context.Model) {
 	m.Navigation.Search.Query = ""
 }
 
-func finalizeSearch(m *tui_context.Model, msg messages.SearchMsg) tea.Cmd {
+func finalizeSearch(m *tuictx.Model, msg messages.SearchMsg) tea.Cmd {
 	if msg.Query != m.Navigation.Search.Query {
 		return nil
 	}
@@ -205,7 +205,7 @@ func finalizeSearch(m *tui_context.Model, msg messages.SearchMsg) tea.Cmd {
 	return nil
 }
 
-func performSearch(m *tui_context.Model, query string) tea.Cmd {
+func performSearch(m *tuictx.Model, query string) tea.Cmd {
 	if len(query) < 1 {
 		m.Navigation.Search.IsSearching = false
 		return nil

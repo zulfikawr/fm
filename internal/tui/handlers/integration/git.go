@@ -2,14 +2,14 @@ package integration
 
 import (
 	"github.com/zulfikawr/fm/internal/files/core"
-	tui_context "github.com/zulfikawr/fm/internal/tui/context"
+	tuictx "github.com/zulfikawr/fm/internal/tui/context"
 	"github.com/zulfikawr/fm/internal/tui/messages"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
 
 // HandleGit handles git-related messages
-func HandleGit(m *tui_context.Model, msg tea.Msg) tea.Cmd {
+func HandleGit(m *tuictx.Model, msg tea.Msg) tea.Cmd {
 	switch msg := msg.(type) {
 	case messages.GitStatusMsg:
 		return applyGitStatus(m, msg)
@@ -17,7 +17,7 @@ func HandleGit(m *tui_context.Model, msg tea.Msg) tea.Cmd {
 	return nil
 }
 
-func applyGitStatus(m *tui_context.Model, msg messages.GitStatusMsg) tea.Cmd {
+func applyGitStatus(m *tuictx.Model, msg messages.GitStatusMsg) tea.Cmd {
 	if msg.Path != m.Navigation.Path {
 		return nil
 	}

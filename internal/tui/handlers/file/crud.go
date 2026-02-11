@@ -8,20 +8,20 @@ import (
 	"github.com/zulfikawr/fm/internal/files/conflict"
 	"github.com/zulfikawr/fm/internal/files/core"
 	"github.com/zulfikawr/fm/internal/files/ops"
-	tui_context "github.com/zulfikawr/fm/internal/tui/context"
+	tuictx "github.com/zulfikawr/fm/internal/tui/context"
 	"github.com/zulfikawr/fm/internal/tui/messages"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-func StartCreate(m *tui_context.Model) tea.Cmd {
-	m.StartInput(tui_context.InputCreate)
+func StartCreate(m *tuictx.Model) tea.Cmd {
+	m.StartInput(tuictx.InputCreate)
 	m.Inputs.AltMode = false // false = File, true = Folder
 	m.Inputs.ActiveInput.SetValue("")
 	return m.Inputs.ActiveInput.FocusCmd()
 }
 
-func PerformCreate(m *tui_context.Model, name string) tea.Cmd {
+func PerformCreate(m *tuictx.Model, name string) tea.Cmd {
 	if name == "" {
 		return nil
 	}
@@ -45,7 +45,7 @@ func PerformCreate(m *tui_context.Model, name string) tea.Cmd {
 	if err != nil {
 		if cerr, ok := err.(*conflict.ConflictError); ok {
 			m.UI.Loading = false
-			m.Operations.Conflict.Set(tui_context.ConflictParams{
+			m.Operations.Conflict.Set(tuictx.ConflictParams{
 				Source:       "",
 				Destination:  cerr.Destination,
 				PendingItems: []string{cerr.Destination},
@@ -70,7 +70,7 @@ func PerformCreate(m *tui_context.Model, name string) tea.Cmd {
 	return func() tea.Msg { return messages.StatusMsg{Message: msg} }
 }
 
-func PerformDelete(m *tui_context.Model) tea.Cmd {
+func PerformDelete(m *tuictx.Model) tea.Cmd {
 	targets := GetTargets(m)
 	if len(targets) == 0 {
 		return nil
@@ -99,7 +99,7 @@ func PerformDelete(m *tui_context.Model) tea.Cmd {
 	return func() tea.Msg { return messages.LogPushMsg{Type: "Delete", Message: msg, Targets: targets} }
 }
 
-func StartRename(m *tui_context.Model) tea.Cmd {
+func StartRename(m *tuictx.Model) tea.Cmd {
 	if len(m.Navigation.FilteredItems) == 0 {
 		return nil
 	}
@@ -112,12 +112,12 @@ func StartRename(m *tui_context.Model) tea.Cmd {
 		return nil
 	}
 
-	m.StartInput(tui_context.InputRename)
+	m.StartInput(tuictx.InputRename)
 	m.Inputs.ActiveInput.SetValue(selected.Name)
 	return m.Inputs.ActiveInput.FocusCmd()
 }
 
-func PerformRenameWithParams(m *tui_context.Model, newName string, selected core.Item, oldPath string) tea.Cmd {
+func PerformRenameWithParams(m *tuictx.Model, newName string, selected core.Item, oldPath string) tea.Cmd {
 	if newName == "" {
 		return nil
 	}
@@ -133,7 +133,7 @@ func PerformRenameWithParams(m *tui_context.Model, newName string, selected core
 	}
 }
 
-func PerformRename(m *tui_context.Model, newName string) tea.Cmd {
+func PerformRename(m *tuictx.Model, newName string) tea.Cmd {
 	if newName == "" {
 		return nil
 	}
@@ -172,7 +172,7 @@ func DeleteItems(opts ops.DeleteOptions, logID string) tea.Cmd {
 	)
 }
 
-func PerformConflictRename(m *tui_context.Model, newName string) tea.Cmd {
+func PerformConflictRename(m *tuictx.Model, newName string) tea.Cmd {
 	if newName == "" {
 		return nil
 	}

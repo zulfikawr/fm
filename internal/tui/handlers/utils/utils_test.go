@@ -5,12 +5,12 @@ import (
 	"testing"
 
 	"github.com/zulfikawr/fm/internal/testutil"
-	tui_context "github.com/zulfikawr/fm/internal/tui/context"
+	tuictx "github.com/zulfikawr/fm/internal/tui/context"
 )
 
 func TestUtils(t *testing.T) {
 	fs := testutil.NewMockFileSystem()
-	m := tui_context.NewModel(fs, "/")
+	m := tuictx.NewModel(fs, "/")
 
 	t.Run("SetMsg and SetErrMsg", func(t *testing.T) {
 		SetMsg(m, "test msg")
@@ -24,19 +24,19 @@ func TestUtils(t *testing.T) {
 	})
 
 	t.Run("Log Operations", func(t *testing.T) {
-		id := LogPush(m, tui_context.LogEntry{
+		id := LogPush(m, tuictx.LogEntry{
 			Type:    "test",
-			Level:   tui_context.LogInfo,
-			Status:  tui_context.StatusSuccess,
+			Level:   tuictx.LogInfo,
+			Status:  tuictx.StatusSuccess,
 			Message: "msg",
 			Details: "details",
 		})
 		if id == "" {
 			t.Error("LogPush failed")
 		}
-		LogUpdate(m, id, tui_context.LogEntry{
-			Status:  tui_context.StatusError,
-			Level:   tui_context.LogError,
+		LogUpdate(m, id, tuictx.LogEntry{
+			Status:  tuictx.StatusError,
+			Level:   tuictx.LogError,
 			Message: "new msg",
 			Details: "new details",
 		})

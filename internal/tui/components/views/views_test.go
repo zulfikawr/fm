@@ -7,7 +7,7 @@ import (
 	"github.com/zulfikawr/fm/internal/config"
 	"github.com/zulfikawr/fm/internal/files/core"
 	"github.com/zulfikawr/fm/internal/testutil"
-	tui_context "github.com/zulfikawr/fm/internal/tui/context"
+	tuictx "github.com/zulfikawr/fm/internal/tui/context"
 	"github.com/zulfikawr/fm/internal/tui/theme"
 )
 
@@ -44,7 +44,7 @@ func TestRenderLogs(t *testing.T) {
 		Width:  100,
 		Height: 10,
 		Style:  styles,
-		Logs: []tui_context.LogEntry{
+		Logs: []tuictx.LogEntry{
 			{ID: "1", Message: "log 1", Type: "Test"},
 		},
 	}
@@ -67,7 +67,7 @@ func TestRenderLogs(t *testing.T) {
 	})
 
 	t.Run("Log Entry with Details", func(t *testing.T) {
-		entry := tui_context.LogEntry{
+		entry := tuictx.LogEntry{
 			ID:      "1",
 			Message: "msg",
 			Type:    "Op",

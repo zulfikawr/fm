@@ -4,10 +4,10 @@ import (
 	"fmt"
 
 	"github.com/zulfikawr/fm/internal/files/core"
-	tui_context "github.com/zulfikawr/fm/internal/tui/context"
+	tuictx "github.com/zulfikawr/fm/internal/tui/context"
 )
 
-func GetTargets(m *tui_context.Model) []string {
+func GetTargets(m *tuictx.Model) []string {
 	var targets []string
 	if m.Navigation.SelectedCount() > 0 {
 		for path, selected := range m.Navigation.SelectedPaths {
@@ -27,7 +27,7 @@ func GetTargets(m *tui_context.Model) []string {
 	return targets
 }
 
-func FormatDisplayPath(m *tui_context.Model, fs core.FileSystem, path string) string {
+func FormatDisplayPath(m *tuictx.Model, fs core.FileSystem, path string) string {
 	if fs.IsLocal() {
 		return path
 	}

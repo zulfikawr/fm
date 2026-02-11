@@ -1,13 +1,13 @@
 package nav
 
 import (
-	tui_context "github.com/zulfikawr/fm/internal/tui/context"
+	tuictx "github.com/zulfikawr/fm/internal/tui/context"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
 
 // NavigateBack moves to the previous path in history
-func NavigateBack(m *tui_context.Model) tea.Cmd {
+func NavigateBack(m *tuictx.Model) tea.Cmd {
 	if len(m.Navigation.BackHistory) == 0 {
 		return nil
 	}
@@ -21,7 +21,7 @@ func NavigateBack(m *tui_context.Model) tea.Cmd {
 }
 
 // NavigateForward moves forward in history
-func NavigateForward(m *tui_context.Model) tea.Cmd {
+func NavigateForward(m *tuictx.Model) tea.Cmd {
 	if len(m.Navigation.ForwardHistory) == 0 {
 		return nil
 	}

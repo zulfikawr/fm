@@ -10,7 +10,7 @@ import (
 	"github.com/zulfikawr/fm/internal/files/listing"
 	"github.com/zulfikawr/fm/internal/files/sorting"
 	"github.com/zulfikawr/fm/internal/logger"
-	tui_context "github.com/zulfikawr/fm/internal/tui/context"
+	tuictx "github.com/zulfikawr/fm/internal/tui/context"
 	"github.com/zulfikawr/fm/internal/tui/messages"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -18,7 +18,7 @@ import (
 )
 
 // Reload triggers an asynchronous reload of the current directory.
-func Reload(m *tui_context.Model, silent bool) tea.Cmd {
+func Reload(m *tuictx.Model, silent bool) tea.Cmd {
 	path := m.Navigation.Path
 	gen := m.Navigation.PathGen
 	fs := m.FS
@@ -131,7 +131,7 @@ func Reload(m *tui_context.Model, silent bool) tea.Cmd {
 	return loadSkeletonCmd
 }
 
-func HandlePartialItems(m *tui_context.Model, msg messages.PartialItemsMsg) tea.Cmd {
+func HandlePartialItems(m *tuictx.Model, msg messages.PartialItemsMsg) tea.Cmd {
 	if msg.Generation != m.Navigation.PathGen {
 		return nil
 	}
@@ -156,7 +156,7 @@ func HandlePartialItems(m *tui_context.Model, msg messages.PartialItemsMsg) tea.
 	return fetchMetadata(m)
 }
 
-func fetchMetadata(m *tui_context.Model) tea.Cmd {
+func fetchMetadata(m *tuictx.Model) tea.Cmd {
 	path := m.Navigation.Path
 	gen := m.Navigation.PathGen
 	fs := m.FS
@@ -273,7 +273,7 @@ func fetchMetadata(m *tui_context.Model) tea.Cmd {
 	}
 }
 
-func FinalizeDirectoryLoad(m *tui_context.Model, msg messages.LoadedItemsMsg) tea.Cmd {
+func FinalizeDirectoryLoad(m *tuictx.Model, msg messages.LoadedItemsMsg) tea.Cmd {
 	m.UI.Loading = false
 	if msg.Generation != m.Navigation.PathGen {
 		return nil
@@ -329,7 +329,7 @@ func FinalizeDirectoryLoad(m *tui_context.Model, msg messages.LoadedItemsMsg) te
 	return func() tea.Msg { return messages.WatchDirMsg{} }
 }
 
-func EnterArchive(m *tui_context.Model, selected core.Item) tea.Cmd {
+func EnterArchive(m *tuictx.Model, selected core.Item) tea.Cmd {
 	m.UI.Loading = true
 	archivePath := selected.Path
 

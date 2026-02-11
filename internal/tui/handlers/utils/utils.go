@@ -8,7 +8,7 @@ import (
 	"github.com/zulfikawr/fm/internal/constants"
 	fileerrors "github.com/zulfikawr/fm/internal/files/errors"
 	"github.com/zulfikawr/fm/internal/logger"
-	tui_context "github.com/zulfikawr/fm/internal/tui/context"
+	tuictx "github.com/zulfikawr/fm/internal/tui/context"
 	tuierrors "github.com/zulfikawr/fm/internal/tui/errors"
 	"github.com/zulfikawr/fm/internal/tui/messages"
 
@@ -17,7 +17,7 @@ import (
 )
 
 // SetMsg sets a temporary message in the footer
-func SetMsg(m *tui_context.Model, msg string) tea.Cmd {
+func SetMsg(m *tuictx.Model, msg string) tea.Cmd {
 	m.Message.Push(msg, false)
 	return tea.Tick(constants.MessageDisplayDuration, func(time.Time) tea.Msg {
 		return messages.ClearMsg{}
@@ -25,7 +25,7 @@ func SetMsg(m *tui_context.Model, msg string) tea.Cmd {
 }
 
 // SetErrMsg sets a temporary error message in the footer
-func SetErrMsg(m *tui_context.Model, msg string) tea.Cmd {
+func SetErrMsg(m *tuictx.Model, msg string) tea.Cmd {
 	m.Message.Push(msg, true)
 	return tea.Tick(constants.MessageDisplayDuration, func(time.Time) tea.Msg {
 		return messages.ClearMsg{}
@@ -33,7 +33,7 @@ func SetErrMsg(m *tui_context.Model, msg string) tea.Cmd {
 }
 
 // LogPush adds a new log entry
-func LogPush(m *tui_context.Model, entry tui_context.LogEntry) string {
+func LogPush(m *tuictx.Model, entry tuictx.LogEntry) string {
 	if entry.ID == "" {
 		entry.ID = fmt.Sprintf("%d", time.Now().UnixNano())
 	}
@@ -42,12 +42,12 @@ func LogPush(m *tui_context.Model, entry tui_context.LogEntry) string {
 }
 
 // LogUpdate updates an existing log entry
-func LogUpdate(m *tui_context.Model, id string, entry tui_context.LogEntry) {
+func LogUpdate(m *tuictx.Model, id string, entry tuictx.LogEntry) {
 	m.Logs.UpdateStatus(id, entry)
 }
 
 // LogError logs a TUI error and sets it as the current error in the model
-func LogError(m *tui_context.Model, err error, context string) tea.Cmd {
+func LogError(m *tuictx.Model, err error, context string) tea.Cmd {
 	if err == nil {
 		return nil
 	}
@@ -98,7 +98,7 @@ func WatchRemoteDir() tea.Cmd {
 }
 
 // RestartWatcherAction restarts the file system watcher
-func RestartWatcherAction(m *tui_context.Model) tea.Cmd {
+func RestartWatcherAction(m *tuictx.Model) tea.Cmd {
 	return func() tea.Msg {
 		if m.Watcher.Watcher != nil {
 			logger.CloseAndLog(m.Watcher.Watcher, "local filesystem watcher during restart")

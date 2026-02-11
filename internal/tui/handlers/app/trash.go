@@ -4,17 +4,17 @@ import (
 	"github.com/zulfikawr/fm/internal/constants"
 	"github.com/zulfikawr/fm/internal/files/conflict"
 	"github.com/zulfikawr/fm/internal/files/trash"
-	tui_context "github.com/zulfikawr/fm/internal/tui/context"
+	tuictx "github.com/zulfikawr/fm/internal/tui/context"
 	"github.com/zulfikawr/fm/internal/tui/messages"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
 
 // HandleTrash handles trash-related messages
-func HandleTrash(m *tui_context.Model, msg tea.Msg) tea.Cmd {
+func HandleTrash(m *tuictx.Model, msg tea.Msg) tea.Cmd {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		if m.UI.ActiveView == tui_context.ViewTrash {
+		if m.UI.ActiveView == tuictx.ViewTrash {
 			return handleTrashKeys(m, msg)
 		}
 	case messages.TrashLoadedMsg:
@@ -30,7 +30,7 @@ func HandleTrash(m *tui_context.Model, msg tea.Msg) tea.Cmd {
 	case messages.TrashRestoreConflictMsg:
 		// Set up conflict state for user to resolve
 		destPath := msg.OriginalPath
-		m.Trash.RestoreConflict = &tui_context.TrashRestoreConflict{
+		m.Trash.RestoreConflict = &tuictx.TrashRestoreConflict{
 			TrashedName:    msg.TrashedName,
 			OriginalPath:   msg.OriginalPath,
 			DestPath:       destPath,
@@ -71,7 +71,7 @@ func HandleTrash(m *tui_context.Model, msg tea.Msg) tea.Cmd {
 	return nil
 }
 
-func handleTrashKeys(m *tui_context.Model, msg tea.KeyMsg) tea.Cmd {
+func handleTrashKeys(m *tuictx.Model, msg tea.KeyMsg) tea.Cmd {
 	switch msg.String() {
 	case "esc", "t":
 		m.UI.ToggleTrash()
@@ -121,7 +121,7 @@ func handleTrashKeys(m *tui_context.Model, msg tea.KeyMsg) tea.Cmd {
 	return nil
 }
 
-func performTrashRestore(m *tui_context.Model, trashedName string) tea.Msg {
+func performTrashRestore(m *tuictx.Model, trashedName string) tea.Msg {
 	manager, err := trash.NewManager(m.FS)
 	if err != nil {
 		return messages.StatusMsg{Message: "Failed to restore: " + err.Error(), IsError: true}
@@ -152,7 +152,7 @@ func performTrashRestore(m *tui_context.Model, trashedName string) tea.Msg {
 	return messages.TrashOperationFinishedMsg{Success: true, Message: "Item restored"}
 }
 
-func performTrashDelete(m *tui_context.Model, trashedName string) tea.Msg {
+func performTrashDelete(m *tuictx.Model, trashedName string) tea.Msg {
 	manager, err := trash.NewManager(m.FS)
 	if err != nil {
 		return messages.StatusMsg{Message: "Failed to delete: " + err.Error(), IsError: true}
@@ -165,7 +165,7 @@ func performTrashDelete(m *tui_context.Model, trashedName string) tea.Msg {
 	return messages.TrashOperationFinishedMsg{Success: true, Message: "Item deleted permanently"}
 }
 
-func performTrashEmpty(m *tui_context.Model) tea.Msg {
+func performTrashEmpty(m *tuictx.Model) tea.Msg {
 	manager, err := trash.NewManager(m.FS)
 	if err != nil {
 		return messages.StatusMsg{Message: "Failed to empty trash: " + err.Error(), IsError: true}
@@ -193,7 +193,7 @@ func ScrollTrash(cursor, offset, viewportHeight int) int {
 }
 
 // ResolveTrashRestoreConflict handles user input for trash restore conflict resolution
-func ResolveTrashRestoreConflict(m *tui_context.Model, choice string) tea.Msg {
+func ResolveTrashRestoreConflict(m *tuictx.Model, choice string) tea.Msg {
 	if m.Trash.RestoreConflict == nil {
 		return messages.StatusMsg{Message: "No active trash restore conflict", IsError: true}
 	}

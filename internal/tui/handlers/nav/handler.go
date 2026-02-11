@@ -9,7 +9,7 @@ import (
 	"github.com/zulfikawr/fm/internal/files/local"
 	"github.com/zulfikawr/fm/internal/logger"
 	"github.com/zulfikawr/fm/internal/tui/components/file"
-	tui_context "github.com/zulfikawr/fm/internal/tui/context"
+	tuictx "github.com/zulfikawr/fm/internal/tui/context"
 	"github.com/zulfikawr/fm/internal/tui/handlers/utils"
 	"github.com/zulfikawr/fm/internal/tui/messages"
 
@@ -17,7 +17,7 @@ import (
 )
 
 // HandleNavigation handles navigation-related messages
-func HandleNavigation(m *tui_context.Model, msg tea.Msg) tea.Cmd {
+func HandleNavigation(m *tuictx.Model, msg tea.Msg) tea.Cmd {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		return HandleNavKeys(m, msg)
@@ -40,7 +40,7 @@ func HandleNavigation(m *tui_context.Model, msg tea.Msg) tea.Cmd {
 }
 
 // NavigateToPath handles navigation to a specific directory path
-func NavigateToPath(m *tui_context.Model, path string) tea.Cmd {
+func NavigateToPath(m *tuictx.Model, path string) tea.Cmd {
 	if m.Navigation.Path != "" {
 		if len(m.Navigation.BackHistory) == 0 || m.Navigation.BackHistory[len(m.Navigation.BackHistory)-1] != m.Navigation.Path {
 			m.Navigation.BackHistory = append(m.Navigation.BackHistory, m.Navigation.Path)
@@ -55,7 +55,7 @@ func NavigateToPath(m *tui_context.Model, path string) tea.Cmd {
 }
 
 // NavigateToPathInternal is a helper for history navigation that skips history pushing
-func NavigateToPathInternal(m *tui_context.Model, path string) tea.Cmd {
+func NavigateToPathInternal(m *tuictx.Model, path string) tea.Cmd {
 	info, err := m.FS.Stat(m.Context, path)
 	if err != nil {
 		return func() tea.Msg { return messages.ErrorMsg{Err: err} }
@@ -86,7 +86,7 @@ func NavigateToPathInternal(m *tui_context.Model, path string) tea.Cmd {
 }
 
 // SwitchToLocal switches the current filesystem back to local
-func SwitchToLocal(m *tui_context.Model, path string) tea.Cmd {
+func SwitchToLocal(m *tuictx.Model, path string) tea.Cmd {
 	if m.FS.IsLocal() {
 		return NavigateToPath(m, path)
 	}
@@ -135,15 +135,15 @@ func SwitchToLocal(m *tui_context.Model, path string) tea.Cmd {
 }
 
 // ApplyFilter filters the navigation items based on current search query
-func ApplyFilter(m *tui_context.Model) {
-	if m.UI.InputActive && m.Inputs.Mode == tui_context.InputSearch {
+func ApplyFilter(m *tuictx.Model) {
+	if m.UI.InputActive && m.Inputs.Mode == tuictx.InputSearch {
 		m.Navigation.FilterQuery = strings.ToLower(m.Inputs.ActiveInput.Value())
 	}
 	file.ApplyFilter(m)
 	SyncOffset(m)
 }
 
-func SyncOffset(m *tui_context.Model) {
+func SyncOffset(m *tuictx.Model) {
 	if m.Display.ViewportHeight == 0 {
 		return
 	}
@@ -159,7 +159,7 @@ func SyncOffset(m *tui_context.Model) {
 	}
 }
 
-func ExitArchive(m *tui_context.Model) tea.Cmd {
+func ExitArchive(m *tuictx.Model) tea.Cmd {
 
 	if m.Navigation.ParentFS == nil {
 
@@ -183,7 +183,7 @@ func ExitArchive(m *tui_context.Model) tea.Cmd {
 
 }
 
-func HandleGotoFinalize(m *tui_context.Model, input string) tea.Cmd {
+func HandleGotoFinalize(m *tuictx.Model, input string) tea.Cmd {
 
 	if !m.FS.IsLocal() {
 
@@ -226,7 +226,7 @@ func HandleGotoFinalize(m *tui_context.Model, input string) tea.Cmd {
 }
 
 // TriggerFilter starts a debounce timer for filtering items
-func TriggerFilter(m *tui_context.Model) tea.Cmd {
+func TriggerFilter(m *tuictx.Model) tea.Cmd {
 	if m.Navigation.FilterTimer != nil {
 		m.Navigation.FilterTimer.Stop()
 	}
@@ -241,7 +241,7 @@ func TriggerFilter(m *tui_context.Model) tea.Cmd {
 
 // WatchDirAction starts watching the current directory
 
-func WatchDirAction(m *tui_context.Model) tea.Cmd {
+func WatchDirAction(m *tuictx.Model) tea.Cmd {
 
 	if m.Navigation.Path == "" {
 

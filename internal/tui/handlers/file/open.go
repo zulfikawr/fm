@@ -3,14 +3,14 @@ package file
 import (
 	"github.com/zulfikawr/fm/internal/files/core"
 	"github.com/zulfikawr/fm/internal/files/ops"
-	tui_context "github.com/zulfikawr/fm/internal/tui/context"
+	tuictx "github.com/zulfikawr/fm/internal/tui/context"
 	"github.com/zulfikawr/fm/internal/tui/handlers/utils"
 	"github.com/zulfikawr/fm/internal/tui/messages"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-func OpenFile(m *tui_context.Model, selected core.Item) tea.Cmd {
+func OpenFile(m *tuictx.Model, selected core.Item) tea.Cmd {
 	if !m.FS.IsLocal() {
 		return utils.SetErrMsg(m, "Opening remote files not supported yet")
 	}
@@ -47,7 +47,7 @@ func OpenFile(m *tui_context.Model, selected core.Item) tea.Cmd {
 	}
 }
 
-func OpenFileAtLine(m *tui_context.Model, path string, line int) tea.Cmd {
+func OpenFileAtLine(m *tuictx.Model, path string, line int) tea.Cmd {
 	execCmd, isTerminal, err := ops.GetOpenAtLineCmd(ops.OpenOptions{
 		FS:        m.FS,
 		Path:      path,

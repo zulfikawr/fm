@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/zulfikawr/fm/internal/constants"
@@ -221,6 +222,9 @@ func finalizeInput(m *tuictx.Model) tea.Cmd {
 				m.Operations.ActionType = constants.ActionRename
 				m.UI.StartConfirming()
 				return nil
+			} else {
+				// No items to rename
+				return func() tea.Msg { return messages.ErrorMsg{Err: fmt.Errorf("no item to rename")} }
 			}
 		}
 		return file.PerformRename(m, val)

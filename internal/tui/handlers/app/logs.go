@@ -1,23 +1,23 @@
 package app
 
 import (
-	tui_context "github.com/zulfikawr/fm/internal/tui/context"
+	tuictx "github.com/zulfikawr/fm/internal/tui/context"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
 
 // HandleLogs handles log-related messages
-func HandleLogs(m *tui_context.Model, msg tea.Msg) tea.Cmd {
+func HandleLogs(m *tuictx.Model, msg tea.Msg) tea.Cmd {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		if m.UI.ActiveView == tui_context.ViewLogs {
+		if m.UI.ActiveView == tuictx.ViewLogs {
 			return handleLogKeys(m, msg)
 		}
 	}
 	return nil
 }
 
-func handleLogKeys(m *tui_context.Model, msg tea.KeyMsg) tea.Cmd {
+func handleLogKeys(m *tuictx.Model, msg tea.KeyMsg) tea.Cmd {
 	switch msg.String() {
 	case "esc", "alt+l":
 		m.UI.ToggleLogs()

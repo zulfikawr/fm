@@ -4,7 +4,7 @@ import (
 	"strings"
 
 	"github.com/zulfikawr/fm/internal/constants"
-	tui_context "github.com/zulfikawr/fm/internal/tui/context"
+	tuictx "github.com/zulfikawr/fm/internal/tui/context"
 	"github.com/zulfikawr/fm/internal/tui/messages"
 	"github.com/zulfikawr/fm/internal/update"
 
@@ -26,7 +26,7 @@ func CheckForUpdates() tea.Cmd {
 }
 
 // StartUpdate starts the update process
-func StartUpdate(m *tui_context.Model) tea.Cmd {
+func StartUpdate(m *tuictx.Model) tea.Cmd {
 	progress := make(chan float64)
 
 	return tea.Batch(

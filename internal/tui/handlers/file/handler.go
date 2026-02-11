@@ -11,7 +11,7 @@ import (
 	"github.com/zulfikawr/fm/internal/files/ops"
 	"github.com/zulfikawr/fm/internal/logger"
 	"github.com/zulfikawr/fm/internal/tui/components/ui"
-	tui_context "github.com/zulfikawr/fm/internal/tui/context"
+	tuictx "github.com/zulfikawr/fm/internal/tui/context"
 	"github.com/zulfikawr/fm/internal/tui/handlers/app"
 	"github.com/zulfikawr/fm/internal/tui/messages"
 
@@ -19,7 +19,7 @@ import (
 )
 
 // HandleFileOps handles file system and operation messages
-func HandleFileOps(m *tui_context.Model, msg tea.Msg) tea.Cmd {
+func HandleFileOps(m *tuictx.Model, msg tea.Msg) tea.Cmd {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		if m.UI.Confirming {
@@ -39,8 +39,8 @@ func HandleFileOps(m *tui_context.Model, msg tea.Msg) tea.Cmd {
 	return nil
 }
 
-func HandleFileKeys(m *tui_context.Model, msg tea.KeyMsg) tea.Cmd {
-	if m.UI.InputActive || m.UI.ActiveView != tui_context.ViewMain {
+func HandleFileKeys(m *tuictx.Model, msg tea.KeyMsg) tea.Cmd {
+	if m.UI.InputActive || m.UI.ActiveView != tuictx.ViewMain {
 		return nil
 	}
 
@@ -66,7 +66,7 @@ func HandleFileKeys(m *tui_context.Model, msg tea.KeyMsg) tea.Cmd {
 	return nil
 }
 
-func HandleConfirmKeys(m *tui_context.Model, msg tea.KeyMsg) tea.Cmd {
+func HandleConfirmKeys(m *tuictx.Model, msg tea.KeyMsg) tea.Cmd {
 	action := m.Operations.ActionType
 
 	if action == constants.ActionConflict {
@@ -104,7 +104,7 @@ func HandleConfirmKeys(m *tui_context.Model, msg tea.KeyMsg) tea.Cmd {
 		if action == constants.ActionGoto {
 			m.UI.StopConfirming()
 			m.Operations.ActionType = constants.ActionNone
-			m.StartInput(tui_context.InputGoto)
+			m.StartInput(tuictx.InputGoto)
 			m.Inputs.AltMode = false
 			m.Inputs.ActiveInput.SetValue(m.Navigation.Path)
 			return m.Inputs.ActiveInput.FocusCmd()
@@ -113,7 +113,7 @@ func HandleConfirmKeys(m *tui_context.Model, msg tea.KeyMsg) tea.Cmd {
 		if action == constants.ActionGoto {
 			m.UI.StopConfirming()
 			m.Operations.ActionType = constants.ActionNone
-			m.StartInput(tui_context.InputGoto)
+			m.StartInput(tuictx.InputGoto)
 			m.Inputs.AltMode = true
 			m.Inputs.ActiveInput.SetValue("")
 			return m.Inputs.ActiveInput.FocusCmd()
@@ -122,7 +122,7 @@ func HandleConfirmKeys(m *tui_context.Model, msg tea.KeyMsg) tea.Cmd {
 		if action == constants.ActionAuth {
 			m.UI.StopConfirming()
 			m.Operations.ActionType = constants.ActionNone
-			m.StartInput(tui_context.InputAuth)
+			m.StartInput(tuictx.InputAuth)
 			m.Inputs.AltMode = false
 			m.Inputs.ActiveInput.EchoMode = ui.EchoPassword
 			m.Inputs.ActiveInput.SetPrompt("Password: ")
@@ -132,7 +132,7 @@ func HandleConfirmKeys(m *tui_context.Model, msg tea.KeyMsg) tea.Cmd {
 		if action == constants.ActionAuth {
 			m.UI.StopConfirming()
 			m.Operations.ActionType = constants.ActionNone
-			m.StartInput(tui_context.InputAuth)
+			m.StartInput(tuictx.InputAuth)
 			m.Inputs.AltMode = true
 			m.Inputs.ActiveInput.EchoMode = ui.EchoNormal
 			m.Inputs.ActiveInput.SetPrompt("PEM Path: ")
@@ -154,21 +154,25 @@ func HandleConfirmKeys(m *tui_context.Model, msg tea.KeyMsg) tea.Cmd {
 			// Execute stored rename operation
 			op := m.Operations.PendingOp
 			m.Operations.ActionType = constants.ActionNone
+			m.Operations.PendingOp = tuictx.PendingOperation{} // Clear after use
 			return PerformRenameWithParams(m, op.Value, op.Selected, op.OldPath)
 		case constants.ActionCreate:
 			// Execute stored create operation
 			op := m.Operations.PendingOp
 			m.Operations.ActionType = constants.ActionNone
+			m.Operations.PendingOp = tuictx.PendingOperation{} // Clear after use
 			return PerformCreate(m, op.Value)
 		case constants.ActionZip:
 			// Execute stored zip operation
 			op := m.Operations.PendingOp
 			m.Operations.ActionType = constants.ActionNone
+			m.Operations.PendingOp = tuictx.PendingOperation{} // Clear after use
 			return PerformZipWithTargets(m, op.Value, op.Targets)
 		case constants.ActionUnzip:
 			// Execute stored unzip operation
 			op := m.Operations.PendingOp
 			m.Operations.ActionType = constants.ActionNone
+			m.Operations.PendingOp = tuictx.PendingOperation{} // Clear after use
 			return PerformUnzipWithTargets(m, op.Value, op.Targets)
 		}
 		m.Operations.ActionType = constants.ActionNone
@@ -181,14 +185,14 @@ func HandleConfirmKeys(m *tui_context.Model, msg tea.KeyMsg) tea.Cmd {
 		// Clear pending operation for rename, create, zip, unzip
 		if action == constants.ActionRename || action == constants.ActionCreate ||
 			action == constants.ActionZip || action == constants.ActionUnzip {
-			m.Operations.PendingOp = tui_context.PendingOperation{}
+			m.Operations.PendingOp = tuictx.PendingOperation{}
 		}
 		m.Operations.ActionType = constants.ActionNone
 	}
 	return nil
 }
 
-func ResolveConflict(m *tui_context.Model, choice string, applyToAll bool) tea.Cmd {
+func ResolveConflict(m *tuictx.Model, choice string, applyToAll bool) tea.Cmd {
 	var cmds []tea.Cmd
 
 	ctx, cancel := context.WithCancel(m.Context)
@@ -279,7 +283,7 @@ func ResolveConflict(m *tui_context.Model, choice string, applyToAll bool) tea.C
 	return tea.Batch(cmds...)
 }
 
-func HandleProgress(m *tui_context.Model, msg messages.ProgressMsg) tea.Cmd {
+func HandleProgress(m *tuictx.Model, msg messages.ProgressMsg) tea.Cmd {
 	now := time.Now()
 	if now.Sub(m.Operations.Progress.LastProgressUpdate) < 33*time.Millisecond && msg.Percent < 1.0 {
 		return ListenToProgress(msg.Channel)
@@ -291,7 +295,7 @@ func HandleProgress(m *tui_context.Model, msg messages.ProgressMsg) tea.Cmd {
 	return ListenToProgress(msg.Channel)
 }
 
-func FinalizeOperation(m *tui_context.Model, msg messages.OperationFinishedMsg) tea.Cmd {
+func FinalizeOperation(m *tuictx.Model, msg messages.OperationFinishedMsg) tea.Cmd {
 	m.UI.Loading = false
 	m.Operations.Progress.Update(1.0)
 	m.Operations.ConflictPolicy = conflict.Ask
@@ -305,9 +309,9 @@ func FinalizeOperation(m *tui_context.Model, msg messages.OperationFinishedMsg) 
 	return func() tea.Msg { return messages.OperationFinishedEventMsg{LogID: msg.LogID, Paths: msg.Paths} }
 }
 
-func HandleConflict(m *tui_context.Model, msg messages.ConflictMsg) tea.Cmd {
+func HandleConflict(m *tuictx.Model, msg messages.ConflictMsg) tea.Cmd {
 	m.UI.Loading = false
-	m.Operations.Conflict.Set(tui_context.ConflictParams{
+	m.Operations.Conflict.Set(tuictx.ConflictParams{
 		Source:       msg.Src,
 		Destination:  msg.Dst,
 		PendingItems: msg.PendingItems,
@@ -335,7 +339,7 @@ func ListenToProgress(progChan chan core.Progress) tea.Cmd {
 }
 
 // GetActionForKeyFromModel retrieves the action for a given key from the model's config
-func GetActionForKeyFromModel(m *tui_context.Model, key string) string {
+func GetActionForKeyFromModel(m *tuictx.Model, key string) string {
 	for i := range m.Config.Keybindings {
 		kb := m.Config.Keybindings[i]
 		for j := range kb.Keys {

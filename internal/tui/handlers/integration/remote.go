@@ -7,7 +7,7 @@ import (
 
 	"github.com/zulfikawr/fm/internal/files/remote"
 	"github.com/zulfikawr/fm/internal/ssh"
-	tui_context "github.com/zulfikawr/fm/internal/tui/context"
+	tuictx "github.com/zulfikawr/fm/internal/tui/context"
 	"github.com/zulfikawr/fm/internal/tui/handlers/utils"
 	"github.com/zulfikawr/fm/internal/tui/messages"
 
@@ -15,7 +15,7 @@ import (
 )
 
 // HandleRemote handles remote-related messages
-func HandleRemote(m *tui_context.Model, msg tea.Msg) tea.Cmd {
+func HandleRemote(m *tuictx.Model, msg tea.Msg) tea.Cmd {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		if m.UI.HostConfirm {
@@ -64,15 +64,15 @@ func ListenForHostConfirmation(askChan chan *ssh.HostConfirmRequest) tea.Cmd {
 	}
 }
 
-func finalizeRemoteConnect(m *tui_context.Model, msg messages.RemoteConnectMsg) tea.Cmd {
+func finalizeRemoteConnect(m *tuictx.Model, msg messages.RemoteConnectMsg) tea.Cmd {
 	m.UI.Loading = false
 	if msg.Err != nil {
 		errStr := msg.Err.Error()
 
-		utils.LogPush(m, tui_context.LogEntry{
+		utils.LogPush(m, tuictx.LogEntry{
 			Type:    "Remote",
-			Level:   tui_context.LogError,
-			Status:  tui_context.StatusError,
+			Level:   tuictx.LogError,
+			Status:  tuictx.StatusError,
 			Message: "Connection failed",
 			Details: errStr,
 		})
@@ -91,10 +91,10 @@ func finalizeRemoteConnect(m *tui_context.Model, msg messages.RemoteConnectMsg) 
 			if strings.Contains(errStr, "ssh: handshake failed") || strings.Contains(errStr, "unable to authenticate") {
 				// Key auth failed - user can try password manually
 				errMsg := "Key auth failed. Try: 'g' -> 'r' -> [p] for password"
-				utils.LogPush(m, tui_context.LogEntry{
+				utils.LogPush(m, tuictx.LogEntry{
 					Type:    "Remote",
-					Level:   tui_context.LogError,
-					Status:  tui_context.StatusError,
+					Level:   tuictx.LogError,
+					Status:  tuictx.StatusError,
 					Message: "Key authentication failed",
 					Details: errMsg,
 				})
@@ -125,10 +125,10 @@ func finalizeRemoteConnect(m *tui_context.Model, msg messages.RemoteConnectMsg) 
 		authMethod = "agent/default keys"
 	}
 
-	utils.LogPush(m, tui_context.LogEntry{
+	utils.LogPush(m, tuictx.LogEntry{
 		Type:    "Remote",
-		Level:   tui_context.LogSuccess,
-		Status:  tui_context.StatusSuccess,
+		Level:   tuictx.LogSuccess,
+		Status:  tuictx.StatusSuccess,
 		Message: fmt.Sprintf("Connection established to %s@%s", m.Navigation.Remote.User, m.Navigation.Remote.Host),
 		Details: fmt.Sprintf("Authenticated via %s", authMethod),
 	})
@@ -136,14 +136,14 @@ func finalizeRemoteConnect(m *tui_context.Model, msg messages.RemoteConnectMsg) 
 	return func() tea.Msg { return messages.NavigateMsg{Path: msg.Path} }
 }
 
-func handleHostConfirm(m *tui_context.Model, msg messages.HostConfirmMsg) tea.Cmd {
+func handleHostConfirm(m *tuictx.Model, msg messages.HostConfirmMsg) tea.Cmd {
 	m.UI.Loading = false
 	m.UI.HostConfirm = true
 	m.Navigation.Remote.HostConfirmReq = msg.Request
 	return nil
 }
 
-func handleHostConfirmKeys(m *tui_context.Model, msg tea.KeyMsg) tea.Cmd {
+func handleHostConfirmKeys(m *tuictx.Model, msg tea.KeyMsg) tea.Cmd {
 	switch msg.String() {
 	case "y", "Y":
 		if m.Navigation.Remote.HostConfirmReq != nil && m.Navigation.Remote.HostConfirmReq.Resolve != nil {
@@ -170,7 +170,7 @@ func handleHostConfirmKeys(m *tui_context.Model, msg tea.KeyMsg) tea.Cmd {
 	return nil
 }
 
-func HandleRemoteGoto(m *tui_context.Model, input string) tea.Cmd {
+func HandleRemoteGoto(m *tuictx.Model, input string) tea.Cmd {
 	host := input
 	user := ""
 	keyPath := ""
@@ -216,7 +216,7 @@ func HandleRemoteGoto(m *tui_context.Model, input string) tea.Cmd {
 	)
 }
 
-func HandleAuthFinalize(m *tui_context.Model, input string) tea.Cmd {
+func HandleAuthFinalize(m *tuictx.Model, input string) tea.Cmd {
 	password := ""
 	keyPath := ""
 	tryKeyAuth := false
@@ -228,10 +228,10 @@ func HandleAuthFinalize(m *tui_context.Model, input string) tea.Cmd {
 		// Check if key file exists first
 		if info, err := os.Stat(keyPath); os.IsNotExist(err) {
 			errMsg := fmt.Sprintf("Key file not found: %s", keyPath)
-			utils.LogPush(m, tui_context.LogEntry{
+			utils.LogPush(m, tuictx.LogEntry{
 				Type:    "Remote",
-				Level:   tui_context.LogError,
-				Status:  tui_context.StatusError,
+				Level:   tuictx.LogError,
+				Status:  tuictx.StatusError,
 				Message: "Key authentication failed",
 				Details: errMsg,
 			})

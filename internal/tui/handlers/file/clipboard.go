@@ -5,13 +5,13 @@ import (
 
 	"github.com/zulfikawr/fm/internal/constants"
 	"github.com/zulfikawr/fm/internal/files/conflict"
-	tui_context "github.com/zulfikawr/fm/internal/tui/context"
+	tuictx "github.com/zulfikawr/fm/internal/tui/context"
 	"github.com/zulfikawr/fm/internal/tui/messages"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-func CopySelected(m *tui_context.Model) tea.Cmd {
+func CopySelected(m *tuictx.Model) tea.Cmd {
 	targets := GetTargets(m)
 	if len(targets) == 0 {
 		return nil
@@ -22,7 +22,7 @@ func CopySelected(m *tui_context.Model) tea.Cmd {
 	return func() tea.Msg { return messages.StatusMsg{Message: msg} }
 }
 
-func CutSelected(m *tui_context.Model) tea.Cmd {
+func CutSelected(m *tuictx.Model) tea.Cmd {
 	targets := GetTargets(m)
 	if len(targets) == 0 {
 		return nil
@@ -33,7 +33,7 @@ func CutSelected(m *tui_context.Model) tea.Cmd {
 	return func() tea.Msg { return messages.StatusMsg{Message: msg} }
 }
 
-func PerformPaste(m *tui_context.Model) tea.Cmd {
+func PerformPaste(m *tuictx.Model) tea.Cmd {
 	paths := m.Operations.Clipboard.Paths
 	if len(paths) == 0 {
 		return func() tea.Msg { return messages.ErrorMsg{Err: fmt.Errorf("clipboard is empty")} }
