@@ -19,7 +19,8 @@ func PrintHelp(styles theme.Stylesheet, themeName string) {
 
 	// Helper to get formatted keys for an action
 	getKeys := func(action string) string {
-		for _, kb := range keybinds {
+		for i := range keybinds {
+			kb := keybinds[i]
 			if kb.Action == action {
 				displayKeys := make([]string, len(kb.Keys))
 				for i, k := range kb.Keys {
@@ -128,8 +129,10 @@ func PrintHelp(styles theme.Stylesheet, themeName string) {
 	usageWidth := lipgloss.Width(styles.GitStaged.Render("fm")+" "+styles.GitConflict.Render("search")+" "+styles.DimCol.Render("[--regex]")+" "+styles.FileCol.Render("<query>")) + 3
 
 	keyWidth := 0
-	for _, s := range sections {
-		for _, k := range s.Items {
+	for i := range sections {
+		s := sections[i]
+		for j := range s.Items {
+			k := s.Items[j]
 			if w := lipgloss.Width(styles.DimCol.Render(k.Desc)); w > keyWidth {
 				keyWidth = w
 			}
@@ -152,9 +155,11 @@ func PrintHelp(styles theme.Stylesheet, themeName string) {
 	usage6Command := styles.GitStaged.Render("fm") + " " + styles.GitConflict.Render("config") + " " + styles.DimCol.Render("[--reset | init]")
 	fmt.Printf("  %s %s\n\n", padString(usage6Command, usageWidth), styles.DimCol.Render("Manage configuration (view, reset, or interactive init)"))
 
-	for _, s := range sections {
+	for i := range sections {
+		s := sections[i]
 		fmt.Println(styles.DirCol.Render(s.Title + ":"))
-		for _, k := range s.Items {
+		for j := range s.Items {
+			k := s.Items[j]
 			// Render the description first, then pad
 			renderedDesc := styles.DimCol.Render(k.Desc)
 			visibleWidth := lipgloss.Width(renderedDesc)

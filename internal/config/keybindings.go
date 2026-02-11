@@ -89,14 +89,15 @@ func ValidateKeybindings(keybinds []Keybinding) error {
 	keyToActions := make(map[string][]string)
 
 	// Collect all key-action mappings
-	for _, kb := range keybinds {
-		for _, key := range kb.Keys {
-			key = strings.ToLower(strings.TrimSpace(key))
+	for i := range keybinds {
+		kb := keybinds[i]
+		for j := range kb.Keys {
+			key := strings.ToLower(strings.TrimSpace(kb.Keys[j]))
 			if existingActions, exists := keyToActions[key]; exists {
 				// Check if this is the same action (allowed for multiple keys per action)
 				isSameAction := false
-				for _, action := range existingActions {
-					if action == kb.Action {
+				for k := range existingActions {
+					if existingActions[k] == kb.Action {
 						isSameAction = true
 						break
 					}
@@ -214,7 +215,8 @@ func LoadKeybindings() []Keybinding {
 
 	// Add missing defaults
 	finalKeybinds := make([]Keybinding, 0)
-	for _, defaultKb := range defaults {
+	for i := range defaults {
+		defaultKb := defaults[i]
 		if customKb, exists := resultMap[defaultKb.Action]; exists {
 			finalKeybinds = append(finalKeybinds, *customKb)
 		} else {
@@ -252,7 +254,8 @@ func SaveKeybindings(keybinds []Keybinding) error {
 
 // GetKeybindingForAction returns the keys associated with a specific action
 func GetKeybindingForAction(action string, keybinds []Keybinding) []string {
-	for _, kb := range keybinds {
+	for i := range keybinds {
+		kb := keybinds[i]
 		if kb.Action == action {
 			return kb.Keys
 		}
@@ -263,9 +266,10 @@ func GetKeybindingForAction(action string, keybinds []Keybinding) []string {
 // GetActionForKey returns the action associated with a specific key
 func GetActionForKey(key string, keybinds []Keybinding) string {
 	key = strings.ToLower(strings.TrimSpace(key))
-	for _, kb := range keybinds {
-		for _, k := range kb.Keys {
-			if strings.ToLower(k) == key {
+	for i := range keybinds {
+		kb := keybinds[i]
+		for j := range kb.Keys {
+			if strings.ToLower(kb.Keys[j]) == key {
 				return kb.Action
 			}
 		}

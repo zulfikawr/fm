@@ -67,7 +67,8 @@ func (gs *gitService) GetStatus(ctx context.Context, path string) (map[string]st
 // ParseGitStatusStats calculates summary statistics for the whole repo
 func ParseGitStatusStats(output string) (modified, staged, untracked int) {
 	lines := strings.Split(output, "\n")
-	for _, line := range lines {
+	for i := range lines {
+		line := lines[i]
 		if len(line) < 3 {
 			continue
 		}
@@ -120,7 +121,8 @@ func (gs *gitService) GetIgnoredFiles(ctx context.Context, repoRoot string) ([]s
 
 	files := strings.Split(strings.TrimSpace(string(out)), "\n")
 	var result []string
-	for _, f := range files {
+	for i := range files {
+		f := files[i]
 		if f != "" {
 			result = append(result, filepath.Join(repoRoot, f))
 		}
@@ -143,7 +145,8 @@ func ParseGitStatusPorcelain(output, repoRoot, dirPath string) map[string]string
 		relDir = ""
 	}
 	lines := strings.Split(output, "\n")
-	for _, line := range lines {
+	for i := range lines {
+		line := lines[i]
 		if len(line) < 4 {
 			continue
 		}

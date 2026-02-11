@@ -49,7 +49,8 @@ func ParseSSHConfig() (map[string]*SSHConfig, error) {
 		case "host":
 			// Save previous config if any
 			if currentCfg != nil {
-				for _, h := range currentHost {
+				for i := range currentHost {
+					h := currentHost[i]
 					// We don't handle wildcards well here, but it's a start
 					if h != "*" {
 						configs[h] = currentCfg
@@ -83,7 +84,8 @@ func ParseSSHConfig() (map[string]*SSHConfig, error) {
 
 	// Save last config
 	if currentCfg != nil {
-		for _, h := range currentHost {
+		for i := range currentHost {
+			h := currentHost[i]
 			if h != "*" {
 				configs[h] = currentCfg
 			}

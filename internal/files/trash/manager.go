@@ -34,9 +34,9 @@ func NewManager(fs core.FileSystem) (*Manager, error) {
 	filesDir := filepath.Join(trashDir, "files")
 	infoDir := filepath.Join(trashDir, "info")
 
-	// Create directories if they don't exist
-	for _, dir := range []string{trashDir, filesDir, infoDir} {
-		if err := os.MkdirAll(dir, 0755); err != nil {
+	dirs := []string{trashDir, filesDir, infoDir}
+	for i := range dirs {
+		if err := os.MkdirAll(dirs[i], 0755); err != nil {
 			return nil, fmt.Errorf("create trash dir: %w", err)
 		}
 	}
@@ -92,7 +92,8 @@ func (m *Manager) List() ([]TrashItem, error) {
 	}
 
 	var items []TrashItem
-	for _, entry := range entries {
+	for i := range entries {
+		entry := entries[i]
 		if entry.IsDir() || filepath.Ext(entry.Name()) != ".json" {
 			continue
 		}
@@ -160,7 +161,8 @@ func (m *Manager) Empty(ctx context.Context) error {
 		return fmt.Errorf("list trash: %w", err)
 	}
 
-	for _, item := range items {
+	for i := range items {
+		item := items[i]
 		select {
 		case <-ctx.Done():
 			return ctx.Err()
@@ -269,7 +271,8 @@ func (m *Manager) RecoverInterruptedDeletions(ctx context.Context) error {
 		return fmt.Errorf("read files dir: %w", err)
 	}
 
-	for _, entry := range entries {
+	for i := range entries {
+		entry := entries[i]
 		if filepath.Ext(entry.Name()) == ".deleting" {
 			trashedName := entry.Name()[:len(entry.Name())-9] // Remove .deleting
 			logger.LogIfError(m.Delete(ctx, trashedName), "trash: failed to complete interrupted deletion")
@@ -299,7 +302,8 @@ func (m *Manager) AutoCleanup(ctx context.Context, maxAgeDays int, maxSizeMB int
 	// Delete items older than maxAgeDays
 	if maxAgeDays > 0 {
 		cutoff := time.Now().Add(-time.Duration(maxAgeDays) * 24 * time.Hour)
-		for _, item := range items {
+		for i := range items {
+			item := items[i]
 			if item.DeletionTime.Before(cutoff) {
 				logger.LogIfError(m.Delete(ctx, item.TrashedName), "trash: failed to delete old item")
 			}
@@ -313,8 +317,8 @@ func (m *Manager) AutoCleanup(ctx context.Context, maxAgeDays int, maxSizeMB int
 			logger.Errorf("trash: failed to list items during auto-cleanup: %v", err)
 		}
 		totalSize := int64(0)
-		for _, item := range items {
-			totalSize += item.SizeBytes
+		for i := range items {
+			totalSize += items[i].SizeBytes
 		}
 
 		maxBytes := maxSizeMB * 1024 * 1024
@@ -329,7 +333,8 @@ func (m *Manager) AutoCleanup(ctx context.Context, maxAgeDays int, maxSizeMB int
 			}
 
 			// Delete oldest until under limit
-			for _, item := range items {
+			for i := range items {
+				item := items[i]
 				if totalSize <= maxBytes {
 					break
 				}

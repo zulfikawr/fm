@@ -68,7 +68,8 @@ func (fs *RemoteFS) RemoveAll(ctx context.Context, p string) error {
 			return err
 		}
 
-		for _, entry := range entries {
+		for i := range entries {
+			entry := entries[i]
 			childPath := path.Join(p, entry.Name())
 			if err := fs.RemoveAll(ctx, childPath); err != nil {
 				return err

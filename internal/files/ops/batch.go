@@ -212,13 +212,14 @@ func MoveMultiple(opts BatchOptions) error {
 // CheckAndMarkProcessing checks if any of the paths are currently being processed
 // and marks them as processing if none are. Returns false if any path is already processing.
 func CheckAndMarkProcessing(processing map[string]bool, paths []string) bool {
-	for _, p := range paths {
+	for i := range paths {
+		p := paths[i]
 		if processing[p] {
 			return false
 		}
 	}
-	for _, p := range paths {
-		processing[p] = true
+	for i := range paths {
+		processing[paths[i]] = true
 	}
 	return true
 }

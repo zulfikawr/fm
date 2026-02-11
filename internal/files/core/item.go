@@ -100,8 +100,9 @@ func (item *Item) IsArchive() bool {
 		return false
 	}
 	ext := strings.ToLower(item.Name)
-	for _, aExt := range []string{".zip", ".tar", ".gz", ".tgz"} {
-		if strings.HasSuffix(ext, aExt) {
+	exts := []string{".zip", ".tar", ".gz", ".tgz"}
+	for i := range exts {
+		if strings.HasSuffix(ext, exts[i]) {
 			return true
 		}
 	}
@@ -114,8 +115,9 @@ func (item *Item) IsImage() bool {
 		return false
 	}
 	ext := strings.ToLower(item.Name)
-	for _, iExt := range []string{".jpg", ".jpeg", ".png", ".gif", ".svg", ".webp", ".bmp", ".ico"} {
-		if strings.HasSuffix(ext, iExt) {
+	exts := []string{".jpg", ".jpeg", ".png", ".gif", ".svg", ".webp", ".bmp", ".ico"}
+	for i := range exts {
+		if strings.HasSuffix(ext, exts[i]) {
 			return true
 		}
 	}

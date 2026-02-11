@@ -52,8 +52,8 @@ func (fs *RemoteFS) parallelWalk(state *walkState, root string) error {
 		return state.walkFn(root, nil, err)
 	}
 
-	for _, entry := range entries {
-		entry := entry // capture
+	for i := range entries {
+		entry := entries[i]
 		p := path.Join(root, entry.Name())
 
 		// Report the entry

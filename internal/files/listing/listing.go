@@ -38,7 +38,8 @@ func LoadSkeleton(ctx context.Context, opts LoadOptions) ([]core.Item, error) {
 	// Track seen files to identify ghosts later
 	seenOnDisk := make(map[string]bool)
 
-	for _, d := range entries {
+	for i := range entries {
+		d := entries[i]
 		if !opts.ShowHidden && strings.HasPrefix(d.Name(), ".") {
 			continue
 		}
@@ -109,7 +110,8 @@ func EnrichMetadata(ctx context.Context, fs core.FileSystem, item *core.Item) {
 	}
 
 	maxMTime := item.Metadata.MTime
-	for _, entry := range entries {
+	for i := range entries {
+		entry := entries[i]
 		info, err := entry.Info()
 		if err == nil {
 			if info.ModTime().After(maxMTime) {

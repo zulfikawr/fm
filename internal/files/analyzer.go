@@ -119,7 +119,8 @@ func (a *Analyzer) scanConcurrent(ctx context.Context, path string, track func(i
 	results := make(chan *core.AnalysisResult, len(entries))
 	var wg sync.WaitGroup
 
-	for _, entry := range entries {
+	for i := range entries {
+		entry := entries[i]
 		wg.Add(1)
 		childPath := a.fs.Join(path, entry.Name())
 
@@ -155,7 +156,8 @@ func (a *Analyzer) calculatePercentages(r *core.AnalysisResult) {
 	if r.Size == 0 {
 		return
 	}
-	for _, child := range r.Children {
+	for i := range r.Children {
+		child := r.Children[i]
 		child.Percentage = float64(child.Size) / float64(r.Size)
 		a.calculatePercentages(child)
 	}
@@ -165,7 +167,7 @@ func (a *Analyzer) sortResult(r *core.AnalysisResult) {
 	sort.Slice(r.Children, func(i, j int) bool {
 		return r.Children[i].Size > r.Children[j].Size
 	})
-	for _, child := range r.Children {
-		a.sortResult(child)
+	for i := range r.Children {
+		a.sortResult(r.Children[i])
 	}
 }
