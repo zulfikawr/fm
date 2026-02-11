@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.2.0] - 2026-02-12
+
+### Added
+- **Consistent Operation Confirmation**: All file operations now respect the `confirm_operations` configuration setting:
+  - **Rename operations**: Ask for confirmation before renaming files/folders
+  - **Create operations**: Ask for confirmation before creating new files/folders  
+  - **Zip operations**: Ask for confirmation before creating archive files
+  - **Unzip operations**: Ask for confirmation before extracting archives
+  - **Delete operations**: Already respected confirmation (unchanged)
+  - **Paste operations**: Already respected confirmation (unchanged)
+  - **Reset Settings**: Already respected confirmation (unchanged)
+
+### Changed
+- **Confirmation Flow**: Operations that require user input (rename, create, zip, unzip) now show confirmation prompt *after* user provides input, following the pattern: input → confirm → execute
+- **Configuration Consistency**: The `confirm_operations` setting now consistently applies to all potentially destructive operations
+
 ## [v1.1.10] - 2026-02-12
 
 ### Added

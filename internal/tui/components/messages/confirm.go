@@ -34,6 +34,14 @@ func BuildConfirmationPrompt(props Props) string {
 		return fmt.Sprintf("Paste %d items? [y] Yes | [n] No", props.Confirm.ClipboardCount)
 	case constants.ActionResetSettings:
 		return "Reset all settings to defaults? [y] Yes | [n] No"
+	case constants.ActionRename:
+		return fmt.Sprintf("Rename to '%s'? [y] Yes | [n] No", props.Confirm.PendingValue)
+	case constants.ActionCreate:
+		return fmt.Sprintf("Create '%s'? [y] Yes | [n] No", props.Confirm.PendingValue)
+	case constants.ActionZip:
+		return fmt.Sprintf("Create zip archive '%s'? [y] Yes | [n] No", props.Confirm.PendingValue)
+	case constants.ActionUnzip:
+		return fmt.Sprintf("Extract to '%s'? [y] Yes | [n] No", props.Confirm.PendingValue)
 	case constants.ActionConflict:
 		baseName := extractBaseName(props.Confirm.ConflictDst)
 		if props.Confirm.ConflictCount > 1 {

@@ -43,6 +43,7 @@ type ConfirmContext struct {
 	ConflictCount  int
 	HostConfirmReq *ssh.HostConfirmRequest
 	LatestVersion  string
+	PendingValue   string // User input value for pending operations
 }
 
 // Props contains all data needed to render any message or prompt

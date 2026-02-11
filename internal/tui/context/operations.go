@@ -11,6 +11,15 @@ import (
 
 // --- Operations State ---
 
+// PendingOperation holds parameters for a pending operation that needs confirmation
+type PendingOperation struct {
+	Type     constants.ActionType // "rename", "create", "zip", "unzip"
+	Value    string               // User input value (filename, zip name, etc.)
+	Targets  []string             // Target paths for the operation
+	Selected core.Item            // Selected item for rename
+	OldPath  string               // Old path for rename
+}
+
 // OperationsState holds file operation and action state
 type OperationsState struct {
 	Progress        ProgressState        // Progress tracking for operations
@@ -18,8 +27,9 @@ type OperationsState struct {
 	Clipboard       ClipboardState       // Clipboard state (cut/copy)
 	Conflict        ConflictState        // Conflict resolution state
 	ConflictPolicy  conflict.Policy      // Current conflict handling policy
-	ActionType      constants.ActionType // "delete", "paste", "reset-settings", "conflict"
+	ActionType      constants.ActionType // "delete", "paste", "reset-settings", "conflict", "rename", "create", "zip", "unzip"
 	CancelFunc      context.CancelFunc   // Function to cancel current operation
+	PendingOp       PendingOperation     // Pending operation waiting for confirmation
 }
 
 // --- Clipboard State ---

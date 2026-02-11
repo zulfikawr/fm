@@ -56,6 +56,7 @@ func renderFooter(m *context.Model, layout context.Layout) string {
 			ConflictCount:  len(m.Operations.Conflict.PendingItems),
 			HostReq:        m.Navigation.Remote.HostConfirmReq,
 			LatestVersion:  m.UI.LatestVersion,
+			PendingValue:   m.Operations.PendingOp.Value,
 		},
 		SettingsCursor: m.Settings.Cursor,
 		SettingsItems:  settingsItems,

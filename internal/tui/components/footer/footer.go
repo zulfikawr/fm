@@ -75,6 +75,7 @@ type ConfirmContext struct {
 	ConflictCount  int
 	HostReq        *ssh.HostConfirmRequest
 	LatestVersion  string
+	PendingValue   string // User input value for pending operations
 }
 
 // Props contains all data needed to render the footer
@@ -173,6 +174,7 @@ func renderPromptsFooter(props Props) string {
 			ConflictCount:  props.Confirm.ConflictCount,
 			HostConfirmReq: props.Confirm.HostReq,
 			LatestVersion:  props.Confirm.LatestVersion,
+			PendingValue:   props.Confirm.PendingValue,
 		},
 	})
 }

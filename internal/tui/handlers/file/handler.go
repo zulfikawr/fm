@@ -150,6 +150,26 @@ func HandleConfirmKeys(m *tui_context.Model, msg tea.KeyMsg) tea.Cmd {
 			return func() tea.Msg { return messages.ResetSettingsMsg{} }
 		case constants.ActionTestIcons:
 			return func() tea.Msg { return messages.IconTestMsg{Success: true} }
+		case constants.ActionRename:
+			// Execute stored rename operation
+			op := m.Operations.PendingOp
+			m.Operations.ActionType = constants.ActionNone
+			return PerformRenameWithParams(m, op.Value, op.Selected, op.OldPath)
+		case constants.ActionCreate:
+			// Execute stored create operation
+			op := m.Operations.PendingOp
+			m.Operations.ActionType = constants.ActionNone
+			return PerformCreate(m, op.Value)
+		case constants.ActionZip:
+			// Execute stored zip operation
+			op := m.Operations.PendingOp
+			m.Operations.ActionType = constants.ActionNone
+			return PerformZipWithTargets(m, op.Value, op.Targets)
+		case constants.ActionUnzip:
+			// Execute stored unzip operation
+			op := m.Operations.PendingOp
+			m.Operations.ActionType = constants.ActionNone
+			return PerformUnzipWithTargets(m, op.Value, op.Targets)
 		}
 		m.Operations.ActionType = constants.ActionNone
 	case "n", "N", "esc":
@@ -157,6 +177,11 @@ func HandleConfirmKeys(m *tui_context.Model, msg tea.KeyMsg) tea.Cmd {
 		if action == constants.ActionTestIcons {
 			m.Operations.ActionType = constants.ActionNone
 			return func() tea.Msg { return messages.IconTestMsg{Success: false} }
+		}
+		// Clear pending operation for rename, create, zip, unzip
+		if action == constants.ActionRename || action == constants.ActionCreate ||
+			action == constants.ActionZip || action == constants.ActionUnzip {
+			m.Operations.PendingOp = tui_context.PendingOperation{}
 		}
 		m.Operations.ActionType = constants.ActionNone
 	}

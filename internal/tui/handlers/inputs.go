@@ -3,6 +3,7 @@ package handlers
 import (
 	"strings"
 
+	"github.com/zulfikawr/fm/internal/constants"
 	"github.com/zulfikawr/fm/internal/files/local"
 	tuictx "github.com/zulfikawr/fm/internal/tui/context"
 	"github.com/zulfikawr/fm/internal/tui/handlers/app"
@@ -207,18 +208,67 @@ func finalizeInput(m *tuictx.Model) tea.Cmd {
 		return app.FinalizeKeybinding(m)
 	case tuictx.InputRename:
 		m.StopInput(true)
+		if m.Config.Ops.ConfirmOperations {
+			// Store rename operation for confirmation
+			if len(m.Navigation.FilteredItems) > 0 {
+				selected := m.Navigation.FilteredItems[m.Navigation.Cursor]
+				m.Operations.PendingOp = tuictx.PendingOperation{
+					Type:     constants.ActionRename,
+					Value:    val,
+					Selected: selected,
+					OldPath:  selected.Path,
+				}
+				m.Operations.ActionType = constants.ActionRename
+				m.UI.StartConfirming()
+				return nil
+			}
+		}
 		return file.PerformRename(m, val)
 	case tuictx.InputConflictRename:
 		m.StopInput(true)
 		return file.PerformConflictRename(m, val)
 	case tuictx.InputCreate:
 		m.StopInput(true)
+		if m.Config.Ops.ConfirmOperations {
+			// Store create operation for confirmation
+			m.Operations.PendingOp = tuictx.PendingOperation{
+				Type:  constants.ActionCreate,
+				Value: val,
+			}
+			m.Operations.ActionType = constants.ActionCreate
+			m.UI.StartConfirming()
+			return nil
+		}
 		return file.PerformCreate(m, val)
 	case tuictx.InputZip:
 		m.StopInput(true)
+		if m.Config.Ops.ConfirmOperations {
+			// Store zip operation for confirmation
+			targets := file.GetTargets(m)
+			m.Operations.PendingOp = tuictx.PendingOperation{
+				Type:    constants.ActionZip,
+				Value:   val,
+				Targets: targets,
+			}
+			m.Operations.ActionType = constants.ActionZip
+			m.UI.StartConfirming()
+			return nil
+		}
 		return file.PerformZip(m, val)
 	case tuictx.InputUnzip:
 		m.StopInput(true)
+		if m.Config.Ops.ConfirmOperations {
+			// Store unzip operation for confirmation
+			targets := file.GetTargets(m)
+			m.Operations.PendingOp = tuictx.PendingOperation{
+				Type:    constants.ActionUnzip,
+				Value:   val,
+				Targets: targets,
+			}
+			m.Operations.ActionType = constants.ActionUnzip
+			m.UI.StartConfirming()
+			return nil
+		}
 		return file.PerformUnzip(m, val)
 	case tuictx.InputGoto:
 		m.StopInput(true)

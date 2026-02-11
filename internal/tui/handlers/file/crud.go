@@ -117,6 +117,22 @@ func StartRename(m *tui_context.Model) tea.Cmd {
 	return m.Inputs.ActiveInput.FocusCmd()
 }
 
+func PerformRenameWithParams(m *tui_context.Model, newName string, selected core.Item, oldPath string) tea.Cmd {
+	if newName == "" {
+		return nil
+	}
+
+	if err := ops.ValidateFileName(newName); err != nil {
+		return func() tea.Msg { return messages.ErrorMsg{Err: err} }
+	}
+
+	newPath := m.FS.Join(m.Navigation.Path, newName)
+
+	return func() tea.Msg {
+		return messages.PerformRenameMsg{Selected: selected, OldPath: oldPath, NewPath: newPath, NewName: newName}
+	}
+}
+
 func PerformRename(m *tui_context.Model, newName string) tea.Cmd {
 	if newName == "" {
 		return nil

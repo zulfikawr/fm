@@ -45,6 +45,10 @@ const (
 	ActionAuth          ActionType = "auth"
 	ActionTestIcons     ActionType = "test-icons"
 	ActionTrashRestore  ActionType = "trash-restore"
+	ActionRename        ActionType = "rename"
+	ActionCreate        ActionType = "create"
+	ActionZip           ActionType = "zip"
+	ActionUnzip         ActionType = "unzip"
 )
 
 // Editors lists supported text editors
