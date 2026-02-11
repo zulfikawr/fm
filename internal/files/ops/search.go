@@ -37,8 +37,8 @@ func Search(opts SearchOptions) ([]core.FileResult, error) {
 	if opts.Git != nil && opts.Git.IsEnabled() {
 		gitIgnored, err := opts.Git.GetIgnoredFiles(opts.OpCtx.Context, opts.Root)
 		if err == nil {
-			for _, p := range gitIgnored {
-				ignored[p] = true
+			for i := range gitIgnored {
+				ignored[gitIgnored[i]] = true
 			}
 		}
 	}

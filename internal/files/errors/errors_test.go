@@ -51,7 +51,8 @@ func TestFileError_Error(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
+	for i := range tests {
+		tt := tests[i]
 		t.Run(tt.name, func(t *testing.T) {
 			if got := tt.err.Error(); got != tt.expected {
 				t.Errorf("FileError.Error() = %v, want %v", got, tt.expected)
@@ -146,7 +147,8 @@ func TestWrapError(t *testing.T) {
 			{fmt.Errorf("is a directory"), "cannot perform this operation on a directory"},
 		}
 
-		for _, tt := range tests {
+		for i := range tests {
+			tt := tests[i]
 			err := WrapError(tt.err, "Op")
 			fe := err.(*FileError)
 			if fe.Msg != tt.expected {

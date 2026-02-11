@@ -153,10 +153,10 @@ func buildActionShortcuts(props Props) string {
 		mutedStyle.Render("[") + accentStyle.Render("z") + mutedStyle.Render("]") + normalStyle.Render(" Zip"),
 	}
 
-	// Check if a zip file is focused or selected to show Unzip hint
 	showUnzip := false
 	if props.Status.SelectedCount > 0 {
-		for _, item := range props.Status.Items {
+		for i := range props.Status.Items {
+			item := props.Status.Items[i]
 			if item.State.Selected && strings.HasSuffix(strings.ToLower(item.Name), ".zip") {
 				showUnzip = true
 				break
@@ -264,7 +264,8 @@ func GetActionAt(x int, props Props) string {
 
 			showUnzip := false
 			if props.Status.SelectedCount > 0 {
-				for _, item := range props.Status.Items {
+				for j := range props.Status.Items {
+					item := props.Status.Items[j]
 					if item.State.Selected && strings.HasSuffix(strings.ToLower(item.Name), ".zip") {
 						showUnzip = true
 						break

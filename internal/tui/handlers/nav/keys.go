@@ -135,9 +135,10 @@ func HandleNavKeys(m *tui_context.Model, msg tea.KeyMsg) tea.Cmd {
 
 // GetActionForKeyFromModel retrieves the action for a given key from the model's config
 func GetActionForKeyFromModel(m *tui_context.Model, key string) string {
-	for _, kb := range m.Config.Keybindings {
-		for _, bindKey := range kb.Keys {
-			if bindKey == key {
+	for i := range m.Config.Keybindings {
+		kb := m.Config.Keybindings[i]
+		for j := range kb.Keys {
+			if kb.Keys[j] == key {
 				return kb.Action
 			}
 		}
@@ -147,10 +148,11 @@ func GetActionForKeyFromModel(m *tui_context.Model, key string) string {
 
 // containsKeyForAction checks if the given key is mapped to the specified action
 func containsKeyForAction(m *tui_context.Model, key, action string) bool {
-	for _, kb := range m.Config.Keybindings {
+	for i := range m.Config.Keybindings {
+		kb := m.Config.Keybindings[i]
 		if kb.Action == action {
-			for _, bindKey := range kb.Keys {
-				if bindKey == key {
+			for j := range kb.Keys {
+				if kb.Keys[j] == key {
 					return true
 				}
 			}

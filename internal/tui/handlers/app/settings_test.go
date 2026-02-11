@@ -59,8 +59,9 @@ func TestSettings_ToggleLogic(t *testing.T) {
 	})
 
 	t.Run("Toggle Prev All Cases", func(t *testing.T) {
-		for _, i := range []int{4, 9, 11, 13} {
-			m.Settings.Cursor = i
+		idxs := []int{4, 9, 11, 13}
+		for j := range idxs {
+			m.Settings.Cursor = idxs[j]
 			app.HandleSettings(m, tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'h'}})
 		}
 	})

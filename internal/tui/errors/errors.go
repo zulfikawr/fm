@@ -250,7 +250,9 @@ func captureStack(skip int) []StackFrame {
 	n := runtime.Callers(skip+1, pcs[:])
 
 	frames := make([]StackFrame, 0, n)
-	for _, pc := range pcs[:n] {
+	pcSlice := pcs[:n]
+	for i := range pcSlice {
+		pc := pcSlice[i]
 		fn := runtime.FuncForPC(pc)
 		if fn == nil {
 			continue

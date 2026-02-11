@@ -104,7 +104,8 @@ func (fs *TarFS) ReadDirEntries(ctx context.Context, path string) ([]os.DirEntry
 	seen := make(map[string]bool)
 	var entries []os.DirEntry
 
-	for _, entry := range fs.entries {
+	for i := range fs.entries {
+		entry := fs.entries[i]
 		select {
 		case <-ctx.Done():
 			return nil, ctx.Err()
@@ -157,7 +158,8 @@ func (fs *TarFS) Stat(ctx context.Context, path string) (os.FileInfo, error) {
 
 	path = strings.TrimPrefix(path, "/")
 
-	for _, entry := range fs.entries {
+	for i := range fs.entries {
+		entry := fs.entries[i]
 		if strings.TrimSuffix(entry.header.Name, "/") == path {
 			return entry.header.FileInfo(), nil
 		}
@@ -168,7 +170,8 @@ func (fs *TarFS) Stat(ctx context.Context, path string) (os.FileInfo, error) {
 	if !strings.HasSuffix(dirPath, "/") {
 		dirPath += "/"
 	}
-	for _, entry := range fs.entries {
+	for i := range fs.entries {
+		entry := fs.entries[i]
 		if strings.HasPrefix(entry.header.Name, dirPath) {
 			return &archiveFileInfo{
 				name:  fs.Base(path),
@@ -246,7 +249,8 @@ func (fs *TarFS) Walk(ctx context.Context, root string, walkFn filepath.WalkFunc
 		root = ""
 	}
 
-	for _, entry := range fs.entries {
+	for i := range fs.entries {
+		entry := fs.entries[i]
 		select {
 		case <-ctx.Done():
 			return ctx.Err()

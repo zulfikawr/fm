@@ -151,7 +151,9 @@ func (fs *ZipFS) ReadDirEntries(ctx context.Context, path string) ([]os.DirEntry
 	seen := make(map[string]bool)
 	var entries []os.DirEntry
 
-	for _, file := range fs.reader.File {
+	files := fs.reader.File
+	for i := range files {
+		file := files[i]
 		select {
 		case <-ctx.Done():
 			return nil, ctx.Err()
@@ -205,7 +207,9 @@ func (fs *ZipFS) Stat(ctx context.Context, path string) (os.FileInfo, error) {
 	path = strings.TrimPrefix(path, "/")
 
 	// Check for exact file match
-	for _, file := range fs.reader.File {
+	files := fs.reader.File
+	for i := range files {
+		file := files[i]
 		if strings.TrimSuffix(file.Name, "/") == path {
 			return file.FileInfo(), nil
 		}
@@ -216,7 +220,8 @@ func (fs *ZipFS) Stat(ctx context.Context, path string) (os.FileInfo, error) {
 	if !strings.HasSuffix(dirPath, "/") {
 		dirPath += "/"
 	}
-	for _, file := range fs.reader.File {
+	for i := range files {
+		file := files[i]
 		if strings.HasPrefix(file.Name, dirPath) {
 			return &archiveFileInfo{
 				name:  fs.Base(path),
@@ -240,7 +245,9 @@ func (fs *ZipFS) Open(ctx context.Context, path string) (io.ReadCloser, error) {
 	}
 
 	path = strings.TrimPrefix(fs.Clean(path), "/")
-	for _, file := range fs.reader.File {
+	files := fs.reader.File
+	for i := range files {
+		file := files[i]
 		if file.Name == path {
 			f, err := file.Open()
 			return f, errors.WrapErrorWithPath(err, "Open", path)
@@ -288,7 +295,9 @@ func (fs *ZipFS) Walk(ctx context.Context, root string, walkFn filepath.WalkFunc
 	}
 	searchRoot = strings.TrimPrefix(searchRoot, "/")
 
-	for _, file := range fs.reader.File {
+	files := fs.reader.File
+	for i := range files {
+		file := files[i]
 		select {
 		case <-ctx.Done():
 			return ctx.Err()

@@ -20,7 +20,8 @@ func TestIsTextFile(t *testing.T) {
 		{"SCRIPT.SH", true},
 	}
 
-	for _, tt := range tests {
+	for i := range tests {
+		tt := tests[i]
 		result := IsTextFile(fs, tt.path)
 		if result != tt.expected {
 			t.Errorf("IsTextFile(%q) = %v, want %v", tt.path, result, tt.expected)

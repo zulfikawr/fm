@@ -93,7 +93,8 @@ func RunSearch(args *Args) error {
 		Foreground(styles.Success.GetForeground()).
 		Bold(true)
 
-	for _, res := range results {
+	for i := range results {
+		res := results[i]
 		relPath, err := filepath.Rel(searchPath, res.Path)
 		if err != nil || relPath == "." || relPath == "" {
 			relPath = res.Path
@@ -129,7 +130,8 @@ func RunSearch(args *Args) error {
 		fmt.Println(header)
 
 		// Render Line Matches
-		for _, match := range res.Matches {
+		for j := range res.Matches {
+			match := res.Matches[j]
 			if match.Line == 0 {
 				continue
 			}
@@ -144,8 +146,8 @@ func RunSearch(args *Args) error {
 	// Summary Footer
 	totalFiles := len(results)
 	totalMatches := 0
-	for _, res := range results {
-		totalMatches += len(res.Matches)
+	for i := range results {
+		totalMatches += len(results[i].Matches)
 	}
 
 	footer := fmt.Sprintf(" Found %d matches in %d files.", totalMatches, totalFiles)
@@ -161,8 +163,8 @@ func highlightMatchesWithBase(content string, indices []int, styles HighlightSty
 	}
 
 	isMatched := make(map[int]bool)
-	for _, idx := range indices {
-		isMatched[idx] = true
+	for i := range indices {
+		isMatched[indices[i]] = true
 	}
 
 	var sb strings.Builder
@@ -185,8 +187,8 @@ func highlightMatches(content string, indices []int, style lipgloss.Style) strin
 	}
 
 	isMatched := make(map[int]bool)
-	for _, idx := range indices {
-		isMatched[idx] = true
+	for i := range indices {
+		isMatched[indices[i]] = true
 	}
 
 	var sb strings.Builder

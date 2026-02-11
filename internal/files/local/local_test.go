@@ -114,8 +114,8 @@ func TestLocalFS(t *testing.T) {
 		entries, err := fs.ReadDirEntries(ctx, tmpDir)
 		testutil.AssertNoError(t, err, "ReadDirEntries should succeed")
 		found := false
-		for _, e := range entries {
-			if e.Name() == "entry.txt" {
+		for i := range entries {
+			if entries[i].Name() == "entry.txt" {
 				found = true
 				break
 			}

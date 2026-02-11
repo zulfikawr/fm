@@ -32,7 +32,8 @@ func TestFooter_RenderModes(t *testing.T) {
 		{"Clipboard", ModeClipboard, "", "Back"},
 	}
 
-	for _, tt := range tests {
+	for i := range tests {
+		tt := tests[i]
 		t.Run(tt.name, func(t *testing.T) {
 			ti := ui.NewInput(styles)
 			if tt.prompt != "" {

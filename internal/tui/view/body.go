@@ -89,8 +89,8 @@ func renderBody(m *context.Model, layout context.Layout) string {
 	case context.ViewTrash:
 		// Convert interface{} items to trash.TrashItem
 		trashItems := make([]trash.TrashItem, 0, len(m.Trash.Items))
-		for _, item := range m.Trash.Items {
-			if ti, ok := item.(trash.TrashItem); ok {
+		for i := range m.Trash.Items {
+			if ti, ok := m.Trash.Items[i].(trash.TrashItem); ok {
 				trashItems = append(trashItems, ti)
 			}
 		}

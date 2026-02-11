@@ -37,8 +37,8 @@ func applyGitStatus(m *tui_context.Model, msg messages.GitStatusMsg) tea.Cmd {
 
 	// Handle ghost entries (deleted in git but not on disk)
 	seen := make(map[string]bool)
-	for _, item := range m.Navigation.Items {
-		seen[item.Name] = true
+	for i := range m.Navigation.Items {
+		seen[m.Navigation.Items[i].Name] = true
 	}
 
 	for name, status := range msg.Statuses {

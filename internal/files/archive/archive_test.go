@@ -25,7 +25,8 @@ func createTestZip(t *testing.T) string {
 	}
 
 	var err error
-	for _, file := range files {
+	for i := range files {
+		file := files[i]
 		f, err := w.Create(file.Name)
 		testutil.AssertNoError(t, err, "create zip entry")
 		_, err = f.Write([]byte(file.Body))
@@ -69,7 +70,8 @@ func TestArchiveFS(t *testing.T) {
 
 		foundReadme := false
 		foundFolder := false
-		for _, e := range entries {
+		for i := range entries {
+			e := entries[i]
 			if e.Name() == "readme.txt" {
 				foundReadme = true
 			}
@@ -115,7 +117,8 @@ func createTestTar(t *testing.T) string {
 		{"folder/file.txt", "Tar file inside folder"},
 	}
 
-	for _, file := range files {
+	for i := range files {
+		file := files[i]
 		hdr := &tar.Header{
 			Name: file.Name,
 			Mode: 0600,
@@ -165,8 +168,8 @@ func TestTarFS(t *testing.T) {
 		testutil.AssertNoError(t, err, "ReadDirEntries /")
 
 		foundReadme := false
-		for _, e := range entries {
-			if e.Name() == "readme.txt" {
+		for i := range entries {
+			if entries[i].Name() == "readme.txt" {
 				foundReadme = true
 			}
 		}

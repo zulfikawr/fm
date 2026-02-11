@@ -20,7 +20,8 @@ func TestTruncate(t *testing.T) {
 		{"hello world", 0, ""},
 	}
 
-	for _, tt := range tests {
+	for i := range tests {
+		tt := tests[i]
 		result := Truncate(tt.s, tt.max)
 		if result != tt.expected {
 			t.Errorf("Truncate(%q, %d) = %q, want %q", tt.s, tt.max, result, tt.expected)

@@ -61,8 +61,8 @@ func RenderSearch(props SearchProps) string {
 
 	// Stats header
 	totalMatches := 0
-	for _, res := range props.Results {
-		totalMatches += len(res.Matches)
+	for i := range props.Results {
+		totalMatches += len(props.Results[i].Matches)
 	}
 	stats := fmt.Sprintf(" Found %d matches in %d files", totalMatches, len(props.Results))
 	headerStr := props.Style.ListHeader.Render(stats) + "\n\n"
@@ -190,8 +190,8 @@ func renderMatchContent(props MatchProps) string {
 
 	var sb strings.Builder
 	idxMap := make(map[int]bool)
-	for _, idx := range props.MatchedIdx {
-		idxMap[idx] = true
+	for i := range props.MatchedIdx {
+		idxMap[props.MatchedIdx[i]] = true
 	}
 
 	// Highlight style: use theme's selected colors for the match background

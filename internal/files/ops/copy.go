@@ -230,7 +230,8 @@ func crossCopyDirRecursive(state *copyState, src, dst string) error {
 		return errors.WrapErrorWithPath(err, "ReadDir", src)
 	}
 
-	for _, entry := range entries {
+	for i := range entries {
+		entry := entries[i]
 		srcPath := state.opts.SrcFS.Join(src, entry.Name())
 		dstPath := state.opts.OpCtx.FS.Join(dst, entry.Name())
 

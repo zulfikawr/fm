@@ -93,7 +93,8 @@ func TestMessages_ColorizeKeys(t *testing.T) {
 		{"[Space] Toggle", "[Space] Toggle"},
 	}
 
-	for _, tt := range tests {
+	for i := range tests {
+		tt := tests[i]
 		v := ColorizeKeys(props, tt.input)
 		stripped := testutil.StripANSI(v)
 		if stripped != tt.input {

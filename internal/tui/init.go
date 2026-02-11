@@ -50,7 +50,8 @@ func Close(m *context.Model) {
 		closed[m.FS] = true
 	}
 
-	for _, t := range m.Tabs {
+	for i := range m.Tabs {
+		t := m.Tabs[i]
 		if t.FS != nil && !closed[t.FS] {
 			logger.CloseAndLog(t.FS, "tui tab filesystem during shutdown")
 			closed[t.FS] = true

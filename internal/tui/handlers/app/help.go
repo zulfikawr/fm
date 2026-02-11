@@ -33,10 +33,11 @@ func handleHelpKeys(m *tui_context.Model, msg tea.KeyMsg) tea.Cmd {
 		m.UI.ToggleHelp()
 	default:
 		// Check for custom help toggle key
-		for _, kb := range m.Config.Keybindings {
+		for i := range m.Config.Keybindings {
+			kb := m.Config.Keybindings[i]
 			if kb.Action == "help" {
-				for _, k := range kb.Keys {
-					if k == msg.String() {
+				for j := range kb.Keys {
+					if kb.Keys[j] == msg.String() {
 						m.UI.ToggleHelp()
 						return nil
 					}

@@ -55,8 +55,8 @@ func renderTrashRows(props TrashProps) []string {
 
 	// Header with trash info
 	totalSize := int64(0)
-	for _, item := range props.Items {
-		totalSize += item.SizeBytes
+	for i := range props.Items {
+		totalSize += props.Items[i].SizeBytes
 	}
 
 	header := fmt.Sprintf("Trash (%d items, %s)",

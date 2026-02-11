@@ -66,7 +66,8 @@ func Zip(opts ZipOptions) error {
 		},
 	}
 
-	for _, src := range opts.Srcs {
+	for i := range opts.Srcs {
+		src := opts.Srcs[i]
 		select {
 		case <-opts.OpCtx.Context.Done():
 			return opts.OpCtx.Context.Err()
@@ -125,7 +126,8 @@ func walkAndZip(state *zipState, currentPath, baseDir string) error {
 			return errors.WrapErrorWithPath(err, "ReadDir", currentPath)
 		}
 
-		for _, entry := range entries {
+		for i := range entries {
+			entry := entries[i]
 			childPath := state.opts.OpCtx.FS.Join(currentPath, entry.Name())
 			if err := walkAndZip(state, childPath, baseDir); err != nil {
 				return err
@@ -238,7 +240,8 @@ func Unzip(opts ZipOptions) error {
 	totalFiles := len(zr.File)
 	processedFiles := 0
 
-	for _, f := range zr.File {
+	for i := range zr.File {
+		f := zr.File[i]
 		select {
 		case <-opts.OpCtx.Context.Done():
 			return opts.OpCtx.Context.Err()

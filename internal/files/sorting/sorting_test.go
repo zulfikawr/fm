@@ -32,7 +32,8 @@ func TestSortModes(t *testing.T) {
 			{SortMode(99), "[ ? ] Unknown"},
 		}
 
-		for _, tc := range testCases {
+		for i := range testCases {
+			tc := testCases[i]
 			testutil.AssertEqual(t, tc.expected, tc.mode.String(), "String should match")
 		}
 	})

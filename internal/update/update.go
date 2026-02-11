@@ -97,7 +97,8 @@ func DownloadAndInstall(version string, progress chan float64) error {
 		suffix += ".exe"
 	}
 
-	for _, asset := range release.Assets {
+	for i := range release.Assets {
+		asset := release.Assets[i]
 		if strings.HasSuffix(asset.Name, suffix) {
 			targetAsset = &asset
 			break

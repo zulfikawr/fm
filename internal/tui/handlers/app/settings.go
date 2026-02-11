@@ -29,8 +29,8 @@ func HandleSettings(m *tui_context.Model, msg tea.Msg) tea.Cmd {
 func handleSettingsKeys(m *tui_context.Model, msg tea.KeyMsg) tea.Cmd {
 	groups := buildSettingGroups(m)
 	totalItems := 0
-	for _, g := range groups {
-		totalItems += len(g.Settings)
+	for i := range groups {
+		totalItems += len(groups[i].Settings)
 	}
 
 	var reload bool
@@ -96,10 +96,11 @@ func buildSettingGroups(m *tui_context.Model) []struct {
 		"tabs":       "Keybindings: Tabs",
 	}
 
-	for _, cat := range categories {
+	for i := range categories {
+		cat := categories[i]
 		count := 0
-		for _, kb := range m.Config.Keybindings {
-			if kb.Category == cat {
+		for j := range m.Config.Keybindings {
+			if m.Config.Keybindings[j].Category == cat {
 				count++
 			}
 		}
@@ -201,8 +202,10 @@ func BuildFullSettingList(m *tui_context.Model) []SettingItem {
 
 	// Group 5+: Keybindings
 	categories := []string{"general", "navigation", "file_ops", "selection", "search", "tabs"}
-	for _, cat := range categories {
-		for _, kb := range cfg.Keybindings {
+	for i := range categories {
+		cat := categories[i]
+		for j := range cfg.Keybindings {
+			kb := cfg.Keybindings[j]
 			if kb.Category == cat {
 				items = append(items, SettingItem{
 					Label:        kb.HumanLabel(),

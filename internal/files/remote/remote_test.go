@@ -53,7 +53,8 @@ func TestRemoteFS_Helpers(t *testing.T) {
 			{"/a/b", "/a/b/c", "c"},
 		}
 
-		for _, tt := range tests {
+		for i := range tests {
+			tt := tests[i]
 			rel, err := fs.Rel(tt.base, tt.targ)
 			testutil.AssertNoError(t, err, "Rel should succeed")
 			testutil.AssertEqual(t, tt.expected, rel, "Rel should match")

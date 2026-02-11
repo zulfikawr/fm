@@ -260,8 +260,8 @@ func FinalizeOperation(m *tui_context.Model, msg messages.OperationFinishedMsg) 
 	m.Operations.ConflictPolicy = conflict.Ask
 	m.Operations.Conflict.Clear()
 
-	for _, p := range msg.Paths {
-		m.Navigation.Deselect(p)
+	for i := range msg.Paths {
+		m.Navigation.Deselect(msg.Paths[i])
 	}
 	m.Navigation.SelectMode = m.Navigation.SelectedCount() > 0
 
@@ -299,9 +299,10 @@ func ListenToProgress(progChan chan core.Progress) tea.Cmd {
 
 // GetActionForKeyFromModel retrieves the action for a given key from the model's config
 func GetActionForKeyFromModel(m *tui_context.Model, key string) string {
-	for _, kb := range m.Config.Keybindings {
-		for _, bindKey := range kb.Keys {
-			if bindKey == key {
+	for i := range m.Config.Keybindings {
+		kb := m.Config.Keybindings[i]
+		for j := range kb.Keys {
+			if kb.Keys[j] == key {
 				return kb.Action
 			}
 		}

@@ -27,7 +27,8 @@ func TestIsNewer(t *testing.T) {
 		{"v1.0.0", "v0.1.0", true},
 	}
 
-	for _, tt := range tests {
+	for i := range tests {
+		tt := tests[i]
 		t.Run(fmt.Sprintf("%s vs %s", tt.latest, tt.current), func(t *testing.T) {
 			if got := isNewer(tt.latest, tt.current); got != tt.want {
 				t.Errorf("isNewer() = %v, want %v", got, tt.want)

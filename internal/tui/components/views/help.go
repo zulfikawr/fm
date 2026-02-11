@@ -63,7 +63,8 @@ func RenderHelp(props HelpProps) string {
 func buildHelpGroups(keybinds []config.Keybinding) []HelpSection {
 	// Helper to get formatted keys for an action
 	getKeys := func(action string) string {
-		for _, kb := range keybinds {
+		for i := range keybinds {
+			kb := keybinds[i]
 			if kb.Action == action {
 				displayKeys := make([]string, len(kb.Keys))
 				for i, k := range kb.Keys {
@@ -152,9 +153,11 @@ func renderHelpRows(props HelpProps, groups []HelpSection) []string {
 	rows = append(rows, "") // Top margin
 
 	currentIndex := 0
-	for _, s := range groups {
+	for i := range groups {
+		s := groups[i]
 		rows = append(rows, props.Style.SettingsHeader.Width(props.Width).Render(s.Title))
-		for _, item := range s.Items {
+		for j := range s.Items {
+			item := s.Items[j]
 			rows = append(rows, renderHelpRow(props, item, currentIndex == props.Cursor))
 			currentIndex++
 		}

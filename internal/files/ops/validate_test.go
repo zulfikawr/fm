@@ -23,7 +23,8 @@ func TestValidateFileName(t *testing.T) {
 		{strings.Repeat("A", 300), false},
 	}
 
-	for _, tt := range tests {
+	for i := range tests {
+		tt := tests[i]
 		err := ValidateFileName(tt.name)
 		if (err == nil) != tt.isValid {
 			t.Errorf("ValidateFileName(%q) error = %v, want valid = %v", tt.name, err, tt.isValid)

@@ -27,7 +27,8 @@ type HeaderProps struct {
 // RenderHeader renders a standardized table header with separators
 func RenderHeader(props HeaderProps) string {
 	var parts []string
-	for _, col := range props.Columns {
+	for i := range props.Columns {
+		col := props.Columns[i]
 		title := col.Title
 		if len(title) > col.Width {
 			title = Truncate(title, col.Width)

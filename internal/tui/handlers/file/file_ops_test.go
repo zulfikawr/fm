@@ -76,7 +76,8 @@ func TestHandleFileKeys(t *testing.T) {
 		{"u", tuictx.InputUnzip},
 	}
 
-	for _, tt := range tests {
+	for i := range tests {
+		tt := tests[i]
 		t.Run(tt.key, func(t *testing.T) {
 			m := tuictx.NewModel(fs, "/test")
 			item := core.Item{Name: "file1.zip", Path: "/test/file1.zip"}

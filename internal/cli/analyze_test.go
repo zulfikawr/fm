@@ -102,7 +102,8 @@ func TestRenderCLIBar(t *testing.T) {
 		{"Under", -0.5, 10, "[..........]"},
 	}
 
-	for _, tt := range tests {
+	for i := range tests {
+		tt := tests[i]
 		t.Run(tt.name, func(t *testing.T) {
 			got := renderCLIBar(tt.percent, tt.width, &styles)
 			// Strip ANSI codes for comparison

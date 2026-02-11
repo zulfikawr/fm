@@ -19,7 +19,8 @@ func TestFormatSize(t *testing.T) {
 		{-1, 0, ""},
 	}
 
-	for _, tt := range tests {
+	for i := range tests {
+		tt := tests[i]
 		result := FormatSize(tt.bytes, tt.idx)
 		if result != tt.expected {
 			t.Errorf("FormatSize(%d, %d) = %q, want %q", tt.bytes, tt.idx, result, tt.expected)

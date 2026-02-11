@@ -125,9 +125,11 @@ func buildSettingGroups(props SettingsProps) []SettingGroup {
 		{"general", "Keybindings: General"},
 	}
 
-	for _, cat := range categories {
+	for i := range categories {
+		cat := categories[i]
 		group := SettingGroup{Title: cat.Title}
-		for _, kb := range s.Keybindings {
+		for j := range s.Keybindings {
+			kb := s.Keybindings[j]
 			if kb.Category == cat.ID {
 				displayKeys := make([]string, len(kb.Keys))
 				for i, k := range kb.Keys {
@@ -173,8 +175,8 @@ func renderGroups(props SettingsProps, groups []SettingGroup) []string {
 		}
 
 		rows = append(rows, props.Style.SettingsHeader.Width(props.Width).Render(g.Title))
-		for _, sItem := range g.Settings {
-
+		for j := range g.Settings {
+			sItem := g.Settings[j]
 			rows = append(rows, renderSettingRow(props, sItem, currentIndex == props.Cursor))
 			currentIndex++
 		}

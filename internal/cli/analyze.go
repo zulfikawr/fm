@@ -77,7 +77,8 @@ func RunAnalyze(args *Args) error {
 	)
 
 	// Print immediate children sorted by size
-	for _, child := range result.Children {
+	for i := range result.Children {
+		child := result.Children[i]
 		// 1. Name Column
 		displayName := child.Name
 		if child.IsDirectory {

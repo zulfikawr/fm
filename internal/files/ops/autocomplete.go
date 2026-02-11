@@ -51,7 +51,8 @@ func GetPathCompletions(ctx context.Context, fs core.FileSystem, currentDir, inp
 
 	var completions []string
 	prefixLower := strings.ToLower(prefix)
-	for _, entry := range entries {
+	for i := range entries {
+		entry := entries[i]
 		name := entry.Name()
 		if strings.HasPrefix(strings.ToLower(name), prefixLower) {
 			completion := fs.Join(searchDir, name)

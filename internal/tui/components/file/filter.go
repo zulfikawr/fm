@@ -17,7 +17,8 @@ func ApplyFilter(m *tui_context.Model) {
 	}
 
 	m.Navigation.FilteredItems = nil
-	for _, item := range m.Navigation.Items {
+	for i := range m.Navigation.Items {
+		item := m.Navigation.Items[i]
 		if item.State.IsUp {
 			m.Navigation.FilteredItems = append(m.Navigation.FilteredItems, item)
 			continue

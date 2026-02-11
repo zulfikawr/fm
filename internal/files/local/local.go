@@ -60,7 +60,8 @@ func (fs *LocalFS) ReadDir(ctx context.Context, path string) ([]os.FileInfo, err
 
 	// Filter out nil entries (where Info() failed)
 	result := make([]os.FileInfo, 0, len(infos))
-	for _, info := range infos {
+	for i := range infos {
+		info := infos[i]
 		if info != nil {
 			result = append(result, info)
 		}

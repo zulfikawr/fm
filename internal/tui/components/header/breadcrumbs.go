@@ -23,7 +23,8 @@ func renderBreadcrumbPath(props BreadcrumbProps) string {
 	parts := strings.Split(props.Path, sep)
 	var cleanParts []string
 
-	for _, p := range parts {
+	for i := range parts {
+		p := parts[i]
 		if p != "" {
 			cleanParts = append(cleanParts, p)
 		}
@@ -55,8 +56,8 @@ func renderBreadcrumbPath(props BreadcrumbProps) string {
 
 	// Build the components
 	var styledParts []string
-	for _, p := range cleanParts {
-		styledParts = append(styledParts, baseStyle.Render(p))
+	for i := range cleanParts {
+		styledParts = append(styledParts, baseStyle.Render(cleanParts[i]))
 	}
 
 	separatorStr := dimHeaderStyle.Render(" > ")

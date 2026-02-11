@@ -61,7 +61,8 @@ func TestItem_IsArchive(t *testing.T) {
 		{"test", false},
 	}
 
-	for _, tt := range tests {
+	for i := range tests {
+		tt := tests[i]
 		item := Item{Name: tt.name}
 		if item.IsArchive() != tt.expected {
 			t.Errorf("IsArchive(%s) = %v, expected %v", tt.name, item.IsArchive(), tt.expected)

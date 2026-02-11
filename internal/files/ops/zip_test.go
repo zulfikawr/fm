@@ -66,8 +66,8 @@ func TestZipUnzip(t *testing.T) {
 		}()
 
 		found := make(map[string]bool)
-		for _, f := range r.File {
-			found[f.Name] = true
+		for i := range r.File {
+			found[r.File[i].Name] = true
 		}
 
 		testutil.AssertEqual(t, true, found["file1.txt"], "Should contain file1.txt")

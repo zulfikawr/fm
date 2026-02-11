@@ -70,7 +70,8 @@ func TestList_CalculateLayout_Responsiveness(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
+	for i := range tests {
+		tt := tests[i]
 		t.Run(tt.name, func(t *testing.T) {
 			props := Props{
 				Width:            tt.width,

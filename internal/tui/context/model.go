@@ -81,7 +81,8 @@ func (s *AnalyzeState) GetRows() []AnalyzeRow {
 		rows = append(rows, AnalyzeRow{IsUp: true, IsDirectory: true, Name: ".."})
 	}
 
-	for _, child := range s.ActiveNode.Children {
+	for i := range s.ActiveNode.Children {
+		child := s.ActiveNode.Children[i]
 		rows = append(rows, AnalyzeRow{
 			IsDirectory: child.IsDirectory,
 			Name:        child.Name,

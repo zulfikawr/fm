@@ -46,7 +46,8 @@ func TestPrintHelp(t *testing.T) {
 		"Tabs:",
 	}
 
-	for _, s := range expectedSubstrings {
+	for i := range expectedSubstrings {
+		s := expectedSubstrings[i]
 		if !strings.Contains(output, s) {
 			t.Errorf("Expected output to contain %q, but got:\n%s", s, output)
 		}

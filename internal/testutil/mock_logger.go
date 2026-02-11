@@ -27,8 +27,8 @@ func (m *MockLogger) Reset() {
 func (m *MockLogger) Contains(target string) bool {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
-	for _, l := range m.Logs {
-		if strings.Contains(l, target) {
+	for i := range m.Logs {
+		if strings.Contains(m.Logs[i], target) {
 			return true
 		}
 	}

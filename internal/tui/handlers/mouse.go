@@ -153,7 +153,8 @@ func handleScrollDown(m *context.Model) tea.Cmd {
 	if m.Inputs.Mode == context.InputFuzzySearch || len(m.Navigation.Search.Results) > 0 {
 		// Calculate total lines in search results
 		totalLines := 0
-		for _, res := range m.Navigation.Search.Results {
+		for i := range m.Navigation.Search.Results {
+			res := m.Navigation.Search.Results[i]
 			totalLines++ // Header
 			if !res.Collapsed {
 				totalLines += len(res.Matches)
@@ -834,7 +835,8 @@ func handleBreadcrumbClick(m *context.Model, x int) tea.Cmd {
 	// Basic breadcrumb parsing logic (mirrors internal/tui/components/header/breadcrumbs.go)
 	parts := strings.Split(path, sep)
 	var cleanParts []string
-	for _, p := range parts {
+	for i := range parts {
+		p := parts[i]
 		if p != "" {
 			cleanParts = append(cleanParts, p)
 		}
@@ -882,7 +884,8 @@ func handleBreadcrumbClick(m *context.Model, x int) tea.Cmd {
 		targetPath = "/"
 	}
 
-	for _, p := range cleanParts {
+	for i := range cleanParts {
+		p := cleanParts[i]
 		// Separator " > "
 		currentX += 3
 		if x >= currentX && x < currentX+len(p) {

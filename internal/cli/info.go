@@ -203,7 +203,8 @@ func RunInfo(opts InfoOptions) error {
 }
 
 func countRecursive(node *core.AnalysisResult) (files, dirs int) {
-	for _, child := range node.Children {
+	for i := range node.Children {
+		child := node.Children[i]
 		if child.IsDirectory {
 			dirs++
 			cf, cd := countRecursive(child)
@@ -229,8 +230,8 @@ func buildTreeFromAnalysis(node *core.AnalysisResult, depth, maxDepth int) *Tree
 	}
 
 	if node.IsDirectory && (maxDepth == 0 || depth < maxDepth) {
-		for _, child := range node.Children {
-			treeNode.Children = append(treeNode.Children, *buildTreeFromAnalysis(child, depth+1, maxDepth))
+		for i := range node.Children {
+			treeNode.Children = append(treeNode.Children, *buildTreeFromAnalysis(node.Children[i], depth+1, maxDepth))
 		}
 	}
 

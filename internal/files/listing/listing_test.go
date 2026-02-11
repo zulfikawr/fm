@@ -30,8 +30,8 @@ func TestLoad(t *testing.T) {
 		testutil.AssertNoError(t, err, "Load should not fail")
 
 		foundUp := false
-		for _, item := range items {
-			if item.State.IsUp {
+		for i := range items {
+			if items[i].State.IsUp {
 				foundUp = true
 				break
 			}
@@ -54,7 +54,8 @@ func TestLoad(t *testing.T) {
 		})
 		testutil.AssertNoError(t, err, "Load should not fail")
 
-		for _, item := range items {
+		for i := range items {
+			item := items[i]
 			if strings.HasPrefix(item.Name, ".") && !item.State.IsUp {
 				t.Errorf("found hidden file %q when showHidden=false", item.Name)
 			}
@@ -81,7 +82,8 @@ func TestLoad(t *testing.T) {
 		testutil.AssertNoError(t, err, "Load should not fail")
 
 		foundGhost := false
-		for _, item := range items {
+		for i := range items {
+			item := items[i]
 			if item.Name == "deleted.txt" && item.Display.IsGhost {
 				foundGhost = true
 				break

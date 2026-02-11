@@ -43,7 +43,8 @@ func handleGlobal(m *tuictx.Model, msg tea.Msg) (tea.Cmd, bool) {
 
 			// Get current quit key for dynamic message
 			quitKey := "ctrl+c"
-			for _, kb := range m.Config.Keybindings {
+			for i := range m.Config.Keybindings {
+				kb := m.Config.Keybindings[i]
 				if kb.Action == "quit" && len(kb.Keys) > 0 {
 					quitKey = kb.Keys[0]
 					if quitKey == " " {
