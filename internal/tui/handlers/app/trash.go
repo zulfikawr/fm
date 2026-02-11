@@ -1,6 +1,8 @@
 package app
 
 import (
+	"github.com/zulfikawr/fm/internal/constants"
+	"github.com/zulfikawr/fm/internal/files/conflict"
 	"github.com/zulfikawr/fm/internal/files/trash"
 	tui_context "github.com/zulfikawr/fm/internal/tui/context"
 	"github.com/zulfikawr/fm/internal/tui/messages"
@@ -25,6 +27,18 @@ func HandleTrash(m *tui_context.Model, msg tea.Msg) tea.Cmd {
 		return func() tea.Msg {
 			return performTrashRestore(m, msg.TrashedName)
 		}
+	case messages.TrashRestoreConflictMsg:
+		// Set up conflict state for user to resolve
+		destPath := msg.OriginalPath
+		m.Trash.RestoreConflict = &tui_context.TrashRestoreConflict{
+			TrashedName:    msg.TrashedName,
+			OriginalPath:   msg.OriginalPath,
+			DestPath:       destPath,
+			ConflictReason: msg.ConflictReason,
+		}
+		m.Operations.ActionType = constants.ActionTrashRestore
+		m.Operations.ConflictPolicy = conflict.Ask
+		return nil
 	case messages.TrashDeleteMsg:
 		return func() tea.Msg {
 			return performTrashDelete(m, msg.TrashedName)
@@ -116,32 +130,21 @@ func performTrashRestore(m *tui_context.Model, trashedName string) tea.Msg {
 	if err := manager.Restore(m.Context, trashedName); err != nil {
 		// Check if it's a conflict error
 		if conflictErr, ok := err.(*trash.RestoreConflictError); ok {
-			// TODO: Show conflict dialog - for now just use "Keep Both" strategy
-			// Generate a new name
-			info, err := manager.GetInfo(trashedName)
-			if err != nil {
+			// Get trash item info for proper conflict dialog
+			info, infoErr := manager.GetInfo(trashedName)
+			if infoErr != nil {
 				return messages.StatusMsg{Message: "Restore conflict: " + conflictErr.Error(), IsError: true}
 			}
-			if info != nil {
-				base := m.FS.Base(info.OriginalPath)
-				ext := ""
-				name := base
-				if idx := len(base) - 1; idx >= 0 {
-					for i := idx; i >= 0; i-- {
-						if base[i] == '.' {
-							ext = base[i:]
-							name = base[:i]
-							break
-						}
-					}
-				}
-				newName := name + " (restored)" + ext
-				if err := manager.RestoreWithRename(m.Context, trashedName, newName); err != nil {
-					return messages.StatusMsg{Message: "Failed to restore: " + err.Error(), IsError: true}
-				}
-				return messages.TrashOperationFinishedMsg{Success: true, Message: "Item restored as '" + newName + "'"}
+			if info == nil {
+				return messages.StatusMsg{Message: "Restore conflict: " + conflictErr.Error(), IsError: true}
 			}
-			return messages.StatusMsg{Message: "Restore conflict: " + conflictErr.Error(), IsError: true}
+
+			// Emit conflict message so UI can show dialog
+			return messages.TrashRestoreConflictMsg{
+				TrashedName:    trashedName,
+				OriginalPath:   info.OriginalPath,
+				ConflictReason: conflictErr.Error(),
+			}
 		}
 		return messages.StatusMsg{Message: "Failed to restore: " + err.Error(), IsError: true}
 	}
@@ -187,4 +190,73 @@ func ScrollTrash(cursor, offset, viewportHeight int) int {
 		return cursor - viewportHeight + 1
 	}
 	return offset
+}
+
+// ResolveTrashRestoreConflict handles user input for trash restore conflict resolution
+func ResolveTrashRestoreConflict(m *tui_context.Model, choice string) tea.Msg {
+	if m.Trash.RestoreConflict == nil {
+		return messages.StatusMsg{Message: "No active trash restore conflict", IsError: true}
+	}
+
+	manager, err := trash.NewManager(m.FS)
+	if err != nil {
+		m.Trash.RestoreConflict = nil
+		m.Operations.ActionType = constants.ActionNone
+		return messages.StatusMsg{Message: "Failed to resolve conflict: " + err.Error(), IsError: true}
+	}
+
+	trashedName := m.Trash.RestoreConflict.TrashedName
+	originalPath := m.Trash.RestoreConflict.OriginalPath
+
+	switch choice {
+	case "y", "Y":
+		// Overwrite: restore to original path, replacing existing file
+		if err := manager.Restore(m.Context, trashedName); err != nil {
+			m.Trash.RestoreConflict = nil
+			m.Operations.ActionType = constants.ActionNone
+			return messages.StatusMsg{Message: "Failed to restore: " + err.Error(), IsError: true}
+		}
+		m.Trash.RestoreConflict = nil
+		m.Operations.ActionType = constants.ActionNone
+		return messages.TrashOperationFinishedMsg{Success: true, Message: "Item restored (overwritten)"}
+
+	case "n", "N":
+		// Skip: don't restore this item
+		m.Trash.RestoreConflict = nil
+		m.Operations.ActionType = constants.ActionNone
+		return messages.TrashOperationFinishedMsg{Success: false, Message: "Restore skipped"}
+
+	case "r", "R":
+		// Rename: restore with a new name
+		base := m.FS.Base(originalPath)
+		ext := ""
+		name := base
+		if idx := len(base) - 1; idx >= 0 {
+			for i := idx; i >= 0; i-- {
+				if base[i] == '.' {
+					ext = base[i:]
+					name = base[:i]
+					break
+				}
+			}
+		}
+		newName := name + " (restored)" + ext
+		if err := manager.RestoreWithRename(m.Context, trashedName, newName); err != nil {
+			m.Trash.RestoreConflict = nil
+			m.Operations.ActionType = constants.ActionNone
+			return messages.StatusMsg{Message: "Failed to restore: " + err.Error(), IsError: true}
+		}
+		m.Trash.RestoreConflict = nil
+		m.Operations.ActionType = constants.ActionNone
+		return messages.TrashOperationFinishedMsg{Success: true, Message: "Item restored as '" + newName + "'"}
+
+	case "c", "C":
+		// Cancel: abort restore operation
+		m.Trash.RestoreConflict = nil
+		m.Operations.ActionType = constants.ActionNone
+		return messages.StatusMsg{Message: "Restore cancelled"}
+
+	default:
+		return messages.StatusMsg{Message: "Invalid choice. Press [y]es, [n]o, [r]ename, or [c]ancel", IsError: false}
+	}
 }

@@ -44,6 +44,7 @@ const (
 	ActionGoto          ActionType = "goto"
 	ActionAuth          ActionType = "auth"
 	ActionTestIcons     ActionType = "test-icons"
+	ActionTrashRestore  ActionType = "trash-restore"
 )
 
 // Editors lists supported text editors

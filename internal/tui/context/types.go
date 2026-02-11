@@ -45,7 +45,17 @@ type HelpState struct {
 
 // TrashState holds state for the trash view
 type TrashState struct {
-	Cursor int
-	Offset int
-	Items  []interface{} // Will hold trash.TrashItem
+	Cursor              int
+	Offset              int
+	Items               []interface{} // Will hold trash.TrashItem
+	RestoreConflict     *TrashRestoreConflict
+	PendingRestoreTasks int
+}
+
+// TrashRestoreConflict holds state for a trash restore conflict
+type TrashRestoreConflict struct {
+	TrashedName    string
+	OriginalPath   string
+	DestPath       string
+	ConflictReason string
 }

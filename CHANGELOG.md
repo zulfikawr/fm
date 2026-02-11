@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.1.10] - 2026-02-12
+
+### Added
+- **Trash Restore Conflict Dialog**: When restoring a trashed file, if the destination already exists, users now see an interactive dialog with options:
+  - `[y] Overwrite` - Replace the existing file
+  - `[n] Skip` - Keep the existing file and leave the trashed item in trash
+  - `[r] Rename` - Restore with a new name (e.g., `file (restored).txt`)
+  - `[c] Cancel` - Abort the restore operation
+
+### Changed
+- **Trash Restore Behavior**: Replaced automatic "Keep Both" rename strategy with user-controlled conflict resolution via interactive dialog.
+
 ## [v1.1.9] - 2026-02-09
 
 ### Fixed

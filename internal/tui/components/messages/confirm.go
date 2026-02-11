@@ -40,6 +40,9 @@ func BuildConfirmationPrompt(props Props) string {
 			return fmt.Sprintf("'%s' exists. [y/Y] Overwrite | [n/N] Skip | [r/R] Rename (Upper=All)", baseName)
 		}
 		return fmt.Sprintf("'%s' exists. [y] Overwrite | [n] Skip | [r] Rename", baseName)
+	case constants.ActionTrashRestore:
+		baseName := extractBaseName(props.Confirm.ConflictDst)
+		return fmt.Sprintf("'%s' exists. [y] Overwrite | [n] Skip | [r] Rename | [c] Cancel", baseName)
 	case constants.ActionCancel:
 		return "Cancel ongoing operation? [y] Yes | [n] No"
 	case constants.ActionUpdate:

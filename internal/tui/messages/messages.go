@@ -218,6 +218,12 @@ type TrashRestoreMsg struct {
 	TrashedName string
 }
 
+type TrashRestoreConflictMsg struct {
+	TrashedName    string
+	OriginalPath   string
+	ConflictReason string
+}
+
 type TrashDeleteMsg struct {
 	TrashedName string
 }

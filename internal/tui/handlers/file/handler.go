@@ -12,6 +12,7 @@ import (
 	"github.com/zulfikawr/fm/internal/logger"
 	"github.com/zulfikawr/fm/internal/tui/components/ui"
 	tui_context "github.com/zulfikawr/fm/internal/tui/context"
+	"github.com/zulfikawr/fm/internal/tui/handlers/app"
 	"github.com/zulfikawr/fm/internal/tui/messages"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -89,6 +90,13 @@ func HandleConfirmKeys(m *tui_context.Model, msg tea.KeyMsg) tea.Cmd {
 			return nil
 		}
 		return nil
+	}
+
+	if action == constants.ActionTrashRestore {
+		m.UI.StopConfirming()
+		return func() tea.Msg {
+			return app.ResolveTrashRestoreConflict(m, msg.String())
+		}
 	}
 
 	switch msg.String() {
