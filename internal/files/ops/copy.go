@@ -30,7 +30,7 @@ func CrossCopy(opts CopyOptions) (err error) {
 			logger.Errorf("CrossCopy panic recovered: %v", r)
 		}
 	}()
-	
+
 	if opts.Src == "" {
 		return errors.WrapErrorWithPath(fmt.Errorf("no files selected"), "Copy", "")
 	}
@@ -251,7 +251,7 @@ func crossCopyDirRecursive(state *copyState, src, dst string) error {
 			return state.opts.OpCtx.Context.Err()
 		default:
 		}
-		
+
 		entry := entries[i]
 		srcPath := state.opts.SrcFS.Join(src, entry.Name())
 		dstPath := state.opts.OpCtx.FS.Join(dst, entry.Name())

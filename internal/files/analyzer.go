@@ -126,7 +126,7 @@ func (a *Analyzer) scanConcurrent(ctx context.Context, path string, track func(i
 			return res, ctx.Err()
 		default:
 		}
-		
+
 		entry := entries[i]
 		wg.Add(1)
 		childPath := a.fs.Join(path, entry.Name())

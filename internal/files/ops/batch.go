@@ -17,7 +17,7 @@ func DeleteMultiple(opts DeleteOptions) (err error) {
 			logger.Errorf("DeleteMultiple panic recovered: %v", r)
 		}
 	}()
-	
+
 	if len(opts.Paths) > 0 {
 		if err := ValidateWritable(opts.OpCtx.Context, opts.OpCtx.FS, core.GetParent(opts.OpCtx.FS, opts.Paths[0])); err != nil {
 			return err
@@ -82,7 +82,7 @@ func CopyMultiple(opts BatchOptions) (err error) {
 			logger.Errorf("CopyMultiple panic recovered: %v", r)
 		}
 	}()
-	
+
 	if err := ValidateWritable(opts.OpCtx.Context, opts.OpCtx.FS, opts.DestDir); err != nil {
 		return err
 	}
@@ -163,7 +163,7 @@ func MoveMultiple(opts BatchOptions) (err error) {
 			logger.Errorf("MoveMultiple panic recovered: %v", r)
 		}
 	}()
-	
+
 	if err := ValidateWritable(opts.OpCtx.Context, opts.OpCtx.FS, opts.DestDir); err != nil {
 		return err
 	}

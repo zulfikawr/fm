@@ -15,7 +15,9 @@ func (gs *gitService) GetRoot(ctx context.Context, path string) string {
 
 	// Check cache
 	if root, ok := gs.rootCache.Load(path); ok {
-		return root.(string)
+		if rootStr, ok := root.(string); ok {
+			return rootStr
+		}
 	}
 
 	ctx, cancel := context.WithTimeout(ctx, constants.GitCommandTimeout)

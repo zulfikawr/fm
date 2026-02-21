@@ -74,7 +74,10 @@ func (sc *SimpleCache[K, V]) Put(key K, value V) {
 	if sc.capacity > 0 && sc.order.Len() > sc.capacity {
 		// Find first non-protected item from the back to evict
 		for e := sc.order.Back(); e != nil; e = e.Prev() {
-			k := e.Value.(K)
+			k, ok := e.Value.(K)
+			if !ok {
+				continue
+			}
 			if !sc.protected[k] {
 				sc.order.Remove(e)
 				delete(sc.cache, k)
@@ -125,7 +128,8 @@ func (sc *SimpleCache[K, V]) Delete(key K) {
 	defer sc.mu.Unlock()
 	delete(sc.cache, key)
 	for e := sc.order.Front(); e != nil; e = e.Next() {
-		if e.Value.(K) == key {
+		k, ok := e.Value.(K)
+		if ok && k == key {
 			sc.order.Remove(e)
 			break
 		}

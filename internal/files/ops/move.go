@@ -26,7 +26,7 @@ func CrossMove(opts CopyOptions) (err error) {
 			logger.Errorf("CrossMove panic recovered: %v", r)
 		}
 	}()
-	
+
 	if opts.Src == "" {
 		return errors.WrapErrorWithPath(fmt.Errorf("no files selected"), "Move", "")
 	}

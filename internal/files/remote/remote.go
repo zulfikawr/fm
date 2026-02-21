@@ -154,7 +154,7 @@ func (fs *RemoteFS) Close() error {
 	defer fs.mu.Unlock()
 
 	var errs []string
-	
+
 	// Close SFTP client first
 	if fs.client != nil {
 		if err := fs.client.Close(); err != nil {
@@ -162,7 +162,7 @@ func (fs *RemoteFS) Close() error {
 		}
 		fs.client = nil
 	}
-	
+
 	// Then close SSH connection
 	if fs.conn != nil {
 		if err := fs.conn.Close(); err != nil {
@@ -170,7 +170,7 @@ func (fs *RemoteFS) Close() error {
 		}
 		fs.conn = nil
 	}
-	
+
 	if len(errs) > 0 {
 		return errors.WrapError(fmt.Errorf("close failed: %s", strings.Join(errs, ", ")), "Close")
 	}

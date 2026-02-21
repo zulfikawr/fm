@@ -1,10 +1,7 @@
 package config
 
 import (
-	"encoding/json"
 	"fmt"
-	"os"
-	"path/filepath"
 	"strings"
 
 	"github.com/zulfikawr/fm/internal/logger"
@@ -166,90 +163,6 @@ func (kb Keybinding) HumanLabel() string {
 		}
 	}
 	return strings.Join(parts, " ")
-}
-
-// GetKeybindingPath returns the path to the keybinding config file
-func GetKeybindingPath() string {
-	configDir, err := os.UserConfigDir()
-	if err != nil {
-		home, err := os.UserHomeDir()
-		if err != nil {
-			return filepath.Join(".", "keybindings.json")
-		}
-		return filepath.Join(home, ".config", "fm", "keybindings.json")
-	}
-	return filepath.Join(configDir, "fm", "keybindings.json")
-}
-
-// LoadKeybindings reads keybindings from disk or returns defaults
-func LoadKeybindings() []Keybinding {
-	path := GetKeybindingPath()
-	data, err := os.ReadFile(path)
-	if err != nil {
-		return DefaultKeybindings()
-	}
-
-	var cfg KeybindingConfig
-	if err := json.Unmarshal(data, &cfg); err != nil {
-		logger.Warnf("keybinding config parse failed: %s: %v, using defaults", path, err)
-		return DefaultKeybindings()
-	}
-
-	// Validate the loaded keybindings
-	if err := ValidateKeybindings(cfg.Keybinds); err != nil {
-		logger.Warnf("keybinding validation failed: %v, using defaults", err)
-		return DefaultKeybindings()
-	}
-
-	// Merge with defaults to ensure all required actions have bindings
-	defaults := DefaultKeybindings()
-	defaultMap := make(map[string]*Keybinding)
-	for i := range defaults {
-		defaultMap[defaults[i].Action] = &defaults[i]
-	}
-
-	resultMap := make(map[string]*Keybinding)
-	for i := range cfg.Keybinds {
-		resultMap[cfg.Keybinds[i].Action] = &cfg.Keybinds[i]
-	}
-
-	// Add missing defaults
-	finalKeybinds := make([]Keybinding, 0)
-	for i := range defaults {
-		defaultKb := defaults[i]
-		if customKb, exists := resultMap[defaultKb.Action]; exists {
-			finalKeybinds = append(finalKeybinds, *customKb)
-		} else {
-			finalKeybinds = append(finalKeybinds, defaultKb)
-		}
-	}
-
-	return finalKeybinds
-}
-
-// SaveKeybindings writes keybindings to disk
-func SaveKeybindings(keybinds []Keybinding) error {
-	if err := ValidateKeybindings(keybinds); err != nil {
-		return fmt.Errorf("invalid keybindings: %w", err)
-	}
-
-	cfg := KeybindingConfig{
-		Version:  CurrentKeybindingVersion,
-		Keybinds: keybinds,
-	}
-
-	path := GetKeybindingPath()
-	dir := filepath.Dir(path)
-	if err := os.MkdirAll(dir, 0o755); err != nil {
-		return err
-	}
-
-	data, err := json.MarshalIndent(cfg, "", "  ")
-	if err != nil {
-		return err
-	}
-
-	return os.WriteFile(path, data, 0o644)
 }
 
 // GetKeybindingForAction returns the keys associated with a specific action

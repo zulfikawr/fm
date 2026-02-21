@@ -23,7 +23,7 @@ func Zip(opts ZipOptions) (err error) {
 			logger.Errorf("Zip panic recovered: %v", r)
 		}
 	}()
-	
+
 	if len(opts.Srcs) == 0 {
 		return errors.WrapError(fmt.Errorf("no source files specified"), "Zip")
 	}
@@ -195,7 +195,7 @@ func Unzip(opts ZipOptions) (err error) {
 			logger.Errorf("Unzip panic recovered: %v", r)
 		}
 	}()
-	
+
 	resolver := conflict.NewResolver()
 	resolvedDst, renamed, err := resolver.Resolve(opts.OpCtx.Context, opts.OpCtx.FS, conflict.ResolveOptions{
 		Src:    opts.Src,
@@ -288,7 +288,7 @@ func Unzip(opts ZipOptions) (err error) {
 			logger.Warnf("Skipping nil zip entry at index %d", i)
 			continue
 		}
-		
+
 		select {
 		case <-opts.OpCtx.Context.Done():
 			return opts.OpCtx.Context.Err()

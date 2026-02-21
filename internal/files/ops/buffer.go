@@ -16,7 +16,13 @@ var bufferPool = sync.Pool{
 
 // GetBuffer acquires a buffer from the pool
 func GetBuffer() []byte {
-	return *bufferPool.Get().(*[]byte)
+	buf := bufferPool.Get()
+	if b, ok := buf.(*[]byte); ok {
+		return *b
+	}
+	// Fallback: create new buffer if type assertion fails
+	b := make([]byte, constants.CopyBufferSize)
+	return b
 }
 
 // PutBuffer returns a buffer to the pool

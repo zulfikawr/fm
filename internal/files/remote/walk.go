@@ -54,7 +54,7 @@ func (fs *RemoteFS) parallelWalk(state *walkState, root string) error {
 		return fmt.Errorf("filesystem closed")
 	default:
 	}
-	
+
 	// Read current directory entries
 	entries, err := fs.ReadDir(state.ctx, root)
 	if err != nil {
@@ -70,7 +70,7 @@ func (fs *RemoteFS) parallelWalk(state *walkState, root string) error {
 			return fmt.Errorf("filesystem closed")
 		default:
 		}
-		
+
 		entry := entries[i]
 		p := path.Join(root, entry.Name())
 

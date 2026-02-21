@@ -64,7 +64,7 @@ func (fs *RemoteFS) RemoveAll(ctx context.Context, p string) error {
 			return ctx.Err()
 		default:
 		}
-		
+
 		info, err := fs.client.Stat(p)
 		if err != nil {
 			return err
@@ -85,7 +85,7 @@ func (fs *RemoteFS) RemoveAll(ctx context.Context, p string) error {
 				return ctx.Err()
 			default:
 			}
-			
+
 			entry := entries[i]
 			childPath := path.Join(p, entry.Name())
 			if err := fs.RemoveAll(ctx, childPath); err != nil {
@@ -108,11 +108,11 @@ func (fs *RemoteFS) Create(ctx context.Context, p string) (io.WriteCloser, error
 		fs.mu.RLock()
 		client := fs.client
 		fs.mu.RUnlock()
-		
+
 		if client == nil {
 			return fmt.Errorf("sftp client is nil")
 		}
-		
+
 		var err error
 		f, err = client.Create(p)
 		return err
@@ -129,11 +129,11 @@ func (fs *RemoteFS) Open(ctx context.Context, p string) (io.ReadCloser, error) {
 		fs.mu.RLock()
 		client := fs.client
 		fs.mu.RUnlock()
-		
+
 		if client == nil {
 			return fmt.Errorf("sftp client is nil")
 		}
-		
+
 		var err error
 		f, err = client.Open(p)
 		return err

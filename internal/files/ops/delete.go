@@ -19,7 +19,7 @@ func Delete(opts DeleteOptions) (err error) {
 			logger.Errorf("Delete panic recovered: %v", r)
 		}
 	}()
-	
+
 	if len(opts.Paths) == 0 || opts.Paths[0] == "" {
 		return errors.WrapErrorWithPath(fmt.Errorf("no files selected"), "Delete", "")
 	}

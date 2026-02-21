@@ -3,7 +3,6 @@ package ops
 import (
 	"fmt"
 	"os/exec"
-	"runtime"
 	"strings"
 
 	"github.com/zulfikawr/fm/internal/constants"
@@ -52,34 +51,6 @@ func GetOpenAtLineCmd(opts OpenOptions) (*exec.Cmd, bool, error) {
 	}
 
 	return exec.Command(editor, args...), isTermEditor, nil
-}
-
-// GetSystemOpenCmd returns a command to open a file using the system's default opener.
-func GetSystemOpenCmd(fs core.FileSystem, path string) (*exec.Cmd, error) {
-	if !fs.IsLocal() {
-		return nil, fmt.Errorf("remote open not supported")
-	}
-
-	var cmd *exec.Cmd
-	switch runtime.GOOS {
-	case "linux":
-		opener := "xdg-open"
-		if path, err := lookPath(opener); err != nil {
-			return nil, errors.WrapError(err, fmt.Sprintf("OpenWithXdgOpen (found at: %q)", path))
-		}
-		cmd = exec.Command("xdg-open", path)
-	case "darwin":
-		opener := "open"
-		if path, err := lookPath(opener); err != nil {
-			return nil, errors.WrapError(err, fmt.Sprintf("OpenWithMacOSOpen (found at: %q)", path))
-		}
-		cmd = exec.Command("open", path)
-	case "windows":
-		cmd = exec.Command("rundll32", "url.dll,FileProtocolHandler", path)
-	default:
-		return nil, exec.ErrNotFound
-	}
-	return cmd, nil
 }
 
 func isTerminalEditor(editor string) bool {

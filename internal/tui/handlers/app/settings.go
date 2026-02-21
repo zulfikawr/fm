@@ -116,19 +116,6 @@ func buildSettingGroups(m *tuictx.Model) []struct {
 	return groups
 }
 
-func GetSettingGroups(m *tuictx.Model) []struct {
-	Title    string
-	Settings []struct {
-		Label    string
-		Value    string
-		Inactive bool
-	}
-} {
-	// This should match the structure in internal/tui/components/views/settings.go
-	// In a real refactor, we would unify these.
-	return nil
-}
-
 // ScrollSettings recalculates the settings view offset
 func ScrollSettings(m *tuictx.Model) int {
 	cursor := m.Settings.Cursor

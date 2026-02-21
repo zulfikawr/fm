@@ -55,7 +55,7 @@ func ValidateSecurePath(fs core.FileSystem, baseDir, targetPath string) (string,
 	// Normalize path separators and clean the target path
 	targetPath = filepath.ToSlash(targetPath)
 	targetPath = filepath.Clean(targetPath)
-	
+
 	// Block absolute paths
 	if filepath.IsAbs(targetPath) {
 		return "", &errors.ValidationError{
@@ -64,19 +64,19 @@ func ValidateSecurePath(fs core.FileSystem, baseDir, targetPath string) (string,
 			Message: "Security block: Absolute paths not allowed",
 		}
 	}
-	
+
 	fullPath := fs.Join(baseDir, targetPath)
 	cleanBase, err := fs.Abs(baseDir)
 	if err != nil {
 		return "", errors.WrapError(err, "ValidateSecurePath")
 	}
-	
+
 	// Resolve symlinks to prevent symlink-based traversal
 	cleanTarget, err := fs.Abs(fullPath)
 	if err != nil {
 		return "", errors.WrapError(err, "ValidateSecurePath")
 	}
-	
+
 	// Additional check: evaluate symlinks if local filesystem
 	if fs.IsLocal() {
 		if resolved, err := filepath.EvalSymlinks(cleanTarget); err == nil {

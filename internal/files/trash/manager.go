@@ -224,19 +224,6 @@ func (m *Manager) Restore(ctx context.Context, trashedName string) error {
 	return nil
 }
 
-// RestoreWithOverwrite restores an item, overwriting if it exists.
-func (m *Manager) RestoreWithOverwrite(ctx context.Context, trashedName string) error {
-	info, err := m.readMetadata(trashedName)
-	if err != nil {
-		return fmt.Errorf("read metadata: %w", err)
-	}
-
-	// Remove existing file if present
-	logger.LogIfError(os.RemoveAll(info.OriginalPath), "trash: failed to remove existing item for overwrite")
-
-	return m.Restore(ctx, trashedName)
-}
-
 // RestoreWithRename restores an item with a new name to avoid conflicts.
 func (m *Manager) RestoreWithRename(ctx context.Context, trashedName, newName string) error {
 	info, err := m.readMetadata(trashedName)

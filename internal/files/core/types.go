@@ -67,13 +67,13 @@ type PathResolver interface {
 // It forms a tree structure where each node contains size information
 // and references to its parent and children.
 type AnalysisResult struct {
-	Path        string             // Full path to the file or directory
-	Name        string             // Display name
-	Size        int64              // Total size in bytes (recursive for directories)
-	IsDirectory bool               // Whether this is a directory
-	Children    []*AnalysisResult  // Child nodes (for directories)
-	Parent      *AnalysisResult    // Parent node (nil for root)
-	Percentage  float64            // Size as percentage of parent (0-1)
+	Path        string            // Full path to the file or directory
+	Name        string            // Display name
+	Size        int64             // Total size in bytes (recursive for directories)
+	IsDirectory bool              // Whether this is a directory
+	Children    []*AnalysisResult // Child nodes (for directories)
+	Parent      *AnalysisResult   // Parent node (nil for root)
+	Percentage  float64           // Size as percentage of parent (0-1)
 }
 
 // FileSystem defines the complete interface for file system operations.
