@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.2.2] - 2026-02-21
+
+### Fixed
+- **Security: Enhanced Path Traversal Protection**: Strengthened archive extraction security
+  - Added path normalization to prevent Windows path separator bypass on Unix systems
+  - Implemented symlink resolution to prevent symlink-based directory traversal
+  - Added absolute path blocking in archive entries
+  - Enhanced validation with multiple layers of security checks
+- **Remote File Handle Management**: Fixed potential file handle leaks in SFTP operations
+  - Wrapped remote file handles with proper context cancellation support
+  - Ensured client and connection are set to nil after closing to prevent reuse
+  - Added context checks in file read/write operations
+- **Context Cancellation**: Improved responsiveness for long-running operations
+  - Added context cancellation checks in directory copy loops
+  - Added context checks in remote RemoveAll recursive operations
+  - Added context checks in remote parallel walk operations
+  - Added context checks in disk usage analyzer loops
+  - Operations now respond faster to user cancellation requests
+
 ## [v1.2.1] - 2026-02-21
 
 ### Fixed

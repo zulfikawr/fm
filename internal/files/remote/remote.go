@@ -145,6 +145,7 @@ func NewRemoteFS(opts ssh.SSHConfig) (*RemoteFS, error) {
 
 // Close releases the SFTP client and the underlying SSH connection.
 func (fs *RemoteFS) Close() error {
+	// Cancel context to stop keepAlive goroutine
 	if fs.cancel != nil {
 		fs.cancel()
 	}
@@ -153,16 +154,23 @@ func (fs *RemoteFS) Close() error {
 	defer fs.mu.Unlock()
 
 	var errs []string
+	
+	// Close SFTP client first
 	if fs.client != nil {
 		if err := fs.client.Close(); err != nil {
 			errs = append(errs, fmt.Sprintf("sftp client: %v", err))
 		}
+		fs.client = nil
 	}
+	
+	// Then close SSH connection
 	if fs.conn != nil {
 		if err := fs.conn.Close(); err != nil {
 			errs = append(errs, fmt.Sprintf("ssh connection: %v", err))
 		}
+		fs.conn = nil
 	}
+	
 	if len(errs) > 0 {
 		return errors.WrapError(fmt.Errorf("close failed: %s", strings.Join(errs, ", ")), "Close")
 	}

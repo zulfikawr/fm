@@ -46,6 +46,15 @@ type walkState struct {
 }
 
 func (fs *RemoteFS) parallelWalk(state *walkState, root string) error {
+	// Check context before reading directory
+	select {
+	case <-state.ctx.Done():
+		return state.ctx.Err()
+	case <-fs.ctx.Done():
+		return fmt.Errorf("filesystem closed")
+	default:
+	}
+	
 	// Read current directory entries
 	entries, err := fs.ReadDir(state.ctx, root)
 	if err != nil {
@@ -53,6 +62,15 @@ func (fs *RemoteFS) parallelWalk(state *walkState, root string) error {
 	}
 
 	for i := range entries {
+		// Check context in loop
+		select {
+		case <-state.ctx.Done():
+			return state.ctx.Err()
+		case <-fs.ctx.Done():
+			return fmt.Errorf("filesystem closed")
+		default:
+		}
+		
 		entry := entries[i]
 		p := path.Join(root, entry.Name())
 

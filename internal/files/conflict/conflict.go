@@ -3,6 +3,7 @@ package conflict
 import (
 	"context"
 	"fmt"
+	"path/filepath"
 	"strings"
 
 	"github.com/zulfikawr/fm/internal/files/core"
@@ -48,14 +49,36 @@ type Resolver interface {
 // ValidateSecurePath ensures that a target path is securely contained within a base directory.
 // This prevents ZipSlip and other directory traversal attacks.
 func ValidateSecurePath(fs core.FileSystem, baseDir, targetPath string) (string, error) {
+	// Normalize path separators and clean the target path
+	targetPath = filepath.ToSlash(targetPath)
+	targetPath = filepath.Clean(targetPath)
+	
+	// Block absolute paths
+	if filepath.IsAbs(targetPath) {
+		return "", &errors.ValidationError{
+			Field:   "targetPath",
+			Value:   targetPath,
+			Message: "Security block: Absolute paths not allowed",
+		}
+	}
+	
 	fullPath := fs.Join(baseDir, targetPath)
 	cleanBase, err := fs.Abs(baseDir)
 	if err != nil {
 		return "", errors.WrapError(err, "ValidateSecurePath")
 	}
+	
+	// Resolve symlinks to prevent symlink-based traversal
 	cleanTarget, err := fs.Abs(fullPath)
 	if err != nil {
 		return "", errors.WrapError(err, "ValidateSecurePath")
+	}
+	
+	// Additional check: evaluate symlinks if local filesystem
+	if fs.IsLocal() {
+		if resolved, err := filepath.EvalSymlinks(cleanTarget); err == nil {
+			cleanTarget = resolved
+		}
 	}
 
 	rel, err := fs.Rel(cleanBase, cleanTarget)
@@ -63,7 +86,8 @@ func ValidateSecurePath(fs core.FileSystem, baseDir, targetPath string) (string,
 		return "", errors.WrapError(err, "ValidateSecurePath")
 	}
 
-	if strings.HasPrefix(rel, "..") || strings.HasPrefix(rel, fs.Separator()) {
+	// Block any path that tries to escape the base directory
+	if strings.HasPrefix(rel, "..") || strings.HasPrefix(rel, fs.Separator()) || filepath.IsAbs(rel) {
 		return "", &errors.ValidationError{
 			Field:   "targetPath",
 			Value:   targetPath,

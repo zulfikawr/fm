@@ -2,9 +2,12 @@ package remote
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"os"
 	"path"
+
+	"github.com/pkg/sftp"
 )
 
 func (fs *RemoteFS) ReadDirEntries(ctx context.Context, p string) ([]os.DirEntry, error) {
@@ -55,6 +58,13 @@ func (fs *RemoteFS) Lstat(ctx context.Context, p string) (os.FileInfo, error) {
 
 func (fs *RemoteFS) RemoveAll(ctx context.Context, p string) error {
 	return fs.runWithRetry(func() error {
+		// Check context before starting
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		default:
+		}
+		
 		info, err := fs.client.Stat(p)
 		if err != nil {
 			return err
@@ -69,6 +79,13 @@ func (fs *RemoteFS) RemoveAll(ctx context.Context, p string) error {
 		}
 
 		for i := range entries {
+			// Check context in loop
+			select {
+			case <-ctx.Done():
+				return ctx.Err()
+			default:
+			}
+			
 			entry := entries[i]
 			childPath := path.Join(p, entry.Name())
 			if err := fs.RemoveAll(ctx, childPath); err != nil {
@@ -86,23 +103,77 @@ func (fs *RemoteFS) Rename(ctx context.Context, oldPath, newPath string) error {
 }
 
 func (fs *RemoteFS) Create(ctx context.Context, p string) (io.WriteCloser, error) {
-	var f io.WriteCloser
+	var f *sftp.File
 	err := fs.runWithRetry(func() error {
+		fs.mu.RLock()
+		client := fs.client
+		fs.mu.RUnlock()
+		
+		if client == nil {
+			return fmt.Errorf("sftp client is nil")
+		}
+		
 		var err error
-		f, err = fs.client.Create(p)
+		f, err = client.Create(p)
 		return err
 	})
-	return f, err
+	if err != nil {
+		return nil, err
+	}
+	return &remoteFileWrapper{file: f, fs: fs, ctx: ctx}, err
 }
 
 func (fs *RemoteFS) Open(ctx context.Context, p string) (io.ReadCloser, error) {
-	var f io.ReadCloser
+	var f *sftp.File
 	err := fs.runWithRetry(func() error {
+		fs.mu.RLock()
+		client := fs.client
+		fs.mu.RUnlock()
+		
+		if client == nil {
+			return fmt.Errorf("sftp client is nil")
+		}
+		
 		var err error
-		f, err = fs.client.Open(p)
+		f, err = client.Open(p)
 		return err
 	})
-	return f, err
+	if err != nil {
+		return nil, err
+	}
+	return &remoteFileWrapper{file: f, fs: fs, ctx: ctx}, err
+}
+
+// remoteFileWrapper wraps sftp.File to ensure proper cleanup
+type remoteFileWrapper struct {
+	file *sftp.File
+	fs   *RemoteFS
+	ctx  context.Context
+}
+
+func (w *remoteFileWrapper) Read(p []byte) (n int, err error) {
+	select {
+	case <-w.ctx.Done():
+		return 0, w.ctx.Err()
+	default:
+	}
+	return w.file.Read(p)
+}
+
+func (w *remoteFileWrapper) Write(p []byte) (n int, err error) {
+	select {
+	case <-w.ctx.Done():
+		return 0, w.ctx.Err()
+	default:
+	}
+	return w.file.Write(p)
+}
+
+func (w *remoteFileWrapper) Close() error {
+	if w.file != nil {
+		return w.file.Close()
+	}
+	return nil
 }
 
 func (fs *RemoteFS) MkdirAll(ctx context.Context, p string, perm os.FileMode) error {

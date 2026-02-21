@@ -245,6 +245,13 @@ func crossCopyDirRecursive(state *copyState, src, dst string) error {
 	}
 
 	for i := range entries {
+		// Check context cancellation in loop
+		select {
+		case <-state.opts.OpCtx.Context.Done():
+			return state.opts.OpCtx.Context.Err()
+		default:
+		}
+		
 		entry := entries[i]
 		srcPath := state.opts.SrcFS.Join(src, entry.Name())
 		dstPath := state.opts.OpCtx.FS.Join(dst, entry.Name())

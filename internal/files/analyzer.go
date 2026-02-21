@@ -120,6 +120,13 @@ func (a *Analyzer) scanConcurrent(ctx context.Context, path string, track func(i
 	var wg sync.WaitGroup
 
 	for i := range entries {
+		// Check context in loop
+		select {
+		case <-ctx.Done():
+			return res, ctx.Err()
+		default:
+		}
+		
 		entry := entries[i]
 		wg.Add(1)
 		childPath := a.fs.Join(path, entry.Name())
