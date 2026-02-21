@@ -7,10 +7,19 @@ import (
 	"github.com/zulfikawr/fm/internal/files/core"
 	"github.com/zulfikawr/fm/internal/files/errors"
 	"github.com/zulfikawr/fm/internal/files/trash"
+	"github.com/zulfikawr/fm/internal/logger"
 )
 
 // Delete removes a file or directory recursively.
-func Delete(opts DeleteOptions) error {
+func Delete(opts DeleteOptions) (err error) {
+	// Recover from panics and convert to errors
+	defer func() {
+		if r := recover(); r != nil {
+			err = fmt.Errorf("panic during delete: %v", r)
+			logger.Errorf("Delete panic recovered: %v", r)
+		}
+	}()
+	
 	if len(opts.Paths) == 0 || opts.Paths[0] == "" {
 		return errors.WrapErrorWithPath(fmt.Errorf("no files selected"), "Delete", "")
 	}

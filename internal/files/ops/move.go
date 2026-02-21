@@ -18,7 +18,15 @@ func Move(opts CopyOptions) error {
 }
 
 // CrossMove moves a file or directory between different filesystems.
-func CrossMove(opts CopyOptions) error {
+func CrossMove(opts CopyOptions) (err error) {
+	// Recover from panics and convert to errors
+	defer func() {
+		if r := recover(); r != nil {
+			err = fmt.Errorf("panic during move: %v", r)
+			logger.Errorf("CrossMove panic recovered: %v", r)
+		}
+	}()
+	
 	if opts.Src == "" {
 		return errors.WrapErrorWithPath(fmt.Errorf("no files selected"), "Move", "")
 	}

@@ -22,7 +22,15 @@ func Copy(opts CopyOptions) error {
 }
 
 // CrossCopy copies a file or directory between different filesystems.
-func CrossCopy(opts CopyOptions) error {
+func CrossCopy(opts CopyOptions) (err error) {
+	// Recover from panics and convert to errors
+	defer func() {
+		if r := recover(); r != nil {
+			err = fmt.Errorf("panic during copy: %v", r)
+			logger.Errorf("CrossCopy panic recovered: %v", r)
+		}
+	}()
+	
 	if opts.Src == "" {
 		return errors.WrapErrorWithPath(fmt.Errorf("no files selected"), "Copy", "")
 	}

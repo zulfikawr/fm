@@ -319,6 +319,60 @@ func TestUnzip_ConflictPolicies(t *testing.T) {
 		testutil.AssertNoError(t, err, "ReadFile")
 		testutil.AssertEqual(t, "new content", string(content), "Should overwrite")
 	})
+
+	t.Run("OverwriteDirectoryWithSameName", func(t *testing.T) {
+		// Create a directory with the same name as the destination
+		destDir := filepath.Join(tmpDir, "myarchive")
+		if err := os.MkdirAll(filepath.Join(destDir, "subdir"), 0755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(filepath.Join(destDir, "existing.txt"), []byte("existing"), 0644); err != nil {
+			t.Fatal(err)
+		}
+
+		// Create a zip with different content
+		zipFile2 := filepath.Join(tmpDir, "myarchive.zip")
+		f2, err := os.Create(zipFile2)
+		if err != nil {
+			t.Fatalf("failed to create zip: %v", err)
+		}
+		zw2 := zip.NewWriter(f2)
+		w2, err := zw2.Create("newfile.txt")
+		if err != nil {
+			t.Fatalf("failed to create entry: %v", err)
+		}
+		if _, err := w2.Write([]byte("new file content")); err != nil {
+			t.Fatalf("failed to write content: %v", err)
+		}
+		if err := zw2.Close(); err != nil {
+			t.Fatalf("failed to close zip writer: %v", err)
+		}
+		if err := f2.Close(); err != nil {
+			t.Fatalf("failed to close file: %v", err)
+		}
+
+		// Unzip with overwrite - should remove the existing directory first
+		err = Unzip(ZipOptions{
+			OpCtx:    OpContext{Context: ctx, FS: fs},
+			Src:      zipFile2,
+			Dst:      destDir,
+			Conflict: ConflictOptions{Policy: conflict.Overwrite},
+		})
+		testutil.AssertNoError(t, err, "Unzip should overwrite existing directory")
+
+		// Verify old files are gone
+		if _, err := os.Stat(filepath.Join(destDir, "existing.txt")); !os.IsNotExist(err) {
+			t.Error("Old file should be removed")
+		}
+		if _, err := os.Stat(filepath.Join(destDir, "subdir")); !os.IsNotExist(err) {
+			t.Error("Old subdirectory should be removed")
+		}
+
+		// Verify new file exists
+		content, err := os.ReadFile(filepath.Join(destDir, "newfile.txt"))
+		testutil.AssertNoError(t, err, "ReadFile")
+		testutil.AssertEqual(t, "new file content", string(content), "Should have new content")
+	})
 }
 
 func TestZip_WalkError(t *testing.T) {

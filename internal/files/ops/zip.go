@@ -15,7 +15,15 @@ import (
 )
 
 // Zip compresses multiple files or directories into a single zip archive.
-func Zip(opts ZipOptions) error {
+func Zip(opts ZipOptions) (err error) {
+	// Recover from panics and convert to errors
+	defer func() {
+		if r := recover(); r != nil {
+			err = fmt.Errorf("panic during zip: %v", r)
+			logger.Errorf("Zip panic recovered: %v", r)
+		}
+	}()
+	
 	if len(opts.Srcs) == 0 {
 		return errors.WrapError(fmt.Errorf("no source files specified"), "Zip")
 	}
@@ -179,7 +187,15 @@ func walkAndZip(state *zipState, currentPath, baseDir string) error {
 }
 
 // Unzip extracts a zip archive to the specified destination directory.
-func Unzip(opts ZipOptions) error {
+func Unzip(opts ZipOptions) (err error) {
+	// Recover from panics and convert to errors
+	defer func() {
+		if r := recover(); r != nil {
+			err = fmt.Errorf("panic during unzip: %v", r)
+			logger.Errorf("Unzip panic recovered: %v", r)
+		}
+	}()
+	
 	resolver := conflict.NewResolver()
 	resolvedDst, renamed, err := resolver.Resolve(opts.OpCtx.Context, opts.OpCtx.FS, conflict.ResolveOptions{
 		Src:    opts.Src,
@@ -201,6 +217,17 @@ func Unzip(opts ZipOptions) error {
 
 	if renamed {
 		logger.Debugf("Target renamed due to conflict: %s", resolvedDst)
+	}
+
+	// If overwriting and destination exists, remove it first to prevent conflicts
+	if opts.Conflict.Policy == conflict.Overwrite && !renamed {
+		if dstInfo, statErr := opts.OpCtx.FS.Stat(opts.OpCtx.Context, resolvedDst); statErr == nil {
+			if removeErr := opts.OpCtx.FS.RemoveAll(opts.OpCtx.Context, resolvedDst); removeErr != nil {
+				logger.Warnf("Failed to remove existing destination for overwrite: %v", removeErr)
+				return errors.WrapErrorWithPath(removeErr, "RemoveDestination", resolvedDst)
+			}
+			logger.Debugf("Removed existing %s for overwrite", map[bool]string{true: "directory", false: "file"}[dstInfo.IsDir()])
+		}
 	}
 
 	// Open the source file
@@ -257,6 +284,11 @@ func Unzip(opts ZipOptions) error {
 
 	for i := range zr.File {
 		f := zr.File[i]
+		if f == nil {
+			logger.Warnf("Skipping nil zip entry at index %d", i)
+			continue
+		}
+		
 		select {
 		case <-opts.OpCtx.Context.Done():
 			return opts.OpCtx.Context.Err()
@@ -265,10 +297,17 @@ func Unzip(opts ZipOptions) error {
 
 		fpath, err := conflict.ValidateSecurePath(opts.OpCtx.FS, resolvedDst, f.Name)
 		if err != nil {
+			logger.Warnf("Skipping invalid path in zip: %s (error: %v)", f.Name, err)
 			continue // Skip dangerous paths
 		}
 
-		if f.FileInfo().IsDir() {
+		fileInfo := f.FileInfo()
+		if fileInfo == nil {
+			logger.Warnf("Skipping zip entry with nil FileInfo: %s", f.Name)
+			continue
+		}
+
+		if fileInfo.IsDir() {
 			err = opts.OpCtx.FS.MkdirAll(opts.OpCtx.Context, fpath, f.Mode()|0111) // Ensure execute permission for directory access
 			if err != nil {
 				return errors.WrapErrorWithPath(err, "MkdirAll", fpath)

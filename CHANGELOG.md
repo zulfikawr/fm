@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.2.1] - 2026-02-21
+
+### Fixed
+- **Unzip Panic Prevention**: Fixed panic when unzipping with overwrite policy when a directory with the same name exists
+  - Now properly removes existing destination directory/file before extraction when using overwrite policy
+  - Added nil checks and validation for zip entries to prevent crashes on malformed archives
+  - Added panic recovery to all critical file operations (zip, unzip, copy, move, delete) to convert panics to errors
+  - Improved error handling and logging throughout extraction process
+
 ## [v1.2.0] - 2026-02-12
 
 ### Added

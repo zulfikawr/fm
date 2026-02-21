@@ -5,10 +5,19 @@ import (
 
 	"github.com/zulfikawr/fm/internal/files/conflict"
 	"github.com/zulfikawr/fm/internal/files/core"
+	"github.com/zulfikawr/fm/internal/logger"
 )
 
 // DeleteMultiple removes multiple files or directories recursively.
-func DeleteMultiple(opts DeleteOptions) error {
+func DeleteMultiple(opts DeleteOptions) (err error) {
+	// Recover from panics and convert to errors
+	defer func() {
+		if r := recover(); r != nil {
+			err = fmt.Errorf("panic during batch delete: %v", r)
+			logger.Errorf("DeleteMultiple panic recovered: %v", r)
+		}
+	}()
+	
 	if len(opts.Paths) > 0 {
 		if err := ValidateWritable(opts.OpCtx.Context, opts.OpCtx.FS, core.GetParent(opts.OpCtx.FS, opts.Paths[0])); err != nil {
 			return err
@@ -65,7 +74,15 @@ func DeleteMultiple(opts DeleteOptions) error {
 }
 
 // CopyMultiple copies multiple items from sources to destDir between different filesystems.
-func CopyMultiple(opts BatchOptions) error {
+func CopyMultiple(opts BatchOptions) (err error) {
+	// Recover from panics and convert to errors
+	defer func() {
+		if r := recover(); r != nil {
+			err = fmt.Errorf("panic during batch copy: %v", r)
+			logger.Errorf("CopyMultiple panic recovered: %v", r)
+		}
+	}()
+	
 	if err := ValidateWritable(opts.OpCtx.Context, opts.OpCtx.FS, opts.DestDir); err != nil {
 		return err
 	}
@@ -138,7 +155,15 @@ func CopyMultiple(opts BatchOptions) error {
 }
 
 // MoveMultiple moves multiple items from sources to destDir between different filesystems.
-func MoveMultiple(opts BatchOptions) error {
+func MoveMultiple(opts BatchOptions) (err error) {
+	// Recover from panics and convert to errors
+	defer func() {
+		if r := recover(); r != nil {
+			err = fmt.Errorf("panic during batch move: %v", r)
+			logger.Errorf("MoveMultiple panic recovered: %v", r)
+		}
+	}()
+	
 	if err := ValidateWritable(opts.OpCtx.Context, opts.OpCtx.FS, opts.DestDir); err != nil {
 		return err
 	}
