@@ -1,3 +1,5 @@
+// Package view handles rendering of the TUI components.
+// It provides functions for rendering the header, body, footer, and overall layout.
 package view
 
 import (

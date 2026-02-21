@@ -1,3 +1,5 @@
+// Package errors provides custom error types and error wrapping utilities for file operations.
+// It includes specialized errors for validation, file operations, and path-related issues.
 package errors
 
 import (

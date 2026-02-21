@@ -1,3 +1,5 @@
+// Package git provides Git repository integration for the file manager.
+// It handles Git status parsing, repository detection, and .gitignore file processing.
 package git
 
 import (

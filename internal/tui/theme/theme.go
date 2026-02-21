@@ -30,7 +30,8 @@ type Theme struct {
 	Error     lipgloss.Color // Error states
 }
 
-// Available Themes
+// Themes is the collection of available color themes for the application.
+// Each theme defines a complete color palette for UI elements, git status, and semantic colors.
 var Themes = []Theme{
 	{
 		Name:         "Gruvbox",

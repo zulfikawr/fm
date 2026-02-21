@@ -1,3 +1,5 @@
+// Package config manages application configuration including UI settings, keybindings, and preferences.
+// It handles loading, saving, validation, and migration of configuration files.
 package config
 
 import (

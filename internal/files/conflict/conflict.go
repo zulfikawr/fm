@@ -1,3 +1,6 @@
+// Package conflict handles file operation conflicts and resolution strategies.
+// It provides policies for handling existing files (overwrite, skip, rename, ask)
+// and includes security validation for path traversal attacks.
 package conflict
 
 import (

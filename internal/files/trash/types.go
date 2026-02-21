@@ -1,3 +1,5 @@
+// Package trash implements a trash/recycle bin system for safe file deletion.
+// It provides metadata preservation, conflict handling, and automatic cleanup of old items.
 package trash
 
 import (

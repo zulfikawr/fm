@@ -1,3 +1,6 @@
+// Package bootstrap handles application initialization including filesystem setup,
+// configuration loading, and service instantiation. It prepares the application
+// for both TUI and CLI modes.
 package bootstrap
 
 import (

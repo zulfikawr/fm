@@ -1,3 +1,5 @@
+// Package remote implements the FileSystem interface for SFTP/SSH remote filesystems.
+// It provides connection management, automatic reconnection, and parallel directory traversal.
 package remote
 
 import (

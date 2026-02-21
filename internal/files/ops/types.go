@@ -1,3 +1,5 @@
+// Package ops implements file operations including copy, move, delete, search, and archive handling.
+// All operations support context cancellation, progress reporting, and conflict resolution.
 package ops
 
 import (

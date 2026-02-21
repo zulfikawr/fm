@@ -1,3 +1,5 @@
+// Package local implements the FileSystem interface for local filesystem operations.
+// It provides platform-specific implementations for file access, permissions, and preallocation.
 package local
 
 import (

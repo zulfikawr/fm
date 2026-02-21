@@ -1,3 +1,5 @@
+// Package listing handles directory content loading with progressive enrichment.
+// It provides skeleton loading for fast initial display and background metadata fetching.
 package listing
 
 import (

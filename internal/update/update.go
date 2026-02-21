@@ -1,3 +1,5 @@
+// Package update provides functionality for checking and installing application updates.
+// It supports downloading new versions from GitHub releases and performing in-place updates.
 package update
 
 import (

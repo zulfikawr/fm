@@ -1,3 +1,5 @@
+// Package testutil provides testing utilities and mocks for the file manager.
+// It includes mock implementations of filesystems, git services, and assertion helpers.
 package testutil
 
 import (

@@ -1,3 +1,5 @@
+// Package logger provides structured logging functionality for the application.
+// It supports multiple log levels and writes to a file in the user's cache directory.
 package logger
 
 import (

@@ -1,3 +1,5 @@
+// Package archive provides filesystem implementations for reading ZIP and TAR archives.
+// It allows browsing archive contents as if they were regular directories.
 package archive
 
 import (

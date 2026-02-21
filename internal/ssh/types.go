@@ -1,3 +1,5 @@
+// Package ssh provides SSH/SFTP connection utilities including authentication,
+// known_hosts management, and SSH config file parsing.
 package ssh
 
 import (

@@ -1,3 +1,6 @@
+// Package context defines the application state model and related types.
+// It contains the central Model struct that holds all application state including
+// navigation, UI state, operations, and configuration.
 package context
 
 // InputMode defines the various text input modes

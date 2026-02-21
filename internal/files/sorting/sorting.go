@@ -1,3 +1,5 @@
+// Package sorting provides file and directory sorting functionality.
+// It supports multiple sort modes including name, size, and modification time.
 package sorting
 
 import (

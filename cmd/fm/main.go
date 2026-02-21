@@ -1,3 +1,4 @@
+// Package main is the entry point for the fm terminal file manager.
 package main
 
 import (
@@ -19,6 +20,9 @@ func main() {
 	}
 }
 
+// run initializes and executes the file manager application.
+// It handles CLI argument parsing, mode selection (TUI, search, info, analyze, config),
+// and ensures proper cleanup on exit or panic.
 func run() error {
 	args, err := cli.Parse()
 	if err != nil {

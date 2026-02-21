@@ -1,3 +1,5 @@
+// Package format provides formatting utilities for file sizes and other display values.
+// It converts byte sizes to human-readable formats (KB, MB, GB, etc.).
 package format
 
 import (

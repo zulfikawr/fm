@@ -1,3 +1,6 @@
+// Package cli implements command-line interface tools for the file manager.
+// It provides commands for search, info, analyze, and configuration management
+// that can be used in scripts and non-interactive environments.
 package cli
 
 import (

@@ -1,3 +1,5 @@
+// Package factory provides filesystem creation and connection management.
+// It handles instantiation of local and remote (SFTP) filesystems with proper authentication.
 package factory
 
 import (

@@ -1,8 +1,10 @@
+// Package constants defines application-wide constants including timeouts, limits, and version information.
 package constants
 
 import "time"
 
-// Application version
+// AppVersion is the current version of the fm application.
+// It is set during build time via ldflags.
 var AppVersion = "0.0.0-dev"
 
 // Timeouts

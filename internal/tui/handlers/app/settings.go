@@ -15,7 +15,8 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-// handleSettingsKeys handles settings-related messages
+// HandleSettings processes settings view messages and key inputs.
+// It routes key messages to the appropriate settings handler when the settings view is active.
 func HandleSettings(m *tuictx.Model, msg tea.Msg) tea.Cmd {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:

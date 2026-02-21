@@ -1,3 +1,5 @@
+// Package tui implements the terminal user interface using the Bubble Tea framework.
+// It provides the main application model, initialization, and view rendering.
 package tui
 
 import (
