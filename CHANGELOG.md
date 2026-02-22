@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.3.0] - 2026-02-22
+
+### Changed
+- **BREAKING: CLI Command Syntax**: Standardized all commands to use flags instead of subcommands
+  - `fm config` → `fm -c` or `fm --config`
+  - `fm search <query>` → `fm -s <query>` or `fm --search <query>`
+  - `fm info [path]` → `fm -i [path]` or `fm --info [path]`
+  - `fm analyze [path]` → `fm -a [path]` or `fm --analyze [path]`
+  - This resolves conflicts when navigating to directories with command-like names (e.g., `fm config` now opens the `./config` directory instead of running the config command)
+  - All commands now support both short and long flag versions for consistency
+
+### Fixed
+- **Directory Navigation**: Can now navigate to directories named `config`, `search`, `info`, or `analyze` without triggering CLI commands
+
 ## [v1.2.2] - 2026-02-21
 
 ### Fixed

@@ -26,18 +26,19 @@ fm -r ssh-alias
 
 ---
 
-### `fm config`
+### `fm -c, --config`
 Manage application configuration directly from the CLI.
 
 ```bash
 # View current configuration
-fm config
+fm -c
+fm --config
 
 # Reset configuration to defaults
-fm config --reset
+fm -c --reset
 
 # Run interactive configuration wizard
-fm config init
+fm -c --init
 ```
 
 **Features:**
@@ -46,26 +47,29 @@ fm config init
 - **Interactive Init**: Step-by-step wizard to configure your environment without manually editing JSON.
 
 **Options:**
+- `-c, --config` - Manage configuration
 - `--reset` - Reset configuration to default values
-- `init` - Launch the interactive configuration wizard
+- `--init` - Launch the interactive configuration wizard
 
 ---
 
-### `fm search`
+### `fm -s, --search`
 Perform fuzzy or regex search for files and content within directories.
 
 ```bash
 # Search in current directory (Fuzzy)
-fm search <query>
+fm -s <query>
+fm --search <query>
 
 # Search using Regular Expressions
-fm search --regex "func.*Test" .
+fm -s <query> --regex [path]
+fm -s <query> -e [path]
 
 # Search in specific directory
-fm search <query> [path]
+fm -s <query> [path]
 
 # Search remote server (requires SSH)
-fm -r user@host search <query> [path]
+fm -r user@host -s <query> [path]
 ```
 
 **Features:**
@@ -79,26 +83,28 @@ fm -r user@host search <query> [path]
 - Shows line numbers for content matches
 
 **Note:** Search uses substring/fuzzy matching, not regex patterns. For example:
-- `fm search "Handle"` will match "HandleUpdate", "handleError", etc.
-- `fm search "config"` will match "config.json", "configuration.md", lines containing "config", etc.
+- `fm -s "Handle"` will match "HandleUpdate", "handleError", etc.
+- `fm -s "config"` will match "config.json", "configuration.md", lines containing "config", etc.
 
 **Options:**
-- `-s <query>` - Alternative flag syntax
+- `-s, --search <query>` - Search query
+- `-e, --regex` - Use regular expressions for search
 
 ---
 
-### `fm analyze`
+### `fm -a, --analyze`
 Analyze disk usage of a directory recursively.
 
 ```bash
 # Analyze current directory
-fm analyze
+fm -a
+fm --analyze
 
 # Analyze specific path
-fm analyze /home/user
+fm -a /home/user
 
 # Analyze remote server disk usage
-fm -r user@host analyze /var/log
+fm -r user@host -a /var/log
 ```
 
 **Features:**
@@ -108,35 +114,38 @@ fm -r user@host analyze /var/log
 - Respects "One Filesystem" rule by default
 
 **Options:**
+- `-a, --analyze` - Analyze disk usage
 - `-r, --remote <addr>` - Analyze remote disk usage via SFTP
 
 ---
 
-### `fm info`
+### `fm -i, --info`
 Display detailed information about files and directories.
 
 ```bash
 # Show info for current directory
-fm info
-fm info .
+fm -i
+fm -i .
+fm --info
 
 # Show info for specific path
-fm info /path/to/file
-fm info ./directory
+fm -i /path/to/file
+fm -i ./directory
 
 # JSON output for scripting
-fm info --json .
+fm -i --json .
 
 # Tree view with depth control
-fm info --tree --depth 2 .
-fm info --tree --depth 0 .  # Unlimited depth
+fm -i --tree --depth 2 .
+fm -i --tree --depth 0 .  # Unlimited depth
 
 # Remote file info (requires SSH access)
-fm -r user@host info /path/to/file
-fm -r ssh-alias info /etc/hostname
+fm -r user@host -i /path/to/file
+fm -r ssh-alias -i /etc/hostname
 ```
 
 **Options:**
+- `-i, --info` - Display file/directory information
 - `--json` - Output in JSON format (machine-readable)
 - `--tree` - Display directory tree structure
 - `--depth N` - Tree depth limit (default: 2, 0 for unlimited)
@@ -194,21 +203,21 @@ internal/
 
 ## Global Options
 
-These options work with any command and must be specified **before** the subcommand:
+These options work with any command:
 
 - `-r, --remote <address>` - Connect to remote SFTP server
   - Format: `user@host[:port]` or `user@host[:port][:path]`
   - Or use SSH alias from `~/.ssh/config`
   - Requires SSH key or interactive password authentication
-  - **Must be specified before subcommand**: `fm -r host info /path` ✅ NOT `fm info -r host /path` ❌
 - `-v, --version` - Show FM version
 - `--help` - Show help for command
 
-**Example Flag Order:**
+**Example Usage:**
 ```bash
-fm -r user@server info /path        # Correct ✅
-fm -r user@server search "query"    # Correct ✅
-fm info -r user@server /path        # Wrong ❌ (flag after subcommand)
+fm -r user@server -i /path        # Remote info
+fm -r user@server -s "query"      # Remote search
+fm -a /home/user                  # Local analyze
+fm -c --reset                     # Reset config
 ```
 
 ---
@@ -218,65 +227,64 @@ fm info -r user@server /path        # Wrong ❌ (flag after subcommand)
 ### Quick File Inspection
 ```bash
 # Check file details
-fm info README.md
+fm -i README.md
 
 # Get size and permissions in JSON
-fm info --json /var/log/app.log | jq '.size, .permissions'
+fm -i --json /var/log/app.log | jq '.size, .permissions'
 ```
 
 ### Directory Analysis
 ```bash
 # See directory structure
-fm info --tree --depth 3 ./src
+fm -i --tree --depth 3 ./src
 
 # Count files and total size
-fm info --json . | jq '.file_count, .total_size'
+fm -i --json . | jq '.file_count, .total_size'
 ```
 
 ### Git Status Overview
 ```bash
 # Check git stats for directory
-fm info --json . | jq '.git_stats'
+fm -i --json . | jq '.git_stats'
 
 # Check specific branch
-fm info /path/to/repo | grep Branch
+fm -i /path/to/repo | grep Branch
 ```
 
 ### Search Operations
 ```bash
 # Find TODOs in codebase
-fm search "TODO" ./src
+fm -s "TODO" ./src
 
 # Find function names
-fm search "HandleUpdate" ./internal
+fm -s "HandleUpdate" ./internal
 
 # Search for config files
-fm search "config" .
+fm -s "config" .
 
 # Find imports (searches file content)
-fm search "bubbletea" ./internal
+fm -s "bubbletea" ./internal
 ```
 
 ### Remote Operations
 
-**Note:** Remote operations require SSH key-based authentication or interactive password entry. The `-r` flag must come **before** the subcommand.
+**Note:** Remote operations require SSH key-based authentication or interactive password entry.
 
 ```bash
-# Correct syntax: -r flag BEFORE subcommand
-fm -r user@server info /var/log/app.log
-fm -r user@server search "config"
-
 # Inspect remote file info
-fm -r user@server info /path/to/file
+fm -r user@server -i /var/log/app.log
 
 # Search remote directory
-fm -r user@server search "API_KEY" /path
+fm -r user@server -s "config" /path
+
+# Analyze remote disk usage
+fm -r user@server -a /var/log
 
 # Browse remote with TUI (interactive)
 fm -r production-server
 
 # Using SSH config alias
-fm -r dev-server info /home/user
+fm -r dev-server -i /home/user
 ```
 
 **Requirements:**
@@ -289,7 +297,7 @@ fm -r dev-server info /home/user
 **Bash - Get directory size:**
 ```bash
 #!/bin/bash
-size=$(fm info --json "$1" | jq -r '.total_size')
+size=$(fm -i --json "$1" | jq -r '.total_size')
 echo "Directory size: $size bytes"
 ```
 
@@ -298,7 +306,7 @@ echo "Directory size: $size bytes"
 import subprocess
 import json
 
-result = subprocess.run(['fm', 'info', '--json', '.'], 
+result = subprocess.run(['fm', '-i', '--json', '.'], 
                        capture_output=True, text=True)
 data = json.loads(result.stdout)
 
@@ -311,7 +319,7 @@ if data['in_git_repo']:
 **Fish - Count files recursively:**
 ```fish
 function count-files
-    fm info --json $argv[1] | jq '.file_count'
+    fm -i --json $argv[1] | jq '.file_count'
 end
 ```
 
@@ -341,14 +349,15 @@ Settings used by CLI:
 
 1. **Combine with other tools:**
    ```bash
-   fm info --json . | jq
-   fm search "pattern" | grep -i specific
+   fm -i --json . | jq
+   fm -s "pattern" | grep -i specific
    ```
 
 2. **Alias common operations:**
    ```bash
-   alias fmtree='fm info --tree --depth 2'
-   alias fmj='fm info --json'
+   alias fmtree='fm -i --tree --depth 2'
+   alias fmj='fm -i --json'
+   alias fms='fm -s'
    ```
 
 3. **Use in scripts:**
@@ -359,6 +368,19 @@ Settings used by CLI:
 4. **Remote shortcuts:**
    - Define SSH aliases in `~/.ssh/config`
    - Use `-r alias` instead of full connection strings
+
+5. **Navigate to directories with command-like names:**
+   ```bash
+   # Now you can navigate to directories named after commands
+   fm config      # Opens ./config directory
+   fm search      # Opens ./search directory
+   fm info        # Opens ./info directory
+   
+   # Use flags for actual commands
+   fm -c          # Opens config manager
+   fm -s "query"  # Performs search
+   fm -i          # Shows info
+   ```
 
 ---
 

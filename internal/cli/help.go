@@ -126,14 +126,98 @@ func PrintHelp(styles theme.Stylesheet, themeName string) {
 	}
 
 	// Determine max visible width for alignment
-	usageWidth := lipgloss.Width(styles.GitStaged.Render("fm")+" "+styles.GitConflict.Render("search")+" "+styles.DimCol.Render("[--regex]")+" "+styles.FileCol.Render("<query>")) + 3
+	usageLines := []struct {
+		command string
+		desc    string
+	}{
+		{"[path]", "Open fm in the specified directory"},
+		{"-r | --remote user@host[:path]", "Open fm on a remote server via SFTP"},
+		{"-s | --search <query> [-e | --regex]", "Perform fuzzy or regex search for files and content"},
+		{"-i | --info [path] [--json] [--tree] [--depth N]", "Show file/directory information"},
+		{"-a | --analyze [path]", "Analyze disk usage of a directory"},
+		{"-c | --config [--reset | --init]", "Manage configuration (view, reset, or interactive init)"},
+	}
+
+	// Helper to colorize command parts
+	colorizeCommand := func(cmd string) string {
+		result := ""
+		inBracket := false
+		inAngle := false
+		word := ""
+		
+		for _, ch := range cmd {
+			switch ch {
+			case '[':
+				if word != "" {
+					result += styles.DimCol.Render(word)
+					word = ""
+				}
+				inBracket = true
+				word = "["
+			case ']':
+				word += "]"
+				result += styles.FileCol.Render(word)
+				word = ""
+				inBracket = false
+			case '<':
+				if word != "" {
+					result += styles.DimCol.Render(word)
+					word = ""
+				}
+				inAngle = true
+				word = "<"
+			case '>':
+				word += ">"
+				result += styles.AccentCol.Render(word)
+				word = ""
+				inAngle = false
+			case ' ', '|':
+				if word != "" {
+					if inBracket || inAngle {
+						word += string(ch)
+					} else if word == "-r" || word == "-s" || word == "-i" || word == "-a" || word == "-c" || word == "-e" {
+						result += styles.GitStaged.Render(word)
+						word = ""
+						result += styles.DimCol.Render(string(ch))
+					} else if word == "--remote" || word == "--search" || word == "--info" || word == "--analyze" || word == "--config" || word == "--regex" || word == "--json" || word == "--tree" || word == "--depth" || word == "--reset" || word == "--init" {
+						result += styles.GitStaged.Render(word)
+						word = ""
+						result += styles.DimCol.Render(string(ch))
+					} else {
+						result += styles.DimCol.Render(word)
+						word = ""
+						result += styles.DimCol.Render(string(ch))
+					}
+				} else {
+					result += styles.DimCol.Render(string(ch))
+				}
+			default:
+				word += string(ch)
+			}
+		}
+		if word != "" {
+			result += styles.DimCol.Render(word)
+		}
+		return result
+	}
+
+	// Calculate max command width for alignment
+	maxCmdWidth := 0
+	for i := range usageLines {
+		cmdRendered := styles.PrimaryCol.Render("fm") + " " + colorizeCommand(usageLines[i].command)
+		w := lipgloss.Width(cmdRendered)
+		if w > maxCmdWidth {
+			maxCmdWidth = w
+		}
+	}
+	maxCmdWidth += 3 // Add padding
 
 	keyWidth := 0
 	for i := range sections {
 		s := sections[i]
 		for j := range s.Items {
 			k := s.Items[j]
-			if w := lipgloss.Width(styles.DimCol.Render(k.Desc)); w > keyWidth {
+			if w := lipgloss.Width(styles.FileCol.Render(k.Desc)); w > keyWidth {
 				keyWidth = w
 			}
 		}
@@ -142,18 +226,12 @@ func PrintHelp(styles theme.Stylesheet, themeName string) {
 
 	fmt.Println()
 	fmt.Println(styles.DirCol.Render("Usage:"))
-	usage1Command := styles.GitStaged.Render("fm") + " " + styles.FileCol.Render("[path]")
-	fmt.Printf("  %s %s\n", padString(usage1Command, usageWidth), styles.DimCol.Render("Open fm in the specified directory"))
-	usage2Command := styles.GitStaged.Render("fm") + " " + styles.FileCol.Render("-r user@host[:path]")
-	fmt.Printf("  %s %s\n", padString(usage2Command, usageWidth), styles.DimCol.Render("Open fm on a remote server via SFTP"))
-	usage3Command := styles.GitStaged.Render("fm") + " " + styles.GitConflict.Render("search") + " " + styles.DimCol.Render("[--regex]") + " " + styles.FileCol.Render("<query>")
-	fmt.Printf("  %s %s\n", padString(usage3Command, usageWidth), styles.DimCol.Render("Perform fuzzy or regex search for files and content"))
-	usage4Command := styles.GitStaged.Render("fm") + " " + styles.GitConflict.Render("info") + " " + styles.FileCol.Render("[path]")
-	fmt.Printf("  %s %s\n", padString(usage4Command, usageWidth), styles.DimCol.Render("Show file/directory information"))
-	usage5Command := styles.GitStaged.Render("fm") + " " + styles.GitConflict.Render("analyze") + " " + styles.FileCol.Render("[path]")
-	fmt.Printf("  %s %s\n", padString(usage5Command, usageWidth), styles.DimCol.Render("Analyze disk usage of a directory"))
-	usage6Command := styles.GitStaged.Render("fm") + " " + styles.GitConflict.Render("config") + " " + styles.DimCol.Render("[--reset | init]")
-	fmt.Printf("  %s %s\n\n", padString(usage6Command, usageWidth), styles.DimCol.Render("Manage configuration (view, reset, or interactive init)"))
+	for i := range usageLines {
+		line := usageLines[i]
+		cmdRendered := styles.PrimaryCol.Render("fm") + " " + colorizeCommand(line.command)
+		fmt.Printf("  %s %s\n", padString(cmdRendered, maxCmdWidth), styles.DimCol.Render(line.desc))
+	}
+	fmt.Println()
 
 	for i := range sections {
 		s := sections[i]
@@ -161,7 +239,7 @@ func PrintHelp(styles theme.Stylesheet, themeName string) {
 		for j := range s.Items {
 			k := s.Items[j]
 			// Render the description first, then pad
-			renderedDesc := styles.DimCol.Render(k.Desc)
+			renderedDesc := styles.FileCol.Render(k.Desc)
 			visibleWidth := lipgloss.Width(renderedDesc)
 			padding := strings.Repeat(" ", keyWidth-visibleWidth)
 

@@ -5,7 +5,7 @@ import "time"
 
 // AppVersion is the current version of the fm application.
 // It is set during build time via ldflags.
-var AppVersion = "0.0.0-dev"
+var AppVersion = "1.3.0"
 
 // Timeouts
 const (

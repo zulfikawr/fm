@@ -33,10 +33,20 @@ make build
 ./fm [path]
 
 # Search for files and content
-./fm search <query>
+./fm -s <query>
+./fm --search <query>
 
 # Show file/directory info
-./fm info [path|file]
+./fm -i [path|file]
+./fm --info [path|file]
+
+# Analyze disk usage
+./fm -a [path]
+./fm --analyze [path]
+
+# Manage configuration
+./fm -c
+./fm --config
 ```
 
 ## 📦 Installation
@@ -85,7 +95,7 @@ See [**keybindings.md**](./docs/keybindings.md) for the full list.
 - **Fuzzy Search:** Deep content search powered by a concurrent engine.
 - **Tabs:** Multitasking with up to 9 active directory tabs.
 - **Archive Support:** Create and extract Zip/Tar archives directly in the UI.
-- **CLI Tools:** Powerful command-line tools (`info`, `search`) for scripting and quick checks.
+- **CLI Tools:** Powerful command-line tools (`analyze`, `info`, `search`) for scripting and quick checks.
 
 ## 🛠️ Technology Stack
 
