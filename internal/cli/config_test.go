@@ -11,10 +11,10 @@ import (
 )
 
 func TestParseConfig(t *testing.T) {
-	t.Run("config subcommand", func(t *testing.T) {
+	t.Run("--config flag", func(t *testing.T) {
 		fs := flag.NewFlagSet("test", flag.ContinueOnError)
 		fs.SetOutput(io.Discard)
-		args, err := parse(fs, []string{"config"})
+		args, err := parse(fs, []string{"--config"})
 		if err != nil {
 			t.Fatalf("Unexpected error: %v", err)
 		}
@@ -26,10 +26,10 @@ func TestParseConfig(t *testing.T) {
 		}
 	})
 
-	t.Run("config --reset", func(t *testing.T) {
+	t.Run("--config --reset", func(t *testing.T) {
 		fs := flag.NewFlagSet("test", flag.ContinueOnError)
 		fs.SetOutput(io.Discard)
-		args, err := parse(fs, []string{"config", "--reset"})
+		args, err := parse(fs, []string{"--config", "--reset"})
 		if err != nil {
 			t.Fatalf("Unexpected error: %v", err)
 		}
@@ -41,10 +41,10 @@ func TestParseConfig(t *testing.T) {
 		}
 	})
 
-	t.Run("config init", func(t *testing.T) {
+	t.Run("--config --init", func(t *testing.T) {
 		fs := flag.NewFlagSet("test", flag.ContinueOnError)
 		fs.SetOutput(io.Discard)
-		args, err := parse(fs, []string{"config", "init"})
+		args, err := parse(fs, []string{"--config", "--init"})
 		if err != nil {
 			t.Fatalf("Unexpected error: %v", err)
 		}

@@ -144,13 +144,12 @@ func PrintHelp(styles theme.Stylesheet, themeName string) {
 		inBracket := false
 		inAngle := false
 		word := ""
-		
+
 		for _, ch := range cmd {
 			switch ch {
 			case '[':
 				if word != "" {
 					result += styles.DimCol.Render(word)
-					word = ""
 				}
 				inBracket = true
 				word = "["
@@ -162,7 +161,6 @@ func PrintHelp(styles theme.Stylesheet, themeName string) {
 			case '<':
 				if word != "" {
 					result += styles.DimCol.Render(word)
-					word = ""
 				}
 				inAngle = true
 				word = "<"
