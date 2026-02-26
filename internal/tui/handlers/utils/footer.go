@@ -56,7 +56,7 @@ func DetermineFooterMode(m *context.Model) footer.Mode {
 
 // isQuitConfirmation checks if the model is currently showing a quit warning
 func isQuitConfirmation(m *context.Model) bool {
-	return strings.HasPrefix(m.Message.Text, "press [") && strings.HasSuffix(m.Message.Text, "] again to close")
+	return strings.HasPrefix(m.Message.Text, "Press [") && strings.HasSuffix(m.Message.Text, "] again to close")
 }
 
 // getInputFooterMode maps InputMode to footer.Mode

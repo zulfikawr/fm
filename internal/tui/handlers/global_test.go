@@ -44,13 +44,13 @@ func TestGlobal_Quit(t *testing.T) {
 		msg := tea.KeyMsg{Type: tea.KeyCtrlC}
 		handlers.HandleUpdate(m, msg)
 
-		if m.Message.Text != "press [ctrl+c] again to close" {
+		if m.Message.Text != "Press [ctrl+c] again to close" {
 			t.Errorf("expected warning message, got %q", m.Message.Text)
 		}
 	})
 
 	t.Run("Second ctrl+c returns Quit command", func(t *testing.T) {
-		m.Message.Push("press [ctrl+c] again to close", false)
+		m.Message.Push("Press [ctrl+c] again to close", false)
 		msg := tea.KeyMsg{Type: tea.KeyCtrlC}
 		cmd := handlers.HandleUpdate(m, msg)
 

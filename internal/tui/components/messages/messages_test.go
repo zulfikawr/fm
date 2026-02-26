@@ -89,7 +89,7 @@ func TestMessages_ColorizeKeys(t *testing.T) {
 		input    string
 		contains string
 	}{
-		{"press [ctrl+c] again", "press [ctrl+c] again"},
+		{"Press [ctrl+c] again", "Press [ctrl+c] again"},
 		{"[Space] Toggle", "[Space] Toggle"},
 	}
 

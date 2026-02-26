@@ -53,7 +53,7 @@ func handleGlobal(m *tuictx.Model, msg tea.Msg) (tea.Cmd, bool) {
 					break
 				}
 			}
-			msg := "press [" + quitKey + "] again to close"
+			msg := "Press [" + quitKey + "] again to close"
 
 			if m.Message.Text == msg {
 				if m.FS.IsLocal() && m.Watcher.Watcher != nil {

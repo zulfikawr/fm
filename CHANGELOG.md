@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.3.1] - 2026-02-26
+
+### Changed
+- **Footer Message Capitalization**: Updated quit confirmation message to use title case
+  - Changed "press [ctrl+c] again to close" to "Press [ctrl+c] again to close"
+  - Improves consistency with standard UI text conventions
+- **Update Success Message**: Improved visibility and clarity of update completion message
+  - Changed message from "successfully updated. press [ctrl+c] twice to quit" to "Successfully updated. New version will be used on next run"
+  - Message now persists until user action instead of auto-clearing after 3 seconds
+  - Users can now read the confirmation at their own pace
+
 ## [v1.3.0] - 2026-02-22
 
 ### Changed
