@@ -66,18 +66,32 @@ if [ -z "$DOWNLOAD_URL" ]; then
 fi
 echo -e "   ${COLOR_SUCCESS}✓${NC} Found ${COLOR_HIGHLIGHT}$VERSION${NC} as the most recent version.\n"
 
-# 4. Interactive Path Selection
-echo -e "${COLOR_INFO}::${NC} ${COLOR_BOLD}Select installation target:${NC}"
-echo -e "   ${COLOR_HIGHLIGHT}1)${NC} ${COLOR_FILE}System-wide${NC}  ${COLOR_SUBTLE}(/usr/local/bin/fm)${NC} ${COLOR_BOLD}${COLOR_WARNING}*${NC} ${COLOR_SUBTLE}requires sudo${NC}"
-echo -e "   ${COLOR_HIGHLIGHT}2)${NC} ${COLOR_FILE}User-only${NC}    ${COLOR_SUBTLE}(~/.local/bin/fm)${NC}"
-echo -ne "   ${COLOR_BOLD}${COLOR_INFO}>>${NC} ${COLOR_FILE}Pick an option [1-2, default 1]: ${NC}"
-read choice
-choice=${choice:-1}
-echo ""
+# 4. Path Selection
+# If it's not a terminal (e.g. piped from curl), default to system-wide if root, else ask if possible
+if [ -t 0 ]; then
+    echo -e "${COLOR_INFO}::${NC} ${COLOR_BOLD}Select installation target:${NC}"
+    echo -e "   ${COLOR_HIGHLIGHT}1)${NC} ${COLOR_FILE}System-wide${NC}  ${COLOR_SUBTLE}(/usr/local/bin/fm)${NC} ${COLOR_BOLD}${COLOR_WARNING}*${NC} ${COLOR_SUBTLE}requires sudo${NC}"
+    echo -e "   ${COLOR_HIGHLIGHT}2)${NC} ${COLOR_FILE}User-only${NC}    ${COLOR_SUBTLE}(~/.local/bin/fm)${NC}"
+    echo -ne "   ${COLOR_BOLD}${COLOR_INFO}>>${NC} ${COLOR_FILE}Pick an option [1-2, default 1]: ${NC}"
+    read choice < /dev/tty || choice=1
+    choice=${choice:-1}
+    echo ""
+else
+    # Non-interactive: default to /usr/local/bin if possible, else ~/.local/bin
+    if [ "$EUID" -eq 0 ] || [ -w "/usr/local/bin" ]; then
+        choice=1
+    else
+        choice=2
+    fi
+fi
 
 if [ "$choice" == "1" ]; then
     INSTALL_DIR="/usr/local/bin"
-    USE_SUDO=true
+    if [ "$EUID" -ne 0 ] && [ ! -w "$INSTALL_DIR" ]; then
+        USE_SUDO=true
+    else
+        USE_SUDO=false
+    fi
 else
     INSTALL_DIR="$HOME/.local/bin"
     USE_SUDO=false
@@ -109,10 +123,39 @@ echo -e "${COLOR_SUCCESS}${COLOR_BOLD}Success!${NC} ${COLOR_FILE}fm${NC} ${COLOR
 
 # Check if path is in PATH
 if [[ ":$PATH:" != *":$INSTALL_DIR:"* ]]; then
-    echo -e "\n${COLOR_WARNING}⚠️  Important:${NC} ${COLOR_ACCENT}$INSTALL_DIR${NC} is not in your ${COLOR_BOLD}PATH${NC}."
-    echo -e "   To run 'fm' from anywhere, add this line to your ${COLOR_BOLD}.bashrc${NC} or ${COLOR_BOLD}.zshrc${NC}:"
-    echo -e "   ${COLOR_PRIMARY}export PATH=\"\$PATH:$INSTALL_DIR\"${NC}"
-    echo -e "   Then restart your terminal or run: ${COLOR_PRIMARY}source ~/.bashrc${NC} (or .zshrc)\n"
+    echo -e "\n${COLOR_INFO}::${NC} ${COLOR_BOLD}Automatically adding ${COLOR_ACCENT}$INSTALL_DIR${NC} to your PATH...${NC}"
+    
+    ADDED_TO=""
+    # For Bash
+    if [ -f "$HOME/.bashrc" ]; then
+        if ! grep -q "$INSTALL_DIR" "$HOME/.bashrc"; then
+            echo -e "\n# fm - Terminal File Manager\nexport PATH=\"\$PATH:$INSTALL_DIR\"" >> "$HOME/.bashrc"
+            ADDED_TO="$ADDED_TO .bashrc"
+        fi
+    fi
+    
+    # For Zsh
+    if [ -f "$HOME/.zshrc" ]; then
+        if ! grep -q "$INSTALL_DIR" "$HOME/.zshrc"; then
+            echo -e "\n# fm - Terminal File Manager\nexport PATH=\"\$PATH:$INSTALL_DIR\"" >> "$HOME/.zshrc"
+            ADDED_TO="$ADDED_TO .zshrc"
+        fi
+    fi
+
+    # For Profile
+    if [ -f "$HOME/.profile" ]; then
+        if ! grep -q "$INSTALL_DIR" "$HOME/.profile"; then
+            echo -e "\n# fm - Terminal File Manager\nexport PATH=\"\$PATH:$INSTALL_DIR\"" >> "$HOME/.profile"
+            ADDED_TO="$ADDED_TO .profile"
+        fi
+    fi
+
+    if [ -n "$ADDED_TO" ]; then
+        echo -e "   ${COLOR_SUCCESS}✓${NC} Added to:$ADDED_TO"
+        echo -e "   ${COLOR_WARNING}Note:${NC} To use 'fm' immediately, run: ${COLOR_PRIMARY}export PATH=\"\$PATH:$INSTALL_DIR\"${NC}"
+    else
+        echo -e "   ${COLOR_WARNING}⚠️  Warning:${NC} Could not automatically update PATH. Please add ${COLOR_ACCENT}$INSTALL_DIR${NC} manually."
+    fi
 fi
 
 echo -e "\n${COLOR_INFO}Execute ${COLOR_BOLD}'fm'${NC} ${COLOR_INFO}to begin navigation.${NC}\n"
