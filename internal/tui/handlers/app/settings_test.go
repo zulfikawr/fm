@@ -2,6 +2,7 @@ package app_test
 
 import (
 	"path/filepath"
+	"slices"
 	"testing"
 
 	"github.com/zulfikawr/fm/internal/config"
@@ -86,5 +87,39 @@ func TestConfirmSettingsReset(t *testing.T) {
 	// Default is true in DefaultConfig()
 	if !m.Config.UI.ShowHidden {
 		t.Error("expected ShowHidden to be reset to default (true)")
+	}
+}
+
+func TestSettings_KeybindingCursorEditsHighlightedAction(t *testing.T) {
+	tmpDir := testutil.TempDir(t)
+	config.SetConfigPath(filepath.Join(tmpDir, "config.json"))
+	defer config.SetConfigPath("")
+
+	fs := testutil.NewMockFileSystem()
+	m := tuictx.NewModel(fs, "/test")
+	m.UI.ActiveView = tuictx.ViewSettings
+
+	// The first keybinding row is the navigation action "open".
+	m.Settings.Cursor = 17
+	app.HandleSettings(m, tea.KeyMsg{Type: tea.KeyEnter})
+
+	if !m.UI.InputActive || m.Inputs.Mode != tuictx.InputKeybinding {
+		t.Fatal("expected keybinding input mode")
+	}
+	if got, want := m.Inputs.ActiveInput.Prompt, "Bind Open / Enter: "; got != want {
+		t.Fatalf("highlighted row opened the wrong keybinding: got prompt %q, want %q", got, want)
+	}
+	if got, want := m.Inputs.ActiveInput.Value(), "enter, l, right"; got != want {
+		t.Fatalf("highlighted row loaded the wrong shortcuts: got %q, want %q", got, want)
+	}
+
+	m.Inputs.ActiveInput.SetValue("ctrl+o")
+	app.HandleSettings(m, tea.KeyMsg{Type: tea.KeyEnter})
+
+	if got := config.GetKeybindingForAction("open", m.Config.Keybindings); !slices.Equal(got, []string{"ctrl+o"}) {
+		t.Fatalf("expected highlighted open action to be updated, got %v", got)
+	}
+	if got := config.GetKeybindingForAction("quit", m.Config.Keybindings); !slices.Equal(got, []string{"ctrl+c"}) {
+		t.Fatalf("unselected quit action was unexpectedly changed: %v", got)
 	}
 }

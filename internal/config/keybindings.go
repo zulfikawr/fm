@@ -23,6 +23,11 @@ type KeybindingConfig struct {
 
 const CurrentKeybindingVersion = 1
 
+// KeybindingCategoryOrder returns the settings display order.
+func KeybindingCategoryOrder() []string {
+	return []string{"navigation", "file_ops", "tabs", "selection", "search", "general"}
+}
+
 // DefaultKeybindings returns the default keybinding configuration
 func DefaultKeybindings() []Keybinding {
 	return []Keybinding{

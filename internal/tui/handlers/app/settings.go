@@ -28,11 +28,7 @@ func HandleSettings(m *tuictx.Model, msg tea.Msg) tea.Cmd {
 }
 
 func handleSettingsKeys(m *tuictx.Model, msg tea.KeyMsg) tea.Cmd {
-	groups := buildSettingGroups(m)
-	totalItems := 0
-	for i := range groups {
-		totalItems += len(groups[i].Settings)
-	}
+	totalItems := len(BuildFullSettingList(m))
 
 	var reload bool
 	var cmd tea.Cmd
@@ -82,12 +78,12 @@ func buildSettingGroups(m *tuictx.Model) []struct {
 		Settings []struct{ Label string }
 	}{
 		{Title: "File Operations", Settings: make([]struct{ Label string }, 6)},
-		{Title: "Display Options", Settings: make([]struct{ Label string }, 7)},
+		{Title: "Display Options", Settings: make([]struct{ Label string }, 8)},
 		{Title: "Search, Filtering & Inputs", Settings: make([]struct{ Label string }, 1)},
 		{Title: "Appearance", Settings: make([]struct{ Label string }, 2)},
 	}
 
-	categories := []string{"general", "navigation", "file_ops", "selection", "search", "tabs"}
+	categories := config.KeybindingCategoryOrder()
 	titles := map[string]string{
 		"general":    "Keybindings: General",
 		"navigation": "Keybindings: Navigation",
@@ -189,7 +185,7 @@ func BuildFullSettingList(m *tuictx.Model) []SettingItem {
 	items = append(items, SettingItem{Label: "Theme", Action: "pick_theme", HelpText: "Change the application color scheme"})
 
 	// Group 5+: Keybindings
-	categories := []string{"general", "navigation", "file_ops", "selection", "search", "tabs"}
+	categories := config.KeybindingCategoryOrder()
 	for i := range categories {
 		cat := categories[i]
 		for j := range cfg.Keybindings {

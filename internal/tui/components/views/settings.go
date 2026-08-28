@@ -113,24 +113,20 @@ func buildSettingGroups(props SettingsProps) []SettingGroup {
 	}
 
 	// Add Keybindings group
-	categories := []struct {
-		ID    string
-		Title string
-	}{
-		{"navigation", "Keybindings: Navigation"},
-		{"file_ops", "Keybindings: File Operations"},
-		{"tabs", "Keybindings: Tabs"},
-		{"selection", "Keybindings: Selection"},
-		{"search", "Keybindings: Search & Filter"},
-		{"general", "Keybindings: General"},
+	titles := map[string]string{
+		"navigation": "Keybindings: Navigation",
+		"file_ops":   "Keybindings: File Operations",
+		"tabs":       "Keybindings: Tabs",
+		"selection":  "Keybindings: Selection",
+		"search":     "Keybindings: Search & Filter",
+		"general":    "Keybindings: General",
 	}
 
-	for i := range categories {
-		cat := categories[i]
-		group := SettingGroup{Title: cat.Title}
+	for _, category := range config.KeybindingCategoryOrder() {
+		group := SettingGroup{Title: titles[category]}
 		for j := range s.Keybindings {
 			kb := s.Keybindings[j]
-			if kb.Category == cat.ID {
+			if kb.Category == category {
 				displayKeys := make([]string, len(kb.Keys))
 				for i, k := range kb.Keys {
 					if k == " " {
