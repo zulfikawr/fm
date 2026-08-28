@@ -53,7 +53,7 @@ If you are accessing VS Code via a browser (e.g., via SSH or Codespaces), you mu
 
 Once your font is configured:
 1. Open `fm`.
-2. Press `.` to open **Settings**.
+2. Press `,` to open **Settings**.
 3. Navigate to **Enable Nerd Font Icons** and toggle it to **[ON]**.
 4. If this is your first time, `fm` will download the icon mapping and perform a short visual test to ensure your font is working correctly.
 

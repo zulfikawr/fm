@@ -71,8 +71,8 @@ func TestRouter_GlobalKeys(t *testing.T) {
 	wrapper := NewTestModelWrapper(m)
 	tm := testutil.NewTestModel(t, wrapper)
 
-	t.Run("Toggle Logs (alt+l)", func(t *testing.T) {
-		tm.Send(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("l"), Alt: true})
+	t.Run("Toggle Logs (ctrl+l)", func(t *testing.T) {
+		tm.Send(tea.KeyMsg{Type: tea.KeyCtrlL})
 		time.Sleep(10 * time.Millisecond)
 		if m.UI.ActiveView != tuictx.ViewLogs {
 			t.Error("expected logs to be open")
@@ -246,19 +246,19 @@ func TestRouter_FinalizeInput(t *testing.T) {
 		}
 	})
 
-	t.Run("Dot key does not open settings during input", func(t *testing.T) {
+	t.Run("Comma does not open settings during input", func(t *testing.T) {
 		m.StartInput(tuictx.InputSearch)
 		m.Inputs.ActiveInput.Focus()
 		m.UI.ActiveView = tuictx.ViewMain
 
-		tm.Send(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune(".")})
+		tm.Send(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune(",")})
 		time.Sleep(10 * time.Millisecond)
 
 		if m.UI.ActiveView != tuictx.ViewMain {
 			t.Error("expected settings to remain closed when input is active")
 		}
-		if m.Inputs.ActiveInput.Value() != "." {
-			t.Errorf("expected input value to be '.', got %q", m.Inputs.ActiveInput.Value())
+		if m.Inputs.ActiveInput.Value() != "," {
+			t.Errorf("expected input value to be ',', got %q", m.Inputs.ActiveInput.Value())
 		}
 	})
 
@@ -278,11 +278,11 @@ func TestRouter_FinalizeInput(t *testing.T) {
 		}
 	})
 
-	t.Run("Dot and Question mark still work when input is NOT active", func(t *testing.T) {
+	t.Run("Comma and Question mark still work when input is NOT active", func(t *testing.T) {
 		m.StopInput(true)
 		m.UI.ActiveView = tuictx.ViewMain
 
-		tm.Send(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune(".")})
+		tm.Send(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune(",")})
 		time.Sleep(10 * time.Millisecond)
 		if m.UI.ActiveView != tuictx.ViewSettings {
 			t.Error("expected settings to open")

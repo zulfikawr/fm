@@ -15,7 +15,7 @@ The trash system is:
 
 ### Enable Trash
 
-1. Press `.` to open Settings
+1. Press `,` to open Settings
 2. Navigate to "Use Trash (Move to Trash)"
 3. Press `Enter` to toggle it on
 4. Files will now move to trash instead of being permanently deleted
@@ -240,7 +240,7 @@ This metadata enables:
 ### Trash Not Working
 
 **Check if enabled:**
-1. Press `.` to open Settings
+1. Press `,` to open Settings
 2. Look for "Use Trash (Move to Trash)"
 3. Should show `[✓]` if enabled
 

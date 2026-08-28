@@ -40,7 +40,7 @@ func handleInputs(m *tuictx.Model, msg tea.Msg) (tea.Cmd, bool) {
 		switch m.Inputs.Mode {
 		case tuictx.InputFuzzySearch:
 			switch msg.String() {
-			case "up", "down", "tab", "alt+j", "alt+k", "alt+n", "alt+m":
+			case "up", "down", "tab", "ctrl+j", "ctrl+k", "ctrl+n", "ctrl+m":
 				isNavKey = true
 			}
 		case tuictx.InputSearch:

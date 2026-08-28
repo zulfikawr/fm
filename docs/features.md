@@ -11,7 +11,7 @@
 
 ## 🔎 Fuzzy Content Search (Find in Files)
 
-One of the most powerful features of `fm` is the deep content search (`Alt+/`).
+One of the most powerful features of `fm` is the deep content search (`Ctrl+F`).
 - **Concurrent Engine:** Uses a worker-pool architecture to search thousands of files quickly.
 - **Regex Support:** Use full regular expressions by enabling "Regex Search" in settings or using the `--regex` flag in the CLI.
 - **Smart Filtering:** Automatically ignores files specified in `.gitignore` and binary files.
@@ -26,7 +26,7 @@ Manage compressed files without leaving the TUI.
 
 ## 📊 Disk Usage Analysis
 
-Quickly identify what is taking up space on your disk with the built-in analyzer (`Alt+U`).
+Quickly identify what is taking up space on your disk with the built-in analyzer (`Ctrl+U`).
 - **Concurrent Scanner:** Uses a worker-pool to walk directory trees at high speed.
 - **One Filesystem Rule:** Automatically stays within the same filesystem to avoid "fake" large files in virtual directories like `/proc` or `/sys`.
 - **Interactive Heat-map:** Visual bars show what percentage of the parent directory each item consumes.
@@ -64,7 +64,7 @@ When moving or copying files, `fm` handles name collisions gracefully:
 
 ## 🎨 Theme System
 
-`fm` supports multiple themes to match your terminal's aesthetic. You can cycle through themes in the settings menu (`.`). Popular themes include:
+`fm` supports multiple themes to match your terminal's aesthetic. You can cycle through themes in the settings menu (`,`). Popular themes include:
 - Gruvbox (Default)
 - Nord
 - Dracula
@@ -77,4 +77,4 @@ When moving or copying files, `fm` handles name collisions gracefully:
 
 ## 📜 Operation Logs
 
-Long-running operations like copying large directories or searching through millions of lines happen in the background. Press `Alt+L` to view the Operation Logs, where you can track the progress of every task in real-time.
+Long-running operations like copying large directories or searching through millions of lines happen in the background. Press `Ctrl+L` to view the Operation Logs, where you can track the progress of every task in real-time.

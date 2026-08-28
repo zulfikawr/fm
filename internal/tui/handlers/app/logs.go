@@ -19,7 +19,7 @@ func HandleLogs(m *tuictx.Model, msg tea.Msg) tea.Cmd {
 
 func handleLogKeys(m *tuictx.Model, msg tea.KeyMsg) tea.Cmd {
 	switch msg.String() {
-	case "esc", "alt+l":
+	case "esc", "ctrl+l":
 		m.UI.ToggleLogs()
 		return nil
 

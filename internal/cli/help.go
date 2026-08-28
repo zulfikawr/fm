@@ -120,7 +120,7 @@ func PrintHelp(styles theme.Stylesheet, themeName string) {
 			}{
 				{getKeys("new_tab"), "New Tab"},
 				{getKeys("close_tab"), "Close Tab"},
-				{"[alt+1-9]", "Switch to Tab 1-9"},
+				{"[1-9]", "Switch to Tab 1-9"},
 			},
 		},
 	}

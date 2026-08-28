@@ -187,6 +187,6 @@ func renderMiniBar(percent float64, width int, style theme.Stylesheet, isSelecte
 
 func RenderAnalyzeFooter(width int, style theme.Stylesheet) string {
 	props := messages.Props{Style: style}
-	prompt := " [Esc/Alt+U] Back | [d] Delete"
+	prompt := " [Esc/Ctrl+U] Back | [d] Delete"
 	return style.Footer.Width(width).Render(messages.ColorizeKeys(props, prompt))
 }

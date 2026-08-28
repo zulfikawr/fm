@@ -10,6 +10,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - **Keybinding Settings**: Fixed shortcut editing targeting a different action than the highlighted row.
 
+### Changed
+- **Default Shortcuts**: Changed Settings to `,`, Fuzzy Search to `Ctrl+F`, replaced Alt shortcuts with Ctrl shortcuts, and assigned `1`–`9` to direct tab selection for improved macOS compatibility.
+
 ## [v1.3.1] - 2026-02-26
 
 ### Changed

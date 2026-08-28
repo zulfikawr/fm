@@ -102,5 +102,5 @@ Navigation in `fm` is designed to be intuitive:
 
 1.  **Explore your files:** Use the navigation keys to move around.
 2.  **Try the filter:** Press `/` and start typing to filter the current directory view.
-3.  **Check settings:** Press `.` to view and toggle basic settings.
+3.  **Check settings:** Press `,` to view and toggle basic settings.
 4.  **Open a file:** Press `Enter` on a file to open it in your default editor.

@@ -124,6 +124,6 @@ func renderLogsEmpty(width, height int, styles theme.Stylesheet) string {
 // RenderLogsFooter renders navigation hints for the log view
 func RenderLogsFooter(width int, styles theme.Stylesheet) string {
 	dimStyle := styles.DimCol.Inherit(styles.Footer).UnsetPadding().UnsetWidth()
-	hint := "[Esc/Alt+L] Back"
+	hint := "[Esc/Ctrl+L] Back"
 	return styles.Footer.Width(width).Render(" " + messages.ColorizeKeys(messages.Props{Style: styles}, hint) + dimStyle.Render(""))
 }

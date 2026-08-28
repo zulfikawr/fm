@@ -68,14 +68,39 @@ func TestGlobal_InputSafety(t *testing.T) {
 	fs := testutil.NewMockFileSystem()
 	m := tuictx.NewModel(fs, "/test")
 
-	t.Run("Dot key ignored during input", func(t *testing.T) {
+	t.Run("Comma key ignored during input", func(t *testing.T) {
 		m.StartInput(tuictx.InputSearch)
 		m.UI.ActiveView = tuictx.ViewMain
 
-		handlers.HandleUpdate(m, tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune(".")})
+		handlers.HandleUpdate(m, tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune(",")})
 
 		if m.UI.ActiveView != tuictx.ViewMain {
 			t.Error("Settings should NOT open when input is active")
+		}
+	})
+
+	t.Run("Comma key opens settings without input", func(t *testing.T) {
+		m.StopInput(true)
+		m.UI.ActiveView = tuictx.ViewMain
+
+		handlers.HandleUpdate(m, tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune(",")})
+
+		if m.UI.ActiveView != tuictx.ViewSettings {
+			t.Error("Settings should open when input is inactive")
+		}
+	})
+
+	t.Run("Comma key is recorded in keybinding input", func(t *testing.T) {
+		m.UI.ActiveView = tuictx.ViewSettings
+		m.StartInput(tuictx.InputKeybinding)
+
+		handlers.HandleUpdate(m, tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune(",")})
+
+		if m.UI.ActiveView != tuictx.ViewSettings {
+			t.Error("Settings should remain open during keybinding input")
+		}
+		if m.Inputs.ActiveInput.Value() != "," {
+			t.Errorf("expected comma to be recorded, got %q", m.Inputs.ActiveInput.Value())
 		}
 	})
 

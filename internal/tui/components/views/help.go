@@ -134,7 +134,7 @@ func buildHelpGroups(keybinds []config.Keybinding) []HelpSection {
 				{Key: "[tab]", Desc: "Autocomplete current name or path"},
 				{Key: getKeys("fuzzy_search"), Desc: "Fuzzy Content Search (Find in Files)"},
 				{Key: getKeys("toggle_regex_search"), Desc: "Toggle Regex Search mode"},
-				{Key: "[Alt+M/Alt+N]", Desc: "Jump between files in search results"},
+				{Key: "[Ctrl+M/Ctrl+N]", Desc: "Jump between files in search results"},
 			},
 		},
 		{
@@ -142,7 +142,7 @@ func buildHelpGroups(keybinds []config.Keybinding) []HelpSection {
 			Items: []HelpItem{
 				{Key: getKeys("new_tab"), Desc: "Open a new tab (up to 9)"},
 				{Key: getKeys("close_tab"), Desc: "Close current tab"},
-				{Key: "[Alt+1-9]", Desc: "Switch to corresponding tab"},
+				{Key: "[1-9]", Desc: "Switch to corresponding tab"},
 			},
 		},
 	}

@@ -90,8 +90,7 @@ func TestHandleNavKeys(t *testing.T) {
 	})
 
 	t.Run("Select All", func(t *testing.T) {
-		// SelectAll is mapped to "alt+a"
-		nav.HandleNavKeys(m, tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'a'}, Alt: true})
+		nav.HandleNavKeys(m, tea.KeyMsg{Type: tea.KeyCtrlA})
 		if m.Navigation.SelectedCount() != 2 {
 			t.Errorf("expected 2 selected, got %d", m.Navigation.SelectedCount())
 		}
@@ -176,6 +175,43 @@ func TestTabManagement(t *testing.T) {
 			t.Errorf("expected 2 tabs, got %d", len(m.Tabs))
 		}
 	})
+}
+
+func TestTabManagementDefaultShortcuts(t *testing.T) {
+	fs := testutil.NewMockFileSystem()
+	m := tuictx.NewModel(fs, "/test")
+
+	nav.HandleNavKeys(m, tea.KeyMsg{Type: tea.KeyCtrlT})
+	if len(m.Tabs) != 2 {
+		t.Fatalf("ctrl+t should create a tab, got %d tabs", len(m.Tabs))
+	}
+
+	nav.HandleNavKeys(m, tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'1'}})
+	if m.ActiveTab != 0 {
+		t.Fatalf("1 should switch to the first tab, got active tab %d", m.ActiveTab+1)
+	}
+
+	m.StartInput(tuictx.InputSearch)
+	nav.HandleNavKeys(m, tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'2'}})
+	if m.ActiveTab != 0 {
+		t.Fatal("number shortcuts should not switch tabs during input")
+	}
+	m.StopInput(true)
+
+	nav.HandleNavKeys(m, tea.KeyMsg{Type: tea.KeyCtrlW})
+	if len(m.Tabs) != 1 {
+		t.Fatalf("ctrl+w should close a tab, got %d tabs", len(m.Tabs))
+	}
+}
+
+func TestFuzzySearchDefaultShortcut(t *testing.T) {
+	fs := testutil.NewMockFileSystem()
+	m := tuictx.NewModel(fs, "/test")
+
+	nav.HandleNavKeys(m, tea.KeyMsg{Type: tea.KeyCtrlF})
+	if !m.UI.InputActive || m.Inputs.Mode != tuictx.InputFuzzySearch {
+		t.Fatal("ctrl+f should open fuzzy search")
+	}
 }
 
 func TestNavigation_Extra(t *testing.T) {

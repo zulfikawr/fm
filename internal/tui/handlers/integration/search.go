@@ -31,19 +31,19 @@ func HandleSearch(m *tuictx.Model, msg tea.Msg) tea.Cmd {
 func handleSearchKeys(m *tuictx.Model, msg tea.KeyMsg) tea.Cmd {
 	key := msg.String()
 	switch key {
-	case "up", "alt+k":
+	case "up", "ctrl+k":
 		moveSearchCursor(m, -1)
 		m.Navigation.Search.Offset = ScrollSearch(m)
-	case "down", "alt+j":
+	case "down", "ctrl+j":
 		moveSearchCursor(m, 1)
 		m.Navigation.Search.Offset = ScrollSearch(m)
-	case "alt+m":
+	case "ctrl+m":
 		if m.Navigation.Search.CursorFile > 0 {
 			m.Navigation.Search.CursorFile--
 			m.Navigation.Search.CursorMatch = -1
 			m.Navigation.Search.Offset = ScrollSearch(m)
 		}
-	case "alt+n":
+	case "ctrl+n":
 		if m.Navigation.Search.CursorFile < len(m.Navigation.Search.Results)-1 {
 			m.Navigation.Search.CursorFile++
 			m.Navigation.Search.CursorMatch = -1

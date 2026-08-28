@@ -220,7 +220,7 @@ func renderSettingRow(props SettingsProps, sItem SettingItem, isCursor bool) str
 func RenderSettingsFooter(width int, cursor int, items []SettingHelpItem, styles theme.Stylesheet) string {
 	baseFooterStyle := styles.Footer.UnsetPadding().UnsetWidth()
 
-	leftPart := " [↑↓] Navigate | [⏎/Space] Toggle | [r] Reset | [Esc/.] Back"
+	leftPart := " [↑↓] Navigate | [⏎/Space] Toggle | [r] Reset | [Esc/,] Back"
 
 	helpText := ""
 	if cursor >= 0 && cursor < len(items) {

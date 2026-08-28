@@ -70,15 +70,15 @@ See [**docs/getting-started.md**](./docs/getting-started.md) for other methods (
 | `v` | Paste clipboard contents |
 | `r` | Rename highlighted item |
 | `/` | Enter filter mode |
-| `Alt+/` | Fuzzy content search (Find in Files) |
+| `Ctrl+F` | Fuzzy content search (Find in Files) |
 | `Tab` | Autocomplete name or path |
 | `g` | Go to path (Local or Remote) |
 | `t` | Open trash view |
-| `Alt+T` / `Alt+W` | New Tab / Close Tab |
-| `Alt+U` | Analyze Disk Usage |
-| `Alt+1`-`9` | Switch between tabs |
+| `Ctrl+T` / `Ctrl+W` | New Tab / Close Tab |
+| `Ctrl+U` | Analyze Disk Usage |
+| `1`-`9` | Switch between tabs |
 | `?` | Toggle help |
-| `.` | Toggle settings |
+| `,` | Toggle settings |
 | `Ctrl+C` | Quit |
 
 See [**keybindings.md**](./docs/keybindings.md) for the full list.

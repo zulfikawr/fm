@@ -39,8 +39,8 @@ func RenderInputPrompt(props Props) string {
 			rightPart = mutedStyle.Render("[") + accentStyle.Render("Tab") + mutedStyle.Render("] ") + mutedStyle.Render(target) + baseStyle.Render(" ")
 		case ModeFuzzySearch:
 			rightPart = mutedStyle.Render("[") + accentStyle.Render("Tab") + mutedStyle.Render("] ") + mutedStyle.Render("Collapse") +
-				mutedStyle.Render(" | [") + accentStyle.Render("Alt+n/m") + mutedStyle.Render("] ") + mutedStyle.Render("Files") +
-				mutedStyle.Render(" | [") + accentStyle.Render("Alt+j/k") + mutedStyle.Render("] ") + mutedStyle.Render("Matches") + baseStyle.Render(" ")
+				mutedStyle.Render(" | [") + accentStyle.Render("Ctrl+n/m") + mutedStyle.Render("] ") + mutedStyle.Render("Files") +
+				mutedStyle.Render(" | [") + accentStyle.Render("Ctrl+j/k") + mutedStyle.Render("] ") + mutedStyle.Render("Matches") + baseStyle.Render(" ")
 		}
 	}
 

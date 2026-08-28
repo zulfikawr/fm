@@ -55,7 +55,7 @@ func HandleAnalyze(m *tuictx.Model, msg tea.Msg) tea.Cmd {
 
 	case tea.KeyMsg:
 		switch msg.String() {
-		case "esc", "q", "alt+u":
+		case "esc", "q", "ctrl+u":
 			m.UI.ActiveView = tuictx.ViewMain
 			return func() tea.Msg { return nil }
 

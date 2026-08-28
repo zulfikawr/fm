@@ -1,10 +1,17 @@
 package config
 
 import (
+	"strconv"
 	"testing"
 )
 
 func TestKeybindings_Validation(t *testing.T) {
+	t.Run("Default keybindings", func(t *testing.T) {
+		if err := ValidateKeybindings(DefaultKeybindings()); err != nil {
+			t.Fatalf("default keybindings should be valid: %v", err)
+		}
+	})
+
 	t.Run("Conflict detection", func(t *testing.T) {
 		keybinds := []Keybinding{
 			{Action: "quit", Keys: []string{"q"}},
@@ -46,6 +53,38 @@ func TestKeybindings_Validation(t *testing.T) {
 			t.Errorf("Expected no error for duplicate keys in same action, got %v", err)
 		}
 	})
+}
+
+func TestDefaultKeybindings(t *testing.T) {
+	want := map[string]string{
+		"settings":            ",",
+		"select_all":          "ctrl+a",
+		"new_tab":             "ctrl+t",
+		"close_tab":           "ctrl+w",
+		"create":              "ctrl+n",
+		"fuzzy_search":        "ctrl+f",
+		"toggle_regex_search": "ctrl+r",
+		"analyze":             "ctrl+u",
+		"clipboard_view":      "ctrl+b",
+		"logs_view":           "ctrl+l",
+	}
+
+	keybindings := DefaultKeybindings()
+	for action, key := range want {
+		keys := GetKeybindingForAction(action, keybindings)
+		if len(keys) != 1 || keys[0] != key {
+			t.Errorf("%s: got %v, want [%s]", action, keys, key)
+		}
+	}
+
+	for tab := 1; tab <= 9; tab++ {
+		key := strconv.Itoa(tab)
+		action := "switch_tab_" + key
+		keys := GetKeybindingForAction(action, keybindings)
+		if len(keys) != 1 || keys[0] != key {
+			t.Errorf("%s: got %v, want [%s]", action, keys, key)
+		}
+	}
 }
 
 func TestKeybindings_Helpers(t *testing.T) {

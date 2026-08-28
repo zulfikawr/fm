@@ -73,7 +73,7 @@ func renderEmptyClipboard(width, height int) string {
 
 // RenderClipboardFooter renders hints for clipboard actions
 func RenderClipboardFooter(width int, isEmpty bool, styles theme.Stylesheet) string {
-	hint := "[Esc/Alt+c] Back"
+	hint := "[Esc/Ctrl+B] Back"
 	if !isEmpty {
 		hint += " | [x] Remove | [v] Paste"
 	}

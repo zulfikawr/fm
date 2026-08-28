@@ -2,6 +2,7 @@ package nav
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/zulfikawr/fm/internal/constants"
@@ -26,23 +27,20 @@ func HandleNavKeys(m *tuictx.Model, msg tea.KeyMsg) tea.Cmd {
 	// Check for matching action using custom keybindings
 	action := GetActionForKeyFromModel(m, key)
 
-	// Tab management shortcuts
-	if strings.HasPrefix(key, "alt+") {
-		if len(key) == 5 && key[4] >= '1' && key[4] <= '9' {
-			tabNum := int(key[4] - '0')
+	if strings.HasPrefix(action, "switch_tab_") {
+		tabNum, err := strconv.Atoi(strings.TrimPrefix(action, "switch_tab_"))
+		if err == nil && tabNum >= 1 && tabNum <= 9 {
 			return SwitchTab(m, tabNum)
 		}
-		// Check if alt+X combinations match any custom keybinding
-		switch action {
-		case "new_tab":
-			return CreateTab(m)
-		case "close_tab":
-			return CloseTab(m)
-		case "create":
-			if !m.UI.InputActive {
-				return func() tea.Msg { return messages.StartCreateMsg{} }
-			}
-		}
+	}
+
+	switch action {
+	case "new_tab":
+		return CreateTab(m)
+	case "close_tab":
+		return CloseTab(m)
+	case "create":
+		return func() tea.Msg { return messages.StartCreateMsg{} }
 	}
 
 	// Process actions based on custom keybindings

@@ -638,7 +638,7 @@ func handleFooterClick(m *context.Model, msg tea.MouseMsg) tea.Cmd {
 		rightWidth := 0
 		switch mode {
 		case footer_comp.ModeFuzzySearch:
-			rightWidth = 45 // "[Tab] Collapse | [Alt+n/m] Files | [Alt+j/k] Matches "
+			rightWidth = 47 // "[Tab] Collapse | [Ctrl+n/m] Files | [Ctrl+j/k] Matches "
 		case footer_comp.ModeCreate:
 			rightWidth = 15 // "[Tab] File/Folder "
 		}
@@ -658,7 +658,7 @@ func handleFooterClick(m *context.Model, msg tea.MouseMsg) tea.Cmd {
 		}
 
 	case footer_comp.ModeSettings, footer_comp.ModeLog, footer_comp.ModeClipboard:
-		// Simple check for [Esc] or [.] or [Alt+L/C]
+		// Simple check for back actions in view footers.
 		if msg.X > 1 && msg.X < 20 { // Typical position for [Esc/...] Back
 			return HandleUpdate(m, tea.KeyMsg{Type: tea.KeyEsc})
 		}

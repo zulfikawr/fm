@@ -35,7 +35,7 @@ The configuration uses a flat JSON structure. Below are the available fields:
 
 ### Via Settings Menu
 The easiest way to change settings is within `fm` itself:
-1. Press `.` to open the settings menu.
+1. Press `,` to open the settings menu.
 2. Use the arrow keys to navigate and `Enter` to toggle or change values.
 3. Press `r` within the settings menu to reset all settings to defaults.
 4. Changes are saved automatically when you exit the menu or the application.
@@ -153,7 +153,7 @@ Keys can be specified as:
 
 ### Customizing via Settings Menu
 
-1. Press `.` to open Settings
+1. Press `,` to open Settings
 2. Scroll to the Keybindings section
 3. Select the action you want to rebind
 4. Press `Enter` to start recording
