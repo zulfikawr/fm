@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/mattn/go-runewidth"
 	"github.com/zulfikawr/fm/internal/files/core"
 	"github.com/zulfikawr/fm/internal/tui/components/ui"
 	"github.com/zulfikawr/fm/internal/tui/theme"
@@ -114,6 +115,7 @@ func renderNamePart(ctx RowContext) string {
 	}
 
 	nameStr = ui.Truncate(nameStr, ctx.Layout.NameWidth)
+	nameStrLen := runewidth.StringWidth(nameStr)
 
 	// Git Status Coloring for Name
 	nameStyle := ctx.Props.Styles.FileCol
@@ -138,7 +140,7 @@ func renderNamePart(ctx RowContext) string {
 	if ctx.IsCursor {
 		sStyle := ctx.Props.Styles.SelectedItem.UnsetPadding().UnsetWidth()
 		styledName := nameStyle.Inherit(sStyle).Render(iconPart + nameStr)
-		gap := ctx.Layout.NameWidth - len(nameStr)
+		gap := ctx.Layout.NameWidth - nameStrLen
 		if gap < 0 {
 			gap = 0
 		}
@@ -146,7 +148,7 @@ func renderNamePart(ctx RowContext) string {
 	}
 
 	styledName := nameStyle.Render(iconPart + nameStr)
-	gap := ctx.Layout.NameWidth - len(nameStr)
+	gap := ctx.Layout.NameWidth - nameStrLen
 	if gap < 0 {
 		gap = 0
 	}
